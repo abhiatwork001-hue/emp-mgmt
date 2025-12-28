@@ -16,10 +16,13 @@ export function RoleSwitcher({ currentUserRole }: { currentUserRole: string }) {
 
     // List of roles to test
     const roles = [
+        { value: "super_user", label: "Super User" },
         { value: "owner", label: "Owner (Super Admin)" },
+        { value: "admin", label: "Admin" },
         { value: "hr", label: "HR Manager" },
         { value: "store_manager", label: "Store Manager" },
-        { value: "department_head", label: "Department Head" },
+        { value: "department_head", label: "Global Dept Head" },
+        { value: "store_department_head", label: "Store Dept Head" },
         { value: "employee", label: "Employee" }
     ];
 
@@ -36,11 +39,11 @@ export function RoleSwitcher({ currentUserRole }: { currentUserRole: string }) {
     };
 
     return (
-        <div className="flex items-center gap-2 mb-4 p-2 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-            <Users className="h-4 w-4 text-yellow-500" />
-            <Label className="text-yellow-500 text-xs font-semibold whitespace-nowrap">Test View:</Label>
+        <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/20 rounded-lg">
+            <Users className="h-4 w-4 text-primary" />
+            <Label className="text-primary text-xs font-semibold whitespace-nowrap">Test View:</Label>
             <Select value={currentTestRole} onValueChange={handleRoleChange}>
-                <SelectTrigger className="h-8 w-[180px] bg-slate-900 border-zinc-700 text-xs">
+                <SelectTrigger className="h-8 w-[180px] bg-background border-border text-xs text-foreground">
                     <SelectValue placeholder="Select role" />
                 </SelectTrigger>
                 <SelectContent>
@@ -51,7 +54,7 @@ export function RoleSwitcher({ currentUserRole }: { currentUserRole: string }) {
                     ))}
                 </SelectContent>
             </Select>
-            <Badge variant="outline" className="ml-auto text-xs text-yellow-500 border-yellow-500/50">
+            <Badge variant="outline" className="ml-auto text-xs text-primary border-primary/50">
                 Testing Mode
             </Badge>
         </div>

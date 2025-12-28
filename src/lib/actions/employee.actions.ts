@@ -1,27 +1,19 @@
 "use server";
 
 import dbConnect from "@/lib/db";
-import { Employee, IEmployee, Store } from "@/lib/models";
+import { Employee, IEmployee, Store, Company, Notification } from "@/lib/models";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
+import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
+import crypto from 'crypto';
 
 type EmployeeData = Partial<IEmployee>;
 
 export interface EmployeeFilterOptions {
     search?: string;
     storeId?: string;
-    departmentId?: string; // Global Department ID (via StoreDepartment -> GlobalDepartment relation) or StoreDepartment ID directly? 
-    // User asked for "departments". In the list, we show Store Department.
-    // Actually, "departments" usually implies broad categories (Global) or specific (Store). 
-    // Let's support filtering by Global Department ID (easier for high level) OR Store Department ID if needed.
-    // Given the UI, usually filtering by Global Department is more useful across stores. 
-    // But let's look at the schema. StoreDepartment has globalDepartmentId.
-    // We will filter by `storeDepartmentId` OR if we want global...
-    // Let's implement filtering by `storeDepartmentId` first as it's direct on the model, 
-    // BUT the dropdown usually comes from "Global Departments".
-    // Let's stick to simple: Filter by exact Store Department ID for now, or we can do advanced lookup.
-    // Simpler choice: Filter by `storeId` and `positionId` is direct.
-    // For `departmentId`, if the user selects a Global Dept, we need to find all employees whose storeDepartment has that globalDepartmentId.
+    departmentId?: string; // Global Department ID
+    storeDepartmentId?: string; // Specific Store Department ID
     positionId?: string;
     sort?: string;
 }
@@ -29,11 +21,15 @@ export interface EmployeeFilterOptions {
 export async function getAllEmployees(options: EmployeeFilterOptions = {}) {
     await dbConnect();
 
-    const { search, storeId, departmentId, positionId, sort } = options;
+    const { search, storeId, departmentId, storeDepartmentId, positionId, sort } = options;
     const query: any = { active: true };
 
     if (storeId && storeId !== "all") {
         query.storeId = storeId;
+    }
+
+    if (storeDepartmentId && storeDepartmentId !== "all") {
+        query.storeDepartmentId = storeDepartmentId;
     }
 
     if (positionId && positionId !== "all") {
@@ -42,11 +38,16 @@ export async function getAllEmployees(options: EmployeeFilterOptions = {}) {
 
     // Search (Text)
     if (search) {
-        query.$or = [
-            { firstName: { $regex: search, $options: "i" } },
-            { lastName: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } }
-        ];
+        const keywords = search.trim().split(/\s+/).filter(k => k.length > 0);
+        if (keywords.length > 0) {
+            query.$and = keywords.map(keyword => ({
+                $or: [
+                    { firstName: { $regex: keyword, $options: "i" } },
+                    { lastName: { $regex: keyword, $options: "i" } },
+                    { email: { $regex: keyword, $options: "i" } }
+                ]
+            }));
+        }
     }
 
     // Sort logic
@@ -59,9 +60,9 @@ export async function getAllEmployees(options: EmployeeFilterOptions = {}) {
 
     // Initial query
     let employeesQuery = Employee.find(query)
-        .populate("storeId", "name")
-        .populate("storeDepartmentId", "name globalDepartmentId") // Get global ID to filter in memory if needed, or better, aggregation?
-        .populate("positionId", "name");
+        .populate("storeId", "name translations")
+        .populate("storeDepartmentId", "name translations globalDepartmentId")
+        .populate("positionId", "name translations");
 
     // If departmentId is provided (Global Department), we need to filter employees 
     // whose storeDepartment -> globalDepartmentId matches.
@@ -72,11 +73,11 @@ export async function getAllEmployees(options: EmployeeFilterOptions = {}) {
         const storeDepts = await StoreDepartment.find({ globalDepartmentId: departmentId }).select("_id");
         const storeDeptIds = storeDepts.map((sd: any) => sd._id);
         query.storeDepartmentId = { $in: storeDeptIds };
-        // Update query with new constraint
+
         employeesQuery = Employee.find(query)
-            .populate("storeId", "name")
-            .populate("storeDepartmentId", "name")
-            .populate("positionId", "name");
+            .populate("storeId", "name translations")
+            .populate("storeDepartmentId", "name translations")
+            .populate("positionId", "name translations");
     }
 
     const employees = await employeesQuery.sort(sortOptions).select("-password").lean();
@@ -99,7 +100,11 @@ export async function getEmployeeById(id: string) {
 
     const employee = await Employee.findById(id)
         .populate("storeId", "name")
-        .populate("positionId", "name level")
+        .populate({
+            path: "positionId",
+            select: "name level roles",
+            populate: { path: "roles", select: "name permissions" }
+        })
         .populate("storeDepartmentId", "name")
         .populate({
             path: "positionHistory.positionId",
@@ -131,11 +136,14 @@ export async function getEmployeeById(id: string) {
 export async function createEmployee(data: EmployeeData) {
     await dbConnect();
 
-    // Hash password if provided
-    if (data.password) {
-        const salt = await bcrypt.genSalt(10);
-        data.password = await bcrypt.hash(data.password, salt);
-    }
+    // Generate One-Time Password
+    const otp = crypto.randomBytes(4).toString('hex'); // 8 chars
+    const rawOtp = otp;
+
+    // Hash the OTP for storage
+    const salt = await bcrypt.genSalt(10);
+    data.password = await bcrypt.hash(rawOtp, salt);
+    data.isPasswordChanged = false;
 
     // Initialize Position History if position assigned
     if (data.positionId) {
@@ -149,9 +157,98 @@ export async function createEmployee(data: EmployeeData) {
     }
 
     const newEmployee = await Employee.create(data);
+
+    // Get company name for email
+    const company = await Company.findOne({});
+    const companyName = company?.name || "The Chick";
+
+    // Send Welcome Email
+    try {
+        await sendWelcomeEmail(newEmployee.email, newEmployee.firstName, companyName, rawOtp);
+    } catch (error) {
+        console.error("Failed to send welcome email:", error);
+        // We don't throw here to avoid failing employee creation if email fails
+    }
+
     revalidatePath("/dashboard/employees");
     return JSON.parse(JSON.stringify(newEmployee));
 }
+
+export async function requestPasswordReset(email: string) {
+    await dbConnect();
+
+    const employee = await Employee.findOne({ email: email.toLowerCase() });
+    if (!employee) {
+        throw new Error("Employee not found with this email.");
+    }
+
+    // Set flag
+    employee.passwordResetRequested = true;
+    await employee.save();
+
+    // Notify HR
+    // Find HRs or Admins to notify
+    const hrs = await Employee.find({ roles: { $in: ["hr", "admin", "owner", "super_user"] } }).select("_id");
+
+    if (hrs.length > 0) {
+        await Notification.create({
+            title: "Password Reset Requested",
+            message: `${employee.firstName} ${employee.lastName} (${employee.email}) has requested a password reset. Please confirm to send a new OTP.`,
+            type: "warning",
+            category: "password_reset",
+            relatedEmployeeId: employee._id,
+            recipients: hrs.map(hr => ({ userId: hr._id, read: false }))
+        });
+    }
+
+    return { success: true };
+}
+
+export async function confirmPasswordReset(employeeId: string) {
+    await dbConnect();
+
+    const employee = await Employee.findById(employeeId);
+    if (!employee) throw new Error("Employee not found");
+
+    // Generate new OTP
+    const otp = crypto.randomBytes(4).toString('hex');
+    const rawOtp = otp;
+
+    const salt = await bcrypt.genSalt(10);
+    employee.password = await bcrypt.hash(rawOtp, salt);
+    employee.isPasswordChanged = false;
+    employee.passwordResetRequested = false;
+
+    await employee.save();
+
+    const company = await Company.findOne({});
+    const companyName = company?.name || "The Chick";
+
+    // Send Reset Email
+    try {
+        await sendPasswordResetEmail(employee.email, employee.firstName, companyName, rawOtp);
+    } catch (error) {
+        console.error("Failed to send reset email:", error);
+    }
+
+    revalidatePath("/dashboard/employees");
+    return { success: true };
+}
+
+export async function changePassword(employeeId: string, newPassword: string) {
+    await dbConnect();
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await Employee.findByIdAndUpdate(employeeId, {
+        password: hashedPassword,
+        isPasswordChanged: true
+    });
+
+    return { success: true };
+}
+
 
 export async function updateEmployee(id: string, data: EmployeeData) {
     await dbConnect();

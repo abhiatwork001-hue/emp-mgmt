@@ -2,12 +2,16 @@
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useCallback, useState, useEffect } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Building2, MapPin, Briefcase, Filter, X } from "lucide-react";
+import { Plus, Search, Building2, MapPin, Briefcase, Filter, X, KeyRound, ShieldAlert } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { motion, AnimatePresence } from "framer-motion";
+import { Card, CardContent } from "@/components/ui/card";
+import { confirmPasswordReset } from "@/lib/actions/employee.actions";
+import { toast } from "sonner";
 import {
     Select,
     SelectContent,
@@ -16,6 +20,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { useTranslations, useLocale } from "next-intl";
+import { getLocalized } from "@/lib/utils";
 
 interface Employee {
     _id: string;
@@ -29,6 +35,7 @@ interface Employee {
     image?: string;
     joinedOn?: string;
     contract?: { employmentType?: string };
+    passwordResetRequested?: boolean;
 }
 
 interface FilterOption {
@@ -47,6 +54,8 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
+    const t = useTranslations("Common");
+    const locale = useLocale();
 
     // Local state for search to allow debouncing (or just enter key)
     const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
@@ -55,7 +64,18 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
     useEffect(() => {
         setSearchTerm(searchParams.get("search") || "");
     }, [searchParams]);
-
+    // Live search debouncing
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchTerm !== (searchParams.get("search") || "")) {
+                const params = new URLSearchParams(searchParams.toString());
+                if (searchTerm) params.set("search", searchTerm);
+                else params.delete("search");
+                router.push(pathname + "?" + params.toString());
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm, pathname, router, searchParams]);
     const createQueryString = useCallback(
         (name: string, value: string) => {
             const params = new URLSearchParams(searchParams.toString());
@@ -96,180 +116,249 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
         setSearchTerm("");
     };
 
+    const handleConfirmReset = async (e: React.MouseEvent, empId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!confirm("Are you sure you want to reset this employee's password? A new OTP will be sent to their email.")) {
+            return;
+        }
+
+        try {
+            await confirmPasswordReset(empId);
+            toast.success("Password reset confirmed and new OTP sent.");
+            router.refresh();
+        } catch (error) {
+            toast.error("Failed to confirm password reset.");
+        }
+    };
+
     const hasFilters = searchParams.toString().length > 0;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             {/* Controls Filter Bar */}
-            <div className="flex flex-col gap-4 p-4 border rounded-lg bg-card/50">
+            <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-card p-6 rounded-2xl border-primary/10 flex flex-col gap-6"
+            >
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                     {/* Search */}
-                    <div className="relative w-full md:w-1/3">
-                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <div className="relative w-full md:w-1/3 group">
+                        <Search className="absolute left-4 top-3.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <Input
-                            placeholder="Search by name or email..."
-                            className="pl-9"
+                            placeholder={t("search") + "..."}
+                            className="pl-11 h-12 bg-background/50 border-border/40 focus:ring-primary/20 transition-all rounded-xl"
                             value={searchTerm}
-                            onChange={(e) => {
-                                setSearchTerm(e.target.value);
-                                // Simple debounce
-                                const params = new URLSearchParams(searchParams.toString());
-                                if (e.target.value) params.set("search", e.target.value);
-                                else params.delete("search");
-                                // We need a way to not push every keystroke instantly without debounce util.
-                                // For simplicity in this tool: I will just set state, and user must hit enter? 
-                                // No, users expect live search. 
-                                // I'll use a pragmatic approach: Just pass to handler which won't debounce properly inline.
-                                // Let's just use onBlur or Enter for search to save specific debounce impl overhead.
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    applyFilter("search", searchTerm);
-                                }
-                            }}
-                            onBlur={() => applyFilter("search", searchTerm)}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
                     <Link href="/dashboard/employees/new">
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" /> Add Employee
+                        <Button className="h-12 px-6 shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all rounded-xl">
+                            <Plus className="mr-2 h-5 w-5" /> {t("add")} {t("employees")}
                         </Button>
                     </Link>
                 </div>
 
-                <Separator />
+                <Separator className="bg-border/20" />
 
-                <div className="flex flex-wrap gap-2 items-center">
-                    <Filter className="h-4 w-4 text-muted-foreground mr-2" />
+                <div className="flex flex-wrap gap-3 items-center">
+                    <div className="p-2 rounded-lg bg-primary/5 mr-2">
+                        <Filter className="h-4 w-4 text-primary" />
+                    </div>
 
-                    {/* Store Filter */}
-                    <Select
-                        value={searchParams.get("storeId") || "all"}
-                        onValueChange={(val) => applyFilter("storeId", val)}
-                    >
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filter by Store" />
+                    <Select value={searchParams.get("storeId") || "all"} onValueChange={(val) => applyFilter("storeId", val)}>
+                        <SelectTrigger className="w-[200px] h-10 bg-background/50 border-border/40 rounded-lg">
+                            <SelectValue placeholder={t('filterByStore')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Stores</SelectItem>
-                            {stores.map(s => <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>)}
+                            <SelectItem value="all">{t('allStores')}</SelectItem>
+                            {stores.map(s => <SelectItem key={s._id} value={s._id}>{getLocalized(s, "name", locale)}</SelectItem>)}
                         </SelectContent>
                     </Select>
 
-                    {/* Department Filter (Global) */}
-                    <Select
-                        value={searchParams.get("departmentId") || "all"}
-                        onValueChange={(val) => applyFilter("departmentId", val)}
-                    >
-                        <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Filter by Department" />
+                    <Select value={searchParams.get("departmentId") || "all"} onValueChange={(val) => applyFilter("departmentId", val)}>
+                        <SelectTrigger className="w-[220px] h-10 bg-background/50 border-border/40 rounded-lg">
+                            <SelectValue placeholder={t('filterByDept')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Departments</SelectItem>
-                            {departments.map(d => <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>)}
+                            <SelectItem value="all">{t('allDepts')}</SelectItem>
+                            {departments.map(d => <SelectItem key={d._id} value={d._id}>{getLocalized(d, "name", locale)}</SelectItem>)}
                         </SelectContent>
                     </Select>
 
-                    {/* Position Filter */}
-                    <Select
-                        value={searchParams.get("positionId") || "all"}
-                        onValueChange={(val) => applyFilter("positionId", val)}
-                    >
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filter by Position" />
+                    <Select value={searchParams.get("positionId") || "all"} onValueChange={(val) => applyFilter("positionId", val)}>
+                        <SelectTrigger className="w-[200px] h-10 bg-background/50 border-border/40 rounded-lg">
+                            <SelectValue placeholder={t('filterByPosition')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Positions</SelectItem>
-                            {positions.map(p => <SelectItem key={p._id} value={p._id}>{p.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-
-                    {/* Sort */}
-                    <Select
-                        value={searchParams.get("sort") || "newest"}
-                        onValueChange={(val) => applyFilter("sort", val)}
-                    >
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Sort By" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="newest">Newest First</SelectItem>
-                            <SelectItem value="oldest">Oldest First</SelectItem>
-                            <SelectItem value="name-asc">Name (A-Z)</SelectItem>
-                            <SelectItem value="name-desc">Name (Z-A)</SelectItem>
-                            <SelectItem value="joined-desc">Joined (Recent)</SelectItem>
-                            <SelectItem value="joined-asc">Joined (Oldest)</SelectItem>
-                            <SelectItem value="contract">Contract Type</SelectItem>
+                            <SelectItem value="all">{t('allPositions')}</SelectItem>
+                            {positions.map(p => <SelectItem key={p._id} value={p._id}>{getLocalized(p, "name", locale)}</SelectItem>)}
                         </SelectContent>
                     </Select>
 
                     {hasFilters && (
-                        <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto">
-                            <X className="h-4 w-4 mr-2" /> Clear
+                        <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground hover:text-foreground">
+                            <X className="h-4 w-4 mr-2" /> Clear All Filters
                         </Button>
                     )}
                 </div>
-            </div>
+            </motion.div>
 
-            <div className="rounded-md border bg-card overflow-hidden">
+            <Card glass premium className="p-0 overflow-hidden border-border/40">
                 {/* Header */}
-                <div className="grid grid-cols-12 gap-4 p-4 border-b text-sm font-medium text-muted-foreground bg-muted/40">
-                    <div className="col-span-4 pl-2">Employee</div>
-                    <div className="col-span-2">Position</div>
-                    <div className="col-span-2">Status</div>
-                    <div className="col-span-2">Store</div>
-                    <div className="col-span-2">Department</div>
+                <div className="hidden md:grid md:grid-cols-12 md:gap-4 p-5 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30 border-b">
+                    <div className="col-span-4 pl-4">{t("employees")}</div>
+                    <div className="col-span-2">{t("positions")}</div>
+                    <div className="col-span-2">Status & Actions</div>
+                    <div className="col-span-2">{t("stores")}</div>
+                    <div className="col-span-2">{t("departments")}</div>
                 </div>
 
                 {/* Rows */}
-                <div className="divide-y divide-zinc-800">
-                    {initialEmployees.map((emp) => (
-                        <Link href={`/dashboard/employees/${emp._id}`} key={emp._id} className="grid grid-cols-12 gap-4 p-4 hover:bg-accent/50 transition items-center group">
-                            <div className="col-span-4 flex items-center gap-3">
-                                <Avatar className="h-10 w-10 border border-zinc-700 transition group-hover:border-primary/50">
-                                    <AvatarImage src={emp.image} alt={`${emp.firstName} ${emp.lastName}`} />
-                                    <AvatarFallback className="bg-muted text-foreground font-bold">
-                                        {emp.firstName?.[0]}{emp.lastName?.[0]}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="text-foreground font-medium group-hover:text-primary transition-colors">{emp.firstName} {emp.lastName}</p>
-                                    <p className="text-xs text-muted-foreground">{emp.email}</p>
-                                </div>
-                            </div>
-                            <div className="col-span-2 text-sm text-foreground">
-                                {emp.positionId?.name || "No Position"}
-                            </div>
-                            <div className="col-span-2">
-                                {emp.active ? (
-                                    <Badge className="bg-emerald-500/10 text-emerald-500 border-0 text-xs hover:bg-emerald-500/20">Active</Badge>
-                                ) : (
-                                    <Badge className="bg-red-500/10 text-red-500 border-0 text-xs hover:bg-red-500/20">Inactive</Badge>
-                                )}
-                            </div>
-                            <div className="col-span-2 text-sm text-muted-foreground flex items-center gap-2">
-                                <MapPin className="h-3 w-3" />
-                                <span className="truncate" title={emp.storeId?.name}>{emp.storeId?.name || "-"}</span>
-                            </div>
-                            <div className="col-span-2 text-sm text-muted-foreground flex items-center gap-2">
-                                <Briefcase className="h-3 w-3" />
-                                <span className="truncate" title={emp.storeDepartmentId?.name}>{emp.storeDepartmentId?.name || "-"}</span>
-                            </div>
-                        </Link>
-                    ))}
+                <div className="divide-y divide-border/20">
+                    <AnimatePresence>
+                        {initialEmployees.map((emp, index) => (
+                            <motion.div
+                                key={emp._id}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                            >
+                                <Link href={`/dashboard/employees/${emp._id}`} className="block hover:bg-primary/5 transition-all group border-b last:border-0 md:border-0 relative">
+                                    {/* Link overlay to handle full card click while buttons still work */}
+                                    <div className="flex flex-col gap-3 p-6 md:hidden">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <Avatar className="h-12 w-12 border-2 border-border group-hover:border-primary/50 transition-all shadow-sm">
+                                                    <AvatarImage src={emp.image} alt={`${emp.firstName} ${emp.lastName}`} />
+                                                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                                        {emp.firstName?.[0]}{emp.lastName?.[0]}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="text-foreground font-bold group-hover:text-primary transition-colors">{emp.firstName} {emp.lastName}</p>
+                                                    <p className="text-xs text-muted-foreground">{emp.email}</p>
+                                                </div>
+                                            </div>
+                                            {emp.active ? (
+                                                <Badge className="bg-emerald-500/10 text-emerald-600 border-0 text-[10px] font-bold uppercase tracking-tighter">{t('active')}</Badge>
+                                            ) : (
+                                                <Badge className="bg-red-500/10 text-red-600 border-0 text-[10px] font-bold uppercase tracking-tighter">{t('inactive')}</Badge>
+                                            )}
+                                        </div>
+
+                                        {emp.passwordResetRequested && (
+                                            <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 p-2 rounded-lg flex items-center justify-between mt-1">
+                                                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-500 flex items-center gap-1 uppercase">
+                                                    <ShieldAlert className="h-3.5 w-3.5" /> Identity Reset
+                                                </span>
+                                                <Button size="sm" className="h-7 px-3 bg-amber-600 text-white border-0" onClick={(e) => handleConfirmReset(e, emp._id)}>Confirm</Button>
+                                            </div>
+                                        )}
+
+                                        <div className="grid grid-cols-2 gap-4 text-sm mt-2 p-3 bg-muted/20 rounded-xl border border-border/40">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{t("positions")}</span>
+                                                <span className="font-semibold text-foreground/90">{getLocalized(emp.positionId, "name", locale) || "No Position"}</span>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{t("stores")}</span>
+                                                <div className="flex items-center gap-1.5 text-foreground/80">
+                                                    <MapPin className="h-3 w-3 text-primary/60" />
+                                                    <span className="truncate font-semibold">{getLocalized(emp.storeId, "name", locale) || "-"}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Desktop View (Grid) */}
+                                    <div className="hidden md:grid md:grid-cols-12 md:gap-4 md:p-5 md:items-center">
+                                        <div className="col-span-4 flex items-center gap-4 pl-2">
+                                            <div className="relative">
+                                                <Avatar className="h-12 w-12 border-2 border-border group-hover:border-primary/50 transition-all shadow-md">
+                                                    <AvatarImage src={emp.image} alt={`${emp.firstName} ${emp.lastName}`} />
+                                                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                                        {emp.firstName?.[0]}{emp.lastName?.[0]}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                {emp.active && (
+                                                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-background rounded-full" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="text-foreground font-bold text-base group-hover:text-primary transition-colors">{emp.firstName} {emp.lastName}</p>
+                                                <p className="text-xs text-muted-foreground font-medium">{emp.email}</p>
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2 text-sm font-semibold text-foreground/90">
+                                            {getLocalized(emp.positionId, "name", locale) || "No Position"}
+                                        </div>
+                                        <div className="col-span-2">
+                                            <div className="flex flex-col gap-2">
+                                                {emp.active ? (
+                                                    <Badge className="w-fit bg-emerald-500/10 text-emerald-600 border-0 text-[10px] font-bold uppercase hover:bg-emerald-500/20">{t('active')}</Badge>
+                                                ) : (
+                                                    <Badge className="w-fit bg-red-500/10 text-red-600 border-0 text-[10px] font-bold uppercase hover:bg-red-500/20">{t('inactive')}</Badge>
+                                                )}
+                                                {emp.passwordResetRequested && (
+                                                    <motion.div
+                                                        initial={{ scale: 0.9, opacity: 0 }}
+                                                        animate={{ scale: 1, opacity: 1 }}
+                                                        className="flex flex-col gap-1.5"
+                                                    >
+                                                        <Badge variant="outline" className="w-fit text-[9px] border-amber-500/50 text-amber-700 bg-amber-50 gap-1 animate-pulse uppercase font-extrabold">
+                                                            <ShieldAlert className="h-3 w-3" /> Reset Req
+                                                        </Badge>
+                                                        <Button
+                                                            size="sm"
+                                                            className="h-7 px-3 text-[9px] gap-1 bg-amber-600 hover:bg-amber-700 text-white border-0 shadow-lg shadow-amber-200 dark:shadow-none font-bold uppercase tracking-tight"
+                                                            onClick={(e) => handleConfirmReset(e, emp._id)}
+                                                        >
+                                                            <KeyRound className="h-3 w-3" /> Confirm Reset
+                                                        </Button>
+                                                    </motion.div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2 text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                            <div className="p-1.5 rounded-lg bg-muted/50">
+                                                <MapPin className="h-3.5 w-3.5 text-primary/60" />
+                                            </div>
+                                            <span className="truncate max-w-[120px]" title={getLocalized(emp.storeId, "name", locale)}>
+                                                {getLocalized(emp.storeId, "name", locale) || "-"}
+                                            </span>
+                                        </div>
+                                        <div className="col-span-2 text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                            <div className="p-1.5 rounded-lg bg-muted/50">
+                                                <Briefcase className="h-3.5 w-3.5 text-primary/60" />
+                                            </div>
+                                            <span className="truncate max-w-[120px]" title={getLocalized(emp.storeDepartmentId, "name", locale)}>
+                                                {getLocalized(emp.storeDepartmentId, "name", locale) || "-"}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+
                     {initialEmployees.length === 0 && (
-                        <div className="p-12 text-center flex flex-col items-center justify-center text-muted-foreground">
-                            <Search className="h-12 w-12 opacity-20 mb-4" />
-                            <p className="text-lg font-medium text-foreground">No employees found</p>
-                            <p className="text-sm">Try adjusting your filters or search terms.</p>
-                            <Button variant="link" onClick={clearFilters} className="mt-2">Clear all filters</Button>
+                        <div className="p-20 text-center flex flex-col items-center justify-center text-muted-foreground bg-accent/5">
+                            <div className="p-6 rounded-full bg-muted/20 mb-6">
+                                <Search className="h-12 w-12 opacity-20" />
+                            </div>
+                            <p className="text-xl font-bold text-foreground">No matching employees</p>
+                            <p className="text-sm mt-1">Try adjusting your filters or searching for another name.</p>
+                            <Button variant="link" onClick={clearFilters} className="mt-4 font-bold text-primary">Clear all filters</Button>
                         </div>
                     )}
                 </div>
-            </div>
+            </Card>
 
-            <div className="text-xs text-muted-foreground text-center">
-                Showing {initialEmployees.length} result{initialEmployees.length !== 1 && 's'}
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground text-center pt-4">
+                {initialEmployees.length} result{initialEmployees.length !== 1 && 's'} in registry
             </div>
         </div>
     );

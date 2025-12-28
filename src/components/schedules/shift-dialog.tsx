@@ -25,14 +25,14 @@ import {
 import { cn } from "@/lib/utils";
 
 const PRESET_COLORS = [
-    "#3b82f6", // Blue
-    "#ef4444", // Red
-    "#10b981", // Green
-    "#f59e0b", // Amber
-    "#8b5cf6", // Purple
-    "#ec4899", // Pink
-    "#06b6d4", // Cyan
-    "#6b7280", // Gray
+    "#3b82f6", // Blue 500
+    "#ef4444", // Red 500
+    "#10b981", // Emerald 500
+    "#f59e0b", // Amber 500
+    "#8b5cf6", // Violet 500
+    "#ec4899", // Pink 500
+    "#06b6d4", // Cyan 500
+    "#f97316", // Orange 500
 ];
 
 export function ShiftDialog({
@@ -67,7 +67,7 @@ export function ShiftDialog({
     const [breakMinutes, setBreakMinutes] = useState(0);
     const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
     const [isOvertime, setIsOvertime] = useState(false);
-
+    const [requiredHeadcount, setRequiredHeadcount] = useState(0);
 
     // Day Off Mode
     const [isDayOff, setIsDayOff] = useState(false);
@@ -78,6 +78,7 @@ export function ShiftDialog({
     // Template Creation State
     const [isCreatingTemplate, setIsCreatingTemplate] = useState(false);
     const [newTemplateName, setNewTemplateName] = useState("");
+    const [templateRequiredHeadcount, setTemplateRequiredHeadcount] = useState(0);
 
     // Employee Selection State
     const [employees, setEmployees] = useState<any[]>([]);
@@ -100,6 +101,7 @@ export function ShiftDialog({
                 setSelectedEmployeeIds(initialData.employees?.map((e: any) => e._id) || []);
                 setIsDayOff(initialData.shiftName === "Day Off");
                 setIsOvertime(initialData.isOvertime || false);
+                setRequiredHeadcount(initialData.requiredHeadcount || 0);
             } else {
                 // Reset defaults for new
                 setStartTime("09:00");
@@ -111,6 +113,7 @@ export function ShiftDialog({
                 setSelectedEmployeeIds([]);
                 setIsDayOff(false);
                 setIsOvertime(false);
+                setRequiredHeadcount(0);
             }
 
             // Default to department if ID is provided
@@ -153,7 +156,7 @@ export function ShiftDialog({
                 startTime: "",
                 endTime: "",
                 breakMinutes: 0,
-                color: "#6b7280", // Gray for day off
+                color: "#94a3b8", // Slate 400 for day off
                 notes,
                 employees: selectedEmps
             });
@@ -166,6 +169,7 @@ export function ShiftDialog({
                 color: selectedColor,
                 notes,
                 isOvertime,
+                requiredHeadcount,
                 employees: selectedEmps
             });
         }
@@ -370,6 +374,15 @@ export function ShiftDialog({
                                                         <Label>Break (min)</Label>
                                                         <Input type="number" value={breakMinutes} onChange={e => setBreakMinutes(Number(e.target.value))} />
                                                     </div>
+                                                    <div className="space-y-1">
+                                                        <Label>Required Staff</Label>
+                                                        <Input
+                                                            type="number"
+                                                            min="0"
+                                                            value={requiredHeadcount}
+                                                            onChange={e => setRequiredHeadcount(Number(e.target.value))}
+                                                        />
+                                                    </div>
                                                     {/* Color Picker Custom */}
                                                     <div className="col-span-2 space-y-2">
                                                         <Label>Color Code</Label>
@@ -424,24 +437,30 @@ export function ShiftDialog({
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[200px] overflow-y-auto border rounded-md p-2">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-[300px] overflow-y-auto border border-border rounded-lg p-3 bg-muted/20">
                                 {filteredEmployees.length === 0 ? (
-                                    <div className="col-span-full py-8 text-center text-muted-foreground text-sm">
-                                        No employees found in this view.
+                                    <div className="col-span-full py-12 text-center text-muted-foreground text-sm flex flex-col items-center gap-2">
+                                        <Users className="h-8 w-8 opacity-20" />
+                                        <span>No employees found in this view.</span>
                                     </div>
                                 ) : (
                                     filteredEmployees.map(emp => (
                                         <div
                                             key={emp._id}
                                             onClick={() => toggleEmployee(emp._id)}
-                                            className={`flex items-center gap-2 p-2 rounded cursor-pointer border transition-colors ${selectedEmployeeIds.includes(emp._id) ? 'bg-primary/10 border-primary' : 'hover:bg-muted border-transparent'}`}
+                                            className={cn(
+                                                "flex items-center gap-2 p-2.5 rounded-md cursor-pointer border transition-all",
+                                                selectedEmployeeIds.includes(emp._id)
+                                                    ? 'bg-primary/10 border-primary text-primary shadow-sm'
+                                                    : 'hover:bg-accent border-transparent text-foreground'
+                                            )}
                                         >
-                                            <Avatar className="h-6 w-6">
+                                            <Avatar className="h-7 w-7 border border-background">
                                                 <AvatarImage src={emp.image} />
-                                                <AvatarFallback>{emp.firstName[0]}</AvatarFallback>
+                                                <AvatarFallback className="text-[10px] bg-muted">{emp.firstName[0]}{emp.lastName[0]}</AvatarFallback>
                                             </Avatar>
                                             <div className="overflow-hidden">
-                                                <div className="text-sm font-medium truncate">{emp.firstName} {emp.lastName}</div>
+                                                <div className="text-xs font-semibold truncate">{emp.firstName} {emp.lastName}</div>
                                                 <div className="text-[10px] text-muted-foreground truncate">{emp.positionId?.name}</div>
                                             </div>
                                         </div>

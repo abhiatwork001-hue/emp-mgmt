@@ -1,11 +1,23 @@
 "use server";
 
 import dbConnect from "@/lib/db";
-import { Schedule, StoreDepartment, Employee, Store, AbsenceRecord } from "@/lib/models";
+import { Schedule, StoreDepartment, Employee, Store, AbsenceRecord, ExtraHourRequest } from "@/lib/models";
+import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { triggerNotification } from "@/lib/actions/notification.actions";
+import { getEmployeeById } from "@/lib/actions/employee.actions"; // Import employee fetcher
+
+const MANAGE_SCHEDULE_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr"];
+
+async function checkSchedulePermission(userId: string) {
+    const employee = await getEmployeeById(userId);
+    const roles = (employee?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    if (!roles.some((r: string) => MANAGE_SCHEDULE_ROLES.includes(r))) {
+        throw new Error("Unauthorized: You do not have permission to manage schedules.");
+    }
+}
 
 export async function getSchedules(storeId: string, departmentId?: string, year?: number, week?: number) {
     await dbConnect();
@@ -52,6 +64,10 @@ export async function getScheduleById(id: string) {
 
 export async function createSchedule(data: any) {
     await dbConnect();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+    await checkSchedulePermission((session.user as any).id);
+
     const newSchedule = await Schedule.create(data);
     revalidatePath("/dashboard/schedules");
     return JSON.parse(JSON.stringify(newSchedule));
@@ -59,15 +75,69 @@ export async function createSchedule(data: any) {
 
 export async function updateSchedule(id: string, data: any) {
     await dbConnect();
-    const updated = await Schedule.findByIdAndUpdate(id, data, { new: true }).lean();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+    await checkSchedulePermission((session.user as any).id);
+
+    const updated = await Schedule.findByIdAndUpdate(id, data, { new: true })
+        .populate("storeId", "name")
+        .populate("storeDepartmentId", "name")
+        .lean();
+
     revalidatePath(`/dashboard/schedules/${id}`);
     revalidatePath("/dashboard/schedules");
+
+    // Notification: If updating a pending schedule, notify Approvers
+    if (updated.status === 'pending' || updated.status === 'review') {
+        try {
+            const actor = await Employee.findById((session.user as any).id).select("firstName lastName");
+            const actorName = actor ? `${actor.firstName} ${actor.lastName}` : "Someone";
+            const storeName = (updated.storeId as any)?.name || "Store";
+            const deptName = (updated.storeDepartmentId as any)?.name || "Department";
+
+            const approvers = await Employee.find({
+                roles: { $in: [/^hr$/i, /^owner$/i] },
+                active: true
+            }).select("_id");
+
+            const recipientIds = approvers.map(a => a._id.toString()).filter(id => id !== (session.user as any).id);
+
+            if (recipientIds.length > 0) {
+                await triggerNotification({
+                    title: "Pending Schedule Updated",
+                    message: `${actorName} updated the pending schedule for ${deptName} at ${storeName}.`,
+                    type: "info",
+                    category: "schedule",
+                    recipients: recipientIds,
+                    link: `/dashboard/browsing/schedules/${id}`,
+                    senderId: (session.user as any).id,
+                    relatedStoreId: (updated.storeId as any)?._id,
+                    relatedDepartmentId: (updated.storeDepartmentId as any)?._id
+                });
+            }
+        } catch (e) {
+            console.error("Failed to notify on schedule update:", e);
+        }
+    }
+
     return JSON.parse(JSON.stringify(updated));
 }
 
 export async function updateScheduleStatus(id: string, status: string, userId: string, comment?: string) {
     await dbConnect();
+    await checkSchedulePermission(userId);
 
+    // Strict Permissions for Approval/Rejection/Publishing
+    if (['approved', 'rejected', 'published'].includes(status)) {
+        const actor = await getEmployeeById(userId);
+        const roles = (actor?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+        // Allowing Admin/Super User as well for system stability, alongside requested HR/Owner
+        const hasAuthority = roles.some((r: string) => ['hr', 'owner', 'super_user', 'admin'].includes(r));
+
+        if (!hasAuthority) {
+            throw new Error(`Permission Denied: Only HR or Owners can ${status} schedules.`);
+        }
+    }
 
     const update: any = {
         status,
@@ -99,47 +169,55 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         let title = "";
         let message = "";
 
-        if (status === 'pending') {
+        if (status === 'review' || status === 'pending') { // 'pending' or 'review' depending on convention
             title = "Schedule Sent for Approval";
-            message = `${actorName} sent a schedule for approval from ${storeName} and ${deptName}.`;
+            message = `${actorName} sent a schedule for approval for ${deptName} at ${storeName}.`;
 
-            // Notify Store Managers
-            const store = await Store.findById(updated.storeId._id || updated.storeId).lean();
-            if (store) {
-                const recipients = [...(store.managers || []), ...(store.subManagers || [])].map(id => id.toString());
-                const finalRecipients = recipients.filter(r => r !== userId);
+            // Notify HR and Owners
+            // We find employees with role 'hr' or 'owner' (case insensitive match usually required but sticking to simple regex/in)
+            const approvers = await Employee.find({
+                roles: { $in: [/^hr$/i, /^owner$/i] },
+                active: true
+            }).select("_id");
 
+            const recipientIds = approvers.map(a => a._id.toString()).filter(id => id !== userId);
 
-
-                if (finalRecipients.length > 0) {
-                    await triggerNotification({
-                        title,
-                        message,
-                        type: "info",
-                        category: "schedule",
-                        recipients: finalRecipients,
-                        link: `/dashboard/schedules/${id}`,
-                        senderId: userId,
-                        relatedStoreId: (updated.storeId as any)?._id,
-                        relatedDepartmentId: (updated.storeDepartmentId as any)?._id
-                    });
-                }
-
+            if (recipientIds.length > 0) {
+                await triggerNotification({
+                    title,
+                    message,
+                    type: "info",
+                    category: "schedule",
+                    recipients: recipientIds,
+                    link: `/dashboard/browsing/schedules/${id}`, // Assuming admin view link
+                    senderId: userId,
+                    relatedStoreId: (updated.storeId as any)?._id,
+                    relatedDepartmentId: (updated.storeDepartmentId as any)?._id
+                });
             }
-        } else if (status === 'published') {
-            title = "Schedule Published";
-            message = `The schedule for ${deptName} at ${storeName} has been published by ${actorName}.`;
+
+        } else if (status === 'published' || status === 'approved') {
+            title = "Schedule Approved & Published";
+            message = `The schedule for ${deptName} at ${storeName} has been approved and published.`;
 
             const employeeIds = new Set<string>();
+
+            // Add Employees in Schedule
             updated.days.forEach((day: any) => {
                 day.shifts.forEach((shift: any) => {
                     shift.employees.forEach((emp: any) => {
-                        // Handle both populated and unpopulated ID
                         const empId = emp._id ? emp._id.toString() : emp.toString();
                         employeeIds.add(empId);
                     });
                 });
             });
+
+            // Add Creator (Store Manager)
+            if (updated.createdBy) {
+                const creatorId = updated.createdBy._id ? updated.createdBy._id.toString() : updated.createdBy.toString();
+                employeeIds.add(creatorId);
+            }
+
             const recipients = Array.from(employeeIds).filter(r => r !== userId);
 
             if (recipients.length > 0) {
@@ -157,20 +235,23 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
             }
         } else if (status === 'rejected') {
             title = "Schedule Rejected";
-            message = `The schedule for ${deptName} was rejected by ${actorName}. Reason: ${comment || "No reason provided"}.`;
+            message = `Your schedule for ${deptName} at ${storeName} was rejected by ${actorName}. Comment: ${comment || "None"}.`;
 
-            if (updated.createdBy && (updated.createdBy._id ? updated.createdBy._id.toString() : updated.createdBy.toString()) !== userId) {
-                await triggerNotification({
-                    title,
-                    message,
-                    type: "error",
-                    category: "schedule",
-                    recipients: [updated.createdBy._id ? updated.createdBy._id.toString() : updated.createdBy.toString()],
-                    link: `/dashboard/schedules/${id}`,
-                    senderId: userId,
-                    relatedStoreId: (updated.storeId as any)?._id,
-                    relatedDepartmentId: (updated.storeDepartmentId as any)?._id
-                });
+            if (updated.createdBy) {
+                const creatorId = updated.createdBy._id ? updated.createdBy._id.toString() : updated.createdBy.toString();
+                if (creatorId !== userId) {
+                    await triggerNotification({
+                        title,
+                        message,
+                        type: "error",
+                        category: "schedule",
+                        recipients: [creatorId],
+                        link: `/dashboard/schedules/${id}`,
+                        senderId: userId,
+                        relatedStoreId: (updated.storeId as any)?._id,
+                        relatedDepartmentId: (updated.storeDepartmentId as any)?._id
+                    });
+                }
             }
         }
     } catch (e) {
@@ -270,6 +351,7 @@ function getISOWeekNumber(d: Date) {
 
 export async function copyPreviousSchedule(currentScheduleId: string, userId: string) {
     await dbConnect();
+    await checkSchedulePermission(userId);
 
     // 1. Get current schedule as LEAN to interact with plain objects
     const currentSchedule = await Schedule.findById(currentScheduleId).lean();
@@ -426,7 +508,7 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
     }));
 }
 
-export async function getDashboardData(date: Date = new Date()) {
+export async function getDashboardData(date: Date = new Date(), storeIdFilter?: string) {
     await dbConnect();
     const { Store, StoreDepartment } = require("@/lib/models");
 
@@ -434,8 +516,13 @@ export async function getDashboardData(date: Date = new Date()) {
     const d = new Date(date);
     const { week, year } = getISOWeekNumber(d);
 
-    // 2. Fetch all active Stores & Departments
-    const stores = await Store.find({ active: true }).lean();
+    // 2. Fetch active Stores (apply filter if provided)
+    const storeQuery: any = { active: true };
+    if (storeIdFilter) {
+        storeQuery._id = storeIdFilter;
+    }
+
+    const stores = await Store.find(storeQuery).lean();
     const storeIds = stores.map((s: any) => s._id);
 
     // 3. Fetch all Schedules for this week
@@ -445,28 +532,22 @@ export async function getDashboardData(date: Date = new Date()) {
         weekNumber: week
     }).lean();
 
-    // 4. Aggregate Data
+    // 4. Structure Response & Aggregate Data
+    // We fetch departments first to know the "Universe" of work
     const summary = {
         total: 0,
         inProgress: 0,
         pending: 0,
-        approved: 0
+        approved: 0,
+        notStarted: 0,
+        totalDepartments: 0
     };
 
-    // Helper map for quick schedule lookup by department
     const scheduleMap = new Map();
     schedules.forEach((sch: any) => {
         scheduleMap.set(sch.storeDepartmentId.toString(), sch);
-
-        // Update Summary
-        summary.total++;
-        if (sch.status === 'draft') summary.inProgress++;
-        if (sch.status === 'review') summary.pending++;
-        if (sch.status === 'approved' || sch.status === 'published') summary.approved++;
     });
 
-    // 5. Structure Response
-    // We need to fetch departments for each store manually or via lookup if we want to be efficient
     const storesWithData = await Promise.all(stores.map(async (store: any) => {
         const departments = await StoreDepartment.find({ storeId: store._id, active: true }).lean();
 
@@ -511,6 +592,21 @@ export async function getDashboardData(date: Date = new Date()) {
         };
     }));
 
+    // Calculate Summary from the structured data to ensure consistency
+    storesWithData.forEach((store: any) => {
+        store.departments.forEach((dept: any) => {
+            summary.totalDepartments++;
+            if (!dept.schedule) {
+                summary.notStarted++;
+            } else {
+                summary.total++;
+                if (dept.schedule.status === 'draft') summary.inProgress++;
+                else if (dept.schedule.status === 'pending' || dept.schedule.status === 'review') summary.pending++;
+                else if (dept.schedule.status === 'approved' || dept.schedule.status === 'published') summary.approved++;
+            }
+        });
+    });
+
     return JSON.parse(JSON.stringify({
         summary,
         stores: storesWithData,
@@ -518,3 +614,183 @@ export async function getDashboardData(date: Date = new Date()) {
     }));
 }
 
+export async function getPendingSchedules() {
+    await dbConnect();
+    const schedules = await Schedule.find({ status: 'pending' })
+        .populate("storeId", "name")
+        .populate("storeDepartmentId", "name")
+        .populate("createdBy", "firstName lastName")
+        .sort({ updatedAt: -1 })
+        .lean();
+    return JSON.parse(JSON.stringify(schedules));
+}
+
+// --- Work History & Stats ---
+
+export async function getEmployeeWorkHistory(employeeId: string, rangeHelper?: { start?: Date, end?: Date }) {
+    await dbConnect();
+    const { Schedule, ExtraHourRequest } = require("@/lib/models");
+
+    const now = new Date();
+    // Default range: Last 1 year if not specified
+    const defaultStart = new Date(now);
+    defaultStart.setFullYear(now.getFullYear() - 1);
+
+    // Determine effective range for query
+    // If rangeHelper is strict (calculator), we use it strictly.
+    // If not (profile view), we allow fetching past 1 year to populate history navigation.
+    const queryStart = rangeHelper?.start || defaultStart;
+    const queryEnd = rangeHelper?.end || new Date(now.getFullYear() + 1, 0, 1); // Future buffer
+
+    // 1. Fetch Schedules
+    // We want schedules that OVERLAP with the query range.
+    // Schedule range: s.startDate to s.endDate.
+    // Overlap: s.startDate <= queryEnd && s.endDate >= queryStart
+    const scheduleQuery = {
+        "days.shifts.employees": employeeId,
+        "dateRange.startDate": { $lte: queryEnd },
+        "dateRange.endDate": { $gte: queryStart }
+    };
+
+    const schedules = await Schedule.find(scheduleQuery)
+        .populate("storeId", "name")
+        .populate("storeDepartmentId", "name")
+        .lean();
+
+    // 2. Fetch Extra Hours (Approved Overtime)
+    const extraHoursQuery = {
+        employeeId: employeeId,
+        status: "approved",
+        date: { $gte: queryStart, $lte: queryEnd }
+    };
+
+    const extraRequests = await ExtraHourRequest.find(extraHoursQuery).lean();
+
+    // 3. Process Data
+    let totalHoursToday = 0;
+    let totalHoursWeek = 0;
+    let totalHoursMonth = 0;
+    let totalHoursYear = 0; // Calendar Year
+    let rangeTotal = 0;
+
+    const history: any[] = [];
+    const currentWeekNum = getWeekNumber(now);
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Helper to calculate hours
+    const calcHours = (start: string, end: string, breakMins: number = 0) => {
+        const [h1, m1] = start.split(":").map(Number);
+        const [h2, m2] = end.split(":").map(Number);
+        let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+        if (diff < 0) diff += 24 * 60;
+        diff -= breakMins;
+        return Math.max(0, diff / 60);
+    };
+
+    // Helper for week number
+    function getWeekNumber(d: Date) {
+        d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    }
+
+    const targetStart = rangeHelper?.start?.getTime() || 0;
+    const targetEnd = rangeHelper?.end?.getTime() || Infinity;
+
+    // Process Schedules
+    for (const sched of schedules) {
+        for (const day of sched.days) {
+            const dayDate = new Date(day.date);
+            const isToday = dayDate.toDateString() === now.toDateString();
+            const isThisWeek = getWeekNumber(dayDate) === currentWeekNum && dayDate.getFullYear() === currentYear;
+            const isThisMonth = dayDate.getMonth() === currentMonth && dayDate.getFullYear() === currentYear;
+            const isThisYear = dayDate.getFullYear() === currentYear;
+
+            // Strict range check for calculator / filtering
+            const inRange = dayDate.getTime() >= targetStart && dayDate.getTime() <= targetEnd;
+            if (rangeHelper && !inRange) continue; // Skip if strict range and not in valid range
+
+            for (const shift of day.shifts) {
+                const empIds = shift.employees.map((id: any) => id.toString());
+                if (empIds.includes(employeeId.toString())) {
+                    const hours = calcHours(shift.startTime, shift.endTime, shift.breakMinutes);
+
+                    if (isToday) totalHoursToday += hours;
+                    if (isThisWeek) totalHoursWeek += hours;
+                    if (isThisMonth) totalHoursMonth += hours;
+                    if (isThisYear) totalHoursYear += hours;
+
+                    if (inRange) rangeTotal += hours;
+
+                    history.push({
+                        type: 'shift',
+                        date: day.date,
+                        storeName: sched.storeId?.name,
+                        deptName: sched.storeDepartmentId?.name,
+                        shiftName: shift.shiftName,
+                        startTime: shift.startTime,
+                        endTime: shift.endTime,
+                        hours: Number(hours.toFixed(2)),
+                        isOvertime: shift.isOvertime,
+                        scheduleId: sched._id.toString()
+                    });
+                }
+            }
+        }
+    }
+
+    // Process Approved Extra Hours
+    for (const req of extraRequests) {
+        const rDate = new Date(req.date);
+        const hours = req.hoursRequested;
+
+        const isToday = rDate.toDateString() === now.toDateString();
+        const isThisWeek = getWeekNumber(rDate) === currentWeekNum && rDate.getFullYear() === currentYear;
+        const isThisMonth = rDate.getMonth() === currentMonth && rDate.getFullYear() === currentYear;
+        const isThisYear = rDate.getFullYear() === currentYear;
+        const inRange = rDate.getTime() >= targetStart && rDate.getTime() <= targetEnd;
+
+        // If we are in strict mode (rangeHelper), current stats (today/week/etc) might not be relevant
+        // if the range is in the past. But let's keep accumulation consistent.
+        // Actually, if rangeHelper is set, user likely only cares about `rangeTotal`.
+        // But `ProfileWorkTab` calls it without rangeHelper for initial Stats + History.
+
+        if (isToday) totalHoursToday += hours;
+        if (isThisWeek) totalHoursWeek += hours;
+        if (isThisMonth) totalHoursMonth += hours;
+        if (isThisYear) totalHoursYear += hours;
+
+        if (inRange || !rangeHelper) {
+            if (inRange) rangeTotal += hours;
+
+            history.push({
+                type: 'extra',
+                date: req.date,
+                storeName: "Extra Hours", // Placeholder
+                deptName: req.note || "Approved Request",
+                shiftName: "Overtime",
+                startTime: "-",
+                endTime: "-",
+                hours: Number(hours.toFixed(2)),
+                isOvertime: true,
+                scheduleId: req._id.toString()
+            });
+        }
+    }
+
+    // Sort history descending
+    history.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return {
+        stats: {
+            day: Number(totalHoursToday.toFixed(2)),
+            week: Number(totalHoursWeek.toFixed(2)),
+            month: Number(totalHoursMonth.toFixed(2)),
+            year: Number(totalHoursYear.toFixed(2))
+        },
+        rangeTotal: Number(rangeTotal.toFixed(2)),
+        history
+    };
+}

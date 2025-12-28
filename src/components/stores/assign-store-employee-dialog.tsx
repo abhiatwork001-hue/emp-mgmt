@@ -80,14 +80,14 @@ export function AssignStoreEmployeeToDepartmentDialog({ storeId, departmentId, d
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" className="bg-white text-black hover:bg-zinc-200">
+                <Button size="sm" variant="outline">
                     <Plus className="mr-2 h-4 w-4" /> Assign Employee
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-[#1e293b] text-white border-zinc-700">
+            <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Assign to {departmentName}</DialogTitle>
-                    <DialogDescription className="text-zinc-400">
+                    <DialogDescription>
                         Select store employees to assign to this department.
                         Only employees already assigned to this store appear here.
                     </DialogDescription>
@@ -95,46 +95,45 @@ export function AssignStoreEmployeeToDepartmentDialog({ storeId, departmentId, d
 
                 <div className="py-4 space-y-4">
                     <div className="relative">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-zinc-500" />
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search employees..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-8 bg-[#0f172a] border-zinc-700 text-white placeholder:text-zinc-500"
+                            className="pl-8 bg-muted/30"
                         />
                     </div>
 
-                    <ScrollArea className="h-[300px] border border-zinc-700 rounded-md p-4 bg-[#0f172a]">
+                    <ScrollArea className="h-[300px] border border-border rounded-md p-4 bg-muted/20">
                         {loading ? (
-                            <div className="flex justify-center p-4"><Loader2 className="h-4 w-4 animate-spin text-zinc-400" /></div>
+                            <div className="flex justify-center p-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
                         ) : filteredEmployees.length === 0 ? (
                             <div className="text-center py-8 px-4">
-                                <p className="text-sm text-zinc-400 mb-1">No available employees found.</p>
-                                <p className="text-xs text-zinc-500">
+                                <p className="text-sm text-muted-foreground mb-1">No available employees found.</p>
+                                <p className="text-xs text-muted-foreground/60">
                                     Make sure employees are assigned to this store first.
                                 </p>
                             </div>
                         ) : (
                             <div className="space-y-2">
                                 {filteredEmployees.map((emp) => (
-                                    <div key={emp._id} className="flex items-center space-x-3 p-2 rounded hover:bg-zinc-800/50 transition cursor-pointer" onClick={() => handleSelect(emp._id)}>
+                                    <div key={emp._id} className="flex items-center space-x-3 p-2 rounded hover:bg-accent transition cursor-pointer" onClick={() => handleSelect(emp._id)}>
                                         <Checkbox
                                             id={`emp-${emp._id}`}
                                             checked={selectedEmployees.includes(emp._id)}
                                             onCheckedChange={() => handleSelect(emp._id)}
-                                            className="border-zinc-500 data-[state=checked]:bg-white data-[state=checked]:text-black"
                                         />
                                         <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
+                                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">
                                                 {emp.firstName?.[0]}{emp.lastName?.[0]}
                                             </div>
                                             <div className="space-y-0.5">
-                                                <Label htmlFor={`emp-${emp._id}`} className="text-sm font-medium text-white cursor-pointer hover:underline">
+                                                <Label htmlFor={`emp-${emp._id}`} className="text-sm font-medium cursor-pointer hover:underline">
                                                     {emp.firstName} {emp.lastName}
                                                 </Label>
-                                                <p className="text-xs text-zinc-500">{emp.email}</p>
+                                                <p className="text-xs text-muted-foreground">{emp.email}</p>
                                                 {emp.positionId?.name && (
-                                                    <p className="text-xs text-zinc-400 italic">{emp.positionId.name}</p>
+                                                    <p className="text-xs text-muted-foreground/80 italic">{emp.positionId.name}</p>
                                                 )}
                                             </div>
                                         </div>
@@ -143,13 +142,13 @@ export function AssignStoreEmployeeToDepartmentDialog({ storeId, departmentId, d
                             </div>
                         )}
                     </ScrollArea>
-                    <div className="text-xs text-zinc-400">
+                    <div className="text-xs text-muted-foreground">
                         {selectedEmployees.length} employees selected
                     </div>
                 </div>
 
                 <DialogFooter>
-                    <Button type="submit" disabled={selectedEmployees.length === 0 || loading} onClick={handleSubmit} className="bg-white text-black hover:bg-zinc-200">
+                    <Button type="submit" disabled={selectedEmployees.length === 0 || loading} onClick={handleSubmit}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Assign Employees
                     </Button>

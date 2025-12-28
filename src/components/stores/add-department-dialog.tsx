@@ -22,6 +22,8 @@ import { Label } from "@/components/ui/label";
 import { Loader2, Plus } from "lucide-react";
 import { getAvailableGlobalDepartments, createStoreDepartment } from "@/lib/actions/store-department.actions";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
+import { getLocalized } from "@/lib/utils";
 
 interface AddDepartmentDialogProps {
     storeId: string;
@@ -33,6 +35,8 @@ export function AddDepartmentDialog({ storeId }: AddDepartmentDialogProps) {
     const [departments, setDepartments] = useState<any[]>([]);
     const [selectedDept, setSelectedDept] = useState("");
     const router = useRouter();
+    const t = useTranslations("Common");
+    const locale = useLocale();
 
     useEffect(() => {
         if (open) {
@@ -70,36 +74,36 @@ export function AddDepartmentDialog({ storeId }: AddDepartmentDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" className="bg-white text-black hover:bg-zinc-200">
-                    <Plus className="mr-2 h-4 w-4" /> Add Department
+                <Button size="sm" variant="outline">
+                    <Plus className="mr-2 h-4 w-4" /> {t('add')} {t('departments')}
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-[#1e293b] text-white border-zinc-700">
+            <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Add Department</DialogTitle>
-                    <DialogDescription className="text-zinc-400">
+                    <DialogTitle>{t('add')} {t('departments')}</DialogTitle>
+                    <DialogDescription>
                         Select a global department to add to this store.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="department" className="text-right text-zinc-300">
+                        <Label htmlFor="department" className="text-right">
                             Department
                         </Label>
                         <div className="col-span-3">
                             <Select onValueChange={setSelectedDept} value={selectedDept}>
-                                <SelectTrigger className="w-full bg-[#0f172a] border-zinc-700 text-white">
-                                    <SelectValue placeholder="Select a department" />
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder={t('loading')} />
                                 </SelectTrigger>
-                                <SelectContent className="bg-[#1e293b] border-zinc-700 text-white">
+                                <SelectContent>
                                     {loading ? (
                                         <div className="flex justify-center p-2"><Loader2 className="h-4 w-4 animate-spin" /></div>
                                     ) : departments.length === 0 ? (
                                         <div className="p-2 text-sm text-zinc-500">No available departments found.</div>
                                     ) : (
                                         departments.map((dept) => (
-                                            <SelectItem key={dept._id} value={dept._id} className="focus:bg-zinc-800 focus:text-white">
-                                                {dept.name}
+                                            <SelectItem key={dept._id} value={dept._id}>
+                                                {getLocalized(dept, "name", locale)}
                                             </SelectItem>
                                         ))
                                     )}
@@ -109,9 +113,9 @@ export function AddDepartmentDialog({ storeId }: AddDepartmentDialogProps) {
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button type="submit" disabled={!selectedDept || loading} onClick={handleSubmit} className="bg-white text-black hover:bg-zinc-200">
+                    <Button type="submit" disabled={!selectedDept || loading} onClick={handleSubmit}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Add Department
+                        {t('add')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

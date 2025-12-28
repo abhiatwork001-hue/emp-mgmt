@@ -68,7 +68,7 @@ export async function getAllGlobalDepartmentsWithStats() {
  */
 export async function getAllGlobalDepartments() {
     await dbConnect();
-    const departments = await GlobalDepartment.find({ active: true }).lean();
+    const departments = await GlobalDepartment.find({ active: true }).select("name translations").lean();
     return JSON.parse(JSON.stringify(departments));
 }
 
@@ -131,6 +131,7 @@ export async function getGlobalDepartmentById(id: string) {
                 createdAt: 1,
                 updatedAt: 1,
                 __v: 1,
+                translations: 1,
                 storeDepts: 1,
                 storeCount: 1,
                 employeeCount: 1

@@ -28,7 +28,9 @@ export function EditStoreDepartmentDialog({ department }: EditStoreDepartmentDia
     const [formData, setFormData] = useState({
         name: department.name,
         description: department.description || "",
-        active: department.active
+        active: department.active,
+        minEmployees: (department as any).minEmployees || 0,
+        targetEmployees: (department as any).targetEmployees || 0
     });
 
     async function handleSubmit(e: React.FormEvent) {
@@ -39,7 +41,9 @@ export function EditStoreDepartmentDialog({ department }: EditStoreDepartmentDia
             await updateStoreDepartment(department._id, {
                 name: formData.name,
                 description: formData.description,
-                active: formData.active
+                active: formData.active,
+                minEmployees: formData.minEmployees,
+                targetEmployees: formData.targetEmployees
             });
             setOpen(false);
             router.refresh();
@@ -92,6 +96,30 @@ export function EditStoreDepartmentDialog({ department }: EditStoreDepartmentDia
                             className="bg-[#111827] border-zinc-700 text-white resize-none"
                             rows={3}
                         />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="min-employees">Min Employees</Label>
+                            <Input
+                                id="min-employees"
+                                type="number"
+                                min="0"
+                                value={formData.minEmployees}
+                                onChange={(e) => setFormData({ ...formData, minEmployees: parseInt(e.target.value) || 0 })}
+                                className="bg-[#111827] border-zinc-700 text-white"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="target-employees">Target Employees</Label>
+                            <Input
+                                id="target-employees"
+                                type="number"
+                                min="0"
+                                value={formData.targetEmployees}
+                                onChange={(e) => setFormData({ ...formData, targetEmployees: parseInt(e.target.value) || 0 })}
+                                className="bg-[#111827] border-zinc-700 text-white"
+                            />
+                        </div>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-zinc-700 p-3 bg-[#111827]">
                         <div className="space-y-0.5">

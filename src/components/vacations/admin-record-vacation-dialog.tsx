@@ -12,12 +12,16 @@ import { getAllStores } from "@/lib/actions/store.actions";
 import { getEmployeesByStore } from "@/lib/actions/employee.actions";
 import { toast } from "sonner";
 import { CalendarPlus } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 export function AdminRecordVacationDialog() {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const t = useTranslations("Vacation");
+    const tc = useTranslations("Common");
 
     // Selection State
     const [stores, setStores] = useState<any[]>([]);
@@ -108,22 +112,13 @@ export function AdminRecordVacationDialog() {
 
             const totalDays = calculateWorkingDays(start, end);
 
-            // Note: Admin Bypass skips 15-day rule and balance check on backend,
-            // but we still calculate working days.
-
-            if (totalDays === 0) {
-                // Admins might want to record weekends? 
-                // If so, we'd need to change simple calc, but safe default is working days.
-                toast.warning("Selected range has 0 working days. Proceeding anyway as this is an Admin action.");
-            }
-
             await createVacationRequest({
                 employeeId: selectedEmployee,
                 requestedFrom: start,
                 requestedTo: end,
-                totalDays, // Pass working days. If 0, backend handles it? 
+                totalDays,
                 comments: formData.comments || "Recorded by Admin",
-                bypassValidation: true // KEY FLAG
+                bypassValidation: true
             });
 
             toast.success("Vacation recorded successfully");
@@ -131,7 +126,7 @@ export function AdminRecordVacationDialog() {
             setFormData({ startDate: "", endDate: "", comments: "" });
             setSelectedStore("");
             setSelectedEmployee("");
-            router.refresh(); // Ensure the UI updates immediately
+            router.refresh();
         } catch (error) {
             console.error("Submission error:", error);
             toast.error("Failed to record vacation.");
@@ -143,24 +138,24 @@ export function AdminRecordVacationDialog() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="default" className="bg-emerald-600 hover:bg-emerald-700">
-                    <CalendarPlus className="mr-2 h-4 w-4" /> Record Vacation
+                <Button variant="default" className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                    <CalendarPlus className="mr-2 h-4 w-4" /> {t('record')}
                 </Button>
             </DialogTrigger>
-            <DialogContent className="bg-[#1e293b] border-zinc-700 text-white sm:max-w-[500px]">
+            <DialogContent className="bg-popover border-border text-popover-foreground sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Record Vacation (Admin)</DialogTitle>
+                    <DialogTitle>{t('recordAdmin')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
 
                     {/* Store Selection */}
                     <div className="space-y-2">
-                        <Label>Select Store</Label>
+                        <Label className="text-sm font-medium">{tc('store')}</Label>
                         <Select value={selectedStore} onValueChange={setSelectedStore}>
-                            <SelectTrigger className="bg-[#0f172a] border-zinc-700 text-white">
-                                <SelectValue placeholder="Select a store..." />
+                            <SelectTrigger className="bg-muted/50 border-border text-foreground">
+                                <SelectValue placeholder={tc('selectStore')} />
                             </SelectTrigger>
-                            <SelectContent className="bg-[#1e293b] border-zinc-700 text-white">
+                            <SelectContent className="bg-popover border-border text-popover-foreground">
                                 {stores.map(store => (
                                     <SelectItem key={store._id} value={store._id}>{store.name}</SelectItem>
                                 ))}
@@ -170,12 +165,12 @@ export function AdminRecordVacationDialog() {
 
                     {/* Employee Selection */}
                     <div className="space-y-2">
-                        <Label>Select Employee</Label>
+                        <Label className="text-sm font-medium">{tc('employee')}</Label>
                         <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={!selectedStore || loading}>
-                            <SelectTrigger className="bg-[#0f172a] border-zinc-700 text-white">
-                                <SelectValue placeholder={loading ? "Loading..." : "Select an employee..."} />
+                            <SelectTrigger className="bg-muted/50 border-border text-foreground">
+                                <SelectValue placeholder={loading ? tc('loading') : tc('selectEmployee')} />
                             </SelectTrigger>
-                            <SelectContent className="bg-[#1e293b] border-zinc-700 text-white max-h-[200px]">
+                            <SelectContent className="bg-popover border-border text-popover-foreground max-h-[200px]">
                                 {employees.map(emp => (
                                     <SelectItem key={emp._id} value={emp._id}>
                                         {emp.firstName} {emp.lastName}
@@ -187,44 +182,38 @@ export function AdminRecordVacationDialog() {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="admin-start">Start Date</Label>
-                            <Input
-                                id="admin-start"
-                                type="date"
-                                required
-                                className="bg-[#0f172a] border-zinc-700 text-white"
-                                value={formData.startDate}
-                                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                            <Label htmlFor="admin-start" className="text-sm font-medium">{t('startDate')}</Label>
+                            <DatePicker
+                                date={formData.startDate}
+                                setDate={(d) => setFormData(prev => ({ ...prev, startDate: d ? d.toISOString().split('T')[0] : "" }))}
+                                placeholder="Pick start date"
                             />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="admin-end">End Date</Label>
-                            <Input
-                                id="admin-end"
-                                type="date"
-                                required
-                                className="bg-[#0f172a] border-zinc-700 text-white"
-                                value={formData.endDate}
-                                onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                            <Label htmlFor="admin-end" className="text-sm font-medium">{t('endDate')}</Label>
+                            <DatePicker
+                                date={formData.endDate}
+                                setDate={(d) => setFormData(prev => ({ ...prev, endDate: d ? d.toISOString().split('T')[0] : "" }))}
+                                placeholder="Pick end date"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="admin-comments">Comments</Label>
+                        <Label htmlFor="admin-comments" className="text-sm font-medium">{t('comments')}</Label>
                         <Textarea
                             id="admin-comments"
-                            className="bg-[#0f172a] border-zinc-700 text-white resize-none"
-                            placeholder="Reason / Notes..."
+                            className="bg-muted/50 border-border text-foreground resize-none"
+                            placeholder={t('reasonPlaceholder')}
                             value={formData.comments}
                             onChange={(e) => setFormData(prev => ({ ...prev, comments: e.target.value }))}
                         />
                     </div>
 
-                    <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-                        <Button type="submit" disabled={loading || !selectedEmployee}>
-                            {loading ? "Processing..." : "Record & Approve"}
+                    <DialogFooter className="pt-4">
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{tc('cancel')}</Button>
+                        <Button type="submit" disabled={loading || !selectedEmployee} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                            {loading ? tc('loading') : t('record')}
                         </Button>
                     </DialogFooter>
                 </form>

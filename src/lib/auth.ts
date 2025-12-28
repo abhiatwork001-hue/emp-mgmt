@@ -55,17 +55,21 @@ export const authOptions: NextAuthOptions = {
                         roles.push(employee.role);
                     }
 
-                    // 2. Check position-based role (if we need to fetch Position details)
+                    // 2. Check position-based role and permissions
+                    let permissions: string[] = [];
                     if (employee.positionId) {
                         const position = await Position.findById(employee.positionId);
-                        // If position has a level or permissions, we could map that to roles here.
-                        // Map common position names to roles if not explicitly set
                         if (position) {
                             const posName = position.name.toLowerCase();
                             if (posName.includes('owner') || posName.includes('partner')) roles.push('owner');
                             if (posName.includes('hr')) roles.push('hr');
                             if (posName.includes('store manager')) roles.push('store_manager');
                             if (posName.includes('department head')) roles.push('department_head');
+
+                            // Functional Permissions
+                            if (position.permissions && position.permissions.length > 0) {
+                                permissions = [...position.permissions];
+                            }
                         }
                     }
 
@@ -74,12 +78,15 @@ export const authOptions: NextAuthOptions = {
                     if (uniqueRoles.length === 0) uniqueRoles.push('employee');
 
                     console.log("[Auth] Roles assigned:", uniqueRoles);
+                    console.log("[Auth] Permissions assigned:", permissions);
 
                     return {
                         id: employee._id.toString(),
                         email: employee.email,
                         name: `${employee.firstName} ${employee.lastName}`,
                         roles: uniqueRoles,
+                        permissions: permissions,
+                        isPasswordChanged: employee.isPasswordChanged !== false
                     };
                 } catch (error) {
                     console.error("[Auth] Error in authorize:", error);
@@ -93,6 +100,8 @@ export const authOptions: NextAuthOptions = {
             if (session?.user) {
                 (session.user as any).id = token.sub;
                 (session.user as any).roles = token.roles;
+                (session.user as any).permissions = token.permissions;
+                (session.user as any).isPasswordChanged = token.isPasswordChanged;
             }
             return session;
         },
@@ -100,6 +109,8 @@ export const authOptions: NextAuthOptions = {
             if (user) {
                 token.sub = user.id;
                 token.roles = (user as any).roles;
+                token.permissions = (user as any).permissions;
+                token.isPasswordChanged = (user as any).isPasswordChanged;
             }
             return token;
         },

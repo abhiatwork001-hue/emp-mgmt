@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CalendarDays, CheckCircle2, Clock, PlayCircle } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 import { format } from "date-fns";
 
 interface ScheduleSummary {
@@ -66,8 +66,8 @@ export function ScheduleOverview({ schedules }: { schedules: ScheduleSummary[] }
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-white">Week of {format(new Date(schedule.dateRange.startDate), "MMM dd, yyyy")}</span>
                                             <Badge variant="secondary" className={`capitalize ${schedule.status === 'published' ? 'bg-emerald-500/10 text-emerald-400' :
-                                                    schedule.status === 'draft' ? 'bg-slate-500/10 text-slate-400' :
-                                                        'bg-amber-500/10 text-amber-400'
+                                                schedule.status === 'draft' ? 'bg-slate-500/10 text-slate-400' :
+                                                    'bg-amber-500/10 text-amber-400'
                                                 }`}>
                                                 {schedule.status}
                                             </Badge>

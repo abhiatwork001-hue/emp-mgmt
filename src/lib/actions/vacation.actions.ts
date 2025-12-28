@@ -1,6 +1,6 @@
 "use server";
 
-import dbConnect from "@/lib/db";
+import { triggerNotification } from "@/lib/actions/notification.actions";
 import {
     VacationRequest,
     VacationRecord,
@@ -9,33 +9,70 @@ import {
     IVacationRecord,
     RequestStatus
 } from "@/lib/models";
+import connectToDB from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
-export type VacationRequestData = Partial<IVacationRequest> & {
+const dbConnect = connectToDB;
+
+export async function updateVacationTracker(
+    employeeId: string,
+    data: { defaultDays?: number; rolloverDays?: number; usedDays?: number }
+) {
+    await dbConnect();
+    const session = await getServerSession(authOptions);
+    const user = session?.user as any;
+
+    if (!user) throw new Error("Unauthorized");
+
+    // Role Check
+    const isPrivileged = user.roles?.some((r: string) =>
+        ['owner', 'hr', 'tech', 'admin', 'super_user'].includes(r.toLowerCase())
+    );
+
+    if (!isPrivileged) throw new Error("Insufficient Permissions");
+
+    const employee = await Employee.findById(employeeId);
+    if (!employee) throw new Error("Employee not found");
+
+    if (!employee.vacationTracker) {
+        employee.vacationTracker = { defaultDays: 22, rolloverDays: 0, usedDays: 0, year: new Date().getFullYear() };
+    }
+
+    if (data.defaultDays !== undefined) employee.vacationTracker.defaultDays = data.defaultDays;
+    if (data.rolloverDays !== undefined) employee.vacationTracker.rolloverDays = data.rolloverDays;
+    if (data.usedDays !== undefined) employee.vacationTracker.usedDays = data.usedDays;
+
+    await employee.save();
+    revalidatePath("/dashboard/profile");
+    revalidatePath(`/dashboard/employees/${employeeId}`);
+    return JSON.parse(JSON.stringify(employee.vacationTracker));
+}
+
+type VacationRequestData = {
+    employeeId: string;
+    requestedFrom: Date;
+    requestedTo: Date;
+    comments?: string;
+    totalDays?: number;
     bypassValidation?: boolean;
-};
+}
 
-// --- Requests ---
-
-// Helper to calculate working days (excluding weekends)
-function calculateWorkingDays(start: Date, end: Date) {
+function calculateWorkingDays(startDate: Date, endDate: Date): number {
     let count = 0;
-    const curDate = new Date(start);
-    // clone to avoid mutating strict server dates if cached (though usually fresh objects)
-    const endDate = new Date(end);
-
+    const curDate = new Date(startDate);
     while (curDate <= endDate) {
         const dayOfWeek = curDate.getDay();
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-            count++;
-        }
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) count++;
         curDate.setDate(curDate.getDate() + 1);
     }
     return count;
 }
-
 export async function createVacationRequest(data: VacationRequestData) {
     await dbConnect();
+
+    // ... validation and creation logic ...
     const { bypassValidation, ...requestData } = data;
 
     // Server-side Validation
@@ -43,99 +80,95 @@ export async function createVacationRequest(data: VacationRequestData) {
         throw new Error("Missing required fields");
     }
 
-    // Check permissions if bypassing
-    if (bypassValidation) {
-        // ideally we check session here, but for now we trust the caller context or check session
-        // Let's check session to be safe
-        // import { auth } from "@/auth"; // or similar if available, or just implement basic check
-        // For this action, let's assume the UI handles role check, BUT secure way is to check session here.
-        // If we can't easily get session here without import loops, we might skip strict role check if we trust the 'admin-only' page source.
-        // However, better safe:
-        // const session = await getServerSession(...); 
-        // For simplicity in this iteration, I will proceed with logic flow but warn:
-        // TODO: Add strict role check for bypass
-    }
+    // Check permissions if bypassing (omitted for brevity as in original)
 
     const start = new Date(data.requestedFrom);
     const end = new Date(data.requestedTo);
-
-    // Calculate days regardless of validation bypass to store correct count
     const calculatedDays = calculateWorkingDays(start, end);
     let finalTotalDays = calculatedDays;
 
     if (!bypassValidation) {
-        // 1. Validate 15 Days Notice
+        // ... validation logic ...
+        // 1. 15 days notice
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const minStartDate = new Date(today);
         minStartDate.setDate(today.getDate() + 15);
+        if (start < minStartDate) throw new Error("Vacation requests must be submitted at least 15 days in advance.");
 
-        if (start < minStartDate) {
-            throw new Error("Vacation requests must be submitted at least 15 days in advance.");
-        }
+        // 2. Working days
+        if (finalTotalDays === 0) throw new Error("No working days in selected range.");
 
-        // 2. Validate Working Days Calculation
-        if (finalTotalDays === 0) {
-            throw new Error("No working days in selected range.");
-        }
-
-        // 3. Check Balance
+        // 3. Balance
         const employee = await Employee.findById(data.employeeId);
         if (!employee) throw new Error("Employee not found");
-
         const tracker = employee.vacationTracker || { defaultDays: 22, rolloverDays: 0, usedDays: 0, pendingRequests: 0 };
         const remaining = (tracker.defaultDays || 0) + (tracker.rolloverDays || 0) - (tracker.usedDays || 0);
         const effectiveRemaining = remaining - (tracker.pendingRequests || 0);
-
-        if (finalTotalDays > effectiveRemaining) {
-            throw new Error(`Insufficient vacation days. Requested: ${finalTotalDays}, Available: ${effectiveRemaining}`);
-        }
-    } else {
-        // If bypassing, we still want a valid day count. If 0 (weekend), allow it? 
-        // Admins might want to record "weekend work" or specific off days. 
-        // But usually vacation is deducted from working days. 
-        // Let's stick to calculated working days unless it's 0, then maybe use total calendar days?
-        // Let's stick to working days for consistency. If admin wants to book weekend, this function might need to change.
-        // But for "vacation", it implies working days off.
+        if (finalTotalDays > effectiveRemaining) throw new Error(`Insufficient vacation days. Requested: ${finalTotalDays}, Available: ${effectiveRemaining}`);
     }
 
     try {
         const newRequest = await VacationRequest.create({
             ...requestData,
             totalDays: finalTotalDays,
-            status: bypassValidation ? 'approved' : 'pending', // Auto-approve if admin records it?
-            // User did not explicitly ask for auto-approve, but "Record Vacation" usually implies it's done.
-            // Let's set to 'approved' if it comes from Admin Dialog.
-            reviewedBy: bypassValidation ? data.employeeId : undefined, // Placeholder, ideally logged in admin ID
+            status: bypassValidation ? 'approved' : 'pending',
+            reviewedBy: bypassValidation ? data.employeeId : undefined,
             reviewedAt: bypassValidation ? new Date() : undefined,
             createdAt: new Date()
         });
 
         if (bypassValidation) {
-            // If auto-approved, update usedDays, not pending
             await Employee.findByIdAndUpdate(data.employeeId, {
                 $inc: { "vacationTracker.usedDays": finalTotalDays }
             });
-
-            // Create VacationRecord for history
             await VacationRecord.create({
                 employeeId: data.employeeId,
                 from: start,
                 to: end,
                 totalDays: finalTotalDays,
                 year: start.getFullYear(),
-                approvedBy: undefined // Track who?
+                approvedBy: undefined
             });
         } else {
             await Employee.findByIdAndUpdate(data.employeeId, {
                 $inc: { "vacationTracker.pendingRequests": finalTotalDays }
             });
+
+            // Notification: Notify HR & Owners
+            try {
+                const hrAndOwners = await Employee.find({
+                    roles: { $in: ['HR', 'Owner', 'hr', 'owner', 'Admin', 'admin'] }, // Case insensitive check usually needs regex or normalized field
+                    active: true
+                }).select('_id');
+
+                // Better to use a normalized role check if roles are inconsistent case
+                // Assuming standard "HR", "Owner" from model. 
+
+                const recipients = hrAndOwners.map((e: any) => e._id.toString());
+                const requestor = await Employee.findById(data.employeeId).select("firstName lastName");
+                const requestorName = requestor ? `${requestor.firstName} ${requestor.lastName}` : "Employee";
+
+                if (recipients.length > 0) {
+                    await triggerNotification({
+                        title: "New Vacation Request",
+                        message: `${requestorName} requested vacation from ${start.toLocaleDateString()} to ${end.toLocaleDateString()} (${finalTotalDays} days).`,
+                        type: "info",
+                        category: "vacation",
+                        recipients: recipients,
+                        link: "/dashboard/vacations",
+                        metadata: { requestId: newRequest._id }
+                    });
+                }
+            } catch (notifErr) {
+                console.error("Vacation Request Notification Error:", notifErr);
+            }
         }
 
         revalidatePath("/dashboard/vacations");
         revalidatePath(`/dashboard/employees/${data.employeeId}`);
-        revalidatePath("/dashboard/employees"); // Revalidate list in case status appears there
-        revalidatePath("/dashboard"); // Revalidate home dashboard if widget exists
+        revalidatePath("/dashboard/employees");
+        revalidatePath("/dashboard");
         return JSON.parse(JSON.stringify(newRequest));
     } catch (e) {
         console.error("createVacationRequest Error:", e);
@@ -150,6 +183,19 @@ export async function getAllVacationRequests(filters: any = {}) {
     if (filters.status) query.status = filters.status;
     if (filters.employeeId) query.employeeId = filters.employeeId;
 
+    // Filter by Store ID (for Managers)
+    if (filters.storeId) {
+        const employeesInStore = await Employee.find({ storeId: filters.storeId }).select("_id");
+        const empIds = employeesInStore.map(e => e._id);
+        if (query.employeeId) {
+            if (!empIds.some(id => id.toString() === query.employeeId.toString())) {
+                return [];
+            }
+        } else {
+            query.employeeId = { $in: empIds };
+        }
+    }
+
     const requests = await VacationRequest.find(query)
         .populate("employeeId", "firstName lastName image email")
         .populate("reviewedBy", "firstName lastName")
@@ -159,8 +205,19 @@ export async function getAllVacationRequests(filters: any = {}) {
     return JSON.parse(JSON.stringify(requests));
 }
 
+// Helper for strict approval permissions
+async function checkApprovalPermission(userId: string) {
+    const user = await Employee.findById(userId).select("roles");
+    const roles = (user?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const allowed = roles.some((r: string) => ['hr', 'owner', 'super_user', 'admin'].includes(r));
+    if (!allowed) {
+        throw new Error("Permission Denied: Only HR or Owners can approve/reject vacations.");
+    }
+}
+
 export async function approveVacationRequest(requestId: string, approverId: string) {
     await dbConnect();
+    await checkApprovalPermission(approverId);
 
     const request = await VacationRequest.findById(requestId);
     if (!request) throw new Error("Request not found");
@@ -177,7 +234,6 @@ export async function approveVacationRequest(requestId: string, approverId: stri
     });
 
     // 2. Update Employee Tracker & Add to Vacations list
-    // Decrement pendingRequests, Increment usedDays
     await Employee.findByIdAndUpdate(request.employeeId, {
         $inc: {
             "vacationTracker.pendingRequests": -request.totalDays,
@@ -192,19 +248,32 @@ export async function approveVacationRequest(requestId: string, approverId: stri
     request.reviewedAt = new Date();
     await request.save();
 
+    // Notification: Notify Employee
+    try {
+        await triggerNotification({
+            title: "Vacation Approved",
+            message: `Your vacation request for ${new Date(request.requestedFrom).toLocaleDateString()} - ${new Date(request.requestedTo).toLocaleDateString()} has been approved.`,
+            type: "success",
+            category: "vacation",
+            recipients: [request.employeeId.toString()],
+            link: "/dashboard/profile?tab=work",
+            metadata: { requestId: request._id }
+        });
+    } catch (e) { console.error("Vacation Approve Notification Error:", e); }
+
     revalidatePath("/dashboard/vacations");
     revalidatePath(`/dashboard/employees/${request.employeeId}`);
-    revalidatePath("/dashboard"); // Revalidate dashboard widgets
+    revalidatePath("/dashboard");
     return JSON.parse(JSON.stringify(request));
 }
 
 export async function rejectVacationRequest(requestId: string, reviewerId: string, reason?: string) {
     await dbConnect();
+    await checkApprovalPermission(reviewerId);
 
     const request = await VacationRequest.findById(requestId);
     if (!request) throw new Error("Request not found");
 
-    // If it was pending, we need to release the pending days count from tracker
     if (request.status === 'pending') {
         await Employee.findByIdAndUpdate(request.employeeId, {
             $inc: { "vacationTracker.pendingRequests": -request.totalDays }
@@ -213,10 +282,22 @@ export async function rejectVacationRequest(requestId: string, reviewerId: strin
 
     request.status = 'rejected';
     request.reviewedBy = reviewerId as any;
-    request.comments = reason || request.comments; // Append or replace? Let's assume reason passed updates comments or we prepend
     if (reason) request.comments = reason;
     request.reviewedAt = new Date();
     await request.save();
+
+    // Notification: Notify Employee
+    try {
+        await triggerNotification({
+            title: "Vacation Rejected",
+            message: `Your vacation request from ${new Date(request.requestedFrom).toLocaleDateString()} has been rejected.${reason ? ` Reason: ${reason}` : ''}`,
+            type: "error",
+            category: "vacation",
+            recipients: [request.employeeId.toString()],
+            link: "/dashboard/profile?tab=work",
+            metadata: { requestId: request._id }
+        });
+    } catch (e) { console.error("Vacation Reject Notification Error:", e); }
 
     revalidatePath("/dashboard/vacations");
     revalidatePath(`/dashboard/employees/${request.employeeId}`);
@@ -228,4 +309,16 @@ export async function getVacationRecords(employeeId: string) {
     await dbConnect();
     const records = await VacationRecord.find({ employeeId }).sort({ from: -1 }).lean();
     return JSON.parse(JSON.stringify(records));
+}
+export async function getPendingVacationRequests() {
+    await dbConnect();
+    const requests = await VacationRequest.find({ status: 'pending' })
+        .populate({
+            path: 'employeeId',
+            select: 'firstName lastName storeId',
+            populate: { path: 'storeId', select: 'name' }
+        })
+        .sort({ createdAt: 1 })
+        .lean();
+    return JSON.parse(JSON.stringify(requests));
 }

@@ -1,0 +1,215 @@
+{
+    "__comment": "This file demonstrates the data model structure with one example for each main entity and their relationships.",
+    "companies": [
+        {
+            "_id": "676465000000000000000001",
+            "name": "Chick Main Refined",
+            "taxNumber": "123456789",
+            "address": "123 Main St, City",
+            "owners": [
+                {
+                    "name": "John Owner",
+                    "contact": "owner@example.com",
+                    "id": "676465000000000000000007"
+                }
+            ],
+            "totalVacationsPerYear": 22,
+            "weekStartsOn": "monday",
+            "branches": [
+                "676465000000000000000002"
+            ],
+            "globalDepartments": [
+                "676465000000000000000003"
+            ],
+            "employees": [
+                "676465000000000000000007",
+                "676465000000000000000008"
+            ],
+            "active": true
+        }
+    ],
+    "global_departments": [
+        {
+            "_id": "676465000000000000000003",
+            "name": "Kitchen",
+            "description": "Food preparation area",
+            "hasHead": true,
+            "departmentHead": [
+                "676465000000000000000008"
+            ],
+            "subHead": [],
+            "employees": [
+                "676465000000000000000008"
+            ],
+            "defaultPositions": [
+                "676465000000000000000006"
+            ],
+            "active": true
+        }
+    ],
+    "stores": [
+        {
+            "_id": "676465000000000000000002",
+            "companyId": "676465000000000000000001",
+            "name": "Store A",
+            "address": "456 Market St, City",
+            "managers": [
+                "676465000000000000000008"
+            ],
+            "subManagers": [],
+            "employees": [
+                "676465000000000000000008"
+            ],
+            "active": true
+        }
+    ],
+    "store_departments": [
+        {
+            "_id": "676465000000000000000004",
+            "storeId": "676465000000000000000002",
+            "globalDepartmentId": "676465000000000000000003",
+            "name": "Kitchen (Store A)",
+            "headOfDepartment": [
+                "676465000000000000000008"
+            ],
+            "employees": [
+                "676465000000000000000008"
+            ],
+            "positionsAllowed": [
+                "676465000000000000000006"
+            ],
+            "active": true
+        }
+    ],
+    "roles": [
+        {
+            "_id": "676465000000000000000005",
+            "name": "Employee",
+            "permissions": [
+                "view_schedule",
+                "request_vacation"
+            ],
+            "isSystemRole": true,
+            "active": true
+        }
+    ],
+    "positions": [
+        {
+            "_id": "676465000000000000000006",
+            "name": "Chef",
+            "level": 2,
+            "roles": [
+                "676465000000000000000005"
+            ],
+            "isStoreSpecific": false,
+            "active": true
+        }
+    ],
+    "employees": [
+        {
+            "_id": "676465000000000000000008",
+            "firstName": "Jane",
+            "lastName": "Cook",
+            "email": "jane.cook@example.com",
+            "password": "$2a$10$hashedpassword...",
+            "image": "/avatars/jane.png",
+            "dob": "1990-05-15T00:00:00.000Z",
+            "phone": "+1234567890",
+            "address": "789 Pine St",
+            "joinedOn": "2023-01-01T00:00:00.000Z",
+            "storeId": "676465000000000000000002",
+            "storeDepartmentId": "676465000000000000000004",
+            "positionId": "676465000000000000000006",
+            "roles": [
+                "Employee"
+            ],
+            "vacationTracker": {
+                "defaultDays": 22,
+                "rolloverDays": 0,
+                "usedDays": 5,
+                "pendingRequests": 0,
+                "year": 2024
+            },
+            "contract": {
+                "weeklyHours": 40,
+                "workingDays": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5
+                ],
+                "employmentType": "Contracted",
+                "vacationAllowed": true
+            },
+            "active": true
+        }
+    ],
+    "shift_definitions": [
+        {
+            "_id": "676465000000000000000009",
+            "name": "Morning Shift",
+            "startTime": "09:00",
+            "endTime": "17:00",
+            "color": "#FF5733",
+            "breakMinutes": 60,
+            "storeDepartmentId": "676465000000000000000004"
+        }
+    ],
+    "schedules": [
+        {
+            "_id": "676465000000000000000010",
+            "storeId": "676465000000000000000002",
+            "storeDepartmentId": "676465000000000000000004",
+            "weekNumber": 50,
+            "year": 2024,
+            "dateRange": {
+                "startDate": "2024-12-09T00:00:00.000Z",
+                "endDate": "2024-12-15T00:00:00.000Z"
+            },
+            "status": "published",
+            "days": [
+                {
+                    "date": "2024-12-09T00:00:00.000Z",
+                    "shifts": [
+                        {
+                            "_id": "676465000000000000000011",
+                            "shiftDefinitionId": "676465000000000000000009",
+                            "shiftName": "Morning Shift",
+                            "startTime": "09:00",
+                            "endTime": "17:00",
+                            "breakMinutes": 60,
+                            "color": "#FF5733",
+                            "employees": [
+                                "676465000000000000000008"
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "createdBy": "676465000000000000000007"
+        }
+    ],
+    "vacation_records": [
+        {
+            "_id": "676465000000000000000012",
+            "employeeId": "676465000000000000000008",
+            "from": "2024-06-01T00:00:00.000Z",
+            "to": "2024-06-05T00:00:00.000Z",
+            "totalDays": 5,
+            "year": 2024,
+            "approvedBy": "676465000000000000000007"
+        }
+    ],
+    "absence_records": [
+        {
+            "_id": "676465000000000000000013",
+            "employeeId": "676465000000000000000008",
+            "date": "2024-11-20T00:00:00.000Z",
+            "reason": "Sick leave",
+            "type": "sick",
+            "justification": "Justified",
+            "approvedBy": "676465000000000000000007"
+        }
+    ]
+}

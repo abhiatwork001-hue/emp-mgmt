@@ -6,13 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { createVacationRequest } from "@/lib/actions/vacation.actions";
-import { getEmployeeAbsences } from "@/lib/actions/absence.actions"; // Import this
+import { getEmployeeAbsences } from "@/lib/actions/absence.actions";
 import { toast } from "sonner";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { DateRange } from "react-day-picker";
+
+import { calculateWorkingDays, isPortugalHoliday, isWeekend } from "@/lib/holidays";
 
 interface RequestVacationDialogProps {
     employeeId: string;
@@ -23,62 +27,43 @@ interface RequestVacationDialogProps {
 export function RequestVacationDialog({ employeeId, remainingDays, trigger }: RequestVacationDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const t = useTranslations("Vacation");
+    const tc = useTranslations("Common");
 
-    // Dates
-    const [startDate, setStartDate] = useState<Date | undefined>();
-    const [endDate, setEndDate] = useState<Date | undefined>();
+    // Unified Range State
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [comments, setComments] = useState("");
-
     const [absentDates, setAbsentDates] = useState<Date[]>([]);
 
     useEffect(() => {
         if (open && employeeId) {
             getEmployeeAbsences(employeeId).then(data => {
                 const dates: Date[] = [];
-                // Records
                 data.records.forEach((r: any) => dates.push(new Date(r.date)));
-                // Requests
                 data.requests.forEach((r: any) => dates.push(new Date(r.date)));
                 setAbsentDates(dates);
             }).catch(console.error);
         }
     }, [open, employeeId]);
 
-    const calculateWorkingDays = (start: Date, end: Date) => {
-        let count = 0;
-        const curDate = new Date(start);
-        while (curDate <= end) {
-            const dayOfWeek = curDate.getDay();
-            if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-                count++;
-            }
-            curDate.setDate(curDate.getDate() + 1);
-        }
-        return count;
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!startDate || !endDate) {
-            toast.error("Please select both start and end dates");
+        if (!dateRange?.from || !dateRange?.to) {
+            toast.error("Please select a date range (Start and End)");
             return;
         }
 
         setLoading(true);
 
         try {
-            if (endDate < startDate) {
-                toast.error("End date cannot be before start date");
-                setLoading(false);
-                return;
-            }
+            const startDate = dateRange.from;
+            const endDate = dateRange.to;
 
             // Rule 1: 15 days notice
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            const minStartDate = new Date(today);
-            minStartDate.setDate(today.getDate() + 15);
+            const minStartDate = addDays(today, 15);
 
             if (startDate < minStartDate) {
                 toast.error("Vacation requests must be submitted at least 15 days in advance.");
@@ -96,7 +81,7 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
             }
 
             if (totalDays > remainingDays) {
-                toast.error(`Insufficient days. This request requires ${totalDays} working days, but you only have ${remainingDays} days remaining.`);
+                toast.error(`Insufficient days. Request needs ${totalDays} working days.`);
                 setLoading(false);
                 return;
             }
@@ -111,8 +96,7 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
 
             toast.success("Vacation request submitted");
             setOpen(false);
-            setStartDate(undefined);
-            setEndDate(undefined);
+            setDateRange(undefined);
             setComments("");
         } catch (error) {
             console.error("Submission error:", error);
@@ -122,116 +106,170 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
         }
     };
 
-    // Calculate min date Logic for Picker
+    // Min Date Logic
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const minSelectableDate = new Date(today);
-    minSelectableDate.setDate(today.getDate() + 15);
+    const minSelectableDate = addDays(today, 15);
 
-    // Disable Logic
+    // Dynamic Max Date based on Start selection
+    const getMaxSelectableDate = (start: Date, limit: number) => {
+        let workingDaysFound = 0;
+        let current = new Date(start);
+
+        // Check start day itself first
+        if (!isWeekend(current) && !isPortugalHoliday(current)) {
+            workingDaysFound++;
+        }
+
+        // If start day already exceeds limit (e.g. limit 0), return start
+        if (workingDaysFound > limit) return start;
+
+        // Iterate to find the Nth working day
+        while (workingDaysFound < limit) {
+            current = addDays(current, 1);
+            if (!isWeekend(current) && !isPortugalHoliday(current)) {
+                workingDaysFound++;
+            }
+            if (workingDaysFound > 365) break;
+        }
+
+        // Now current is the Nth working day.
+        // We can extend to include subsequent non-working days (e.g. weekend)
+        // Check next day
+        let nextDay = addDays(current, 1);
+        while (isWeekend(nextDay) || isPortugalHoliday(nextDay)) {
+            current = nextDay;
+            nextDay = addDays(nextDay, 1);
+        }
+
+        return current;
+    };
+
     const isDateDisabled = (date: Date) => {
-        // Disable past dates (simple check, though minSelectableDate handles future)
-        if (date < today) return true;
-        // Disable dates < minSelectableDate (15 day rule)
-        // Wait, standard Calendar 'disabled' can accept a Matcher.
-        // We want to force user to pick > 15 days.
+        // 1. Min Notice
         if (date < minSelectableDate) return true;
 
-        // Disable absent dates
-        // Compare properly (date comparison)
-        return absentDates.some(absentDate =>
+        // 2. Disable absent dates
+        const isAbsent = absentDates.some(absentDate =>
             absentDate.getDate() === date.getDate() &&
             absentDate.getMonth() === date.getMonth() &&
             absentDate.getFullYear() === date.getFullYear()
         );
+        if (isAbsent) return true;
+
+        // 3. Smart restriction based on 'from' selection
+        if (dateRange?.from) {
+            // If 'to' is undefined, 'from' is our anchor.
+            if (!dateRange.to) {
+                // IMPORTANT: Calculate max allowed date from 'from'
+                const maxDate = getMaxSelectableDate(dateRange.from, remainingDays);
+                if (date > maxDate) return true;
+
+                // Prevent selecting before start to keep it simple and forward-only
+                if (date < dateRange.from) return true;
+            }
+        }
+
+        return false;
     };
+
+    const currentWorkingDays = (dateRange?.from && dateRange?.to)
+        ? calculateWorkingDays(dateRange.from, dateRange.to)
+        : 0;
+
+    const isOverLimit = currentWorkingDays > remainingDays;
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {trigger ? trigger : (
                     <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                        <CalendarIcon className="mr-2 h-4 w-4" /> Request Vacation
+                        <CalendarIcon className="mr-2 h-4 w-4" /> {t('request')}
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="bg-[#1e293b] border-zinc-700 text-white sm:max-w-[425px]">
+            <DialogContent className="bg-popover border-border text-popover-foreground sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Request Vacation</DialogTitle>
+                    <DialogTitle>{t('request')}</DialogTitle>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2 flex flex-col">
-                            <Label>Start Date</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full pl-3 text-left font-normal bg-[#0f172a] border-zinc-700 text-white hover:bg-[#1e293b] hover:text-white",
-                                            !startDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 bg-[#1e293b] border-zinc-700 text-white" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={startDate}
-                                        onSelect={setStartDate}
-                                        disabled={isDateDisabled}
-                                        initialFocus
-                                        className="text-white"
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                        <div className="space-y-2 flex flex-col">
-                            <Label>End Date</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant={"outline"}
-                                        className={cn(
-                                            "w-full pl-3 text-left font-normal bg-[#0f172a] border-zinc-700 text-white hover:bg-[#1e293b] hover:text-white",
-                                            !endDate && "text-muted-foreground"
-                                        )}
-                                    >
-                                        {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 bg-[#1e293b] border-zinc-700 text-white" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={endDate}
-                                        onSelect={setEndDate}
-                                        disabled={(date) => isDateDisabled(date) || (startDate ? date < startDate : false)}
-                                        initialFocus
-                                        className="text-white"
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
+                    <div className="space-y-2 flex flex-col">
+                        <Label>Select Period</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    id="date"
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal bg-background border-input hover:bg-accent hover:text-accent-foreground",
+                                        !dateRange && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? (
+                                        dateRange.to ? (
+                                            <>
+                                                {format(dateRange.from, "MMM d, yyyy")} - {format(dateRange.to, "MMM d, yyyy")}
+                                            </>
+                                        ) : (
+                                            format(dateRange.from, "MMM d, yyyy")
+                                        )
+                                    ) : (
+                                        <span>Pick dates (Max {remainingDays} working days)</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-popover border-border text-popover-foreground" align="start">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={dateRange?.from || minSelectableDate}
+                                    selected={dateRange}
+                                    onSelect={setDateRange}
+                                    numberOfMonths={1}
+                                    disabled={isDateDisabled}
+                                    className="text-foreground"
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
 
+                    {dateRange?.from && dateRange?.to && (
+                        <div className={cn("p-3 rounded-md border", isOverLimit ? "bg-red-50 border-red-200" : "bg-muted/50 border-border")}>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-muted-foreground">Selected Working Days:</span>
+                                <span className={cn("font-bold", isOverLimit ? "text-red-500" : "text-foreground")}>
+                                    {currentWorkingDays} days
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm mt-1">
+                                <span className="text-muted-foreground">Remaining After:</span>
+                                <span className={cn(
+                                    "font-bold",
+                                    isOverLimit ? "text-red-500" : "text-emerald-500"
+                                )}>
+                                    {remainingDays - currentWorkingDays} days
+                                </span>
+                            </div>
+                            {isOverLimit && <p className="text-xs text-red-500 mt-2 font-medium">Exceeds remaining balance!</p>}
+                        </div>
+                    )}
+
                     <div className="space-y-2">
-                        <Label htmlFor="comments">Comments</Label>
+                        <Label htmlFor="comments">{t('comments')}</Label>
                         <Textarea
                             id="comments"
-                            className="bg-[#0f172a] border-zinc-700 text-white resize-none"
-                            placeholder="Reason for vacation..."
+                            className="bg-background border-input resize-none"
+                            placeholder={t('reasonPlaceholder')}
                             value={comments}
                             onChange={(e) => setComments(e.target.value)}
                         />
                     </div>
 
                     <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="hover:bg-zinc-800 text-white hover:text-white">Cancel</Button>
-                        <Button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white">
-                            {loading ? "Submitting..." : "Submit Request"}
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{tc('cancel')}</Button>
+                        <Button type="submit" disabled={loading || isOverLimit || !dateRange?.from || !dateRange?.to}>
+                            {loading ? t('submitting') : t('submit')}
                         </Button>
                     </DialogFooter>
                 </form>
@@ -239,3 +277,4 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
         </Dialog>
     );
 }
+

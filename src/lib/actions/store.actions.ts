@@ -16,7 +16,7 @@ type StoreData = Partial<IStore>;
 export async function getAllStores() {
     await dbConnect();
     // Only return active stores by default
-    const stores = await Store.find({ active: true }).lean();
+    const stores = await Store.find({ active: true }).select("name address translations").lean();
     return JSON.parse(JSON.stringify(stores));
 }
 
@@ -86,6 +86,23 @@ export async function getStoresWithDepartments() {
         }
     ]);
     return JSON.parse(JSON.stringify(stores));
+}
+
+/**
+ * Get departments for a specific store
+ */
+export async function getStoreDepartments(storeId: string) {
+    console.log("Fetching departments for store:", storeId);
+    try {
+        await dbConnect();
+        const { StoreDepartment } = require("@/lib/models");
+        const departments = await StoreDepartment.find({ storeId }).select("name").lean();
+        console.log(`Found ${departments.length} departments`);
+        return JSON.parse(JSON.stringify(departments));
+    } catch (error) {
+        console.error("Error fetching store departments:", error);
+        return [];
+    }
 }
 
 /**
@@ -338,21 +355,31 @@ export async function removeStoreManager(storeId: string, employeeId: string, is
         ]
     });
 
-    // 3. If not a manager anywhere, remove "manager" role
+    // 3. If not a manager anywhere, remove "manager" role and close position
     if (stores.length === 0) {
-        await Employee.findByIdAndUpdate(employeeId, {
-            $pull: { roles: "manager" },
-            $unset: { positionId: 1 }
-        });
-
-        // Close position history
+        // Fetch employee first to get current state (including positionId)
         const employee = await Employee.findById(employeeId);
-        if (employee && employee.positionHistory && employee.positionHistory.length > 0) {
-            const lastHistory = employee.positionHistory[employee.positionHistory.length - 1];
-            if (!lastHistory.to) {
-                lastHistory.to = new Date();
-                await employee.save();
+
+        if (employee) {
+            // Remove "manager" role
+            if (employee.roles && employee.roles.includes("manager")) {
+                employee.roles = employee.roles.filter((r: string) => r !== "manager");
             }
+
+            // Close Position History
+            // We do this BEFORE unsetting positionId so we implicitly know this history entry is ending now.
+            if (employee.positionHistory && employee.positionHistory.length > 0) {
+                const lastHistory = employee.positionHistory[employee.positionHistory.length - 1];
+                if (!lastHistory.to) {
+                    lastHistory.to = new Date();
+                    // Explicitly mark array as modified if needed, though direct obj mod usually tracks in Mongoose
+                }
+            }
+
+            // Unset Position
+            employee.positionId = undefined;
+
+            await employee.save();
         }
     }
 

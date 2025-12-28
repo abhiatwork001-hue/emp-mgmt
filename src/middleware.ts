@@ -1,27 +1,9 @@
-import { withAuth } from "next-auth/middleware";
-import { NextResponse } from "next/server";
+import createMiddleware from 'next-intl/middleware';
+import { routing } from './i18n/routing';
 
-export default withAuth(
-    function middleware(req) {
-        // You can add custom logic here if needed, like role checking
-        // The `withAuth` wrapper automatically ensures the user is logged in
-        // before they reach this code for matched routes.
-        return NextResponse.next();
-    },
-    {
-        callbacks: {
-            authorized: ({ token }) => !!token,
-        },
-    }
-);
+export default createMiddleware(routing);
 
 export const config = {
-    matcher: [
-        "/dashboard/:path*",
-        "/admin/:path*",
-        "/hr/:path*",
-        "/manager/:path*",
-        "/employee/:path*",
-        // Add other protected routes here
-    ],
+    // Match only internationalized pathnames
+    matcher: ['/', '/(de|en|pt)/:path*', '/((?!api|_next|_vercel|.*\\..*).*)']
 };

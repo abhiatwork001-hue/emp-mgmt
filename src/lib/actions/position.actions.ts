@@ -8,7 +8,12 @@ type PositionData = Partial<IPosition>;
 
 export async function getAllPositions() {
     await dbConnect();
-    const positions = await Position.find({ active: true }).lean();
+    const positions = await Position.find({ active: true })
+        .populate("roles", "name permissions")
+        .select("name level isStoreSpecific translations")
+        .sort({ level: 1 })
+        .lean();
+    /*     console.log("Fetched positions:", JSON.stringify(positions, null, 2)); */ // Debug log
     return JSON.parse(JSON.stringify(positions));
 }
 
@@ -38,7 +43,9 @@ export async function archivePosition(id: string) {
 }
 export async function getPositionById(id: string) {
     await dbConnect();
-    const position = await Position.findById(id).lean();
+    const position = await Position.findById(id)
+        .populate("roles", "name permissions")
+        .lean();
     if (!position) return null;
     return JSON.parse(JSON.stringify(position));
 }

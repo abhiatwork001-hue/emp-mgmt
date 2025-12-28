@@ -93,49 +93,49 @@ export function PendingApprovalsCard({ pendingRequests }: { pendingRequests: Pen
         <div className="space-y-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="flex items-center gap-4 rounded-lg border border-zinc-800 bg-slate-900/50 p-4">
-                    <div className="grid h-12 w-12 place-items-center rounded bg-slate-800">
-                        <Calendar className="h-6 w-6 text-white" />
+                <div className="flex items-center gap-4 rounded-lg border border-border bg-card p-4">
+                    <div className="grid h-12 w-12 place-items-center rounded bg-muted">
+                        <Calendar className="h-6 w-6 text-foreground" />
                     </div>
                     <div>
-                        <div className="text-2xl font-bold text-white">{vacationsCount}</div>
-                        <div className="text-sm text-slate-500">Vacation Requests</div>
+                        <div className="text-2xl font-bold text-foreground">{vacationsCount}</div>
+                        <div className="text-sm text-muted-foreground">Vacation Requests</div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4 rounded-lg border border-zinc-800 bg-slate-900/50 p-4">
-                    <div className="grid h-12 w-12 place-items-center rounded bg-slate-800">
-                        <AlertCircle className="h-6 w-6 text-white" />
+                <div className="flex items-center gap-4 rounded-lg border border-border bg-card p-4">
+                    <div className="grid h-12 w-12 place-items-center rounded bg-muted">
+                        <AlertCircle className="h-6 w-6 text-foreground" />
                     </div>
                     <div>
-                        <div className="text-2xl font-bold text-white">{absencesCount}</div>
-                        <div className="text-sm text-slate-500">Absence Requests</div>
+                        <div className="text-2xl font-bold text-foreground">{absencesCount}</div>
+                        <div className="text-sm text-muted-foreground">Absence Requests</div>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4 rounded-lg border border-zinc-800 bg-slate-900/50 p-4">
-                    <div className="grid h-12 w-12 place-items-center rounded bg-slate-800">
-                        <FileText className="h-6 w-6 text-white" />
+                <div className="flex items-center gap-4 rounded-lg border border-border bg-card p-4">
+                    <div className="grid h-12 w-12 place-items-center rounded bg-muted">
+                        <FileText className="h-6 w-6 text-foreground" />
                     </div>
                     <div>
-                        <div className="text-2xl font-bold text-white">0</div>
-                        <div className="text-sm text-slate-500">Schedule Approvals</div>
+                        <div className="text-2xl font-bold text-foreground">0</div>
+                        <div className="text-sm text-muted-foreground">Schedule Approvals</div>
                     </div>
                 </div>
             </div>
 
-            <Card className="border-zinc-800 bg-slate-900/50">
+            <Card className="border-border bg-card">
                 <CardHeader>
                     <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg font-medium text-white">Recent Requests Requiring Action</CardTitle>
+                        <CardTitle className="text-lg font-medium text-foreground">Recent Requests Requiring Action</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {pendingRequests.length === 0 ? (
-                        <div className="p-8 text-center text-slate-500">All caught up! No pending requests.</div>
+                        <div className="p-8 text-center text-muted-foreground">All caught up! No pending requests.</div>
                     ) : (
                         pendingRequests.map((req) => (
-                            <div key={req._id} className="rounded-lg border border-zinc-800 bg-slate-900 p-4">
+                            <div key={req._id} className="rounded-lg border border-border bg-muted/30 p-4">
                                 <div className="mb-4 flex items-start justify-between">
                                     <div className="flex items-start gap-3">
                                         <div className={`grid h-10 w-10 place-items-center rounded ${req.type === 'vacation' ? 'bg-purple-500/10 text-purple-400' : 'bg-rose-500/10 text-rose-400'}`}>
@@ -143,7 +143,7 @@ export function PendingApprovalsCard({ pendingRequests }: { pendingRequests: Pen
                                         </div>
                                         <div>
                                             <div className="flex items-center gap-2">
-                                                <h4 className="font-semibold text-white">
+                                                <h4 className="font-semibold text-foreground">
                                                     {req.type === 'vacation' ? 'Vacation Request' : 'Absence Request'}
                                                 </h4>
                                                 <Badge variant="secondary" className="bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 capitalize">
@@ -153,13 +153,13 @@ export function PendingApprovalsCard({ pendingRequests }: { pendingRequests: Pen
                                                     Medium Priority
                                                 </Badge>
                                             </div>
-                                            <p className="mt-1 text-sm text-slate-400">
+                                            <p className="mt-1 text-sm text-muted-foreground">
                                                 {req.type === 'vacation'
                                                     ? `Requesting ${req.totalDays} days vacation`
                                                     : `Reporting absence`
                                                 }
                                             </p>
-                                            <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                                            <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                                                 <User className="h-3 w-3" />
                                                 {req.employeeId.firstName} {req.employeeId.lastName}
                                                 <span className="mx-1">•</span>
@@ -167,13 +167,13 @@ export function PendingApprovalsCard({ pendingRequests }: { pendingRequests: Pen
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="text-right text-xs text-slate-500">
+                                    <div className="text-right text-xs text-muted-foreground">
                                         {format(new Date(req.createdAt), "yyyy-MM-dd")}
                                     </div>
                                 </div>
 
-                                <div className="flex justify-end gap-2 border-t border-zinc-800 pt-4">
-                                    <Button variant="outline" size="sm" className="h-8 gap-2 border-zinc-700 bg-transparent text-slate-300 hover:bg-slate-800">
+                                <div className="flex justify-end gap-2 border-t border-border pt-4">
+                                    <Button variant="outline" size="sm" className="h-8 gap-2 border-border bg-transparent text-foreground hover:bg-accent">
                                         <Eye className="h-3 w-3" /> View Details
                                     </Button>
                                     <Button

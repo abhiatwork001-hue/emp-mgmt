@@ -1,18 +1,22 @@
 "use server";
-
-import dbConnect from "@/lib/db";
+import { triggerNotification } from "@/lib/actions/notification.actions";
 import {
     AbsenceRequest,
     AbsenceRecord,
-    Employee,
-    IAbsenceRequest,
-    IAbsenceRecord
+    Employee
 } from "@/lib/models";
+import connectToDB from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
-export type AbsenceRequestData = Partial<IAbsenceRequest>;
+const dbConnect = connectToDB;
 
-// --- Requests ---
+type AbsenceRequestData = {
+    employeeId: string;
+    date: Date;
+    reason: string;
+    type?: string;
+    shiftId?: string;
+}
 
 export async function createAbsenceRequest(data: AbsenceRequestData) {
     await dbConnect();
@@ -26,6 +30,31 @@ export async function createAbsenceRequest(data: AbsenceRequestData) {
         createdAt: new Date()
     });
 
+    // Notification: Notify HR & Owners
+    try {
+        const hrAndOwners = await Employee.find({
+            roles: { $in: ['HR', 'Owner', 'hr', 'owner', 'Admin', 'admin'] },
+            active: true
+        }).select('_id');
+        const recipients = hrAndOwners.map((e: any) => e._id.toString());
+
+        const requestor = await Employee.findById(data.employeeId).select("firstName lastName");
+        const requestorName = requestor ? `${requestor.firstName} ${requestor.lastName}` : "Employee";
+        const dateStr = data.date ? new Date(data.date).toLocaleDateString() : 'Unknown Date';
+
+        if (recipients.length > 0) {
+            await triggerNotification({
+                title: "New Absence Reported",
+                message: `${requestorName} reported an absence for ${dateStr}.`,
+                type: "warning",
+                category: "absence",
+                recipients: recipients,
+                link: "/dashboard/absences",
+                metadata: { requestId: newRequest._id }
+            });
+        }
+    } catch (notifErr) { console.error("Absence Notification Error:", notifErr); }
+
     revalidatePath("/dashboard/absences");
     revalidatePath(`/dashboard/employees/${data.employeeId}`);
     return JSON.parse(JSON.stringify(newRequest));
@@ -37,6 +66,18 @@ export async function getAllAbsenceRequests(filters: any = {}) {
 
     if (filters.status) query.status = filters.status;
     if (filters.employeeId) query.employeeId = filters.employeeId;
+
+    if (filters.storeId) {
+        const employeesInStore = await Employee.find({ storeId: filters.storeId }).select("_id");
+        const empIds = employeesInStore.map(e => e._id);
+        if (query.employeeId) {
+            if (!empIds.some(id => id.toString() === query.employeeId.toString())) {
+                return [];
+            }
+        } else {
+            query.employeeId = { $in: empIds };
+        }
+    }
 
     const requests = await AbsenceRequest.find(query)
         .populate("employeeId", "firstName lastName image email")
@@ -80,6 +121,19 @@ export async function approveAbsenceRequest(requestId: string, approverId: strin
     request.justification = justification as any;
     await request.save();
 
+    // Notification: Notify Employee
+    try {
+        await triggerNotification({
+            title: "Absence Approved",
+            message: `Your absence report for ${new Date(request.date).toLocaleDateString()} has been approved.`,
+            type: "info",
+            category: "absence",
+            recipients: [request.employeeId.toString()],
+            link: "/dashboard/profile?tab=work",
+            metadata: { requestId: request._id }
+        });
+    } catch (e) { console.error("Absence Approve Notification Error:", e); }
+
     revalidatePath("/dashboard/absences");
     revalidatePath(`/dashboard/employees/${request.employeeId}`);
     return JSON.parse(JSON.stringify(request));
@@ -116,7 +170,32 @@ export async function rejectAbsenceRequest(requestId: string, reviewerId: string
     // For now, simple status update.
     await request.save();
 
+    // Notification: Notify Employee
+    try {
+        await triggerNotification({
+            title: "Absence Rejected",
+            message: `Your absence report for ${new Date(request.date).toLocaleDateString()} has been rejected.`,
+            type: "error",
+            category: "absence",
+            recipients: [request.employeeId.toString()],
+            link: "/dashboard/profile?tab=work",
+            metadata: { requestId: request._id }
+        });
+    } catch (e) { console.error("Absence Reject Notification Error:", e); }
+
     revalidatePath("/dashboard/absences");
     revalidatePath(`/dashboard/employees/${request.employeeId}`);
     return JSON.parse(JSON.stringify(request));
+}
+export async function getPendingAbsenceRequests() {
+    await dbConnect();
+    const requests = await AbsenceRequest.find({ status: 'pending' })
+        .populate({
+            path: 'employeeId',
+            select: 'firstName lastName storeId',
+            populate: { path: 'storeId', select: 'name' }
+        })
+        .sort({ createdAt: 1 })
+        .lean();
+    return JSON.parse(JSON.stringify(requests));
 }

@@ -13,8 +13,10 @@ import { getAllStores } from "@/lib/actions/store.actions";
 import { getEmployeesByStore } from "@/lib/actions/employee.actions";
 import { toast } from "sonner";
 import { AlertCircle, UserSearch } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface ReportAbsenceDialogProps {
     employeeId?: string;
@@ -25,6 +27,8 @@ export function ReportAbsenceDialog({ employeeId, trigger }: ReportAbsenceDialog
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const t = useTranslations("Absence");
+    const tc = useTranslations("Common");
 
     // Selection Logic
     const [stores, setStores] = useState<any[]>([]);
@@ -65,7 +69,7 @@ export function ReportAbsenceDialog({ employeeId, trigger }: ReportAbsenceDialog
         const finalEmployeeId = employeeId || selectedEmployee;
 
         if (!finalEmployeeId) {
-            toast.error("Please select an employee");
+            toast.error(tc('selectEmployee'));
             return;
         }
 
@@ -100,30 +104,30 @@ export function ReportAbsenceDialog({ employeeId, trigger }: ReportAbsenceDialog
             <DialogTrigger asChild>
                 {trigger ? trigger : (
                     <Button variant="destructive">
-                        <AlertCircle className="mr-2 h-4 w-4" /> Report Absence
+                        <AlertCircle className="mr-2 h-4 w-4" /> {t('report')}
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="bg-[#1e293b] border-zinc-700 text-white sm:max-w-[425px]">
+            <DialogContent className="bg-popover border-border text-popover-foreground sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Report Absence</DialogTitle>
-                    <DialogDescription className="text-zinc-400">
-                        Notify admin about your absence.
+                    <DialogTitle>{t('report')}</DialogTitle>
+                    <DialogDescription className="text-muted-foreground">
+                        {t('reportDescription')}
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     {!employeeId && (
-                        <div className="space-y-4 p-3 border border-dashed border-zinc-700 rounded-lg bg-zinc-900/50">
-                            <h4 className="text-sm font-medium text-zinc-400 flex items-center gap-2">
-                                <UserSearch className="h-4 w-4" /> Select Employee
+                        <div className="space-y-4 p-3 border border-dashed border-border rounded-lg bg-muted/30">
+                            <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-2 uppercase tracking-widest">
+                                <UserSearch className="h-4 w-4" /> {tc('selectEmployee')}
                             </h4>
                             <div className="space-y-2">
-                                <Label>Store</Label>
+                                <Label className="text-xs font-medium">{tc('store')}</Label>
                                 <Select value={selectedStore} onValueChange={setSelectedStore}>
-                                    <SelectTrigger className="bg-[#0f172a] border-zinc-700 text-white">
-                                        <SelectValue placeholder="Select Store" />
+                                    <SelectTrigger className="bg-muted/50 border-border text-foreground">
+                                        <SelectValue placeholder={tc('selectStore')} />
                                     </SelectTrigger>
-                                    <SelectContent className="bg-[#1e293b] border-zinc-700 text-white">
+                                    <SelectContent className="bg-popover border-border text-popover-foreground">
                                         {stores.map(s => (
                                             <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
                                         ))}
@@ -131,12 +135,12 @@ export function ReportAbsenceDialog({ employeeId, trigger }: ReportAbsenceDialog
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Employee</Label>
+                                <Label className="text-xs font-medium">{tc('employee')}</Label>
                                 <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={!selectedStore}>
-                                    <SelectTrigger className="bg-[#0f172a] border-zinc-700 text-white">
-                                        <SelectValue placeholder="Select Employee" />
+                                    <SelectTrigger className="bg-muted/50 border-border text-foreground">
+                                        <SelectValue placeholder={tc('selectEmployee')} />
                                     </SelectTrigger>
-                                    <SelectContent className="bg-[#1e293b] border-zinc-700 text-white">
+                                    <SelectContent className="bg-popover border-border text-popover-foreground">
                                         {employees.map(e => (
                                             <SelectItem key={e._id} value={e._id}>{e.firstName} {e.lastName}</SelectItem>
                                         ))}
@@ -146,47 +150,44 @@ export function ReportAbsenceDialog({ employeeId, trigger }: ReportAbsenceDialog
                         </div>
                     )}
                     <div className="space-y-2">
-                        <Label htmlFor="date">Date</Label>
-                        <Input
-                            id="date"
-                            type="date"
-                            required
-                            className="bg-[#0f172a] border-zinc-700 text-white"
-                            value={formData.date}
-                            onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                        <Label htmlFor="date" className="text-sm font-medium">{tc('date')}</Label>
+                        <DatePicker
+                            date={formData.date}
+                            setDate={(d) => setFormData(prev => ({ ...prev, date: d ? d.toISOString().split('T')[0] : "" }))}
+                            placeholder="Select date"
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="type">Type</Label>
+                        <Label htmlFor="type" className="text-sm font-medium">{tc('type')}</Label>
                         <Select value={formData.type} onValueChange={(val) => setFormData(prev => ({ ...prev, type: val }))}>
-                            <SelectTrigger className="bg-[#0f172a] border-zinc-700 text-white">
-                                <SelectValue placeholder="Select type" />
+                            <SelectTrigger className="bg-muted/50 border-border text-foreground">
+                                <SelectValue placeholder={tc('type')} />
                             </SelectTrigger>
-                            <SelectContent className="bg-[#1e293b] border-zinc-700 text-white">
-                                <SelectItem value="sick">Sick Leave</SelectItem>
-                                <SelectItem value="personal">Personal Emergency</SelectItem>
-                                <SelectItem value="late">Running Late</SelectItem>
-                                <SelectItem value="other">Other</SelectItem>
+                            <SelectContent className="bg-popover border-border text-popover-foreground">
+                                <SelectItem value="sick">{t('sickLeave')}</SelectItem>
+                                <SelectItem value="personal">{t('personalEmergency')}</SelectItem>
+                                <SelectItem value="late">{t('runningLate')}</SelectItem>
+                                <SelectItem value="other">{t('other')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="reason">Reason (Optional)</Label>
+                        <Label htmlFor="reason" className="text-sm font-medium">{t('reasonOptional')}</Label>
                         <Textarea
                             id="reason"
-                            className="bg-[#0f172a] border-zinc-700 text-white resize-none"
-                            placeholder="Additional details..."
+                            className="bg-muted/50 border-border text-foreground resize-none"
+                            placeholder={t('detailsPlaceholder')}
                             value={formData.reason}
                             onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                         />
                     </div>
 
                     <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{tc('cancel')}</Button>
                         <Button type="submit" variant="destructive" disabled={loading || (!employeeId && !selectedEmployee)}>
-                            {loading ? "Submitting..." : "Report Absence"}
+                            {loading ? tc('loading') : t('report')}
                         </Button>
                     </DialogFooter>
                 </form>

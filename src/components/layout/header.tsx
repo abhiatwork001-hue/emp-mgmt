@@ -14,27 +14,42 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MobileSidebar } from "./sidebar";
 import { NotificationBell } from "./notification-bell";
 import { signOut, useSession } from "next-auth/react";
+import { useTranslations, useLocale } from "next-intl";
 
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { GlobalSearch } from "@/components/global-search";
+import { LanguageSwitcher } from "@/components/language-switcher";
+import { Breadcrumbs } from "./breadcrumbs";
 
-export function Header() {
+export function Header({
+    userRole = "employee",
+    departmentName = ""
+}: {
+    userRole?: string,
+    departmentName?: string
+}) {
     const { data: session } = useSession();
+    const t = useTranslations("Common");
+    const locale = useLocale();
 
     return (
-        <div className="flex items-center p-4">
-            <MobileSidebar />
+        <div className="flex items-center justify-between p-4 px-8 border-b border-border/40 bg-background/60 backdrop-blur-md sticky top-0 z-40">
+            <div className="flex items-center gap-4">
+                <div className="md:hidden">
+                    <MobileSidebar />
+                </div>
+                <div className="hidden md:block">
+                    <Breadcrumbs userRole={userRole} departmentName={departmentName} />
+                </div>
+            </div>
 
-            <div className="flex-1 flex justify-center px-4">
-                <GlobalSearch />
+            <div className="hidden md:flex flex-1 justify-center px-4 max-w-xl">
+                <GlobalSearch locale={locale} />
             </div>
 
             <div className="flex justify-end items-center gap-x-4">
                 <ModeToggle />
-                {/* Language Switcher Mock */}
-                <Button variant="ghost" size="icon">
-                    <span className="text-xl">🇬🇧</span>
-                </Button>
+                <LanguageSwitcher />
 
                 {/* Notifications */}
                 <NotificationBell userId={(session?.user as any)?.id} />
@@ -45,7 +60,7 @@ export function Header() {
                         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                             <Avatar className="h-8 w-8">
                                 <AvatarImage src={session?.user?.image || ""} alt="User" />
-                                <AvatarFallback className="bg-amber-600 text-white font-bold">
+                                <AvatarFallback className="bg-primary text-primary-foreground font-bold">
                                     {session?.user?.name?.[0]?.toUpperCase() || "U"}
                                 </AvatarFallback>
                             </Avatar>
@@ -62,7 +77,7 @@ export function Header() {
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => signOut()}>
-                            Log out
+                            {t("logout")}
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>

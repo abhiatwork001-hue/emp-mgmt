@@ -78,53 +78,52 @@ export function AssignEmployeeDialog({ storeId }: AssignEmployeeDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" className="bg-white text-black hover:bg-zinc-200">
+                <Button size="sm" variant="outline">
                     <Plus className="mr-2 h-4 w-4" /> Add Employee
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-[#1e293b] text-white border-zinc-700">
+            <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Assign Employees</DialogTitle>
-                    <DialogDescription className="text-zinc-400">
+                    <DialogDescription>
                         Select employees to assign to this store.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="py-4 space-y-4">
                     <div className="relative">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-zinc-500" />
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search employees..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-8 bg-[#0f172a] border-zinc-700 text-white placeholder:text-zinc-500"
+                            className="pl-8 bg-muted/30"
                         />
                     </div>
 
-                    <ScrollArea className="h-[300px] border border-zinc-700 rounded-md p-4 bg-[#0f172a]">
+                    <ScrollArea className="h-[300px] border border-border rounded-md p-4 bg-muted/20">
                         {loading ? (
-                            <div className="flex justify-center p-4"><Loader2 className="h-4 w-4 animate-spin text-zinc-400" /></div>
+                            <div className="flex justify-center p-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>
                         ) : filteredEmployees.length === 0 ? (
-                            <p className="text-sm text-zinc-500 text-center py-4">No available employees found.</p>
+                            <p className="text-sm text-muted-foreground text-center py-4">No available employees found.</p>
                         ) : (
                             <div className="space-y-2">
                                 {filteredEmployees.map((emp) => (
-                                    <div key={emp._id} className="flex items-center space-x-3 p-2 rounded hover:bg-zinc-800/50 transition cursor-pointer" onClick={() => handleSelect(emp._id)}>
+                                    <div key={emp._id} className="flex items-center space-x-3 p-2 rounded hover:bg-accent transition cursor-pointer" onClick={() => handleSelect(emp._id)}>
                                         <Checkbox
                                             id={`emp-${emp._id}`}
                                             checked={selectedEmployees.includes(emp._id)}
                                             onCheckedChange={() => handleSelect(emp._id)}
-                                            className="border-zinc-500 data-[state=checked]:bg-white data-[state=checked]:text-black"
                                         />
                                         <div className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
+                                            <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">
                                                 {emp.firstName?.[0]}{emp.lastName?.[0]}
                                             </div>
                                             <div className="space-y-0.5">
-                                                <Label htmlFor={`emp-${emp._id}`} className="text-sm font-medium text-white cursor-pointer hover:underline">
+                                                <Label htmlFor={`emp-${emp._id}`} className="text-sm font-medium cursor-pointer hover:underline">
                                                     {emp.firstName} {emp.lastName}
                                                 </Label>
-                                                <p className="text-xs text-zinc-500">{emp.email}</p>
+                                                <p className="text-xs text-muted-foreground">{emp.email}</p>
                                             </div>
                                         </div>
                                     </div>
@@ -132,13 +131,13 @@ export function AssignEmployeeDialog({ storeId }: AssignEmployeeDialogProps) {
                             </div>
                         )}
                     </ScrollArea>
-                    <div className="text-xs text-zinc-400">
+                    <div className="text-xs text-muted-foreground">
                         {selectedEmployees.length} employees selected
                     </div>
                 </div>
 
                 <DialogFooter>
-                    <Button type="submit" disabled={selectedEmployees.length === 0 || loading} onClick={handleSubmit} className="bg-white text-black hover:bg-zinc-200">
+                    <Button type="submit" disabled={selectedEmployees.length === 0 || loading} onClick={handleSubmit}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Assign Employees
                     </Button>

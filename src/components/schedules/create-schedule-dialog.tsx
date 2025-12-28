@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { CalendarIcon, Plus } from "lucide-react";
+import { DatePicker } from "@/components/ui/date-picker";
 import { cn } from "@/lib/utils";
 import { getStoreDepartments } from "@/lib/actions/store-department.actions";
 import { getOrCreateSchedule } from "@/lib/actions/schedule.actions";
@@ -111,10 +112,10 @@ export function CreateScheduleDialog({ storeId, preSelectedDepartmentId, trigger
                     )}
                     <div className="grid gap-2">
                         <Label>Week Of</Label>
-                        <Input
-                            type="date"
-                            value={date ? date.toISOString().split('T')[0] : ""}
-                            onChange={handleDateChange}
+                        <DatePicker
+                            date={date}
+                            setDate={(d) => setDate(d || new Date())}
+                            placeholder="Select any day"
                         />
                         <p className="text-[0.8rem] text-muted-foreground">
                             Select any day in the desired week.

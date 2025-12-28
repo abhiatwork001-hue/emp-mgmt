@@ -9,9 +9,10 @@ import { AssignEmployeeDialog } from "./assign-employee-dialog";
 interface StoreEmployeesListProps {
     storeId: string;
     employees: any[];
+    canManage?: boolean;
 }
 
-export function StoreEmployeesList({ storeId, employees }: StoreEmployeesListProps) {
+export function StoreEmployeesList({ storeId, employees, canManage = false }: StoreEmployeesListProps) {
     const [editMode, setEditMode] = useState(false);
 
     return (
@@ -21,17 +22,19 @@ export function StoreEmployeesList({ storeId, employees }: StoreEmployeesListPro
                     <h3 className="text-lg font-semibold text-foreground">Employees</h3>
                     <p className="text-sm text-muted-foreground">Staff assigned to this store</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant={editMode ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setEditMode(!editMode)}
-                    >
-                        <Edit2 className="h-4 w-4 mr-2" />
-                        {editMode ? "Done" : "Edit Employees"}
-                    </Button>
-                    <AssignEmployeeDialog storeId={storeId} />
-                </div>
+                {canManage && (
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant={editMode ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => setEditMode(!editMode)}
+                        >
+                            <Edit2 className="h-4 w-4 mr-2" />
+                            {editMode ? "Done" : "Edit Employees"}
+                        </Button>
+                        <AssignEmployeeDialog storeId={storeId} />
+                    </div>
+                )}
             </div>
 
             {employees.length === 0 ? (

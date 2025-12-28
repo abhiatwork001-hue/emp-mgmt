@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,11 +26,13 @@ export function EditStoreDialog({ store, trigger }: EditStoreDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    const tc = useTranslations("Common");
 
     const [formData, setFormData] = useState({
         name: store.name,
         address: store.address || "",
-        active: store.active
+        active: store.active,
+        minEmployees: (store as any).minEmployees || 0
     });
 
     async function handleSubmit(e: React.FormEvent) {
@@ -40,7 +43,8 @@ export function EditStoreDialog({ store, trigger }: EditStoreDialogProps) {
             await updateStore(store._id, {
                 name: formData.name,
                 address: formData.address,
-                active: formData.active
+                active: formData.active,
+                minEmployees: formData.minEmployees
             });
             setOpen(false);
             router.refresh();
@@ -55,26 +59,26 @@ export function EditStoreDialog({ store, trigger }: EditStoreDialogProps) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {trigger || (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-zinc-400 hover:text-white">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
                         <Settings className="h-4 w-4" />
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-[#1e293b] border-zinc-800 text-white">
+            <DialogContent className="sm:max-w-[425px] bg-popover border-border text-popover-foreground">
                 <DialogHeader>
-                    <DialogTitle>Edit Store</DialogTitle>
-                    <DialogDescription className="text-zinc-400">
+                    <DialogTitle>{tc('edit')} {tc('store')}</DialogTitle>
+                    <DialogDescription className="text-muted-foreground">
                         Update store details and status.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="store-name">Name</Label>
+                        <Label htmlFor="store-name">{tc('name')}</Label>
                         <Input
                             id="store-name"
                             value={formData.name}
                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="bg-[#111827] border-zinc-700 text-white"
+                            className="bg-muted/50 border-border"
                             required
                         />
                     </div>
@@ -84,13 +88,25 @@ export function EditStoreDialog({ store, trigger }: EditStoreDialogProps) {
                             id="store-address"
                             value={formData.address}
                             onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                            className="bg-[#111827] border-zinc-700 text-white"
+                            className="bg-muted/50 border-border"
                         />
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-zinc-700 p-3 bg-[#111827]">
+                    <div className="space-y-2">
+                        <Label htmlFor="min-employees">Minimum Employees</Label>
+                        <Input
+                            id="min-employees"
+                            type="number"
+                            min="0"
+                            value={formData.minEmployees}
+                            onChange={(e) => setFormData({ ...formData, minEmployees: parseInt(e.target.value) || 0 })}
+                            className="bg-muted/50 border-border"
+                        />
+                        <p className="text-xs text-muted-foreground">Sets the minimum staff requirement for this store.</p>
+                    </div>
+                    <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-muted/30">
                         <div className="space-y-0.5">
                             <Label className="text-base">Active Status</Label>
-                            <p className="text-sm text-zinc-400">
+                            <p className="text-sm text-muted-foreground">
                                 {formData.active ? "Store is active" : "Store is inactive"}
                             </p>
                         </div>
@@ -100,12 +116,12 @@ export function EditStoreDialog({ store, trigger }: EditStoreDialogProps) {
                         />
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400 hover:text-white hover:bg-zinc-800">
-                            Cancel
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
+                            {tc('cancel')}
                         </Button>
-                        <Button type="submit" disabled={loading} className="bg-white text-black hover:bg-zinc-200">
+                        <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Changes
+                            {tc('save')}
                         </Button>
                     </DialogFooter>
                 </form>

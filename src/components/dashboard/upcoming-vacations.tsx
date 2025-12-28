@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, User, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
-import Link from "next/link";
+import { Link } from "@/i18n/routing";
 
 interface UpcomingVacation {
     _id: string;

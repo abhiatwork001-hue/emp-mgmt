@@ -3,6 +3,7 @@
 import dbConnect from "@/lib/db";
 import { Notification } from "@/lib/models";
 import { pusherServer } from "@/lib/pusher";
+import { sendPushNotification } from "./push.actions";
 
 interface NotificationTriggerData {
     title: string;
@@ -45,14 +46,22 @@ export async function triggerNotification(data: NotificationTriggerData) {
 
         // 2. Trigger Pusher Events (Fan-out)
         // We trigger an event for EACH recipient so they receive it on their private channel
-        const triggerPromises = data.recipients.map(userId => {
-            return pusherServer.trigger(`user-${userId}`, "notification:new", {
+        const triggerPromises = data.recipients.map(async (userId) => { // Changed to async
+            // Real-time (Pusher)
+            await pusherServer.trigger(`user-${userId}`, "notification:new", {
                 ...plainNotification,
                 // We format it for the frontend to look like a personal notification
                 // The frontend expects { read: boolean } at the top level usually, 
                 // but since we send the whole doc, the frontend selector will need to be smart 
                 // OR we send a personalized payload.
                 // Let's send the doc, and let frontend handle it.
+            });
+
+            // Background (Web Push)
+            await sendPushNotification(userId, {
+                title: data.title,
+                body: data.message,
+                url: data.link || "/dashboard"
             });
         });
 
@@ -100,4 +109,24 @@ export async function markNotificationAsRead(notificationId: string, userId: str
     );
 
     return { success: true };
+}
+
+import { getAllEmployees } from "./employee.actions";
+
+export async function sendTestBroadcast(message: string) {
+    // 1. Get all active employees
+    const employees = await getAllEmployees();
+    const recipientIds = employees.map((e: any) => e._id);
+
+    if (recipientIds.length === 0) return { success: false, error: "No employees found" };
+
+    // 2. Trigger Notification
+    return await triggerNotification({
+        title: "System Test",
+        message: message,
+        type: "info",
+        category: "system",
+        recipients: recipientIds,
+        link: "/dashboard"
+    });
 }

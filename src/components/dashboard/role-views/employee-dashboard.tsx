@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,14 +9,19 @@ import { Calendar, Clock, Sun, MessageSquare, Briefcase, User, Star, Utensils } 
 import { format } from "date-fns";
 import { EmployeeScheduleTab } from "@/components/employees/employee-schedule-tab"; // Reusing for schedule view
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { RequestVacationDialog } from "@/components/vacations/request-vacation-dialog";
 import { ReportAbsenceDialog } from "@/components/absences/report-absence-dialog";
+import { HolidayWidget } from "@/components/dashboard/widgets/holiday-widget";
 
 interface EmployeeDashboardProps {
     employee: any;
+    todaysCoworkers?: any[];
+    currentScheduleId?: string | null;
+    daysUntilNextDayOff?: number;
 }
 
-export function EmployeeDashboard({ employee }: EmployeeDashboardProps) {
+export function EmployeeDashboard({ employee, todaysCoworkers = [], currentScheduleId, daysUntilNextDayOff = 0 }: EmployeeDashboardProps) {
     const router = useRouter();
     const [greeting, setGreeting] = useState("");
 
@@ -32,75 +38,76 @@ export function EmployeeDashboard({ employee }: EmployeeDashboardProps) {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* Greeting */}
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+            >
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-white">
-                        {greeting}, {employee.firstName}
+                    <h2 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                        {greeting}, <span className="bg-gradient-to-r from-primary to-indigo-500 bg-clip-text text-transparent">{employee.firstName}</span>
                     </h2>
-                    <p className="text-zinc-400">Here's what's happening today.</p>
+                    <p className="text-muted-foreground text-sm font-medium mt-1">Operational status: <span className="text-primary font-bold">Authenticated</span></p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-2 bg-[#1e293b] px-3 py-1.5 rounded-full border border-zinc-700">
-                        <Sun className="h-4 w-4 text-amber-500" />
-                        <span className="text-sm font-medium text-white">24°C Sunny</span>
-                    </div>
+                <div className="flex items-center gap-3 bg-muted/3 p-1.5 rounded-2xl border border-border/40 backdrop-blur-sm">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 h-7 px-3">Active Session</Badge>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="bg-[#1e293b] border-none text-white">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card glass className="relative overflow-hidden group">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Vacations Remaining</CardTitle>
+                        <CardTitle className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Vacations Remaining</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">{vacationTracker.remainingDays} <span className="text-sm font-normal text-zinc-500">days</span></div>
-                        <div className="mt-1 h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-emerald-500"
-                                style={{ width: `${(vacationTracker.remainingDays / vacationTracker.defaultDays) * 100}%` }}
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-4xl font-bold tracking-tighter">{vacationTracker.remainingDays}</span>
+                            <span className="text-sm font-medium text-muted-foreground">days</span>
+                        </div>
+                        <div className="mt-4 h-1.5 w-full bg-primary/10 rounded-full overflow-hidden">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(vacationTracker.remainingDays / vacationTracker.defaultDays) * 100}%` }}
+                                transition={{ duration: 1, ease: "easeOut" }}
+                                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 group-hover:from-emerald-400 group-hover:to-teal-300 transition-all"
                             />
                         </div>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-[#1e293b] border-none text-white">
+                <Card glass className="relative overflow-hidden group">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Next Vacation</CardTitle>
+                        <CardTitle className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Next Vacation</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {nextVacation ? (
-                            <>
-                                <div className="text-lg font-bold truncate">{format(new Date(nextVacation.from), "MMM dd, yyyy")}</div>
-                                <div className="text-xs text-zinc-500 mt-1">in {Math.ceil((new Date(nextVacation.from).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days</div>
-                            </>
+                            <div className="space-y-1">
+                                <div className="text-xl font-bold tracking-tight truncate">{format(new Date(nextVacation.from), "MMM dd, yyyy")}</div>
+                                <Badge variant="success" className="text-[10px] py-0 px-2">In {Math.ceil((new Date(nextVacation.from).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days</Badge>
+                            </div>
                         ) : (
-                            <>
-                                <div className="text-lg font-bold text-zinc-500">Not Scheduled</div>
-                                <div className="text-xs text-zinc-600 mt-1">Plan your time off!</div>
-                            </>
+                            <div className="space-y-1">
+                                <div className="text-xl font-bold text-muted-foreground italic">None Planned</div>
+                                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Plan your break!</p>
+                            </div>
                         )}
                     </CardContent>
                 </Card>
 
-                <Card className="bg-[#1e293b] border-none text-white">
+                <Card glass className="relative overflow-hidden group">
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Day Off Counter</CardTitle>
+                        <CardTitle className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Next Day Off</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-3xl font-bold">2 <span className="text-sm font-normal text-zinc-500">stored</span></div>
-                        <p className="text-xs text-zinc-500 mt-1">Earned from overtime</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-[#1e293b] border-none text-white">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Messages</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-3xl font-bold">0 <span className="text-sm font-normal text-zinc-500">new</span></div>
-                        <p className="text-xs text-zinc-500 mt-1">No urgent alerts</p>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-4xl font-bold tracking-tighter">{daysUntilNextDayOff === 0 ? "Today" : daysUntilNextDayOff}</span>
+                            {daysUntilNextDayOff !== 0 && <span className="text-sm font-medium text-muted-foreground">days</span>}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-1">
+                            {daysUntilNextDayOff === 0 ? "Enjoy your rest!" : "Until your break"}
+                        </p>
                     </CardContent>
                 </Card>
             </div>
@@ -110,35 +117,29 @@ export function EmployeeDashboard({ employee }: EmployeeDashboardProps) {
                 <div className="lg:col-span-2 space-y-6">
                     <EmployeeScheduleTab employeeId={employee._id.toString()} />
 
-                    {/* Recipes Access Placeholder */}
-                    <Card className="bg-[#1e293b] border-none text-white">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Utensils className="h-5 w-5 text-zinc-400" />
-                                Knowledge Base & Recipes
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="p-8 border border-dashed border-zinc-700 rounded-lg text-center text-zinc-500">
-                                <p>Access to company recipes and training materials coming soon!</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {currentScheduleId && (
+                        <div className="flex justify-end">
+                            <Link href={`/dashboard/schedules/${currentScheduleId}`} className="text-sm text-primary hover:underline">
+                                View Full Schedule &rarr;
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 {/* Sidebar: Quick Actions */}
                 <div className="space-y-6">
-                    <Card className="bg-[#1e293b] border-none text-white">
+                    <Card className="bg-card border-border">
                         <CardHeader>
-                            <CardTitle>Quick Actions</CardTitle>
+                            <CardTitle className="text-sm font-bold uppercase tracking-widest">Employee Services</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <RequestVacationDialog
                                 employeeId={employee._id.toString()}
                                 remainingDays={vacationTracker.remainingDays}
                                 trigger={
-                                    <Button variant="outline" className="w-full justify-start border-zinc-700 hover:bg-zinc-800 text-zinc-300">
-                                        <Calendar className="mr-2 h-4 w-4" /> Request Vacation
+                                    <Button variant="outline" className="w-full justify-start h-12 rounded-xl group/btn hover:border-primary/50 transition-all">
+                                        <Calendar className="mr-3 h-5 w-5 text-muted-foreground group-hover/btn:text-primary transition-colors" />
+                                        <span className="font-semibold">Request Vacation</span>
                                     </Button>
                                 }
                             />
@@ -146,48 +147,44 @@ export function EmployeeDashboard({ employee }: EmployeeDashboardProps) {
                             <ReportAbsenceDialog
                                 employeeId={employee._id.toString()}
                                 trigger={
-                                    <Button variant="outline" className="w-full justify-start border-zinc-700 hover:bg-zinc-800 text-zinc-300">
-                                        <User className="mr-2 h-4 w-4" /> Report Absence / Day Off
+                                    <Button variant="outline" className="w-full justify-start h-12 rounded-xl group/btn hover:border-destructive/50 transition-all">
+                                        <User className="mr-3 h-5 w-5 text-muted-foreground group-hover/btn:text-destructive transition-colors" />
+                                        <span className="font-semibold">Report Absence</span>
                                     </Button>
                                 }
                             />
-
-                            <Button variant="outline" className="w-full justify-start border-zinc-700 hover:bg-zinc-800 text-zinc-300 opacity-50 cursor-not-allowed" title="Coming Soon">
-                                <Clock className="mr-2 h-4 w-4" /> Request Overtime
-                            </Button>
-
-                            <Button variant="outline" className="w-full justify-start border-zinc-700 hover:bg-zinc-800 text-zinc-300 opacity-50 cursor-not-allowed" title="Coming Soon">
-                                <Briefcase className="mr-2 h-4 w-4" /> Swap Shift
-                            </Button>
-
-                            <Button variant="outline" className="w-full justify-start border-zinc-700 hover:bg-zinc-800 text-zinc-300 opacity-50 cursor-not-allowed" title="Coming Soon">
-                                <MessageSquare className="mr-2 h-4 w-4" /> Message Admin
-                            </Button>
                         </CardContent>
                     </Card>
 
-                    {/* Today's Team Placeholder */}
-                    <Card className="bg-[#1e293b] border-none text-white">
+                    {/* Holiday Widget */}
+                    <HolidayWidget storeId={employee.storeId?._id || employee.storeId} />
+
+                    {/* Today's Team */}
+                    <Card className="bg-card border-border">
                         <CardHeader>
                             <CardTitle className="text-sm">Working with you today</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold">JD</div>
-                                    <div>
-                                        <div className="text-sm font-medium">John Doe</div>
-                                        <div className="text-xs text-zinc-500">Waitstaff</div>
+                                {todaysCoworkers.length > 0 ? todaysCoworkers.map((cw, idx) => (
+                                    <div key={idx} className="flex items-center gap-3">
+                                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+                                            {cw.firstName?.[0]}{cw.lastName?.[0]}
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-medium">{cw.firstName} {cw.lastName}</div>
+                                            <div className="text-xs text-muted-foreground capitalize">{cw.position || "Employee"}</div>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="h-8 w-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold">AS</div>
-                                    <div>
-                                        <div className="text-sm font-medium">Alice Smith</div>
-                                        <div className="text-xs text-zinc-500">Manager</div>
-                                    </div>
-                                </div>
-                                <p className="text-xs text-zinc-500 pt-2 text-center">View full schedule details</p>
+                                )) : (
+                                    <div className="text-sm text-muted-foreground text-center py-2">No other coworkers on shift today.</div>
+                                )}
+
+                                {currentScheduleId && (
+                                    <Link href={`/dashboard/schedules/${currentScheduleId}`} className="text-xs text-muted-foreground pt-2 text-center block hover:text-primary transition-colors">
+                                        View full schedule details
+                                    </Link>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
