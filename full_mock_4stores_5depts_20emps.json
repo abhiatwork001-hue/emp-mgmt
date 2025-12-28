@@ -1,0 +1,2705 @@
+{
+  "company": {
+    "_id": "company1",
+    "name": "ChickMaster Global",
+    "address": "Av. Central 123, Lisboa",
+    "defaultVacationDays": 22,
+    "createdAt": "2025-12-10T17:18:52.595380"
+  },
+  "stores": [
+    {
+      "_id": "store1",
+      "companyId": "company1",
+      "name": "Lisbon Central",
+      "location": "Lisbon",
+      "createdAt": "2025-12-10T17:18:52.595558",
+      "managers": [
+        "emp1",
+        "emp3"
+      ]
+    },
+    {
+      "_id": "store2",
+      "companyId": "company1",
+      "name": "Porto Riverside",
+      "location": "Porto",
+      "createdAt": "2025-12-10T17:18:52.595564",
+      "managers": [
+        "emp5",
+        "emp7"
+      ]
+    },
+    {
+      "_id": "store3",
+      "companyId": "company1",
+      "name": "Braga Downtown",
+      "location": "Braga",
+      "createdAt": "2025-12-10T17:18:52.595566",
+      "managers": [
+        "emp1",
+        "emp3"
+      ]
+    },
+    {
+      "_id": "store4",
+      "companyId": "company1",
+      "name": "Faro Marina",
+      "location": "Faro",
+      "createdAt": "2025-12-10T17:18:52.595569",
+      "managers": [
+        "emp5",
+        "emp7"
+      ]
+    }
+  ],
+  "departments": [
+    {
+      "_id": "dept1",
+      "companyId": "company1",
+      "name": "Kitchen"
+    },
+    {
+      "_id": "dept2",
+      "companyId": "company1",
+      "name": "Sales"
+    },
+    {
+      "_id": "dept3",
+      "companyId": "company1",
+      "name": "HR"
+    },
+    {
+      "_id": "dept4",
+      "companyId": "company1",
+      "name": "Finance"
+    },
+    {
+      "_id": "dept5",
+      "companyId": "company1",
+      "name": "Logistics"
+    }
+  ],
+  "storeDepartments": [
+    {
+      "_id": "sd1",
+      "storeId": "store1",
+      "departmentId": "dept1",
+      "headOfStoreDepartment": "emp2",
+      "employees": []
+    },
+    {
+      "_id": "sd2",
+      "storeId": "store1",
+      "departmentId": "dept2",
+      "headOfStoreDepartment": "emp4",
+      "employees": []
+    },
+    {
+      "_id": "sd3",
+      "storeId": "store1",
+      "departmentId": "dept3",
+      "headOfStoreDepartment": "emp6",
+      "employees": []
+    },
+    {
+      "_id": "sd4",
+      "storeId": "store2",
+      "departmentId": "dept1",
+      "headOfStoreDepartment": "emp8",
+      "employees": []
+    },
+    {
+      "_id": "sd5",
+      "storeId": "store2",
+      "departmentId": "dept2",
+      "headOfStoreDepartment": "emp2",
+      "employees": []
+    },
+    {
+      "_id": "sd6",
+      "storeId": "store2",
+      "departmentId": "dept3",
+      "headOfStoreDepartment": "emp4",
+      "employees": []
+    },
+    {
+      "_id": "sd7",
+      "storeId": "store3",
+      "departmentId": "dept3",
+      "headOfStoreDepartment": "emp6",
+      "employees": []
+    },
+    {
+      "_id": "sd8",
+      "storeId": "store3",
+      "departmentId": "dept4",
+      "headOfStoreDepartment": "emp8",
+      "employees": []
+    },
+    {
+      "_id": "sd9",
+      "storeId": "store4",
+      "departmentId": "dept3",
+      "headOfStoreDepartment": "emp2",
+      "employees": []
+    },
+    {
+      "_id": "sd10",
+      "storeId": "store4",
+      "departmentId": "dept4",
+      "headOfStoreDepartment": "emp4",
+      "employees": []
+    }
+  ],
+  "positions": [
+    {
+      "_id": "pos1",
+      "name": "Store Manager",
+      "description": "Manages store operations",
+      "permissions": [
+        "manage_schedule",
+        "approve_requests"
+      ]
+    },
+    {
+      "_id": "pos2",
+      "name": "Department Head",
+      "description": "Heads a department",
+      "permissions": [
+        "approve_requests"
+      ]
+    },
+    {
+      "_id": "pos3",
+      "name": "Chef",
+      "description": "Kitchen chef",
+      "permissions": []
+    },
+    {
+      "_id": "pos4",
+      "name": "Cashier",
+      "description": "Cashier",
+      "permissions": []
+    },
+    {
+      "_id": "pos5",
+      "name": "HR Specialist",
+      "description": "Handles HR tasks",
+      "permissions": [
+        "manage_employees"
+      ]
+    }
+  ],
+  "employees": [
+    {
+      "_id": "emp1",
+      "firstName": "First1",
+      "lastName": "Last1",
+      "email": "user1@chickmaster.local",
+      "dateOfBirth": "1990-01-01",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": true,
+      "roles": [
+        "employee",
+        "manager",
+        "admin"
+      ],
+      "storesAssigned": [
+        "store1",
+        "store3"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd2"
+      ],
+      "positionId": "pos1",
+      "createdAt": "2025-12-10T17:18:52.598262",
+      "isActive": true
+    },
+    {
+      "_id": "emp2",
+      "firstName": "First2",
+      "lastName": "Last2",
+      "email": "user2@chickmaster.local",
+      "dateOfBirth": "1991-01-01",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee",
+        "head"
+      ],
+      "storesAssigned": [
+        "store2"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd5",
+        "sd4",
+        "sd1",
+        "sd9"
+      ],
+      "positionId": "pos2",
+      "createdAt": "2025-12-10T17:18:52.598320",
+      "isActive": true
+    },
+    {
+      "_id": "emp3",
+      "firstName": "First3",
+      "lastName": "Last3",
+      "email": "user3@chickmaster.local",
+      "dateOfBirth": "1992-01-01",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee",
+        "manager"
+      ],
+      "storesAssigned": [
+        "store3",
+        "store1"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd2",
+        "sd9"
+      ],
+      "positionId": "pos1",
+      "createdAt": "2025-12-10T17:18:52.598359",
+      "isActive": true
+    },
+    {
+      "_id": "emp4",
+      "firstName": "First4",
+      "lastName": "Last4",
+      "email": "user4@chickmaster.local",
+      "dateOfBirth": "1992-12-31",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee",
+        "head"
+      ],
+      "storesAssigned": [
+        "store4"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd7",
+        "sd2",
+        "sd6",
+        "sd10"
+      ],
+      "positionId": "pos2",
+      "createdAt": "2025-12-10T17:18:52.598389",
+      "isActive": true
+    },
+    {
+      "_id": "emp5",
+      "firstName": "First5",
+      "lastName": "Last5",
+      "email": "user5@chickmaster.local",
+      "dateOfBirth": "1993-12-31",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee",
+        "manager"
+      ],
+      "storesAssigned": [
+        "store1",
+        "store2",
+        "store4"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd2",
+        "sd4"
+      ],
+      "positionId": "pos1",
+      "createdAt": "2025-12-10T17:18:52.598417",
+      "isActive": true
+    },
+    {
+      "_id": "emp6",
+      "firstName": "First6",
+      "lastName": "Last6",
+      "email": "user6@chickmaster.local",
+      "dateOfBirth": "1994-12-31",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee",
+        "head"
+      ],
+      "storesAssigned": [
+        "store2"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd10",
+        "sd1",
+        "sd3",
+        "sd7"
+      ],
+      "positionId": "pos2",
+      "createdAt": "2025-12-10T17:18:52.598444",
+      "isActive": true
+    },
+    {
+      "_id": "emp7",
+      "firstName": "First7",
+      "lastName": "Last7",
+      "email": "user7@chickmaster.local",
+      "dateOfBirth": "1995-12-31",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee",
+        "manager"
+      ],
+      "storesAssigned": [
+        "store3",
+        "store2",
+        "store4"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd9"
+      ],
+      "positionId": "pos1",
+      "createdAt": "2025-12-10T17:18:52.598469",
+      "isActive": true
+    },
+    {
+      "_id": "emp8",
+      "firstName": "First8",
+      "lastName": "Last8",
+      "email": "user8@chickmaster.local",
+      "dateOfBirth": "1996-12-30",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee",
+        "head"
+      ],
+      "storesAssigned": [
+        "store4"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd8",
+        "sd5",
+        "sd4"
+      ],
+      "positionId": "pos2",
+      "createdAt": "2025-12-10T17:18:52.598499",
+      "isActive": true
+    },
+    {
+      "_id": "emp9",
+      "firstName": "First9",
+      "lastName": "Last9",
+      "email": "user9@chickmaster.local",
+      "dateOfBirth": "1997-12-30",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee",
+        "hr"
+      ],
+      "storesAssigned": [
+        "store1"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd7",
+        "sd6"
+      ],
+      "positionId": "pos5",
+      "createdAt": "2025-12-10T17:18:52.598529",
+      "isActive": true
+    },
+    {
+      "_id": "emp10",
+      "firstName": "First10",
+      "lastName": "Last10",
+      "email": "user10@chickmaster.local",
+      "dateOfBirth": "1998-12-30",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee"
+      ],
+      "storesAssigned": [
+        "store2"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd4"
+      ],
+      "positionId": "pos3",
+      "createdAt": "2025-12-10T17:18:52.598554",
+      "isActive": true
+    },
+    {
+      "_id": "emp11",
+      "firstName": "First11",
+      "lastName": "Last11",
+      "email": "user11@chickmaster.local",
+      "dateOfBirth": "1990-01-01",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee"
+      ],
+      "storesAssigned": [
+        "store3"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd2",
+        "sd7"
+      ],
+      "positionId": "pos1",
+      "createdAt": "2025-12-10T17:18:52.598577",
+      "isActive": true
+    },
+    {
+      "_id": "emp12",
+      "firstName": "First12",
+      "lastName": "Last12",
+      "email": "user12@chickmaster.local",
+      "dateOfBirth": "1991-01-01",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee"
+      ],
+      "storesAssigned": [
+        "store4"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd6",
+        "sd5"
+      ],
+      "positionId": "pos1",
+      "createdAt": "2025-12-10T17:18:52.598600",
+      "isActive": true
+    },
+    {
+      "_id": "emp13",
+      "firstName": "First13",
+      "lastName": "Last13",
+      "email": "user13@chickmaster.local",
+      "dateOfBirth": "1992-01-01",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee"
+      ],
+      "storesAssigned": [
+        "store1"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd8"
+      ],
+      "positionId": "pos5",
+      "createdAt": "2025-12-10T17:18:52.598620",
+      "isActive": true
+    },
+    {
+      "_id": "emp14",
+      "firstName": "First14",
+      "lastName": "Last14",
+      "email": "user14@chickmaster.local",
+      "dateOfBirth": "1992-12-31",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee"
+      ],
+      "storesAssigned": [
+        "store2"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd7",
+        "sd2"
+      ],
+      "positionId": "pos5",
+      "createdAt": "2025-12-10T17:18:52.598642",
+      "isActive": true
+    },
+    {
+      "_id": "emp15",
+      "firstName": "First15",
+      "lastName": "Last15",
+      "email": "user15@chickmaster.local",
+      "dateOfBirth": "1993-12-31",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee"
+      ],
+      "storesAssigned": [
+        "store3"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd10",
+        "sd6"
+      ],
+      "positionId": "pos5",
+      "createdAt": "2025-12-10T17:18:52.598680",
+      "isActive": true
+    },
+    {
+      "_id": "emp16",
+      "firstName": "First16",
+      "lastName": "Last16",
+      "email": "user16@chickmaster.local",
+      "dateOfBirth": "1994-12-31",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee"
+      ],
+      "storesAssigned": [
+        "store4"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd2"
+      ],
+      "positionId": "pos1",
+      "createdAt": "2025-12-10T17:18:52.598702",
+      "isActive": true
+    },
+    {
+      "_id": "emp17",
+      "firstName": "First17",
+      "lastName": "Last17",
+      "email": "user17@chickmaster.local",
+      "dateOfBirth": "1995-12-31",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee"
+      ],
+      "storesAssigned": [
+        "store1"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd4",
+        "sd5"
+      ],
+      "positionId": "pos1",
+      "createdAt": "2025-12-10T17:18:52.598723",
+      "isActive": true
+    },
+    {
+      "_id": "emp18",
+      "firstName": "First18",
+      "lastName": "Last18",
+      "email": "user18@chickmaster.local",
+      "dateOfBirth": "1996-12-30",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee"
+      ],
+      "storesAssigned": [
+        "store2"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd2",
+        "sd7"
+      ],
+      "positionId": "pos3",
+      "createdAt": "2025-12-10T17:18:52.598745",
+      "isActive": true
+    },
+    {
+      "_id": "emp19",
+      "firstName": "First19",
+      "lastName": "Last19",
+      "email": "user19@chickmaster.local",
+      "dateOfBirth": "1997-12-30",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee"
+      ],
+      "storesAssigned": [
+        "store3"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd6"
+      ],
+      "positionId": "pos2",
+      "createdAt": "2025-12-10T17:18:52.598766",
+      "isActive": true
+    },
+    {
+      "_id": "emp20",
+      "firstName": "First20",
+      "lastName": "Last20",
+      "email": "user20@chickmaster.local",
+      "dateOfBirth": "1998-12-30",
+      "password": "hashed_default_pw",
+      "isDefaultPasswordChanged": false,
+      "roles": [
+        "employee"
+      ],
+      "storesAssigned": [
+        "store4"
+      ],
+      "departmentsAssigned": [],
+      "storeDepartmentsAssigned": [
+        "sd6",
+        "sd4"
+      ],
+      "positionId": "pos3",
+      "createdAt": "2025-12-10T17:18:52.598787",
+      "isActive": true
+    }
+  ],
+  "positionHistories": [
+    {
+      "_id": "ph_emp1_1",
+      "employeeId": "emp1",
+      "positionId": "pos1",
+      "storeId": "store1",
+      "storeDepartmentId": "sd2",
+      "isDepartmentHead": false,
+      "isStoreManager": true,
+      "assignedAt": "2024-11-05T17:18:52.598273",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp2_1",
+      "employeeId": "emp2",
+      "positionId": "pos2",
+      "storeId": "store2",
+      "storeDepartmentId": "sd5",
+      "isDepartmentHead": true,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598331",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp3_1",
+      "employeeId": "emp3",
+      "positionId": "pos1",
+      "storeId": "store3",
+      "storeDepartmentId": "sd2",
+      "isDepartmentHead": false,
+      "isStoreManager": true,
+      "assignedAt": "2024-11-05T17:18:52.598365",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp4_1",
+      "employeeId": "emp4",
+      "positionId": "pos2",
+      "storeId": "store4",
+      "storeDepartmentId": "sd7",
+      "isDepartmentHead": true,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598394",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp5_1",
+      "employeeId": "emp5",
+      "positionId": "pos1",
+      "storeId": "store1",
+      "storeDepartmentId": "sd2",
+      "isDepartmentHead": false,
+      "isStoreManager": true,
+      "assignedAt": "2024-11-05T17:18:52.598422",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp6_1",
+      "employeeId": "emp6",
+      "positionId": "pos2",
+      "storeId": "store2",
+      "storeDepartmentId": "sd10",
+      "isDepartmentHead": true,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598448",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp7_1",
+      "employeeId": "emp7",
+      "positionId": "pos1",
+      "storeId": "store3",
+      "storeDepartmentId": "sd9",
+      "isDepartmentHead": false,
+      "isStoreManager": true,
+      "assignedAt": "2024-11-05T17:18:52.598473",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp8_1",
+      "employeeId": "emp8",
+      "positionId": "pos2",
+      "storeId": "store4",
+      "storeDepartmentId": "sd8",
+      "isDepartmentHead": true,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598504",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp9_1",
+      "employeeId": "emp9",
+      "positionId": "pos5",
+      "storeId": "store1",
+      "storeDepartmentId": "sd7",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598534",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp10_1",
+      "employeeId": "emp10",
+      "positionId": "pos3",
+      "storeId": "store2",
+      "storeDepartmentId": "sd4",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598559",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp11_1",
+      "employeeId": "emp11",
+      "positionId": "pos1",
+      "storeId": "store3",
+      "storeDepartmentId": "sd2",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598582",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp12_1",
+      "employeeId": "emp12",
+      "positionId": "pos1",
+      "storeId": "store4",
+      "storeDepartmentId": "sd6",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598604",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp13_1",
+      "employeeId": "emp13",
+      "positionId": "pos5",
+      "storeId": "store1",
+      "storeDepartmentId": "sd8",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598624",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp14_1",
+      "employeeId": "emp14",
+      "positionId": "pos5",
+      "storeId": "store2",
+      "storeDepartmentId": "sd7",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598646",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp15_1",
+      "employeeId": "emp15",
+      "positionId": "pos5",
+      "storeId": "store3",
+      "storeDepartmentId": "sd10",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598685",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp16_1",
+      "employeeId": "emp16",
+      "positionId": "pos1",
+      "storeId": "store4",
+      "storeDepartmentId": "sd2",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598706",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp17_1",
+      "employeeId": "emp17",
+      "positionId": "pos1",
+      "storeId": "store1",
+      "storeDepartmentId": "sd4",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598728",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp18_1",
+      "employeeId": "emp18",
+      "positionId": "pos3",
+      "storeId": "store2",
+      "storeDepartmentId": "sd2",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598749",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp19_1",
+      "employeeId": "emp19",
+      "positionId": "pos2",
+      "storeId": "store3",
+      "storeDepartmentId": "sd6",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598770",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_emp20_1",
+      "employeeId": "emp20",
+      "positionId": "pos3",
+      "storeId": "store4",
+      "storeDepartmentId": "sd6",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2024-11-05T17:18:52.598790",
+      "endedAt": null,
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_prev_emp1",
+      "employeeId": "emp1",
+      "positionId": "pos5",
+      "storeId": "store1",
+      "storeDepartmentId": "sd2",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2023-10-02T17:18:52.602029",
+      "endedAt": "2024-11-05T17:18:52.602039",
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_prev_emp2",
+      "employeeId": "emp2",
+      "positionId": "pos1",
+      "storeId": "store2",
+      "storeDepartmentId": "sd5",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2023-10-02T17:18:52.602046",
+      "endedAt": "2024-11-05T17:18:52.602050",
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_prev_emp3",
+      "employeeId": "emp3",
+      "positionId": "pos1",
+      "storeId": "store3",
+      "storeDepartmentId": "sd2",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2023-10-02T17:18:52.602055",
+      "endedAt": "2024-11-05T17:18:52.602059",
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_prev_emp4",
+      "employeeId": "emp4",
+      "positionId": "pos1",
+      "storeId": "store4",
+      "storeDepartmentId": "sd7",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2023-10-02T17:18:52.602064",
+      "endedAt": "2024-11-05T17:18:52.602068",
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_prev_emp5",
+      "employeeId": "emp5",
+      "positionId": "pos2",
+      "storeId": "store1",
+      "storeDepartmentId": "sd2",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2023-10-02T17:18:52.602074",
+      "endedAt": "2024-11-05T17:18:52.602078",
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_prev_emp6",
+      "employeeId": "emp6",
+      "positionId": "pos5",
+      "storeId": "store2",
+      "storeDepartmentId": "sd10",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2023-10-02T17:18:52.602083",
+      "endedAt": "2024-11-05T17:18:52.602087",
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_prev_emp7",
+      "employeeId": "emp7",
+      "positionId": "pos1",
+      "storeId": "store3",
+      "storeDepartmentId": "sd9",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2023-10-02T17:18:52.602092",
+      "endedAt": "2024-11-05T17:18:52.602096",
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_prev_emp8",
+      "employeeId": "emp8",
+      "positionId": "pos3",
+      "storeId": "store4",
+      "storeDepartmentId": "sd8",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2023-10-02T17:18:52.602104",
+      "endedAt": "2024-11-05T17:18:52.602108",
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_prev_emp9",
+      "employeeId": "emp9",
+      "positionId": "pos5",
+      "storeId": "store1",
+      "storeDepartmentId": "sd7",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2023-10-02T17:18:52.602114",
+      "endedAt": "2024-11-05T17:18:52.602118",
+      "assignedBy": "emp1"
+    },
+    {
+      "_id": "ph_prev_emp10",
+      "employeeId": "emp10",
+      "positionId": "pos5",
+      "storeId": "store2",
+      "storeDepartmentId": "sd4",
+      "isDepartmentHead": false,
+      "isStoreManager": false,
+      "assignedAt": "2023-10-02T17:18:52.602124",
+      "endedAt": "2024-11-05T17:18:52.602127",
+      "assignedBy": "emp1"
+    }
+  ],
+  "vacations": [
+    {
+      "_id": "vac_emp1",
+      "employeeId": "emp1",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 5,
+      "usedDaysThisYear": 0,
+      "requests": [
+        {
+          "_id": "vacreq_emp1_2024",
+          "startDate": "2024-08-21T00:00:00",
+          "endDate": "2024-08-23T00:00:00",
+          "daysTaken": 3,
+          "status": "approved",
+          "approvedBy": "emp20",
+          "requestedAt": "2024-07-22T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp1_2025",
+          "startDate": "2025-08-06T00:00:00",
+          "endDate": "2025-08-12T00:00:00",
+          "daysTaken": 7,
+          "status": "pending",
+          "approvedBy": null,
+          "requestedAt": "2025-07-07T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp2",
+      "employeeId": "emp2",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 1,
+      "usedDaysThisYear": 7,
+      "requests": [
+        {
+          "_id": "vacreq_emp2_2024",
+          "startDate": "2024-08-08T00:00:00",
+          "endDate": "2024-08-11T00:00:00",
+          "daysTaken": 4,
+          "status": "approved",
+          "approvedBy": "emp15",
+          "requestedAt": "2024-07-09T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp2_2025",
+          "startDate": "2025-07-09T00:00:00",
+          "endDate": "2025-07-15T00:00:00",
+          "daysTaken": 7,
+          "status": "approved",
+          "approvedBy": "emp8",
+          "requestedAt": "2025-06-09T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp3",
+      "employeeId": "emp3",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 4,
+      "usedDaysThisYear": 5,
+      "requests": [
+        {
+          "_id": "vacreq_emp3_2024",
+          "startDate": "2024-08-11T00:00:00",
+          "endDate": "2024-08-13T00:00:00",
+          "daysTaken": 3,
+          "status": "approved",
+          "approvedBy": "emp8",
+          "requestedAt": "2024-07-12T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp3_2025",
+          "startDate": "2025-06-26T00:00:00",
+          "endDate": "2025-06-30T00:00:00",
+          "daysTaken": 5,
+          "status": "approved",
+          "approvedBy": "emp13",
+          "requestedAt": "2025-05-27T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp4",
+      "employeeId": "emp4",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 0,
+      "usedDaysThisYear": 4,
+      "requests": [
+        {
+          "_id": "vacreq_emp4_2024",
+          "startDate": "2024-07-03T00:00:00",
+          "endDate": "2024-07-06T00:00:00",
+          "daysTaken": 4,
+          "status": "approved",
+          "approvedBy": "emp19",
+          "requestedAt": "2024-06-03T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp4_2025",
+          "startDate": "2025-08-11T00:00:00",
+          "endDate": "2025-08-14T00:00:00",
+          "daysTaken": 4,
+          "status": "approved",
+          "approvedBy": "emp16",
+          "requestedAt": "2025-07-12T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp5",
+      "employeeId": "emp5",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 4,
+      "usedDaysThisYear": 0,
+      "requests": [
+        {
+          "_id": "vacreq_emp5_2024",
+          "startDate": "2024-07-21T00:00:00",
+          "endDate": "2024-07-26T00:00:00",
+          "daysTaken": 6,
+          "status": "approved",
+          "approvedBy": "emp5",
+          "requestedAt": "2024-06-21T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp5_2025",
+          "startDate": "2025-07-05T00:00:00",
+          "endDate": "2025-07-08T00:00:00",
+          "daysTaken": 4,
+          "status": "pending",
+          "approvedBy": null,
+          "requestedAt": "2025-06-05T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp6",
+      "employeeId": "emp6",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 1,
+      "usedDaysThisYear": 6,
+      "requests": [
+        {
+          "_id": "vacreq_emp6_2024",
+          "startDate": "2024-08-18T00:00:00",
+          "endDate": "2024-08-24T00:00:00",
+          "daysTaken": 7,
+          "status": "approved",
+          "approvedBy": "emp9",
+          "requestedAt": "2024-07-19T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp6_2025",
+          "startDate": "2025-08-19T00:00:00",
+          "endDate": "2025-08-24T00:00:00",
+          "daysTaken": 6,
+          "status": "approved",
+          "approvedBy": "emp19",
+          "requestedAt": "2025-07-20T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp7",
+      "employeeId": "emp7",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 1,
+      "usedDaysThisYear": 3,
+      "requests": [
+        {
+          "_id": "vacreq_emp7_2024",
+          "startDate": "2024-07-12T00:00:00",
+          "endDate": "2024-07-15T00:00:00",
+          "daysTaken": 4,
+          "status": "approved",
+          "approvedBy": "emp5",
+          "requestedAt": "2024-06-12T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp7_2025",
+          "startDate": "2025-08-16T00:00:00",
+          "endDate": "2025-08-18T00:00:00",
+          "daysTaken": 3,
+          "status": "approved",
+          "approvedBy": "emp2",
+          "requestedAt": "2025-07-17T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp8",
+      "employeeId": "emp8",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 1,
+      "usedDaysThisYear": 6,
+      "requests": [
+        {
+          "_id": "vacreq_emp8_2024",
+          "startDate": "2024-06-05T00:00:00",
+          "endDate": "2024-06-08T00:00:00",
+          "daysTaken": 4,
+          "status": "approved",
+          "approvedBy": "emp14",
+          "requestedAt": "2024-05-06T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp8_2025",
+          "startDate": "2025-08-03T00:00:00",
+          "endDate": "2025-08-08T00:00:00",
+          "daysTaken": 6,
+          "status": "approved",
+          "approvedBy": "emp13",
+          "requestedAt": "2025-07-04T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp9",
+      "employeeId": "emp9",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 1,
+      "usedDaysThisYear": 0,
+      "requests": [
+        {
+          "_id": "vacreq_emp9_2024",
+          "startDate": "2024-08-15T00:00:00",
+          "endDate": "2024-08-21T00:00:00",
+          "daysTaken": 7,
+          "status": "approved",
+          "approvedBy": "emp9",
+          "requestedAt": "2024-07-16T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp9_2025",
+          "startDate": "2025-08-28T00:00:00",
+          "endDate": "2025-08-30T00:00:00",
+          "daysTaken": 3,
+          "status": "pending",
+          "approvedBy": null,
+          "requestedAt": "2025-07-29T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp10",
+      "employeeId": "emp10",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 0,
+      "usedDaysThisYear": 5,
+      "requests": [
+        {
+          "_id": "vacreq_emp10_2024",
+          "startDate": "2024-08-24T00:00:00",
+          "endDate": "2024-08-26T00:00:00",
+          "daysTaken": 3,
+          "status": "approved",
+          "approvedBy": "emp18",
+          "requestedAt": "2024-07-25T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp10_2025",
+          "startDate": "2025-07-25T00:00:00",
+          "endDate": "2025-07-29T00:00:00",
+          "daysTaken": 5,
+          "status": "approved",
+          "approvedBy": "emp4",
+          "requestedAt": "2025-06-25T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp11",
+      "employeeId": "emp11",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 2,
+      "usedDaysThisYear": 5,
+      "requests": [
+        {
+          "_id": "vacreq_emp11_2024",
+          "startDate": "2024-07-14T00:00:00",
+          "endDate": "2024-07-17T00:00:00",
+          "daysTaken": 4,
+          "status": "approved",
+          "approvedBy": "emp15",
+          "requestedAt": "2024-06-14T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp11_2025",
+          "startDate": "2025-06-24T00:00:00",
+          "endDate": "2025-06-28T00:00:00",
+          "daysTaken": 5,
+          "status": "approved",
+          "approvedBy": "emp17",
+          "requestedAt": "2025-05-25T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp12",
+      "employeeId": "emp12",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 5,
+      "usedDaysThisYear": 7,
+      "requests": [
+        {
+          "_id": "vacreq_emp12_2024",
+          "startDate": "2024-06-17T00:00:00",
+          "endDate": "2024-06-19T00:00:00",
+          "daysTaken": 3,
+          "status": "approved",
+          "approvedBy": "emp10",
+          "requestedAt": "2024-05-18T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp12_2025",
+          "startDate": "2025-08-17T00:00:00",
+          "endDate": "2025-08-23T00:00:00",
+          "daysTaken": 7,
+          "status": "approved",
+          "approvedBy": "emp7",
+          "requestedAt": "2025-07-18T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp13",
+      "employeeId": "emp13",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 0,
+      "usedDaysThisYear": 0,
+      "requests": [
+        {
+          "_id": "vacreq_emp13_2024",
+          "startDate": "2024-06-12T00:00:00",
+          "endDate": "2024-06-15T00:00:00",
+          "daysTaken": 4,
+          "status": "approved",
+          "approvedBy": "emp18",
+          "requestedAt": "2024-05-13T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp13_2025",
+          "startDate": "2025-08-01T00:00:00",
+          "endDate": "2025-08-07T00:00:00",
+          "daysTaken": 7,
+          "status": "pending",
+          "approvedBy": null,
+          "requestedAt": "2025-07-02T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp14",
+      "employeeId": "emp14",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 2,
+      "usedDaysThisYear": 5,
+      "requests": [
+        {
+          "_id": "vacreq_emp14_2024",
+          "startDate": "2024-07-16T00:00:00",
+          "endDate": "2024-07-18T00:00:00",
+          "daysTaken": 3,
+          "status": "approved",
+          "approvedBy": "emp4",
+          "requestedAt": "2024-06-16T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp14_2025",
+          "startDate": "2025-07-27T00:00:00",
+          "endDate": "2025-07-31T00:00:00",
+          "daysTaken": 5,
+          "status": "approved",
+          "approvedBy": "emp8",
+          "requestedAt": "2025-06-27T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp15",
+      "employeeId": "emp15",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 1,
+      "usedDaysThisYear": 6,
+      "requests": [
+        {
+          "_id": "vacreq_emp15_2024",
+          "startDate": "2024-06-08T00:00:00",
+          "endDate": "2024-06-14T00:00:00",
+          "daysTaken": 7,
+          "status": "approved",
+          "approvedBy": "emp3",
+          "requestedAt": "2024-05-09T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp15_2025",
+          "startDate": "2025-06-24T00:00:00",
+          "endDate": "2025-06-29T00:00:00",
+          "daysTaken": 6,
+          "status": "approved",
+          "approvedBy": "emp3",
+          "requestedAt": "2025-05-25T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp16",
+      "employeeId": "emp16",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 5,
+      "usedDaysThisYear": 7,
+      "requests": [
+        {
+          "_id": "vacreq_emp16_2024",
+          "startDate": "2024-08-25T00:00:00",
+          "endDate": "2024-08-28T00:00:00",
+          "daysTaken": 4,
+          "status": "approved",
+          "approvedBy": "emp5",
+          "requestedAt": "2024-07-26T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp16_2025",
+          "startDate": "2025-08-16T00:00:00",
+          "endDate": "2025-08-22T00:00:00",
+          "daysTaken": 7,
+          "status": "approved",
+          "approvedBy": "emp6",
+          "requestedAt": "2025-07-17T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp17",
+      "employeeId": "emp17",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 1,
+      "usedDaysThisYear": 0,
+      "requests": [
+        {
+          "_id": "vacreq_emp17_2024",
+          "startDate": "2024-07-17T00:00:00",
+          "endDate": "2024-07-23T00:00:00",
+          "daysTaken": 7,
+          "status": "approved",
+          "approvedBy": "emp14",
+          "requestedAt": "2024-06-17T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp17_2025",
+          "startDate": "2025-06-18T00:00:00",
+          "endDate": "2025-06-21T00:00:00",
+          "daysTaken": 4,
+          "status": "pending",
+          "approvedBy": null,
+          "requestedAt": "2025-05-19T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp18",
+      "employeeId": "emp18",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 3,
+      "usedDaysThisYear": 6,
+      "requests": [
+        {
+          "_id": "vacreq_emp18_2024",
+          "startDate": "2024-08-10T00:00:00",
+          "endDate": "2024-08-15T00:00:00",
+          "daysTaken": 6,
+          "status": "approved",
+          "approvedBy": "emp12",
+          "requestedAt": "2024-07-11T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp18_2025",
+          "startDate": "2025-07-17T00:00:00",
+          "endDate": "2025-07-22T00:00:00",
+          "daysTaken": 6,
+          "status": "approved",
+          "approvedBy": "emp4",
+          "requestedAt": "2025-06-17T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp19",
+      "employeeId": "emp19",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 2,
+      "usedDaysThisYear": 7,
+      "requests": [
+        {
+          "_id": "vacreq_emp19_2024",
+          "startDate": "2024-06-08T00:00:00",
+          "endDate": "2024-06-10T00:00:00",
+          "daysTaken": 3,
+          "status": "approved",
+          "approvedBy": "emp11",
+          "requestedAt": "2024-05-09T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp19_2025",
+          "startDate": "2025-06-19T00:00:00",
+          "endDate": "2025-06-25T00:00:00",
+          "daysTaken": 7,
+          "status": "approved",
+          "approvedBy": "emp8",
+          "requestedAt": "2025-05-20T00:00:00"
+        }
+      ]
+    },
+    {
+      "_id": "vac_emp20",
+      "employeeId": "emp20",
+      "defaultAnnualDays": 22,
+      "remainingFromLastYear": 5,
+      "usedDaysThisYear": 3,
+      "requests": [
+        {
+          "_id": "vacreq_emp20_2024",
+          "startDate": "2024-08-08T00:00:00",
+          "endDate": "2024-08-10T00:00:00",
+          "daysTaken": 3,
+          "status": "approved",
+          "approvedBy": "emp3",
+          "requestedAt": "2024-07-09T00:00:00"
+        },
+        {
+          "_id": "vacreq_emp20_2025",
+          "startDate": "2025-08-21T00:00:00",
+          "endDate": "2025-08-23T00:00:00",
+          "daysTaken": 3,
+          "status": "approved",
+          "approvedBy": "emp8",
+          "requestedAt": "2025-07-22T00:00:00"
+        }
+      ]
+    }
+  ],
+  "vacationRequests": [
+    {
+      "_id": "vacreq_emp1_2024",
+      "employeeId": "emp1",
+      "startDate": "2024-08-21T00:00:00",
+      "endDate": "2024-08-23T00:00:00",
+      "days": 3,
+      "status": "approved",
+      "requestedAt": "2024-07-22T00:00:00",
+      "approvedBy": "emp20"
+    },
+    {
+      "_id": "vacreq_emp1_2025",
+      "employeeId": "emp1",
+      "startDate": "2025-08-06T00:00:00",
+      "endDate": "2025-08-12T00:00:00",
+      "days": 7,
+      "status": "pending",
+      "requestedAt": "2025-07-07T00:00:00",
+      "approvedBy": null
+    },
+    {
+      "_id": "vacreq_emp2_2024",
+      "employeeId": "emp2",
+      "startDate": "2024-08-08T00:00:00",
+      "endDate": "2024-08-11T00:00:00",
+      "days": 4,
+      "status": "approved",
+      "requestedAt": "2024-07-09T00:00:00",
+      "approvedBy": "emp15"
+    },
+    {
+      "_id": "vacreq_emp2_2025",
+      "employeeId": "emp2",
+      "startDate": "2025-07-09T00:00:00",
+      "endDate": "2025-07-15T00:00:00",
+      "days": 7,
+      "status": "approved",
+      "requestedAt": "2025-06-09T00:00:00",
+      "approvedBy": "emp8"
+    },
+    {
+      "_id": "vacreq_emp3_2024",
+      "employeeId": "emp3",
+      "startDate": "2024-08-11T00:00:00",
+      "endDate": "2024-08-13T00:00:00",
+      "days": 3,
+      "status": "approved",
+      "requestedAt": "2024-07-12T00:00:00",
+      "approvedBy": "emp8"
+    },
+    {
+      "_id": "vacreq_emp3_2025",
+      "employeeId": "emp3",
+      "startDate": "2025-06-26T00:00:00",
+      "endDate": "2025-06-30T00:00:00",
+      "days": 5,
+      "status": "approved",
+      "requestedAt": "2025-05-27T00:00:00",
+      "approvedBy": "emp13"
+    },
+    {
+      "_id": "vacreq_emp4_2024",
+      "employeeId": "emp4",
+      "startDate": "2024-07-03T00:00:00",
+      "endDate": "2024-07-06T00:00:00",
+      "days": 4,
+      "status": "approved",
+      "requestedAt": "2024-06-03T00:00:00",
+      "approvedBy": "emp19"
+    },
+    {
+      "_id": "vacreq_emp4_2025",
+      "employeeId": "emp4",
+      "startDate": "2025-08-11T00:00:00",
+      "endDate": "2025-08-14T00:00:00",
+      "days": 4,
+      "status": "approved",
+      "requestedAt": "2025-07-12T00:00:00",
+      "approvedBy": "emp16"
+    },
+    {
+      "_id": "vacreq_emp5_2024",
+      "employeeId": "emp5",
+      "startDate": "2024-07-21T00:00:00",
+      "endDate": "2024-07-26T00:00:00",
+      "days": 6,
+      "status": "approved",
+      "requestedAt": "2024-06-21T00:00:00",
+      "approvedBy": "emp5"
+    },
+    {
+      "_id": "vacreq_emp5_2025",
+      "employeeId": "emp5",
+      "startDate": "2025-07-05T00:00:00",
+      "endDate": "2025-07-08T00:00:00",
+      "days": 4,
+      "status": "pending",
+      "requestedAt": "2025-06-05T00:00:00",
+      "approvedBy": null
+    },
+    {
+      "_id": "vacreq_emp6_2024",
+      "employeeId": "emp6",
+      "startDate": "2024-08-18T00:00:00",
+      "endDate": "2024-08-24T00:00:00",
+      "days": 7,
+      "status": "approved",
+      "requestedAt": "2024-07-19T00:00:00",
+      "approvedBy": "emp9"
+    },
+    {
+      "_id": "vacreq_emp6_2025",
+      "employeeId": "emp6",
+      "startDate": "2025-08-19T00:00:00",
+      "endDate": "2025-08-24T00:00:00",
+      "days": 6,
+      "status": "approved",
+      "requestedAt": "2025-07-20T00:00:00",
+      "approvedBy": "emp19"
+    },
+    {
+      "_id": "vacreq_emp7_2024",
+      "employeeId": "emp7",
+      "startDate": "2024-07-12T00:00:00",
+      "endDate": "2024-07-15T00:00:00",
+      "days": 4,
+      "status": "approved",
+      "requestedAt": "2024-06-12T00:00:00",
+      "approvedBy": "emp5"
+    },
+    {
+      "_id": "vacreq_emp7_2025",
+      "employeeId": "emp7",
+      "startDate": "2025-08-16T00:00:00",
+      "endDate": "2025-08-18T00:00:00",
+      "days": 3,
+      "status": "approved",
+      "requestedAt": "2025-07-17T00:00:00",
+      "approvedBy": "emp2"
+    },
+    {
+      "_id": "vacreq_emp8_2024",
+      "employeeId": "emp8",
+      "startDate": "2024-06-05T00:00:00",
+      "endDate": "2024-06-08T00:00:00",
+      "days": 4,
+      "status": "approved",
+      "requestedAt": "2024-05-06T00:00:00",
+      "approvedBy": "emp14"
+    },
+    {
+      "_id": "vacreq_emp8_2025",
+      "employeeId": "emp8",
+      "startDate": "2025-08-03T00:00:00",
+      "endDate": "2025-08-08T00:00:00",
+      "days": 6,
+      "status": "approved",
+      "requestedAt": "2025-07-04T00:00:00",
+      "approvedBy": "emp13"
+    },
+    {
+      "_id": "vacreq_emp9_2024",
+      "employeeId": "emp9",
+      "startDate": "2024-08-15T00:00:00",
+      "endDate": "2024-08-21T00:00:00",
+      "days": 7,
+      "status": "approved",
+      "requestedAt": "2024-07-16T00:00:00",
+      "approvedBy": "emp9"
+    },
+    {
+      "_id": "vacreq_emp9_2025",
+      "employeeId": "emp9",
+      "startDate": "2025-08-28T00:00:00",
+      "endDate": "2025-08-30T00:00:00",
+      "days": 3,
+      "status": "pending",
+      "requestedAt": "2025-07-29T00:00:00",
+      "approvedBy": null
+    },
+    {
+      "_id": "vacreq_emp10_2024",
+      "employeeId": "emp10",
+      "startDate": "2024-08-24T00:00:00",
+      "endDate": "2024-08-26T00:00:00",
+      "days": 3,
+      "status": "approved",
+      "requestedAt": "2024-07-25T00:00:00",
+      "approvedBy": "emp18"
+    },
+    {
+      "_id": "vacreq_emp10_2025",
+      "employeeId": "emp10",
+      "startDate": "2025-07-25T00:00:00",
+      "endDate": "2025-07-29T00:00:00",
+      "days": 5,
+      "status": "approved",
+      "requestedAt": "2025-06-25T00:00:00",
+      "approvedBy": "emp4"
+    },
+    {
+      "_id": "vacreq_emp11_2024",
+      "employeeId": "emp11",
+      "startDate": "2024-07-14T00:00:00",
+      "endDate": "2024-07-17T00:00:00",
+      "days": 4,
+      "status": "approved",
+      "requestedAt": "2024-06-14T00:00:00",
+      "approvedBy": "emp15"
+    },
+    {
+      "_id": "vacreq_emp11_2025",
+      "employeeId": "emp11",
+      "startDate": "2025-06-24T00:00:00",
+      "endDate": "2025-06-28T00:00:00",
+      "days": 5,
+      "status": "approved",
+      "requestedAt": "2025-05-25T00:00:00",
+      "approvedBy": "emp17"
+    },
+    {
+      "_id": "vacreq_emp12_2024",
+      "employeeId": "emp12",
+      "startDate": "2024-06-17T00:00:00",
+      "endDate": "2024-06-19T00:00:00",
+      "days": 3,
+      "status": "approved",
+      "requestedAt": "2024-05-18T00:00:00",
+      "approvedBy": "emp10"
+    },
+    {
+      "_id": "vacreq_emp12_2025",
+      "employeeId": "emp12",
+      "startDate": "2025-08-17T00:00:00",
+      "endDate": "2025-08-23T00:00:00",
+      "days": 7,
+      "status": "approved",
+      "requestedAt": "2025-07-18T00:00:00",
+      "approvedBy": "emp7"
+    },
+    {
+      "_id": "vacreq_emp13_2024",
+      "employeeId": "emp13",
+      "startDate": "2024-06-12T00:00:00",
+      "endDate": "2024-06-15T00:00:00",
+      "days": 4,
+      "status": "approved",
+      "requestedAt": "2024-05-13T00:00:00",
+      "approvedBy": "emp18"
+    },
+    {
+      "_id": "vacreq_emp13_2025",
+      "employeeId": "emp13",
+      "startDate": "2025-08-01T00:00:00",
+      "endDate": "2025-08-07T00:00:00",
+      "days": 7,
+      "status": "pending",
+      "requestedAt": "2025-07-02T00:00:00",
+      "approvedBy": null
+    },
+    {
+      "_id": "vacreq_emp14_2024",
+      "employeeId": "emp14",
+      "startDate": "2024-07-16T00:00:00",
+      "endDate": "2024-07-18T00:00:00",
+      "days": 3,
+      "status": "approved",
+      "requestedAt": "2024-06-16T00:00:00",
+      "approvedBy": "emp4"
+    },
+    {
+      "_id": "vacreq_emp14_2025",
+      "employeeId": "emp14",
+      "startDate": "2025-07-27T00:00:00",
+      "endDate": "2025-07-31T00:00:00",
+      "days": 5,
+      "status": "approved",
+      "requestedAt": "2025-06-27T00:00:00",
+      "approvedBy": "emp8"
+    },
+    {
+      "_id": "vacreq_emp15_2024",
+      "employeeId": "emp15",
+      "startDate": "2024-06-08T00:00:00",
+      "endDate": "2024-06-14T00:00:00",
+      "days": 7,
+      "status": "approved",
+      "requestedAt": "2024-05-09T00:00:00",
+      "approvedBy": "emp3"
+    },
+    {
+      "_id": "vacreq_emp15_2025",
+      "employeeId": "emp15",
+      "startDate": "2025-06-24T00:00:00",
+      "endDate": "2025-06-29T00:00:00",
+      "days": 6,
+      "status": "approved",
+      "requestedAt": "2025-05-25T00:00:00",
+      "approvedBy": "emp3"
+    },
+    {
+      "_id": "vacreq_emp16_2024",
+      "employeeId": "emp16",
+      "startDate": "2024-08-25T00:00:00",
+      "endDate": "2024-08-28T00:00:00",
+      "days": 4,
+      "status": "approved",
+      "requestedAt": "2024-07-26T00:00:00",
+      "approvedBy": "emp5"
+    },
+    {
+      "_id": "vacreq_emp16_2025",
+      "employeeId": "emp16",
+      "startDate": "2025-08-16T00:00:00",
+      "endDate": "2025-08-22T00:00:00",
+      "days": 7,
+      "status": "approved",
+      "requestedAt": "2025-07-17T00:00:00",
+      "approvedBy": "emp6"
+    },
+    {
+      "_id": "vacreq_emp17_2024",
+      "employeeId": "emp17",
+      "startDate": "2024-07-17T00:00:00",
+      "endDate": "2024-07-23T00:00:00",
+      "days": 7,
+      "status": "approved",
+      "requestedAt": "2024-06-17T00:00:00",
+      "approvedBy": "emp14"
+    },
+    {
+      "_id": "vacreq_emp17_2025",
+      "employeeId": "emp17",
+      "startDate": "2025-06-18T00:00:00",
+      "endDate": "2025-06-21T00:00:00",
+      "days": 4,
+      "status": "pending",
+      "requestedAt": "2025-05-19T00:00:00",
+      "approvedBy": null
+    },
+    {
+      "_id": "vacreq_emp18_2024",
+      "employeeId": "emp18",
+      "startDate": "2024-08-10T00:00:00",
+      "endDate": "2024-08-15T00:00:00",
+      "days": 6,
+      "status": "approved",
+      "requestedAt": "2024-07-11T00:00:00",
+      "approvedBy": "emp12"
+    },
+    {
+      "_id": "vacreq_emp18_2025",
+      "employeeId": "emp18",
+      "startDate": "2025-07-17T00:00:00",
+      "endDate": "2025-07-22T00:00:00",
+      "days": 6,
+      "status": "approved",
+      "requestedAt": "2025-06-17T00:00:00",
+      "approvedBy": "emp4"
+    },
+    {
+      "_id": "vacreq_emp19_2024",
+      "employeeId": "emp19",
+      "startDate": "2024-06-08T00:00:00",
+      "endDate": "2024-06-10T00:00:00",
+      "days": 3,
+      "status": "approved",
+      "requestedAt": "2024-05-09T00:00:00",
+      "approvedBy": "emp11"
+    },
+    {
+      "_id": "vacreq_emp19_2025",
+      "employeeId": "emp19",
+      "startDate": "2025-06-19T00:00:00",
+      "endDate": "2025-06-25T00:00:00",
+      "days": 7,
+      "status": "approved",
+      "requestedAt": "2025-05-20T00:00:00",
+      "approvedBy": "emp8"
+    },
+    {
+      "_id": "vacreq_emp20_2024",
+      "employeeId": "emp20",
+      "startDate": "2024-08-08T00:00:00",
+      "endDate": "2024-08-10T00:00:00",
+      "days": 3,
+      "status": "approved",
+      "requestedAt": "2024-07-09T00:00:00",
+      "approvedBy": "emp3"
+    },
+    {
+      "_id": "vacreq_emp20_2025",
+      "employeeId": "emp20",
+      "startDate": "2025-08-21T00:00:00",
+      "endDate": "2025-08-23T00:00:00",
+      "days": 3,
+      "status": "approved",
+      "requestedAt": "2025-07-22T00:00:00",
+      "approvedBy": "emp8"
+    }
+  ],
+  "absenceRecords": [
+    {
+      "_id": "absrec_emp1",
+      "employeeId": "emp1",
+      "records": [
+        {
+          "_id": "ar_emp1_2",
+          "date": "2025-04-11T00:00:00",
+          "shiftId": "shift15",
+          "reason": "Family",
+          "status": "pending",
+          "approvedBy": null
+        }
+      ]
+    },
+    {
+      "_id": "absrec_emp2",
+      "employeeId": "emp2",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp3",
+      "employeeId": "emp3",
+      "records": [
+        {
+          "_id": "ar_emp3_3",
+          "date": "2025-04-09T00:00:00",
+          "shiftId": "shift18",
+          "reason": "Personal",
+          "status": "approved",
+          "approvedBy": "emp5"
+        }
+      ]
+    },
+    {
+      "_id": "absrec_emp4",
+      "employeeId": "emp4",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp5",
+      "employeeId": "emp5",
+      "records": [
+        {
+          "_id": "ar_emp5_1",
+          "date": "2025-04-11T00:00:00",
+          "shiftId": "shift10",
+          "reason": "Sick",
+          "status": "approved",
+          "approvedBy": "emp3"
+        },
+        {
+          "_id": "ar_emp5_7",
+          "date": "2025-04-10T00:00:00",
+          "shiftId": "shift9",
+          "reason": "Personal",
+          "status": "pending",
+          "approvedBy": null
+        }
+      ]
+    },
+    {
+      "_id": "absrec_emp6",
+      "employeeId": "emp6",
+      "records": [
+        {
+          "_id": "ar_emp6_5",
+          "date": "2025-04-11T00:00:00",
+          "shiftId": "shift15",
+          "reason": "Family",
+          "status": "approved",
+          "approvedBy": "emp20"
+        }
+      ]
+    },
+    {
+      "_id": "absrec_emp7",
+      "employeeId": "emp7",
+      "records": [
+        {
+          "_id": "ar_emp7_0",
+          "date": "2025-04-07T00:00:00",
+          "shiftId": "shift11",
+          "reason": "Personal",
+          "status": "approved",
+          "approvedBy": "emp13"
+        }
+      ]
+    },
+    {
+      "_id": "absrec_emp8",
+      "employeeId": "emp8",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp9",
+      "employeeId": "emp9",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp10",
+      "employeeId": "emp10",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp11",
+      "employeeId": "emp11",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp12",
+      "employeeId": "emp12",
+      "records": [
+        {
+          "_id": "ar_emp12_4",
+          "date": "2025-04-09T00:00:00",
+          "shiftId": "shift3",
+          "reason": "Personal",
+          "status": "approved",
+          "approvedBy": "emp10"
+        }
+      ]
+    },
+    {
+      "_id": "absrec_emp13",
+      "employeeId": "emp13",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp14",
+      "employeeId": "emp14",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp15",
+      "employeeId": "emp15",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp16",
+      "employeeId": "emp16",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp17",
+      "employeeId": "emp17",
+      "records": [
+        {
+          "_id": "ar_emp17_6",
+          "date": "2025-04-07T00:00:00",
+          "shiftId": "shift1",
+          "reason": "Family",
+          "status": "approved",
+          "approvedBy": "emp4"
+        }
+      ]
+    },
+    {
+      "_id": "absrec_emp18",
+      "employeeId": "emp18",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp19",
+      "employeeId": "emp19",
+      "records": []
+    },
+    {
+      "_id": "absrec_emp20",
+      "employeeId": "emp20",
+      "records": []
+    }
+  ],
+  "absenceRequests": [
+    {
+      "_id": "ar_emp7_0",
+      "employeeId": "emp7",
+      "shiftId": "shift11",
+      "date": "2025-04-07T00:00:00",
+      "reason": "Personal",
+      "status": "approved"
+    },
+    {
+      "_id": "ar_emp5_1",
+      "employeeId": "emp5",
+      "shiftId": "shift10",
+      "date": "2025-04-11T00:00:00",
+      "reason": "Sick",
+      "status": "approved"
+    },
+    {
+      "_id": "ar_emp1_2",
+      "employeeId": "emp1",
+      "shiftId": "shift15",
+      "date": "2025-04-11T00:00:00",
+      "reason": "Family",
+      "status": "pending"
+    },
+    {
+      "_id": "ar_emp3_3",
+      "employeeId": "emp3",
+      "shiftId": "shift18",
+      "date": "2025-04-09T00:00:00",
+      "reason": "Personal",
+      "status": "approved"
+    },
+    {
+      "_id": "ar_emp12_4",
+      "employeeId": "emp12",
+      "shiftId": "shift3",
+      "date": "2025-04-09T00:00:00",
+      "reason": "Personal",
+      "status": "approved"
+    },
+    {
+      "_id": "ar_emp6_5",
+      "employeeId": "emp6",
+      "shiftId": "shift15",
+      "date": "2025-04-11T00:00:00",
+      "reason": "Family",
+      "status": "approved"
+    },
+    {
+      "_id": "ar_emp17_6",
+      "employeeId": "emp17",
+      "shiftId": "shift1",
+      "date": "2025-04-07T00:00:00",
+      "reason": "Family",
+      "status": "approved"
+    },
+    {
+      "_id": "ar_emp5_7",
+      "employeeId": "emp5",
+      "shiftId": "shift9",
+      "date": "2025-04-10T00:00:00",
+      "reason": "Personal",
+      "status": "pending"
+    }
+  ],
+  "extraHourRequests": [
+    {
+      "_id": "ehr_emp18_0",
+      "employeeId": "emp18",
+      "shiftId": "shift5",
+      "date": "2025-04-11T00:00:00",
+      "hours": 3,
+      "reason": "Cover extra shift",
+      "status": "approved"
+    },
+    {
+      "_id": "ehr_emp20_1",
+      "employeeId": "emp20",
+      "shiftId": "shift7",
+      "date": "2025-04-08T00:00:00",
+      "hours": 3,
+      "reason": "Cover extra shift",
+      "status": "pending"
+    },
+    {
+      "_id": "ehr_emp9_2",
+      "employeeId": "emp9",
+      "shiftId": "shift17",
+      "date": "2025-04-08T00:00:00",
+      "hours": 4,
+      "reason": "Cover extra shift",
+      "status": "approved"
+    },
+    {
+      "_id": "ehr_emp2_3",
+      "employeeId": "emp2",
+      "shiftId": "shift3",
+      "date": "2025-04-09T00:00:00",
+      "hours": 4,
+      "reason": "Cover extra shift",
+      "status": "approved"
+    },
+    {
+      "_id": "ehr_emp2_4",
+      "employeeId": "emp2",
+      "shiftId": "shift1",
+      "date": "2025-04-07T00:00:00",
+      "hours": 3,
+      "reason": "Cover extra shift",
+      "status": "pending"
+    },
+    {
+      "_id": "ehr_emp9_5",
+      "employeeId": "emp9",
+      "shiftId": "shift6",
+      "date": "2025-04-07T00:00:00",
+      "hours": 4,
+      "reason": "Cover extra shift",
+      "status": "approved"
+    }
+  ],
+  "shifts": [
+    {
+      "_id": "shift1",
+      "storeId": "store1",
+      "storeDepartmentId": "sd1",
+      "date": "2025-04-07T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#F97316",
+      "assignedEmployees": [
+        "emp3",
+        "emp2",
+        "emp11"
+      ],
+      "createdBy": "emp17",
+      "approved": true
+    },
+    {
+      "_id": "shift2",
+      "storeId": "store1",
+      "storeDepartmentId": "sd1",
+      "date": "2025-04-08T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#EF4444",
+      "assignedEmployees": [
+        "emp8",
+        "emp9",
+        "emp16"
+      ],
+      "createdBy": "emp18",
+      "approved": true
+    },
+    {
+      "_id": "shift3",
+      "storeId": "store1",
+      "storeDepartmentId": "sd1",
+      "date": "2025-04-09T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#EF4444",
+      "assignedEmployees": [
+        "emp5",
+        "emp19",
+        "emp16"
+      ],
+      "createdBy": "emp16",
+      "approved": true
+    },
+    {
+      "_id": "shift4",
+      "storeId": "store1",
+      "storeDepartmentId": "sd1",
+      "date": "2025-04-10T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#F97316",
+      "assignedEmployees": [
+        "emp14",
+        "emp7",
+        "emp4"
+      ],
+      "createdBy": "emp14",
+      "approved": true
+    },
+    {
+      "_id": "shift5",
+      "storeId": "store1",
+      "storeDepartmentId": "sd1",
+      "date": "2025-04-11T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#FB923C",
+      "assignedEmployees": [
+        "emp12",
+        "emp14",
+        "emp19"
+      ],
+      "createdBy": "emp2",
+      "approved": true
+    },
+    {
+      "_id": "shift6",
+      "storeId": "store1",
+      "storeDepartmentId": "sd2",
+      "date": "2025-04-07T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#F43F5E",
+      "assignedEmployees": [
+        "emp4",
+        "emp2",
+        "emp13"
+      ],
+      "createdBy": "emp4",
+      "approved": true
+    },
+    {
+      "_id": "shift7",
+      "storeId": "store1",
+      "storeDepartmentId": "sd2",
+      "date": "2025-04-08T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#FB7185",
+      "assignedEmployees": [
+        "emp8",
+        "emp7",
+        "emp19"
+      ],
+      "createdBy": "emp15",
+      "approved": true
+    },
+    {
+      "_id": "shift8",
+      "storeId": "store1",
+      "storeDepartmentId": "sd2",
+      "date": "2025-04-09T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#F43F5E",
+      "assignedEmployees": [
+        "emp5",
+        "emp14",
+        "emp6"
+      ],
+      "createdBy": "emp15",
+      "approved": true
+    },
+    {
+      "_id": "shift9",
+      "storeId": "store1",
+      "storeDepartmentId": "sd2",
+      "date": "2025-04-10T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#FB7185",
+      "assignedEmployees": [
+        "emp8",
+        "emp3",
+        "emp15"
+      ],
+      "createdBy": "emp4",
+      "approved": true
+    },
+    {
+      "_id": "shift10",
+      "storeId": "store1",
+      "storeDepartmentId": "sd2",
+      "date": "2025-04-11T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#F97316",
+      "assignedEmployees": [
+        "emp2",
+        "emp18",
+        "emp1"
+      ],
+      "createdBy": "emp8",
+      "approved": true
+    },
+    {
+      "_id": "shift11",
+      "storeId": "store1",
+      "storeDepartmentId": "sd3",
+      "date": "2025-04-07T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#FB923C",
+      "assignedEmployees": [
+        "emp6",
+        "emp14",
+        "emp16"
+      ],
+      "createdBy": "emp7",
+      "approved": true
+    },
+    {
+      "_id": "shift12",
+      "storeId": "store1",
+      "storeDepartmentId": "sd3",
+      "date": "2025-04-08T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#FB923C",
+      "assignedEmployees": [
+        "emp13",
+        "emp2",
+        "emp6"
+      ],
+      "createdBy": "emp1",
+      "approved": true
+    },
+    {
+      "_id": "shift13",
+      "storeId": "store1",
+      "storeDepartmentId": "sd3",
+      "date": "2025-04-09T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#F43F5E",
+      "assignedEmployees": [
+        "emp13",
+        "emp9",
+        "emp15"
+      ],
+      "createdBy": "emp14",
+      "approved": true
+    },
+    {
+      "_id": "shift14",
+      "storeId": "store1",
+      "storeDepartmentId": "sd3",
+      "date": "2025-04-10T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#EF4444",
+      "assignedEmployees": [
+        "emp18",
+        "emp16",
+        "emp5"
+      ],
+      "createdBy": "emp10",
+      "approved": true
+    },
+    {
+      "_id": "shift15",
+      "storeId": "store1",
+      "storeDepartmentId": "sd3",
+      "date": "2025-04-11T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#F97316",
+      "assignedEmployees": [
+        "emp7",
+        "emp2",
+        "emp18"
+      ],
+      "createdBy": "emp11",
+      "approved": true
+    },
+    {
+      "_id": "shift16",
+      "storeId": "store2",
+      "storeDepartmentId": "sd4",
+      "date": "2025-04-07T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#FB7185",
+      "assignedEmployees": [
+        "emp2",
+        "emp20",
+        "emp16"
+      ],
+      "createdBy": "emp17",
+      "approved": true
+    },
+    {
+      "_id": "shift17",
+      "storeId": "store2",
+      "storeDepartmentId": "sd4",
+      "date": "2025-04-08T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#F97316",
+      "assignedEmployees": [
+        "emp6",
+        "emp2",
+        "emp17"
+      ],
+      "createdBy": "emp6",
+      "approved": true
+    },
+    {
+      "_id": "shift18",
+      "storeId": "store2",
+      "storeDepartmentId": "sd4",
+      "date": "2025-04-09T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#FB923C",
+      "assignedEmployees": [
+        "emp3",
+        "emp20",
+        "emp8"
+      ],
+      "createdBy": "emp4",
+      "approved": true
+    },
+    {
+      "_id": "shift19",
+      "storeId": "store2",
+      "storeDepartmentId": "sd4",
+      "date": "2025-04-10T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#FB7185",
+      "assignedEmployees": [
+        "emp19",
+        "emp8",
+        "emp2"
+      ],
+      "createdBy": "emp3",
+      "approved": true
+    },
+    {
+      "_id": "shift20",
+      "storeId": "store2",
+      "storeDepartmentId": "sd4",
+      "date": "2025-04-11T00:00:00",
+      "startTime": "09:00",
+      "endTime": "17:00",
+      "breakMinutes": 30,
+      "totalHours": 7.5,
+      "comment": "Regular shift",
+      "color": "#F43F5E",
+      "assignedEmployees": [
+        "emp14",
+        "emp19",
+        "emp17"
+      ],
+      "createdBy": "emp9",
+      "approved": true
+    }
+  ],
+  "schedules": [
+    {
+      "_id": "sched_sd1",
+      "storeDepartmentId": "sd1",
+      "weekOf": "2025-04-07T00:00:00",
+      "shifts": [
+        "shift1",
+        "shift2",
+        "shift3",
+        "shift4",
+        "shift5"
+      ]
+    },
+    {
+      "_id": "sched_sd2",
+      "storeDepartmentId": "sd2",
+      "weekOf": "2025-04-07T00:00:00",
+      "shifts": [
+        "shift6",
+        "shift7",
+        "shift8",
+        "shift9",
+        "shift10"
+      ]
+    },
+    {
+      "_id": "sched_sd3",
+      "storeDepartmentId": "sd3",
+      "weekOf": "2025-04-07T00:00:00",
+      "shifts": [
+        "shift11",
+        "shift12",
+        "shift13",
+        "shift14",
+        "shift15"
+      ]
+    },
+    {
+      "_id": "sched_sd4",
+      "storeDepartmentId": "sd4",
+      "weekOf": "2025-04-07T00:00:00",
+      "shifts": [
+        "shift16",
+        "shift17",
+        "shift18",
+        "shift19",
+        "shift20"
+      ]
+    }
+  ]
+}
