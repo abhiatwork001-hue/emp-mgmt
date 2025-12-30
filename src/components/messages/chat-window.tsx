@@ -173,10 +173,7 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
                                         )}
                                     </div>
                                 )}
-                                <div className={cn(
-                                    "max-w-[75%] px-4 py-2 rounded-2xl text-sm shadow-sm",
-                                    isMe ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
-                                )}>
+                                <div className={cn("flex flex-col max-w-[75%]", isMe ? "items-end" : "items-start")}>
                                     {!isMe && showAvatar && conversation.type === 'group' && (
                                         <p className="text-[10px] text-muted-foreground mb-1 font-semibold opacity-75">{msg.sender?.firstName}</p>
                                     )}
