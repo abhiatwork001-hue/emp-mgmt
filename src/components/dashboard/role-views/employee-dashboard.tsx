@@ -13,6 +13,7 @@ import Link from "next/link";
 import { RequestVacationDialog } from "@/components/vacations/request-vacation-dialog";
 import { ReportAbsenceDialog } from "@/components/absences/report-absence-dialog";
 import { HolidayWidget } from "@/components/dashboard/widgets/holiday-widget";
+import { BirthdayWidget } from "@/components/dashboard/widgets/birthday-widget";
 
 interface EmployeeDashboardProps {
     employee: any;
@@ -158,6 +159,9 @@ export function EmployeeDashboard({ employee, todaysCoworkers = [], currentSched
 
                     {/* Holiday Widget */}
                     <HolidayWidget storeId={employee.storeId?._id || employee.storeId} />
+
+                    {/* Birthday Widget */}
+                    <BirthdayWidget storeId={employee.storeId?._id || employee.storeId} currentUserId={employee._id} />
 
                     {/* Today's Team */}
                     <Card className="bg-card border-border">

@@ -12,6 +12,7 @@ import { EditStoreDialog } from "@/components/stores/edit-store-dialog";
 
 interface Store {
     _id: string;
+    slug: string;
     name: string;
     address?: string;
     phone?: string; // Not in IStore but maybe in future or from owners? Using address for now.
@@ -57,7 +58,7 @@ export function StoreList({ initialStores }: { initialStores: Store[] }) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredStores.map((store) => (
-                    <Link href={`/dashboard/stores/${store._id}`} key={store._id}>
+                    <Link href={`/dashboard/stores/${store.slug}`} key={store._id}>
                         <Card className="bg-card border hover:bg-accent/50 transition cursor-pointer">
                             <CardContent className="p-6 space-y-4">
                                 <div className="flex items-start justify-between">

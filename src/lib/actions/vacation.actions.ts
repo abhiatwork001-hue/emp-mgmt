@@ -13,6 +13,7 @@ import connectToDB from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { logAction } from "./log.actions";
 
 const dbConnect = connectToDB;
 
@@ -116,6 +117,16 @@ export async function createVacationRequest(data: VacationRequestData) {
             reviewedBy: bypassValidation ? data.employeeId : undefined,
             reviewedAt: bypassValidation ? new Date() : undefined,
             createdAt: new Date()
+        });
+
+        const actorId = (session?.user as any)?.id || data.employeeId;
+
+        await logAction({
+            action: 'REQUEST_VACATION',
+            performedBy: actorId,
+            targetId: newRequest._id,
+            targetModel: 'VacationRequest',
+            details: { totalDays: finalTotalDays, from: start, to: end }
         });
 
         if (bypassValidation) {
@@ -248,6 +259,14 @@ export async function approveVacationRequest(requestId: string, approverId: stri
     request.reviewedAt = new Date();
     await request.save();
 
+    await logAction({
+        action: 'APPROVE_VACATION',
+        performedBy: approverId,
+        targetId: request._id,
+        targetModel: 'VacationRequest',
+        details: { employeeId: request.employeeId }
+    });
+
     // Notification: Notify Employee
     try {
         await triggerNotification({
@@ -285,6 +304,14 @@ export async function rejectVacationRequest(requestId: string, reviewerId: strin
     if (reason) request.comments = reason;
     request.reviewedAt = new Date();
     await request.save();
+
+    await logAction({
+        action: 'REJECT_VACATION',
+        performedBy: reviewerId,
+        targetId: request._id,
+        targetModel: 'VacationRequest',
+        details: { employeeId: request.employeeId, reason }
+    });
 
     // Notification: Notify Employee
     try {

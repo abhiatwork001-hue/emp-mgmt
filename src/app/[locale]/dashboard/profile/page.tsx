@@ -130,7 +130,7 @@ export default async function ProfilePage() {
 
                 <TabsContent value="absences" className="animate-in fade-in-50 duration-500 slide-in-from-bottom-2">
                     <div className="bg-muted/30 border border-border rounded-xl p-6 sm:p-8 shadow-sm">
-                        <ProfileAbsenceTab absenceRequests={absenceRequests} />
+                        <ProfileAbsenceTab absenceRequests={absenceRequests} employeeId={userId} />
                     </div>
                 </TabsContent>
 

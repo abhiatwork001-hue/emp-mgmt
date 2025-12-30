@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getStoreById } from "@/lib/actions/store.actions";
+import { getStoreBySlug } from "@/lib/actions/store.actions";
 import { getEmployeesByStore } from "@/lib/actions/employee.actions";
 import { getStoreDepartments } from "@/lib/actions/store-department.actions";
 import { AddDepartmentDialog } from "@/components/stores/add-department-dialog";
@@ -19,11 +19,18 @@ import { StoreDepartmentsListClient } from "@/components/stores/store-department
 import { RemoveStoreManagerButton } from "@/components/stores/remove-store-manager-button";
 import { CreateScheduleDialog } from "@/components/schedules/create-schedule-dialog";
 
-export default async function StoreDetailsPage({ params }: { params: Promise<{ storeId: string }> }) {
+export default async function StoreDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
     const session = await getServerSession(authOptions);
     if (!session) redirect("/login");
 
-    const { storeId } = await params;
+    const { slug } = await params;
+    const store = await getStoreBySlug(slug);
+
+    if (!store) {
+        return <div>Store not found</div>;
+    }
+
+    const storeId = store._id.toString();
     const currentUser = await import("@/lib/actions/employee.actions").then(m => m.getEmployeeById((session.user as any).id));
     const userRoles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
 
@@ -40,13 +47,8 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
     // "employee, storeManager and storeDepartmentHead cannot edit employee... or add employee... and manage team"
     const canManageEmployees = isGlobalAdmin;
 
-    const store = await getStoreById(storeId);
     const employees = await getEmployeesByStore(storeId);
     const storeDepartments = await getStoreDepartments(storeId);
-
-    if (!store) {
-        return <div>Store not found</div>;
-    }
 
     return (
         <div className="space-y-6">
@@ -70,7 +72,7 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
                 <div className="flex items-center gap-2">
                     {canEditStore && (
                         <Button variant="default" asChild>
-                            <a href={`/dashboard/stores/${store._id}/edit`}>
+                            <a href={`/dashboard/stores/${store.slug}/edit`}>
                                 <Edit className="mr-2 h-4 w-4" /> Edit Store
                             </a>
                         </Button>
@@ -151,24 +153,7 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
                             </Link>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                {storeDepartments.map((dept: any) => (
-                                    <div key={dept._id} className="p-4 border rounded-lg hover:shadow-sm transition-shadow">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <h4 className="font-semibold">{dept.name}</h4>
-                                            <Badge variant="secondary" className="text-xs">
-                                                {dept.employees?.length || 0} employees
-                                            </Badge>
-                                        </div>
-                                        <Link
-                                            href={`/dashboard/stores/${store._id}/departments/${dept._id}`}
-                                            className="text-sm text-blue-600 hover:underline flex items-center gap-1 mt-2"
-                                        >
-                                            Department details →
-                                        </Link>
-                                    </div>
-                                ))}
-                            </div>
+                            <StoreDepartmentsListClient storeDepartments={storeDepartments} storeSlug={store.slug} />
                         </CardContent>
                     </Card>
 

@@ -11,6 +11,7 @@ import { EditGlobalDepartmentDialog } from "@/components/departments/edit-global
 
 interface Department {
     _id: string;
+    slug: string;
     name: string;
     description?: string;
     active: boolean;
@@ -52,7 +53,7 @@ export function DepartmentList({ initialDepartments }: { initialDepartments: Dep
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredDependencies.map((dept) => (
-                    <Link href={`/dashboard/departments/${dept._id}`} key={dept._id}>
+                    <Link href={`/dashboard/departments/${dept.slug}`} key={dept._id}>
                         <Card className="bg-card border hover:bg-accent/50 transition cursor-pointer">
                             <CardContent className="p-6">
                                 <div className="flex items-center justify-between">

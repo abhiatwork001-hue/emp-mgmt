@@ -1,4 +1,4 @@
-import { getFoodById, checkFinancialAccess } from "@/lib/actions/recipe.actions";
+import { getFoodBySlug, checkFinancialAccess } from "@/lib/actions/recipe.actions";
 import { getUserSession } from "@/lib/actions/auth.actions";
 import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -11,11 +11,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { RecipeActions } from "@/components/recipes/recipe-actions";
 
-export default async function RecipeDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export default async function RecipeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
     const session = await getUserSession();
 
-    const food = await getFoodById(id);
+    const food = await getFoodBySlug(slug);
     if (!food) return notFound();
 
     // Access Check
@@ -56,7 +56,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
 
                 {canEdit && (
                     <div className="flex items-center gap-2">
-                        <Link href={`/dashboard/recipes/${id}/edit`}>
+                        <Link href={`/dashboard/recipes/${food.slug}/edit`}>
                             <Button variant="outline" className="gap-2">
                                 <Edit className="w-4 h-4" /> Edit
                             </Button>
@@ -64,7 +64,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ i
 
                         {/* Action Buttons */}
                         <RecipeActions
-                            id={id}
+                            id={food._id.toString()}
                             isActive={food.isActive}
                             isDeleted={Boolean(food.isDeleted)}
                             canDelete={canEdit /* Refine permission later per requirement: "Kitchen Head for Archive, Tech for Delete" */}

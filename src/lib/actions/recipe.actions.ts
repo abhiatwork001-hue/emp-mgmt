@@ -6,6 +6,8 @@ import { triggerNotification } from "@/lib/actions/notification.actions";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { logAction } from "./log.actions";
+import { slugify } from "@/lib/utils";
 
 // --- Categories ---
 
@@ -19,6 +21,18 @@ export async function createCategory(name: string) {
     await dbConnect();
     try {
         const newCat = await Category.create({ name });
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'CREATE_RECIPE_CATEGORY',
+                performedBy: (session.user as any).id,
+                targetId: newCat._id.toString(),
+                targetModel: 'Category',
+                details: { name }
+            });
+        }
+
         return JSON.parse(JSON.stringify(newCat));
     } catch (e) {
         console.error("Failed to create category", e);
@@ -131,11 +145,26 @@ export async function getFoodById(id: string) {
     return JSON.parse(JSON.stringify(food));
 }
 
-
+export async function getFoodBySlug(slug: string) {
+    await dbConnect();
+    const food = await Food.findOne({ slug }).populate("category").lean();
+    return JSON.parse(JSON.stringify(food));
+}
 
 export async function createFood(data: Partial<IFood>) {
     await dbConnect();
     try {
+        if (data.name) {
+            data.slug = slugify(data.name);
+            // Ensure uniqueness if slug exists
+            let count = 1;
+            let finalSlug = data.slug;
+            while (await Food.findOne({ slug: finalSlug })) {
+                finalSlug = `${data.slug}-${count++}`;
+            }
+            data.slug = finalSlug;
+        }
+
         const newFood = await Food.create(data);
         revalidatePath("/dashboard/recipes");
 
@@ -168,7 +197,7 @@ export async function createFood(data: Partial<IFood>) {
                             type: "info",
                             category: "system",
                             recipients: finalRecipients,
-                            link: `/dashboard/recipes/${newFood._id}`,
+                            link: `/dashboard/recipes/${newFood.slug}`,
                             metadata: { recipeId: newFood._id }
                         });
                     }
@@ -176,6 +205,17 @@ export async function createFood(data: Partial<IFood>) {
             }
         } catch (notifErr) {
             console.error("Recipe Notification Error:", notifErr);
+        }
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'CREATE_RECIPE',
+                performedBy: (session.user as any).id,
+                targetId: newFood._id.toString(),
+                targetModel: 'Food',
+                details: { name: newFood.name }
+            });
         }
 
         return JSON.parse(JSON.stringify(newFood));
@@ -188,9 +228,12 @@ export async function createFood(data: Partial<IFood>) {
 export async function updateFood(id: string, data: Partial<IFood>) {
     await dbConnect();
     try {
+        if (data.name) {
+            data.slug = slugify(data.name);
+        }
         const updated = await Food.findByIdAndUpdate(id, data, { new: true });
         revalidatePath("/dashboard/recipes");
-        revalidatePath(`/dashboard/recipes/${id}`);
+        revalidatePath(`/dashboard/recipes/${updated.slug}`);
 
         // Notification Logic
         try {
@@ -211,12 +254,6 @@ export async function updateFood(id: string, data: Partial<IFood>) {
 
                     const recipientIds = employees.map((e: any) => e._id.toString());
 
-                    // Filter out creator/updater if possible? The 'updater' is not passed here explicitly as arg, 
-                    // but usually the caller is the updater. We don't have userId handy in args here unless we fetch session.
-                    // For now, allow self-notification or fetch session.
-                    // Let's stick to notifying departments. Maybe the updater wants to confirm it went out?
-                    // Or let's try to remove sending to self via Session if we can.
-
                     const session = await getServerSession(authOptions);
                     const currentUserId = (session?.user as any)?.id;
                     const finalRecipients = recipientIds.filter((rid: string) => rid !== currentUserId);
@@ -228,7 +265,7 @@ export async function updateFood(id: string, data: Partial<IFood>) {
                             type: "info",
                             category: "system",
                             recipients: finalRecipients,
-                            link: `/dashboard/recipes/${updated._id}`,
+                            link: `/dashboard/recipes/${updated.slug}`,
                             metadata: { recipeId: updated._id }
                         });
                     }
@@ -236,6 +273,17 @@ export async function updateFood(id: string, data: Partial<IFood>) {
             }
         } catch (notifErr) {
             console.error("Recipe Update Notification Error:", notifErr);
+        }
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'UPDATE_RECIPE',
+                performedBy: (session.user as any).id,
+                targetId: id,
+                targetModel: 'Food',
+                details: { name: updated?.name }
+            });
         }
 
         return JSON.parse(JSON.stringify(updated));
@@ -251,7 +299,19 @@ export async function archiveFood(id: string) {
         // Archive means isActive = false
         const updated = await Food.findByIdAndUpdate(id, { isActive: false }, { new: true });
         revalidatePath("/dashboard/recipes");
-        revalidatePath(`/dashboard/recipes/${id}`);
+        revalidatePath(`/dashboard/recipes/${updated.slug}`);
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'ARCHIVE_RECIPE',
+                performedBy: (session.user as any).id,
+                targetId: id,
+                targetModel: 'Food',
+                details: { name: updated?.name }
+            });
+        }
+
         return JSON.parse(JSON.stringify(updated));
     } catch (e) {
         console.error("Archive food failed", e);
@@ -266,7 +326,19 @@ export async function deleteFood(id: string) {
         // Also ensure it's inactive
         const updated = await Food.findByIdAndUpdate(id, { isDeleted: true, isActive: false }, { new: true });
         revalidatePath("/dashboard/recipes");
-        revalidatePath(`/dashboard/recipes/${id}`);
+        revalidatePath(`/dashboard/recipes/${updated.slug}`);
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'DELETE_RECIPE',
+                performedBy: (session.user as any).id,
+                targetId: id,
+                targetModel: 'Food',
+                details: { name: updated?.name }
+            });
+        }
+
         return JSON.parse(JSON.stringify(updated));
     } catch (e) {
         console.error("Delete food failed", e);
@@ -279,7 +351,19 @@ export async function restoreFood(id: string) {
     try {
         const updated = await Food.findByIdAndUpdate(id, { isDeleted: false, isActive: true }, { new: true });
         revalidatePath("/dashboard/recipes");
-        revalidatePath(`/dashboard/recipes/${id}`);
+        revalidatePath(`/dashboard/recipes/${updated.slug}`);
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'RESTORE_RECIPE',
+                performedBy: (session.user as any).id,
+                targetId: id,
+                targetModel: 'Food',
+                details: { name: updated?.name }
+            });
+        }
+
         return JSON.parse(JSON.stringify(updated));
     } catch (e) {
         console.error("Restore food failed", e);

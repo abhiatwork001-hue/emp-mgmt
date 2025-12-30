@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getGlobalDepartmentById } from "@/lib/actions/department.actions";
+import { getGlobalDepartmentBySlug } from "@/lib/actions/department.actions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,12 +11,12 @@ import { RemoveGlobalDepartmentHeadButton } from "@/components/departments/remov
 import { GlobalDepartmentLeadership } from "@/components/departments/global-department-leadership";
 import { TestNotificationButton } from "@/components/test-notification-button";
 
-export default async function DepartmentDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function DepartmentDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
     const session = await getServerSession(authOptions);
     if (!session) redirect("/login");
 
-    const { id } = await params;
-    const department = await getGlobalDepartmentById(id);
+    const { slug } = await params;
+    const department = await getGlobalDepartmentBySlug(slug);
 
     if (!department) {
         return <div>Department not found</div>;
@@ -39,7 +39,7 @@ export default async function DepartmentDetailsPage({ params }: { params: Promis
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="outline" asChild>
-                        <a href={`/dashboard/departments/${department._id}/edit`}>
+                        <a href={`/dashboard/departments/${department.slug}/edit`}>
                             <Edit className="mr-2 h-4 w-4" /> Edit
                         </a>
                     </Button>

@@ -8,9 +8,9 @@ export default async function MessagesLayout({ children }: { children: React.Rea
     const conversations = await getConversations((session?.user as any)?.id || "");
 
     return (
-        <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden">
+        <div className="flex h-[calc(100dvh-4rem)] md:h-[calc(100vh-4rem)] w-full overflow-hidden">
             <aside className="hidden md:block w-80 border-r bg-muted/10 h-full flex-shrink-0">
-                <ConversationList conversations={conversations} currentUserId={session?.user?.id} />
+                <ConversationList conversations={conversations} currentUserId={session?.user?.id || ""} />
             </aside>
             <main className="flex-1 flex flex-col min-w-0 bg-background h-full overflow-hidden">
                 {children}

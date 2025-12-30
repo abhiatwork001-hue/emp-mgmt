@@ -21,12 +21,10 @@ export function BirthdayWidget({ storeId, currentUserId }: BirthdayWidgetProps) 
     const [sentMap, setSentMap] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
-        if (storeId) {
-            getUpcomingBirthdays(storeId).then(data => {
-                setBirthdays(data);
-                setLoading(false);
-            });
-        }
+        getUpcomingBirthdays(storeId).then(data => {
+            setBirthdays(data);
+            setLoading(false);
+        });
     }, [storeId]);
 
     const handleSendGreeting = async (targetId: string, name: string) => {

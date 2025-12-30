@@ -3,6 +3,9 @@
 import connectToDB from "@/lib/db";
 import { Employee, Task, Store, StoreDepartment } from "@/lib/models";
 import { revalidatePath } from "next/cache";
+import { logAction } from "./log.actions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 // --- Create Task ---
 import { triggerNotification } from "@/lib/actions/notification.actions";
@@ -104,6 +107,14 @@ export async function createTask(data: {
         } catch (e) {
             console.error("Task Notification Error:", e);
         }
+
+        await logAction({
+            action: 'CREATE_TASK',
+            performedBy: data.creatorId,
+            targetId: newTask._id.toString(),
+            targetModel: 'Task',
+            details: { title: data.title }
+        });
 
         revalidatePath("/dashboard");
         return { success: true, count: 1 };
@@ -218,6 +229,14 @@ export async function updateTaskStatus(taskId: string, status: string, userId: s
             }
         }
 
+        await logAction({
+            action: status === 'completed' ? 'COMPLETE_TASK' : 'UNCOMPLETE_TASK',
+            performedBy: userId,
+            targetId: taskId,
+            targetModel: 'Task',
+            details: { status }
+        });
+
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -329,6 +348,20 @@ export async function updateTask(taskId: string, data: {
             todos: data.todos.map(text => ({ text, completed: false }))
         });
 
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'UPDATE_TASK',
+                performedBy: (session.user as any).id,
+                targetId: taskId,
+                targetModel: 'Task',
+                details: {
+                    title: data.title,
+                    status: (data as any).status || 'updated'
+                }
+            });
+        }
+
         revalidatePath("/dashboard");
         return { success: true };
     } catch (error) {
@@ -382,6 +415,14 @@ export async function submitTaskFile(taskId: string, userId: string, fileUrl: st
                 }
             });
         }
+
+        await logAction({
+            action: 'SUBMIT_TASK_FILE',
+            performedBy: userId,
+            targetId: taskId,
+            targetModel: 'Task',
+            details: { fileName, requirementName }
+        });
 
         revalidatePath("/dashboard");
         return { success: true };

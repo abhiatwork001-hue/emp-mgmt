@@ -54,6 +54,8 @@ export const ourFileRouter = {
     taskAttachment: f({
         image: { maxFileSize: "8MB", maxFileCount: 1 },
         pdf: { maxFileSize: "8MB", maxFileCount: 1 },
+        audio: { maxFileSize: "8MB", maxFileCount: 1 },
+        video: { maxFileSize: "16MB", maxFileCount: 1 },
     })
         .middleware(async ({ req }) => {
             const user = await auth(req);

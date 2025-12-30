@@ -7,6 +7,9 @@ import {
 } from "@/lib/models";
 import connectToDB from "@/lib/db";
 import { revalidatePath } from "next/cache";
+import { logAction } from "./log.actions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const dbConnect = connectToDB;
 
@@ -57,6 +60,18 @@ export async function createAbsenceRequest(data: AbsenceRequestData) {
 
     revalidatePath("/dashboard/absences");
     revalidatePath(`/dashboard/employees/${data.employeeId}`);
+
+    const session = await getServerSession(authOptions);
+    const actorId = session?.user ? (session.user as any).id : data.employeeId;
+
+    await logAction({
+        action: 'REQUEST_ABSENCE',
+        performedBy: actorId,
+        targetId: newRequest._id,
+        targetModel: 'AbsenceRequest',
+        details: { date: data.date, reason: data.reason }
+    });
+
     return JSON.parse(JSON.stringify(newRequest));
 }
 
@@ -136,6 +151,18 @@ export async function approveAbsenceRequest(requestId: string, approverId: strin
 
     revalidatePath("/dashboard/absences");
     revalidatePath(`/dashboard/employees/${request.employeeId}`);
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'APPROVE_ABSENCE',
+            performedBy: (session.user as any).id,
+            targetId: request._id,
+            targetModel: 'AbsenceRequest',
+            details: { employeeId: request.employeeId, date: request.date }
+        });
+    }
+
     return JSON.parse(JSON.stringify(request));
 }
 
@@ -185,6 +212,18 @@ export async function rejectAbsenceRequest(requestId: string, reviewerId: string
 
     revalidatePath("/dashboard/absences");
     revalidatePath(`/dashboard/employees/${request.employeeId}`);
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'REJECT_ABSENCE',
+            performedBy: (session.user as any).id,
+            targetId: request._id,
+            targetModel: 'AbsenceRequest',
+            details: { employeeId: request.employeeId, date: request.date }
+        });
+    }
+
     return JSON.parse(JSON.stringify(request));
 }
 export async function getPendingAbsenceRequests() {

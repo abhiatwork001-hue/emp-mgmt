@@ -3,6 +3,9 @@
 import dbConnect from "@/lib/db";
 import { Position, IPosition } from "@/lib/models";
 import { revalidatePath } from "next/cache";
+import { logAction } from "./log.actions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 type PositionData = Partial<IPosition>;
 
@@ -21,6 +24,18 @@ export async function createPosition(data: PositionData) {
     await dbConnect();
     const newPos = await Position.create(data);
     revalidatePath("/dashboard/positions");
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'CREATE_POSITION',
+            performedBy: (session.user as any).id,
+            targetId: newPos._id.toString(),
+            targetModel: 'Position',
+            details: { name: newPos.name }
+        });
+    }
+
     return JSON.parse(JSON.stringify(newPos));
 }
 
@@ -28,6 +43,18 @@ export async function updatePosition(id: string, data: PositionData) {
     await dbConnect();
     const updated = await Position.findByIdAndUpdate(id, data, { new: true }).lean();
     revalidatePath("/dashboard/positions");
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'UPDATE_POSITION',
+            performedBy: (session.user as any).id,
+            targetId: id,
+            targetModel: 'Position',
+            details: { name: updated?.name }
+        });
+    }
+
     return JSON.parse(JSON.stringify(updated));
 }
 
@@ -117,5 +144,17 @@ export async function removeEmployeeFromPosition(employeeId: string) {
 
     revalidatePath(`/dashboard/employees/${employeeId}`);
     revalidatePath("/dashboard/positions");
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'REMOVE_FROM_POSITION',
+            performedBy: (session.user as any).id,
+            targetId: employeeId,
+            targetModel: 'Employee',
+            details: { oldPositionId }
+        });
+    }
+
     return { success: true };
 }

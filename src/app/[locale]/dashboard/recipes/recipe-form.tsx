@@ -227,7 +227,7 @@ export function RecipeForm({ categories: initialCategories, globalDepartments, u
                 // UPDATE
                 await updateFood(initialData._id, payload);
                 toast.success("Recipe updated successfully!");
-                router.push(`/dashboard/recipes/${initialData._id}`);
+                router.push(`/dashboard/recipes/${initialData.slug}`);
             } else {
                 // CREATE
                 await createFood(payload);

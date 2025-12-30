@@ -3,6 +3,10 @@
 import dbConnect from "@/lib/db";
 import { StoreDepartment, GlobalDepartment, IStoreDepartment, Employee } from "@/lib/models";
 import { revalidatePath } from "next/cache";
+import { logAction } from "./log.actions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { slugify } from "@/lib/utils";
 
 // --- Types ---
 type StoreDepartmentData = Partial<IStoreDepartment>;
@@ -43,14 +47,35 @@ export async function createStoreDepartment(storeId: string, globalDepartmentId:
     const exists = await StoreDepartment.findOne({ storeId, globalDepartmentId, active: true });
     if (exists) throw new Error("Department already assigned to this store");
 
+    const slugBase = slugify(globalDept.name);
+    let finalSlug = slugBase;
+    let count = 1;
+    while (await StoreDepartment.findOne({ storeId, slug: finalSlug })) {
+        finalSlug = `${slugBase}-${count++}`;
+    }
+
     const newStoreDept = await StoreDepartment.create({
         storeId,
         globalDepartmentId,
         name: globalDept.name, // Default to global name
+        slug: finalSlug,
         active: true
     });
 
     revalidatePath(`/dashboard/stores/${storeId}`);
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'CREATE_STORE_DEPARTMENT',
+            performedBy: (session.user as any).id,
+            storeId: storeId,
+            targetId: newStoreDept._id,
+            targetModel: 'StoreDepartment',
+            details: { name: newStoreDept.name }
+        });
+    }
+
     return JSON.parse(JSON.stringify(newStoreDept));
 }
 
@@ -77,14 +102,22 @@ export async function getStoreDepartmentById(id: string) {
     return JSON.parse(JSON.stringify(dept));
 }
 
+export async function getStoreDepartmentBySlug(storeId: string, slug: string) {
+    await dbConnect();
+    const deptDoc = await StoreDepartment.findOne({ storeId, slug }).select("_id").lean();
+    if (!deptDoc) return null;
+    return getStoreDepartmentById(deptDoc._id.toString());
+}
+
 export async function updateStoreDepartment(id: string, data: StoreDepartmentData) {
     await dbConnect();
 
     const updatedDept = await StoreDepartment.findByIdAndUpdate(id, data, { new: true });
 
     if (updatedDept) {
-        revalidatePath(`/dashboard/stores/${updatedDept.storeId}`);
-        revalidatePath(`/dashboard/stores/${updatedDept.storeId}/departments/${id}`);
+        const store = await (require("@/lib/models").Store.findById(updatedDept.storeId).select("slug"));
+        revalidatePath(`/dashboard/stores/${store?.slug || updatedDept.storeId}`);
+        revalidatePath(`/dashboard/stores/${store?.slug || updatedDept.storeId}/departments/${updatedDept.slug}`);
     }
 
     return JSON.parse(JSON.stringify(updatedDept));
@@ -137,8 +170,22 @@ export async function assignStoreEmployeesToDepartment(departmentId: string, emp
     }
 
     if (dept && dept.storeId) {
-        revalidatePath(`/dashboard/stores/${dept.storeId}`);
-        revalidatePath(`/dashboard/stores/${dept.storeId}/departments/${departmentId}`);
+        const store = await (require("@/lib/models").Store.findById(dept.storeId).select("slug"));
+        const storeSlug = store?.slug || dept.storeId.toString();
+        revalidatePath(`/dashboard/stores/${storeSlug}`);
+        revalidatePath(`/dashboard/stores/${storeSlug}/departments/${dept.slug}`);
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'ASSIGN_EMPLOYEES_TO_DEPT',
+                performedBy: (session.user as any).id,
+                storeId: dept.storeId.toString(),
+                targetId: departmentId,
+                targetModel: 'StoreDepartment',
+                details: { employeeCount: employeeIds.length }
+            });
+        }
     }
 
     return { success: true };
@@ -147,8 +194,22 @@ export async function assignStoreEmployeesToDepartment(departmentId: string, emp
 export async function deleteStoreDepartment(id: string, storeId: string) {
     await dbConnect();
     // Soft delete
-    await StoreDepartment.findByIdAndUpdate(id, { active: false });
-    revalidatePath(`/dashboard/stores/${storeId}`);
+    const updated = await StoreDepartment.findByIdAndUpdate(id, { active: false }, { new: true });
+    if (updated) {
+        const store = await (require("@/lib/models").Store.findById(storeId).select("slug"));
+        revalidatePath(`/dashboard/stores/${store?.slug || storeId}`);
+    }
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'DELETE_STORE_DEPARTMENT',
+            performedBy: (session.user as any).id,
+            storeId: storeId,
+            targetId: id,
+            targetModel: 'StoreDepartment'
+        });
+    }
 }
 
 export async function removeStoreEmployeeFromDepartment(departmentId: string, employeeId: string) {
@@ -164,10 +225,23 @@ export async function removeStoreEmployeeFromDepartment(departmentId: string, em
         $pull: { employees: employeeId }
     });
 
-    // Revalidate
-    const dept = await StoreDepartment.findById(departmentId).select("storeId");
+    const dept = await StoreDepartment.findById(departmentId).select("storeId slug");
     if (dept && dept.storeId) {
-        revalidatePath(`/dashboard/stores/${dept.storeId}/departments/${departmentId}`);
+        const store = await (require("@/lib/models").Store.findById(dept.storeId).select("slug"));
+        const storeSlug = store?.slug || dept.storeId.toString();
+        revalidatePath(`/dashboard/stores/${storeSlug}/departments/${dept.slug}`);
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'REMOVE_DEPT_EMPLOYEE',
+                performedBy: (session.user as any).id,
+                storeId: dept.storeId.toString(),
+                targetId: employeeId,
+                targetModel: 'Employee',
+                details: { departmentId }
+            });
+        }
     }
 
     return { success: true };
@@ -189,15 +263,27 @@ export async function assignHeadOfDepartment(departmentId: string, employeeId: s
         $addToSet: { headOfDepartment: employeeId }
     });
 
-    // Ensure they are also in the department's employee list? Usually yes.
-    // If not already in the department, assign them.
     if (!dept.employees.includes(employeeId)) {
         await assignStoreEmployeesToDepartment(departmentId, [employeeId]);
     }
 
     // Revalidate
     if (dept.storeId) {
-        revalidatePath(`/dashboard/stores/${dept.storeId}/departments/${departmentId}`);
+        const store = await (require("@/lib/models").Store.findById(dept.storeId).select("slug"));
+        const storeSlug = store?.slug || dept.storeId.toString();
+        revalidatePath(`/dashboard/stores/${storeSlug}/departments/${dept.slug}`);
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'ASSIGN_DEPT_HEAD',
+                performedBy: (session.user as any).id,
+                storeId: dept.storeId.toString(),
+                targetId: employeeId,
+                targetModel: 'Employee',
+                details: { departmentId }
+            });
+        }
     }
 
     return { success: true };
@@ -225,9 +311,23 @@ export async function removeHeadOfDepartment(departmentId: string, employeeId: s
         $pull: { headOfDepartment: employeeId }
     });
 
-    const dept = await StoreDepartment.findById(departmentId).select("storeId");
+    const dept = await StoreDepartment.findById(departmentId).select("storeId slug");
     if (dept && dept.storeId) {
-        revalidatePath(`/dashboard/stores/${dept.storeId}/departments/${departmentId}`);
+        const store = await (require("@/lib/models").Store.findById(dept.storeId).select("slug"));
+        const storeSlug = store?.slug || dept.storeId.toString();
+        revalidatePath(`/dashboard/stores/${storeSlug}/departments/${dept.slug}`);
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'REMOVE_DEPT_HEAD',
+                performedBy: (session.user as any).id,
+                storeId: dept.storeId.toString(),
+                targetId: employeeId,
+                targetModel: 'Employee',
+                details: { departmentId }
+            });
+        }
     }
 
     return { success: true };
@@ -253,10 +353,23 @@ export async function assignSubHeadOfDepartment(departmentId: string, employeeId
     if (!dept.employees.includes(employeeId)) {
         await assignStoreEmployeesToDepartment(departmentId, [employeeId]);
     }
-
     // Revalidate
     if (dept.storeId) {
-        revalidatePath(`/dashboard/stores/${dept.storeId}/departments/${departmentId}`);
+        const store = await (require("@/lib/models").Store.findById(dept.storeId).select("slug"));
+        const storeSlug = store?.slug || dept.storeId.toString();
+        revalidatePath(`/dashboard/stores/${storeSlug}/departments/${dept.slug}`);
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'ASSIGN_DEPT_SUBHEAD',
+                performedBy: (session.user as any).id,
+                storeId: dept.storeId.toString(),
+                targetId: employeeId,
+                targetModel: 'Employee',
+                details: { departmentId }
+            });
+        }
     }
 
     return { success: true };
@@ -282,9 +395,23 @@ export async function removeSubHeadOfDepartment(departmentId: string, employeeId
         $pull: { subHead: employeeId }
     });
 
-    const dept = await StoreDepartment.findById(departmentId).select("storeId");
+    const dept = await StoreDepartment.findById(departmentId).select("storeId slug");
     if (dept && dept.storeId) {
-        revalidatePath(`/dashboard/stores/${dept.storeId}/departments/${departmentId}`);
+        const store = await (require("@/lib/models").Store.findById(dept.storeId).select("slug"));
+        const storeSlug = store?.slug || dept.storeId.toString();
+        revalidatePath(`/dashboard/stores/${storeSlug}/departments/${dept.slug}`);
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'REMOVE_DEPT_SUBHEAD',
+                performedBy: (session.user as any).id,
+                storeId: dept.storeId.toString(),
+                targetId: employeeId,
+                targetModel: 'Employee',
+                details: { departmentId }
+            });
+        }
     }
 
     return { success: true };

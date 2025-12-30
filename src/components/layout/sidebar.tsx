@@ -67,13 +67,15 @@ const routes = [
 export function Sidebar({
     userRole = "employee",
     departmentName = "",
-    storeId = "",
-    isMobile: propsIsMobile = false
+    storeSlug = "",
+    isMobile: propsIsMobile = false,
+    onNavItemClick
 }: {
     userRole?: string,
     departmentName?: string,
-    storeId?: string,
-    isMobile?: boolean
+    storeSlug?: string,
+    isMobile?: boolean,
+    onNavItemClick?: () => void
 }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -99,7 +101,7 @@ export function Sidebar({
                 if (["owner", "admin", "super_user", "hr", "tech"].includes(effectiveRole)) return route;
                 // Functional check for store management
                 if (permissions.includes("manage_store")) return route;
-                if (storeId) return { ...route, label: "Store", href: `/dashboard/stores/${storeId}` };
+                if (storeSlug) return { ...route, label: "Store", href: `/dashboard/stores/${storeSlug}` };
                 return null;
             }
             if (route.label === "Tips") return effectiveRole === "store_manager" ? route : null;
@@ -209,6 +211,7 @@ export function Sidebar({
                                             <Link
                                                 key={route.href}
                                                 href={route.href}
+                                                onClick={() => onNavItemClick?.()}
                                                 className={cn(
                                                     "text-sm group flex p-3 w-full font-medium cursor-pointer rounded-xl transition-all duration-200 relative",
                                                     pathname === route.href ? "text-primary bg-primary/5 shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-accent/40",
@@ -249,7 +252,7 @@ export function MobileSidebar() {
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0 bg-sidebar border-r border-sidebar-border">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <Sidebar isMobile={true} />
+                <Sidebar isMobile={true} onNavItemClick={() => setOpen(false)} />
             </SheetContent>
         </Sheet>
     );

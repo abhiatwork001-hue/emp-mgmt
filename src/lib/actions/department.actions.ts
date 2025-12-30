@@ -3,6 +3,10 @@
 import dbConnect from "@/lib/db";
 import { GlobalDepartment, IGlobalDepartment } from "@/lib/models";
 import { revalidatePath } from "next/cache";
+import { logAction } from "./log.actions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { slugify } from "@/lib/utils";
 
 // --- Types ---
 type DepartmentData = Partial<IGlobalDepartment>;
@@ -205,11 +209,29 @@ export async function getGlobalDepartmentById(id: string) {
     return dept;
 }
 
+export async function getGlobalDepartmentBySlug(slug: string) {
+    await dbConnect();
+    const deptDoc = await GlobalDepartment.findOne({ slug, active: true }).lean();
+    if (!deptDoc) return null;
+    return getGlobalDepartmentById(deptDoc._id.toString());
+}
+
 /**
  * Create a new global department
  */
 export async function createGlobalDepartment(data: DepartmentData) {
     await dbConnect();
+
+    if (data.name) {
+        data.slug = slugify(data.name);
+        // Ensure uniqueness
+        let count = 1;
+        let finalSlug = data.slug;
+        while (await GlobalDepartment.findOne({ slug: finalSlug })) {
+            finalSlug = `${data.slug}-${count++}`;
+        }
+        data.slug = finalSlug;
+    }
 
     const newDepartment = await GlobalDepartment.create({
         ...data,
@@ -217,6 +239,18 @@ export async function createGlobalDepartment(data: DepartmentData) {
     });
 
     revalidatePath("/dashboard/departments");
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'CREATE_GLOBAL_DEPT',
+            performedBy: (session.user as any).id,
+            targetId: newDepartment._id.toString(),
+            targetModel: 'GlobalDepartment',
+            details: { name: newDepartment.name }
+        });
+    }
+
     return JSON.parse(JSON.stringify(newDepartment));
 }
 
@@ -226,10 +260,26 @@ export async function createGlobalDepartment(data: DepartmentData) {
 export async function updateGlobalDepartment(id: string, data: DepartmentData) {
     await dbConnect();
 
+    if (data.name) {
+        data.slug = slugify(data.name);
+    }
     const updatedDepartment = await GlobalDepartment.findByIdAndUpdate(id, data, { new: true }).lean();
 
     revalidatePath("/dashboard/departments");
-    revalidatePath(`/dashboard/departments/${id}`);
+    if (updatedDepartment) {
+        revalidatePath(`/dashboard/departments/${updatedDepartment.slug}`);
+    }
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'UPDATE_GLOBAL_DEPT',
+            performedBy: (session.user as any).id,
+            targetId: id,
+            targetModel: 'GlobalDepartment',
+            details: { name: updatedDepartment?.name }
+        });
+    }
 
     return JSON.parse(JSON.stringify(updatedDepartment));
 }
@@ -250,6 +300,21 @@ export async function archiveGlobalDepartment(id: string) {
     ).lean();
 
     revalidatePath("/dashboard/departments");
+    if (archived) {
+        revalidatePath(`/dashboard/departments/${archived.slug}`);
+    }
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'ARCHIVE_GLOBAL_DEPT',
+            performedBy: (session.user as any).id,
+            targetId: id,
+            targetModel: 'GlobalDepartment',
+            details: { name: archived?.name }
+        });
+    }
+
     return JSON.parse(JSON.stringify(archived));
 }
 
@@ -338,8 +403,19 @@ export async function assignGlobalDepartmentHead(departmentId: string, employeeI
         await department.save();
         console.log("[assignGlobalDepartmentHead] Department saved, departmentHead:", department.departmentHead);
 
-        revalidatePath(`/dashboard/departments/${departmentId}`);
+        revalidatePath(`/dashboard/departments/${department.slug}`);
         console.log("[assignGlobalDepartmentHead] Assignment successful");
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'ASSIGN_GLOBAL_DEPT_HEAD',
+                performedBy: (session.user as any).id,
+                targetId: employeeId,
+                targetModel: 'Employee',
+                details: { departmentId, departmentName: department.name }
+            });
+        }
 
         return { success: true };
     } catch (error) {
@@ -404,8 +480,19 @@ export async function assignGlobalDepartmentSubHead(departmentId: string, employ
         await department.save();
         console.log("[assignGlobalDepartmentSubHead] Department saved, subHead:", department.subHead);
 
-        revalidatePath(`/dashboard/departments/${departmentId}`);
+        revalidatePath(`/dashboard/departments/${department.slug}`);
         console.log("[assignGlobalDepartmentSubHead] Assignment successful");
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'ASSIGN_GLOBAL_DEPT_SUBHEAD',
+                performedBy: (session.user as any).id,
+                targetId: employeeId,
+                targetModel: 'Employee',
+                details: { departmentId, departmentName: department.name }
+            });
+        }
 
         return { success: true };
     } catch (error) {
@@ -420,6 +507,9 @@ export async function assignGlobalDepartmentSubHead(departmentId: string, employ
 export async function removeGlobalDepartmentHead(departmentId: string, employeeId: string) {
     await dbConnect();
     const { Employee, GlobalDepartment } = require("@/lib/models");
+
+    const department = await GlobalDepartment.findById(departmentId);
+    if (!department) throw new Error("Department not found");
 
     // Remove from department.departmentHead
     await GlobalDepartment.findByIdAndUpdate(departmentId, {
@@ -438,7 +528,19 @@ export async function removeGlobalDepartmentHead(departmentId: string, employeeI
         });
     }
 
-    revalidatePath(`/dashboard/departments/${departmentId}`);
+    revalidatePath(`/dashboard/departments/${department.slug}`);
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'REMOVE_GLOBAL_DEPT_HEAD',
+            performedBy: (session.user as any).id,
+            targetId: employeeId,
+            targetModel: 'Employee',
+            details: { departmentId }
+        });
+    }
+
     return { success: true };
 }
 
@@ -448,6 +550,9 @@ export async function removeGlobalDepartmentHead(departmentId: string, employeeI
 export async function removeGlobalDepartmentSubHead(departmentId: string, employeeId: string) {
     await dbConnect();
     const { Employee, GlobalDepartment } = require("@/lib/models");
+
+    const department = await GlobalDepartment.findById(departmentId);
+    if (!department) throw new Error("Department not found");
 
     // Remove from department.subHead
     await GlobalDepartment.findByIdAndUpdate(departmentId, {
@@ -466,6 +571,18 @@ export async function removeGlobalDepartmentSubHead(departmentId: string, employ
         });
     }
 
-    revalidatePath(`/dashboard/departments/${departmentId}`);
+    revalidatePath(`/dashboard/departments/${department.slug}`);
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'REMOVE_GLOBAL_DEPT_SUBHEAD',
+            performedBy: (session.user as any).id,
+            targetId: employeeId,
+            targetModel: 'Employee',
+            details: { departmentId }
+        });
+    }
+
     return { success: true };
 }

@@ -1,4 +1,5 @@
-import { getStoreDepartmentById } from "@/lib/actions/store-department.actions";
+import { getStoreDepartmentBySlug } from "@/lib/actions/store-department.actions";
+import { getStoreBySlug } from "@/lib/actions/store.actions";
 import { ArrowLeft, Edit, Trash2, MapPin, Users, Info, AlertCircle } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
@@ -14,8 +15,8 @@ import { ViewScheduleButton } from "@/components/schedules/view-schedule-button"
 
 interface PageProps {
     params: Promise<{
-        storeId: string;
-        departmentId: string;
+        slug: string;
+        deptSlug: string;
     }>;
 }
 
@@ -28,7 +29,14 @@ export default async function StoreDepartmentPage({ params }: PageProps) {
     const session = await getServerSession(authOptions);
     if (!session) redirect("/login");
 
-    const { storeId, departmentId } = await params;
+    const { slug, deptSlug } = await params;
+
+    const store = await getStoreBySlug(slug);
+    if (!store) redirect("/dashboard/stores");
+
+    const department = await getStoreDepartmentBySlug(store._id.toString(), deptSlug);
+    const storeId = store._id.toString();
+    const departmentId = department?._id?.toString() || "";
 
     const currentUser = await getEmployeeById((session.user as any).id);
     const userRoles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
@@ -40,8 +48,6 @@ export default async function StoreDepartmentPage({ params }: PageProps) {
     const canAssignEmployees = isGlobalAdmin || isStoreManager;
     const canManageDepartment = isGlobalAdmin || isStoreManager;
     const canManageHeads = isGlobalAdmin || isStoreManager;
-
-    const department = await getStoreDepartmentById(departmentId);
 
     if (!department) {
         return (
@@ -63,7 +69,7 @@ export default async function StoreDepartmentPage({ params }: PageProps) {
             <div>
                 <div className="flex items-center gap-2 mb-6">
                     <Link
-                        href={`/dashboard/stores/${storeId}`}
+                        href={`/dashboard/stores/${slug}`}
                         className="p-2 rounded-full hover:bg-accent transition text-muted-foreground hover:text-foreground"
                     >
                         <ArrowLeft className="h-5 w-5" />

@@ -6,17 +6,19 @@ import { revalidatePath } from "next/cache";
 
 // --- Birthdays ---
 
-export async function getUpcomingBirthdays(storeId: string) {
+export async function getUpcomingBirthdays(storeId?: string) {
     try {
         await connectToDB();
 
-        // Fetch all employees in store with DOB
-        // Note: Mongoose doesn't support complex date comparisons easily in aggregate for "upcoming irrespective of year" 
-        // without obscure operators. We'll fetch and filter in JS for simplicity unless scale is huge.
-        const employees = await Employee.find({
-            storeId: storeId,
+        const query: any = {
             dateOfBirth: { $exists: true, $ne: null }
-        }).select('firstName lastName dateOfBirth image').lean();
+        };
+
+        if (storeId) {
+            query.storeId = storeId;
+        }
+
+        const employees = await Employee.find(query).select('firstName lastName dateOfBirth image').lean();
 
         const today = new Date();
         const currentYear = today.getFullYear();

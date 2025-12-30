@@ -7,12 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
+import { ReportAbsenceDialog } from "@/components/absences/report-absence-dialog";
+import { Button } from "@/components/ui/button";
+import { PlusCircle } from "lucide-react";
 
 interface ProfileAbsenceTabProps {
     absenceRequests: any[];
+    employeeId: string;
 }
 
-export function ProfileAbsenceTab({ absenceRequests }: ProfileAbsenceTabProps) {
+export function ProfileAbsenceTab({ absenceRequests, employeeId }: ProfileAbsenceTabProps) {
     const t = useTranslations("Absence");
     const tc = useTranslations("Common");
     // Group requests
@@ -23,7 +27,15 @@ export function ProfileAbsenceTab({ absenceRequests }: ProfileAbsenceTabProps) {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-card-foreground">{t('history')}</h3>
-                {/* Future: Add "Report Absence" button if needed */}
+                <ReportAbsenceDialog
+                    employeeId={employeeId}
+                    trigger={
+                        <Button size="sm" className="gap-2">
+                            <PlusCircle className="h-4 w-4" />
+                            {t('report')}
+                        </Button>
+                    }
+                />
             </div>
 
             <Tabs defaultValue="pending" className="w-full">

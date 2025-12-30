@@ -10,10 +10,10 @@ import { EditStoreDepartmentDialog } from "@/components/stores/edit-store-depart
 
 interface StoreDepartmentsListClientProps {
     storeDepartments: any[];
-    storeId: string;
+    storeSlug: string;
 }
 
-export function StoreDepartmentsListClient({ storeDepartments, storeId }: StoreDepartmentsListClientProps) {
+export function StoreDepartmentsListClient({ storeDepartments, storeSlug }: StoreDepartmentsListClientProps) {
     const [isEditing, setIsEditing] = useState(false);
 
     return (
@@ -24,7 +24,8 @@ export function StoreDepartmentsListClient({ storeDepartments, storeId }: StoreD
                     <p className="text-sm text-zinc-400">Departments operating in this store</p>
                 </div>
                 <div className="flex gap-2">
-                    <AddDepartmentDialog storeId={storeId} />
+                    {/* AddDepartmentDialog still needs ID for backend, but we might want to pass it separately */}
+                    <AddDepartmentDialog storeId={storeDepartments[0]?.storeId || ""} />
                     <Button
                         variant={isEditing ? "secondary" : "outline"}
                         size="sm"
@@ -43,7 +44,7 @@ export function StoreDepartmentsListClient({ storeDepartments, storeId }: StoreD
                         {storeDepartments.map((dept: any) => (
                             <div key={dept._id} className="flex items-center justify-between rounded-lg border border-zinc-700/50 p-4 hover:bg-zinc-800 transition group">
                                 <Link
-                                    href={`/dashboard/stores/${storeId}/departments/${dept._id}`}
+                                    href={`/dashboard/stores/${storeSlug}/departments/${dept.slug}`}
                                     className="flex-1"
                                 >
                                     <div className="flex items-center gap-4">

@@ -2,13 +2,14 @@
 
 import { Link, usePathname } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Calendar, ListTodo, User, Bell } from "lucide-react";
+import { LayoutDashboard, Calendar, ListTodo, User, Bell, MessageSquare } from "lucide-react";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 
 const navItems = [
     { label: "Home", icon: LayoutDashboard, href: "/dashboard" },
     { label: "Schedule", icon: Calendar, href: "/dashboard/schedules" },
+    { label: "Messages", icon: MessageSquare, href: "/dashboard/messages" },
     { label: "Tasks", icon: ListTodo, href: "/dashboard/tasks" },
     { label: "Profile", icon: User, href: "/dashboard/profile" },
 ];

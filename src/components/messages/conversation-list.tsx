@@ -102,10 +102,17 @@ export function ConversationList({ conversations, currentUserId, onSelect }: Con
                                     </Avatar>
                                     <div className="flex-1 min-w-0 grid gap-1">
                                         <div className="flex items-center justify-between">
-                                            <span className="font-semibold truncate text-sm">{name}</span>
+                                            <span className={cn("font-semibold truncate text-sm", c.unreadCount > 0 ? "text-foreground font-bold" : "")}>{name}</span>
                                             <span className="text-[10px] text-muted-foreground whitespace-nowrap">{timestamp}</span>
                                         </div>
-                                        <p className="text-xs text-muted-foreground truncate">{lastMsg}</p>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className={cn("text-xs truncate max-w-[80%]", c.unreadCount > 0 ? "text-foreground font-medium" : "text-muted-foreground")}>{lastMsg}</p>
+                                            {c.unreadCount > 0 && (
+                                                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500 text-[10px] font-medium text-white">
+                                                    {c.unreadCount > 9 ? '9+' : c.unreadCount}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </button>
                             );

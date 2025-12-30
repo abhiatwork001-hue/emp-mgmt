@@ -134,12 +134,12 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             .lean(),
 
         Store.find(storeFilter)
-            .select("name address translations")
+            .select("name address translations slug")
             .limit(5)
             .lean(),
 
         Food.find(foodFilter)
-            .select("name category heroImg")
+            .select("name category heroImg slug")
             .populate("category", "name")
             .limit(5)
             .lean()
@@ -168,7 +168,7 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             id: store._id.toString(),
             name: storeName,
             subtext: store.address || "Store",
-            url: `/dashboard/stores/${store._id}`
+            url: `/dashboard/stores/${store.slug}`
         });
     });
 
@@ -179,7 +179,7 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             id: food._id.toString(),
             name: food.name,
             subtext: (food.category as any)?.name || "Recipe",
-            url: `/dashboard/recipes/${food._id}`,
+            url: `/dashboard/recipes/${food.slug}`,
             image: food.heroImg
         });
     });

@@ -66,7 +66,7 @@ export function RecipeListClient({ initialFoods, categories, permissions }: Reci
             {/* Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredFoods.map((food) => (
-                    <Link key={food._id} href={`/dashboard/recipes/${food._id}`} className="group">
+                    <Link key={food._id} href={`/dashboard/recipes/${food.slug}`} className="group">
                         <Card className="h-full overflow-hidden transition-all hover:shadow-md hover:border-primary/50">
                             <div className="aspect-video relative bg-muted flex items-center justify-center overflow-hidden">
                                 {food.heroImg ? (

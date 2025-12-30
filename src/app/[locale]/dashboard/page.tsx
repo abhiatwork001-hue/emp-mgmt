@@ -29,6 +29,7 @@ import { getSwapRequests } from "@/lib/actions/shift-swap.actions";
 import { SwapRequestsWidget } from "@/components/dashboard/swap-requests-widget";
 import { getTranslations } from "next-intl/server";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { RecentActivityWidget } from "@/components/dashboard/recent-activity-widget";
 
 // Helper to merge requests sort by date
 function mergeRequests(vacations: any[], absences: any[], overtime: any[], schedules: any[]) {
@@ -424,6 +425,10 @@ export default async function DashboardPage(props: DashboardPageProps) {
                     {/* Sidebar Area (1 col) - Personal Notes */}
                     <FadeInRight delay={0.3} className="lg:col-span-1">
                         <div className="sticky top-10 space-y-8">
+                            <RecentActivityWidget
+                                userId={!["admin", "hr", "owner", "super_user", "tech"].includes(viewRole) ? (session.user as any).id : undefined}
+                                userRoles={allRoles}
+                            />
                             <ReminderWidget userId={(session.user as any).id} role={viewRole} />
                             <PersonalTodoWidget
                                 initialTodos={personalTodos}

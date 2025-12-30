@@ -1,11 +1,12 @@
 "use server";
 
 import dbConnect from "@/lib/db";
-import { Employee, IEmployee, Store, Company, Notification } from "@/lib/models";
+import { Employee, IEmployee, Store, Company, Notification, ActionLog } from "@/lib/models";
 import { revalidatePath } from "next/cache";
-import bcrypt from "bcryptjs";
+import * as bcrypt from "bcryptjs";
 import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
-import crypto from 'crypto';
+import { logAction } from "./log.actions";
+import * as crypto from 'crypto';
 
 type EmployeeData = Partial<IEmployee>;
 
@@ -158,6 +159,20 @@ export async function createEmployee(data: EmployeeData) {
 
     const newEmployee = await Employee.create(data);
 
+    // Log Action
+    await logAction({
+        action: 'CREATE_EMPLOYEE',
+        performedBy: 'SYSTEM',
+        targetId: newEmployee._id,
+        targetModel: 'Employee',
+        details: {
+            firstName: newEmployee.firstName,
+            lastName: newEmployee.lastName,
+            email: newEmployee.email,
+            storeId: newEmployee.storeId
+        }
+    });
+
     // Get company name for email
     const company = await Company.findOne({});
     const companyName = company?.name || "The Chick";
@@ -296,6 +311,14 @@ export async function updateEmployee(id: string, data: EmployeeData) {
         .select("-password")
         .lean();
 
+    // Log Action
+    await logAction({
+        action: 'UPDATE_EMPLOYEE',
+        performedBy: 'SYSTEM',
+        targetId: id,
+        targetModel: 'Employee'
+    });
+
     revalidatePath("/dashboard/employees");
     return JSON.parse(JSON.stringify(updatedEmployee));
 }
@@ -334,6 +357,17 @@ export async function assignEmployeesToStore(storeId: string, employeeIds: strin
     });
 
     revalidatePath(`/dashboard/stores/${storeId}`);
+
+    // Log Action (Note: assignedBy is not passed, but we can assume SYSTEM or update signature later)
+    // For now, minimal intrusive logging
+    await logAction({
+        action: 'ASSIGN_EMPLOYEES_TO_STORE',
+        performedBy: 'SYSTEM',
+        targetId: storeId,
+        targetModel: 'Store',
+        details: { employeeIds }
+    });
+
     return { success: true };
 }
 
@@ -351,6 +385,14 @@ export async function archiveEmployee(id: string) {
     ).lean();
 
     revalidatePath("/dashboard/employees");
+
+    await logAction({
+        action: 'ARCHIVE_EMPLOYEE',
+        performedBy: 'SYSTEM', // Archive usually from admin UI, but actor not passed here
+        targetId: id,
+        targetModel: 'Employee'
+    });
+
     return JSON.parse(JSON.stringify(archived));
 }
 

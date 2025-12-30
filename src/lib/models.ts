@@ -30,6 +30,7 @@ export interface ICompany extends Document {
 
 export interface IGlobalDepartment extends Document {
     name: string;
+    slug: string;
     description?: string;
     hasHead?: boolean;
     departmentHead?: ObjectId[]; // employee ids for department heads
@@ -46,6 +47,7 @@ export interface IGlobalDepartment extends Document {
 export interface IStore extends Document {
     companyId: ObjectId;
     name: string;
+    slug: string;
     address?: string;
     translations?: ITranslations;
     managers: ObjectId[]; // employee ids
@@ -62,6 +64,7 @@ export interface IStoreDepartment extends Document {
     storeId: ObjectId;
     globalDepartmentId?: ObjectId;
     name: string;
+    slug: string;
     description?: string;
     headOfDepartment: ObjectId[]; // employee ids
     subHead?: ObjectId[]; // employee ids
@@ -367,6 +370,7 @@ const CompanySchema = new Schema<ICompany>({
 
 const GlobalDepartmentSchema = new Schema<IGlobalDepartment>({
     name: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
     description: { type: String },
     hasHead: { type: Boolean, default: false },
     departmentHead: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
@@ -381,6 +385,7 @@ const GlobalDepartmentSchema = new Schema<IGlobalDepartment>({
 const StoreSchema = new Schema<IStore>({
     companyId: { type: Schema.Types.ObjectId, ref: 'Company', required: true },
     name: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
     address: { type: String },
     translations: { type: Map, of: Object },
     managers: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
@@ -395,6 +400,7 @@ const StoreDepartmentSchema = new Schema<IStoreDepartment>({
     storeId: { type: Schema.Types.ObjectId, ref: 'Store', required: true },
     globalDepartmentId: { type: Schema.Types.ObjectId, ref: 'GlobalDepartment' },
     name: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
     description: { type: String },
     headOfDepartment: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
     subHead: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
@@ -1143,6 +1149,7 @@ export interface ICategory extends Document {
 
 export interface IFood extends Document {
     name: string;
+    slug: string;
     category: ObjectId; // Ref to Category
     description?: string; // Briefing
     heroImg?: string;
@@ -1206,6 +1213,7 @@ const CategorySchema = new Schema<ICategory>({
 
 const FoodSchema = new Schema<IFood>({
     name: { type: String, required: true, unique: true },
+    slug: { type: String, required: true, unique: true },
     category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     description: { type: String },
     heroImg: { type: String },
@@ -1267,6 +1275,13 @@ export interface IMessage extends Document {
         name?: string;
     }[];
     readBy: ObjectId[];
+    reactions?: {
+        user: ObjectId;
+        emoji: string;
+    }[];
+    isDeleted?: boolean;
+    deletedFor?: ObjectId[];
+    parentMessageId?: ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -1281,6 +1296,8 @@ export interface IConversation extends Document {
         createdAt: Date;
     };
     admins?: ObjectId[];
+    mutedBy?: ObjectId[];
+    deletedBy?: ObjectId[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -1291,11 +1308,18 @@ const MessageSchema = new Schema<IMessage>({
     content: { type: String, default: "" }, // Made optional (default empty) for implementation ease
     attachments: [{
         url: String,
-        type: { type: String, enum: ['image', 'file'] },
+        type: { type: String, enum: ['image', 'file', 'audio', 'video'] },
         name: String
     }],
-    readBy: [{ type: Schema.Types.ObjectId, ref: 'Employee' }]
-}, { timestamps: true });
+    readBy: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
+    reactions: [{
+        user: { type: Schema.Types.ObjectId, ref: 'Employee' },
+        emoji: String
+    }],
+    isDeleted: { type: Boolean, default: false },
+    deletedFor: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
+    parentMessageId: { type: Schema.Types.ObjectId, ref: 'Message' }
+}, { timestamps: true, strictPopulate: false } as any);
 
 const ConversationSchema = new Schema<IConversation>({
     participants: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
@@ -1306,8 +1330,41 @@ const ConversationSchema = new Schema<IConversation>({
         sender: { type: Schema.Types.ObjectId, ref: 'Employee' },
         createdAt: Date
     },
-    admins: [{ type: Schema.Types.ObjectId, ref: 'Employee' }]
+    admins: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
+    mutedBy: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
+    deletedBy: [{ type: Schema.Types.ObjectId, ref: 'Employee' }]
 }, { timestamps: true });
+
+export interface IActionLog extends Document {
+    action: string;
+    performedBy: ObjectId;
+    storeId?: ObjectId; // For "Where"
+    targetId?: ObjectId;
+    targetModel?: string;
+    details?: any;
+    ipAddress?: string;
+    userAgent?: string;
+    createdAt: Date;
+}
+
+const ActionLogSchema = new Schema<IActionLog>({
+    action: { type: String, required: true },
+    performedBy: { type: Schema.Types.ObjectId, ref: 'Employee' },
+    storeId: { type: Schema.Types.ObjectId, ref: 'Store' },
+    targetId: { type: Schema.Types.ObjectId },
+    targetModel: { type: String },
+    details: { type: Schema.Types.Mixed },
+    ipAddress: { type: String },
+    userAgent: { type: String }
+}, { timestamps: { createdAt: true, updatedAt: false } });
+
+// Efficient querying
+ActionLogSchema.index({ createdAt: -1 });
+ActionLogSchema.index({ performedBy: 1, createdAt: -1 });
+ActionLogSchema.index({ storeId: 1, createdAt: -1 });
+ActionLogSchema.index({ action: 1, createdAt: -1 });
+ActionLogSchema.index({ targetId: 1 });
 
 export const Conversation = mongoose.models.Conversation || mongoose.model<IConversation>('Conversation', ConversationSchema);
 export const Message = mongoose.models.Message || mongoose.model<IMessage>('Message', MessageSchema);
+export const ActionLog = mongoose.models.ActionLog || mongoose.model<IActionLog>('ActionLog', ActionLogSchema);

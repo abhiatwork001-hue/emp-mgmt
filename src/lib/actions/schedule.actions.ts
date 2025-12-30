@@ -8,6 +8,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { triggerNotification } from "@/lib/actions/notification.actions";
 import { getEmployeeById } from "@/lib/actions/employee.actions"; // Import employee fetcher
+import { logAction } from "./log.actions";
 
 const MANAGE_SCHEDULE_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr"];
 
@@ -68,7 +69,18 @@ export async function createSchedule(data: any) {
     if (!session?.user) throw new Error("Unauthorized");
     await checkSchedulePermission((session.user as any).id);
 
-    const newSchedule = await Schedule.create(data);
+    const newSchedule = await new Schedule(data).save();
+
+    // Log Action
+    await logAction({
+        action: 'CREATE_SCHEDULE',
+        performedBy: (session.user as any).id,
+        storeId: newSchedule.storeId.toString(),
+        targetId: newSchedule._id,
+        targetModel: 'Schedule',
+        details: { weekNumber: newSchedule.weekNumber, year: newSchedule.year }
+    });
+
     revalidatePath("/dashboard/schedules");
     return JSON.parse(JSON.stringify(newSchedule));
 }
@@ -83,6 +95,16 @@ export async function updateSchedule(id: string, data: any) {
         .populate("storeId", "name")
         .populate("storeDepartmentId", "name")
         .lean();
+
+    // Log Action
+    await logAction({
+        action: 'UPDATE_SCHEDULE',
+        performedBy: (session.user as any).id,
+        storeId: updated.storeId?._id?.toString() || updated.storeId?.toString(),
+        targetId: id,
+        targetModel: 'Schedule',
+        details: { status: updated.status }
+    });
 
     revalidatePath(`/dashboard/schedules/${id}`);
     revalidatePath("/dashboard/schedules");
@@ -156,6 +178,21 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         .populate("storeDepartmentId", "name")
         .populate("createdBy", "firstName lastName")
         .lean();
+
+    // Log Action
+    const logType = (status === 'review' || status === 'pending') ? 'SEND_FOR_APPROVAL' :
+        (status === 'rejected' ? 'REJECT_SCHEDULE' :
+            (status === 'published' ? 'PUBLISH_SCHEDULE' :
+                (status === 'approved' ? 'APPROVE_SCHEDULE' : 'UPDATE_SCHEDULE_STATUS')));
+
+    await logAction({
+        action: logType,
+        performedBy: userId,
+        storeId: updated.storeId?._id?.toString() || updated.storeId?.toString(),
+        targetId: id,
+        targetModel: 'Schedule',
+        details: { status, comment }
+    });
 
     revalidatePath(`/dashboard/schedules/${id}`);
 

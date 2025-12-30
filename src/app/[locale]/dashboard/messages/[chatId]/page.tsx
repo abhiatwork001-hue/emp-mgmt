@@ -8,16 +8,17 @@ export default async function ChatPage({ params }: { params: Promise<{ chatId: s
     const session = await getServerSession(authOptions);
     const { chatId } = await params;
 
+    const userId = (session?.user as any)?.id || "";
+
     const [conversation, messages] = await Promise.all([
         getConversation(chatId),
-        getMessages(chatId)
+        getMessages(chatId, userId)
     ]);
 
     if (!conversation) {
         redirect('/dashboard/messages');
     }
 
-    const userId = (session?.user as any)?.id || "";
     // Security: Check participation
     const isParticipant = conversation.participants.some((p: any) => p._id.toString() === userId);
     if (!isParticipant) {

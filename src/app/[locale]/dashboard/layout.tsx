@@ -4,7 +4,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getEmployeeById } from "@/lib/actions/employee.actions";
 import { SetupPasswordView } from "@/components/auth/setup-password-view";
-import { BottomNav, BottomNavSpacer } from "@/components/layout/bottom-nav";
+import { BottomNav } from "@/components/layout/bottom-nav";
+import { ContentWrapper } from "@/components/layout/content-wrapper";
+import { CallProvider } from "@/context/call-context";
 
 export default async function DashboardLayout({
     children,
@@ -28,9 +30,16 @@ export default async function DashboardLayout({
     // Determine Department Name & Store ID
     const deptName = employee?.storeDepartmentId?.name || "";
     const rawStoreId = employee?.storeId;
-    const storeId = (rawStoreId && typeof rawStoreId === 'object' && '_id' in rawStoreId)
-        ? (rawStoreId as any)._id.toString()
-        : rawStoreId?.toString() || "";
+    let storeSlug = "";
+    if (rawStoreId) {
+        const storeIdStr = (typeof rawStoreId === 'object' && '_id' in rawStoreId)
+            ? (rawStoreId as any)._id.toString()
+            : rawStoreId.toString();
+
+        // We need the slug. Employee usually has storeId as ref.
+        // If it's populated, we can get it. If not, we might need a quick fetch or assume it's there if we populate it in getEmployeeById.
+        storeSlug = (rawStoreId as any).slug || storeIdStr;
+    }
 
     // Determine primary role
     let primaryRole = "employee";
@@ -46,31 +55,32 @@ export default async function DashboardLayout({
     else if (normalizedRoles.includes("store_department_head")) primaryRole = "store_department_head";
 
     return (
-        <div className="flex h-screen overflow-hidden bg-background text-foreground">
+        <CallProvider>
+            <div className="flex h-screen overflow-hidden bg-background text-foreground">
 
 
-            {isPasswordChanged ? (
-                <>
-                    {/* Sidebar Wrapper */}
-                    <div className="hidden md:flex h-full z-[80] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0 overflow-visible">
-                        <Sidebar userRole={primaryRole} departmentName={deptName} storeId={storeId} />
-                    </div>
-
-                    {/* Main Content Area */}
-                    <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
-                        <Header userRole={primaryRole} departmentName={deptName} />
-                        <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
-                            {children}
-                            <BottomNavSpacer />
+                {isPasswordChanged ? (
+                    <>
+                        {/* Sidebar Wrapper */}
+                        <div className="hidden md:flex h-full z-[80] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0 overflow-visible">
+                            <Sidebar userRole={primaryRole} departmentName={deptName} storeSlug={storeSlug} />
                         </div>
-                        <BottomNav />
+
+                        {/* Main Content Area */}
+                        <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
+                            <Header userRole={primaryRole} departmentName={deptName} />
+                            <ContentWrapper>
+                                {children}
+                            </ContentWrapper>
+                            <BottomNav />
+                        </main>
+                    </>
+                ) : (
+                    <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden items-center justify-center bg-background">
+                        <SetupPasswordView />
                     </main>
-                </>
-            ) : (
-                <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden items-center justify-center bg-background">
-                    <SetupPasswordView />
-                </main>
-            )}
-        </div>
+                )}
+            </div>
+        </CallProvider>
     );
 }

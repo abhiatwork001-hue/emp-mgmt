@@ -3,6 +3,10 @@
 import dbConnect from "@/lib/db";
 import { Store, IStore, Company } from "@/lib/models";
 import { revalidatePath } from "next/cache";
+import { logAction } from "./log.actions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { slugify } from "@/lib/utils";
 
 // --- Types ---
 // Helper type for Create/Update payloads
@@ -129,6 +133,27 @@ export async function getStoreById(storeId: string) {
     return JSON.parse(JSON.stringify(store));
 }
 
+export async function getStoreBySlug(slug: string) {
+    await dbConnect();
+    const { Employee } = require("@/lib/models");
+
+    const store = await Store.findOne({ slug })
+        .populate({
+            path: "managers",
+            select: "firstName lastName email image positionId",
+            populate: { path: "positionId", select: "name" }
+        })
+        .populate({
+            path: "subManagers",
+            select: "firstName lastName email image positionId",
+            populate: { path: "positionId", select: "name" }
+        })
+        .lean();
+
+    if (!store) return null;
+    return JSON.parse(JSON.stringify(store));
+}
+
 /**
  * Create a new store
  */
@@ -139,6 +164,17 @@ export async function createStore(data: StoreData) {
     const company = await Company.findOne();
     if (!company) {
         throw new Error("No company found in database. Cannot create store without a company.");
+    }
+
+    if (data.name) {
+        data.slug = slugify(data.name);
+        // Ensure uniqueness
+        let count = 1;
+        let finalSlug = data.slug;
+        while (await Store.findOne({ slug: finalSlug })) {
+            finalSlug = `${data.slug}-${count++}`;
+        }
+        data.slug = finalSlug;
     }
 
     const newStore = await Store.create({
@@ -153,6 +189,19 @@ export async function createStore(data: StoreData) {
     });
 
     revalidatePath("/dashboard/stores");
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'CREATE_STORE',
+            performedBy: (session.user as any).id,
+            storeId: newStore._id.toString(),
+            targetId: newStore._id,
+            targetModel: 'Store',
+            details: { name: newStore.name }
+        });
+    }
+
     return JSON.parse(JSON.stringify(newStore));
 }
 
@@ -161,11 +210,25 @@ export async function createStore(data: StoreData) {
  */
 export async function updateStore(storeId: string, data: StoreData) {
     await dbConnect();
+    if (data.name) {
+        data.slug = slugify(data.name);
+    }
     const updatedStore = await Store.findByIdAndUpdate(storeId, data, { new: true }).lean();
 
     revalidatePath("/dashboard/stores");
     if (updatedStore) {
-        revalidatePath(`/dashboard/stores/${storeId}`);
+        revalidatePath(`/dashboard/stores/${updatedStore.slug}`);
+
+        const session = await getServerSession(authOptions);
+        if (session?.user) {
+            await logAction({
+                action: 'UPDATE_STORE',
+                performedBy: (session.user as any).id,
+                storeId: storeId,
+                targetId: storeId,
+                targetModel: 'Store'
+            });
+        }
     }
 
     return JSON.parse(JSON.stringify(updatedStore));
@@ -187,6 +250,21 @@ export async function archiveStore(storeId: string) {
     ).lean();
 
     revalidatePath("/dashboard/stores");
+    if (archivedStore) {
+        revalidatePath(`/dashboard/stores/${archivedStore.slug}`);
+    }
+
+    const session = await getServerSession(authOptions);
+    if (session?.user) {
+        await logAction({
+            action: 'ARCHIVE_STORE',
+            performedBy: (session.user as any).id,
+            storeId: storeId,
+            targetId: storeId,
+            targetModel: 'Store'
+        });
+    }
+
     return JSON.parse(JSON.stringify(archivedStore));
 }
 
@@ -330,7 +408,17 @@ export async function assignStoreManager(
         $addToSet: { [updateField]: employeeId }
     });
 
-    revalidatePath(`/dashboard/stores/${storeId}`);
+    const session = await getServerSession(authOptions);
+    await logAction({
+        action: isSubManager ? 'ASSIGN_SUB_MANAGER' : 'ASSIGN_MANAGER',
+        performedBy: assignedBy || (session?.user as any)?.id || 'SYSTEM',
+        storeId,
+        targetId: employeeId,
+        targetModel: 'Employee',
+        details: { storeId }
+    });
+
+    revalidatePath(`/dashboard/stores/${store.slug}`);
     return { success: true };
 }
 
