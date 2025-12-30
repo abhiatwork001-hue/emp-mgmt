@@ -175,12 +175,12 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
                                 )}
                                 <div className={cn("flex flex-col max-w-[75%]", isMe ? "items-end" : "items-start")}>
                                     {!isMe && showAvatar && conversation.type === 'group' && (
-                                        <p className="text-[10px] text-muted-foreground mb-1 font-semibold opacity-75">{msg.sender?.firstName}</p>
+                                        <p className="text-[10px] text-muted-foreground mb-1 font-semibold opacity-75 px-1">{msg.sender?.firstName}</p>
                                     )}
 
-                                    {/* Attachments */}
+                                    {/* Attachments (No Bubble) */}
                                     {msg.attachments && msg.attachments.length > 0 && (
-                                        <div className="mb-2 space-y-1">
+                                        <div className={cn("space-y-1", (msg.content && msg.content !== "Sent an attachment" && msg.content !== "\u200B") ? "mb-1" : "")}>
                                             {msg.attachments.map((att: any, i: number) => (
                                                 <div key={i} className="rounded-lg overflow-hidden">
                                                     {att.type === 'image' ? (
@@ -189,7 +189,7 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
                                                                 <img
                                                                     src={att.url}
                                                                     alt="Attachment"
-                                                                    className="max-w-full rounded-lg max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity"
+                                                                    className="max-w-full rounded-lg max-h-48 object-cover cursor-pointer hover:opacity-90 transition-opacity border"
                                                                 />
                                                             </DialogTrigger>
                                                             <DialogContent className="max-w-4xl w-full bg-transparent border-none shadow-none p-0 flex flex-col items-center justify-center">
@@ -198,7 +198,7 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
                                                                 <div className="mt-4">
                                                                     <Button
                                                                         variant="secondary"
-                                                                        onClick={() => window.open(att.url, '_blank')}
+                                                                        onClick={() => handleDownload(att.url, att.name)}
                                                                     >
                                                                         <Download className="mr-2 h-4 w-4" />
                                                                         Download
@@ -207,9 +207,9 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
                                                             </DialogContent>
                                                         </Dialog>
                                                     ) : (
-                                                        <a href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-background/20 p-2 rounded hover:bg-background/30 transition-colors">
+                                                        <a href={att.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 bg-muted p-3 rounded-lg hover:bg-muted/80 transition-colors border">
                                                             <FileIcon className="h-4 w-4" />
-                                                            <span className="underline truncate max-w-[150px]">{att.name || 'Attachment'}</span>
+                                                            <span className="underline truncate max-w-[150px] text-sm">{att.name || 'Attachment'}</span>
                                                         </a>
                                                     )}
                                                 </div>
@@ -217,15 +217,35 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
                                         </div>
                                     )}
 
-                                    {msg.content && <p className="break-words leading-relaxed">{msg.content}</p>}
-                                    <div className={cn("text-[9px] mt-1 flex items-center justify-end opacity-70 gap-1", isMe ? "text-primary-foreground" : "text-muted-foreground")}>
-                                        {format(new Date(msg.createdAt), "h:mm a")}
-                                        {msg.pending ? (
-                                            <Clock className="h-3 w-3 animate-pulse" />
-                                        ) : isMe && (
-                                            isRead ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />
-                                        )}
-                                    </div>
+                                    {/* Text Content Bubble */}
+                                    {msg.content && msg.content !== "Sent an attachment" && msg.content !== "\u200B" && (
+                                        <div className={cn(
+                                            "px-4 py-2 rounded-2xl text-sm shadow-sm",
+                                            isMe ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
+                                        )}>
+                                            <p className="break-words leading-relaxed">{msg.content}</p>
+                                            <div className={cn("text-[9px] mt-1 flex items-center justify-end opacity-70 gap-1", isMe ? "text-primary-foreground" : "text-muted-foreground")}>
+                                                {format(new Date(msg.createdAt), "h:mm a")}
+                                                {msg.pending ? (
+                                                    <Clock className="h-3 w-3 animate-pulse" />
+                                                ) : isMe && (
+                                                    isRead ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Standalone Timestamp (if no text bubble) */}
+                                    {(!msg.content || msg.content === "Sent an attachment" || msg.content === "\u200B") && (
+                                        <div className={cn("text-[9px] mt-1 flex items-center opacity-70 gap-1 px-1", isMe ? "justify-end" : "justify-start")}>
+                                            {format(new Date(msg.createdAt), "h:mm a")}
+                                            {msg.pending ? (
+                                                <Clock className="h-3 w-3 animate-pulse" />
+                                            ) : isMe && (
+                                                isRead ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )
