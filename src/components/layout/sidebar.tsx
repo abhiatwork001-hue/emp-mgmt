@@ -22,6 +22,7 @@ import {
     ListTodo,
     Megaphone,
     Inbox,
+    MessageSquare,
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
@@ -37,7 +38,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 
 const routeGroups = [
-    { title: "Overview", routes: ["Home", "Notices", "Tasks", "Notes"] },
+    { title: "Overview", routes: ["Home", "Notices", "Messages", "Tasks", "Notes"] },
     { title: "Operations", routes: ["Stores", "Departments", "Recipes", "Schedule", "Tips"] },
     { title: "Team Management", routes: ["Employees", "Positions", "Vacations", "Absences"] },
     { title: "Account", routes: ["Profile", "Approvals", "Settings"] },
@@ -47,6 +48,7 @@ const routes = [
     { label: "Home", icon: LayoutDashboard, href: "/dashboard", color: "text-sky-500" },
     { label: "Notices", icon: Megaphone, href: "/dashboard/notices", color: "text-orange-500" },
     { label: "Approvals", icon: Inbox, href: "/dashboard/approvals", color: "text-red-500" },
+    { label: "Messages", icon: MessageSquare, href: "/dashboard/messages", color: "text-blue-500" },
     { label: "Tasks", icon: ListTodo, href: "/dashboard/tasks", color: "text-purple-500" },
     { label: "Notes", icon: StickyNote, href: "/dashboard/notes", color: "text-yellow-400" },
     { label: "Stores", icon: Store, href: "/dashboard/stores", color: "text-violet-500" },

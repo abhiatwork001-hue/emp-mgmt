@@ -13,6 +13,7 @@ import { EditEmployeeDialog } from "@/components/employees/edit-employee-dialog"
 import { RequestVacationDialog } from "@/components/vacations/request-vacation-dialog";
 import { ReportAbsenceDialog } from "@/components/absences/report-absence-dialog";
 import { ProfileWorkTab } from "@/components/employees/profile-work-tab";
+import { AssignTaskButton } from "@/components/employees/assign-task-button";
 import { format } from "date-fns";
 
 export default async function EmployeeDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -146,7 +147,10 @@ export default async function EmployeeDetailsPage({ params }: { params: Promise<
                                     </div>
                                 </div>
 
-                                <EditEmployeeDialog employee={employee} />
+                                <div className="flex flex-col gap-3 pt-4">
+                                    <EditEmployeeDialog employee={employee} />
+                                    <AssignTaskButton employee={employee} currentUser={session.user} />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

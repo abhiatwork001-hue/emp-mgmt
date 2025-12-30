@@ -36,9 +36,11 @@ interface CreateTaskDialogProps {
     onOpenChange: (open: boolean) => void;
     currentUserId: string;
     currentUser: any;
-    stores: any[];
-    managers: any[]; // List of potential assignees
-    storeDepartments: any[];
+    stores?: any[];
+    managers?: any[]; // List of potential assignees
+    storeDepartments?: any[];
+    initialAssignments?: { type: string; id: string; label: string }[];
+    taskToEdit?: any;
 }
 
 export function CreateTaskDialog({
@@ -46,17 +48,24 @@ export function CreateTaskDialog({
     onOpenChange,
     currentUserId,
     currentUser,
-    stores,
-    managers: allEmployees, // Renamed for clarity since it contains all
-    storeDepartments
+    stores = [],
+    managers: allEmployees = [], // Renamed for clarity since it contains all
+    storeDepartments = [],
+    initialAssignments = [],
+    taskToEdit
 }: CreateTaskDialogProps) {
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [priority, setPriority] = useState("medium");
     const [deadline, setDeadline] = useState("");
+    const [requiresSubmission, setRequiresSubmission] = useState(false);
+
+    // Required Files State
+    const [requiredFileNames, setRequiredFileNames] = useState<string[]>([]);
+    const [newRequiredFile, setNewRequiredFile] = useState("");
 
     // Assignment Builder State
-    const [assignments, setAssignments] = useState<{ type: string; id: string; label: string }[]>([]);
+    const [assignments, setAssignments] = useState<{ type: string; id: string; label: string }[]>(initialAssignments);
 
     // RBAC Logic
     const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
@@ -99,12 +108,36 @@ export function CreateTaskDialog({
     // Determine default scope on open or role change
     useEffect(() => {
         if (open) {
+            if (taskToEdit) {
+                setTitle(taskToEdit.title);
+                setDescription(taskToEdit.description || "");
+                setPriority(taskToEdit.priority);
+                setDeadline(taskToEdit.deadline ? new Date(taskToEdit.deadline).toISOString().split('T')[0] : "");
+                setRequiresSubmission(taskToEdit.requiresSubmission || false);
+                setRequiredFileNames(taskToEdit.requiredFileNames || []);
+                setTodos(taskToEdit.todos?.map((t: any) => t.text) || []);
+                setAssignments([]);
+            } else {
+                setTitle("");
+                setDescription("");
+                setPriority("medium");
+                setDeadline("");
+                setRequiresSubmission(false);
+                setRequiredFileNames([]);
+                setTodos([]);
+                if (initialAssignments.length > 0) {
+                    setAssignments(initialAssignments);
+                } else {
+                    setAssignments([]);
+                }
+            }
+
             if (isGlobalAdmin) setScope("global");
             else if (isStoreManager) setScope("store");
             else if (isStoreDeptHead) setScope("department");
             else setScope("individual"); // Fallback
         }
-    }, [open, isGlobalAdmin, isStoreManager, isStoreDeptHead]);
+    }, [open, isGlobalAdmin, isStoreManager, isStoreDeptHead, initialAssignments]);
 
     // Auto-select entity if only one exists
     useEffect(() => {
@@ -130,6 +163,18 @@ export function CreateTaskDialog({
 
     const removeTodo = (idx: number) => {
         setTodos(todos.filter((_, i) => i !== idx));
+    };
+
+    const handleAddRequiredFile = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newRequiredFile.trim()) {
+            setRequiredFileNames([...requiredFileNames, newRequiredFile.trim()]);
+            setNewRequiredFile("");
+        }
+    };
+
+    const removeRequiredFile = (idx: number) => {
+        setRequiredFileNames(requiredFileNames.filter((_, i) => i !== idx));
     };
 
     const addAssignment = () => {
@@ -194,7 +239,26 @@ export function CreateTaskDialog({
     };
 
     const handleSubmit = async () => {
-        if (!title || assignments.length === 0) return;
+        if (!title.trim()) return;
+
+        if (taskToEdit) {
+            const { updateTask } = await import("@/lib/actions/task.actions");
+            const res = await updateTask(taskToEdit._id, {
+                title,
+                description,
+                priority,
+                deadline,
+                requiresSubmission,
+                requiredFileNames,
+                todos
+            });
+            if (res.success) {
+                onOpenChange(false);
+            }
+            return;
+        }
+
+        if (assignments.length === 0) return;
 
         // Simplify assignments for backend
         const payloadAssignments = assignments.map(a => ({ type: a.type, id: a.id }));
@@ -206,7 +270,9 @@ export function CreateTaskDialog({
             deadline,
             assignments: payloadAssignments,
             todos,
-            creatorId: currentUserId
+            creatorId: currentUserId,
+            requiresSubmission,
+            requiredFileNames
         });
 
         if (res.success) {
@@ -215,7 +281,9 @@ export function CreateTaskDialog({
             setTitle("");
             setDescription("");
             setTodos([]);
-            setAssignments([]);
+            setRequiresSubmission(false);
+            setRequiredFileNames([]);
+            setAssignments(initialAssignments);
         }
     };
 
@@ -262,6 +330,65 @@ export function CreateTaskDialog({
                             <Label htmlFor="desc">Description</Label>
                             <Textarea id="desc" value={description} onChange={e => setDescription(e.target.value)} rows={2} />
                         </div>
+
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="submission"
+                                checked={requiresSubmission}
+                                onCheckedChange={(checked) => setRequiresSubmission(checked as boolean)}
+                            />
+                            <Label htmlFor="submission" className="font-medium cursor-pointer">
+                                Require File Submission
+                            </Label>
+                        </div>
+
+                        {requiresSubmission && (
+                            <div className="space-y-3 bg-muted/20 p-3 rounded-md border">
+                                <Label className="text-xs font-semibold uppercase text-muted-foreground">Required Files (Optional Checklist)</Label>
+                                <div className="space-y-2">
+                                    {requiredFileNames.map((name, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 group">
+                                            <div className="flex-1 text-sm p-2 bg-background border rounded-md font-medium">
+                                                {name}
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => removeRequiredFile(idx)}
+                                                className="h-8 w-8 p-0 opacity-50 group-hover:opacity-100 hover:text-red-500"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <div className="flex gap-2">
+                                        <Input
+                                            value={newRequiredFile}
+                                            onChange={(e) => setNewRequiredFile(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleAddRequiredFile(e)}
+                                            placeholder="e.g. Safety Cert, ID Card"
+                                            className="flex-1 h-9 text-sm"
+                                        />
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            variant="secondary"
+                                            onClick={handleAddRequiredFile}
+                                            className="h-9 w-9 p-0"
+                                        >
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground">
+                                        Define specific files to be uploaded. If left empty, a single generic upload slot will be shown.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                            Assignees must upload a file (Image/PDF) to complete this task (e.g., ID Scan, Report).
+                        </p>
                     </div>
 
                     {/* Todos */}
@@ -291,129 +418,130 @@ export function CreateTaskDialog({
                     </div>
 
                     {/* Assignments - Enhanced */}
-                    <div className="space-y-3 border-t pt-4">
-                        <Label>Assign To <span className="text-muted-foreground font-normal">(Multiple selections allowed)</span></Label>
+                    {!taskToEdit && (
+                        <div className="space-y-3 border-t pt-4">
+                            <Label>Assign To <span className="text-muted-foreground font-normal">(Multiple selections allowed)</span></Label>
 
-                        {/* Selector Area */}
-                        <div className="p-4 border rounded-lg bg-muted/20 space-y-4">
-                            <div className="flex gap-2">
-                                <div className="w-1/3">
-                                    <Label className="text-xs mb-1 block text-muted-foreground">Scope</Label>
-                                    <Select value={scope} onValueChange={(v) => { setScope(v); setSelectedEntityId(""); setSelectedSubOption("all"); }}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="individual">Individual</SelectItem>
-                                            {(isGlobalAdmin || isStoreManager) && <SelectItem value="store">Store Team</SelectItem>}
-                                            {(isGlobalAdmin || isStoreManager || isStoreDeptHead) && <SelectItem value="department">Department</SelectItem>}
-                                            {(isGlobalAdmin || isGlobalHead) && <SelectItem value="global">{(isGlobalHead ? "My Global Dept" : "Company Wide")}</SelectItem>}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="flex-1">
-                                    <Label className="text-xs mb-1 block text-muted-foreground">Target</Label>
-
-                                    {scope === 'individual' && (
-                                        <Select value={selectedEntityId} onValueChange={setSelectedEntityId}>
-                                            <SelectTrigger><SelectValue placeholder="Select Employee..." /></SelectTrigger>
+                            {/* Selector Area */}
+                            <div className="p-4 border rounded-lg bg-muted/20 space-y-4">
+                                <div className="flex gap-2">
+                                    <div className="w-1/3">
+                                        <Label className="text-xs mb-1 block text-muted-foreground">Scope</Label>
+                                        <Select value={scope} onValueChange={(v) => { setScope(v); setSelectedEntityId(""); setSelectedSubOption("all"); }}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
                                             <SelectContent>
-                                                {(isStoreDeptHead ? deptHeadEmployees : availableEmployees).map(m => (
-                                                    <SelectItem key={m._id} value={m._id}>{m.firstName} {m.lastName}</SelectItem>
-                                                ))}
+                                                <SelectItem value="individual">Individual</SelectItem>
+                                                {(isGlobalAdmin || isStoreManager) && <SelectItem value="store">Store Team</SelectItem>}
+                                                {(isGlobalAdmin || isStoreManager || isStoreDeptHead) && <SelectItem value="department">Department</SelectItem>}
+                                                {(isGlobalAdmin || isGlobalHead) && <SelectItem value="global">{(isGlobalHead ? "My Global Dept" : "Company Wide")}</SelectItem>}
                                             </SelectContent>
                                         </Select>
-                                    )}
+                                    </div>
 
-                                    {scope === 'store' && (
-                                        <div className="flex gap-2">
-                                            <Select value={selectedEntityId} onValueChange={setSelectedEntityId} disabled={availableStores.length === 1}>
-                                                <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Store..." /></SelectTrigger>
+                                    <div className="flex-1">
+                                        <Label className="text-xs mb-1 block text-muted-foreground">Target</Label>
+
+                                        {scope === 'individual' && (
+                                            <Select value={selectedEntityId} onValueChange={setSelectedEntityId}>
+                                                <SelectTrigger><SelectValue placeholder="Select Employee..." /></SelectTrigger>
                                                 <SelectContent>
-                                                    {availableStores.map(s => (
-                                                        <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
+                                                    {(isStoreDeptHead ? deptHeadEmployees : availableEmployees).map(m => (
+                                                        <SelectItem key={m._id} value={m._id}>{m.firstName} {m.lastName}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
-                                            <Select value={selectedSubOption} onValueChange={setSelectedSubOption}>
-                                                <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+                                        )}
+
+                                        {scope === 'store' && (
+                                            <div className="flex gap-2">
+                                                <Select value={selectedEntityId} onValueChange={setSelectedEntityId} disabled={availableStores.length === 1}>
+                                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Store..." /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {availableStores.map(s => (
+                                                            <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Select value={selectedSubOption} onValueChange={setSelectedSubOption}>
+                                                    <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="all">All Employees</SelectItem>
+                                                        <SelectItem value="managers">Managers Only</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        )}
+
+                                        {scope === 'department' && (
+                                            <Select value={selectedEntityId} onValueChange={setSelectedEntityId} disabled={availableDepts.length === 1}>
+                                                <SelectTrigger><SelectValue placeholder="Select Department..." /></SelectTrigger>
                                                 <SelectContent>
-                                                    <SelectItem value="all">All Employees</SelectItem>
-                                                    <SelectItem value="managers">Managers Only</SelectItem>
+                                                    {availableDepts.map(d => (
+                                                        <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
-                                        </div>
-                                    )}
+                                        )}
 
-                                    {scope === 'department' && (
-                                        <Select value={selectedEntityId} onValueChange={setSelectedEntityId} disabled={availableDepts.length === 1}>
-                                            <SelectTrigger><SelectValue placeholder="Select Department..." /></SelectTrigger>
-                                            <SelectContent>
-                                                {availableDepts.map(d => (
-                                                    <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
-
-                                    {scope === 'global' && (
-                                        <Select value={selectedSubOption} onValueChange={setSelectedSubOption}>
-                                            <SelectTrigger><SelectValue placeholder="Select Group..." /></SelectTrigger>
-                                            <SelectContent>
-                                                {isGlobalAdmin ? (
-                                                    <>
-                                                        <SelectItem value="all">Entire Company (Every Employee)</SelectItem>
-                                                        <SelectItem value="store_managers">All Store Managers</SelectItem>
-                                                        <SelectItem value="dept_heads">All Department Heads</SelectItem>
-                                                    </>
-                                                ) : (
-                                                    <SelectItem value="dept_global">All Departments (In my scope)</SelectItem>
-                                                )}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
+                                        {scope === 'global' && (
+                                            <Select value={selectedSubOption} onValueChange={setSelectedSubOption}>
+                                                <SelectTrigger><SelectValue placeholder="Select Group..." /></SelectTrigger>
+                                                <SelectContent>
+                                                    {isGlobalAdmin ? (
+                                                        <>
+                                                            <SelectItem value="all">Entire Company (Every Employee)</SelectItem>
+                                                            <SelectItem value="store_managers">All Store Managers</SelectItem>
+                                                            <SelectItem value="dept_heads">All Department Heads</SelectItem>
+                                                        </>
+                                                    ) : (
+                                                        <SelectItem value="dept_global">All Departments (In my scope)</SelectItem>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                    </div>
                                 </div>
+
+                                <Button
+                                    type="button"
+                                    className="w-full"
+                                    onClick={addAssignment}
+                                    disabled={
+                                        (scope === 'individual' && !selectedEntityId) ||
+                                        (scope === 'store' && !selectedEntityId) ||
+                                        (scope === 'department' && !selectedEntityId)
+                                    }
+                                >
+                                    <Plus className="h-4 w-4 mr-2" /> Add to List
+                                </Button>
                             </div>
 
-                            <Button
-                                type="button"
-                                className="w-full"
-                                onClick={addAssignment}
-                                disabled={
-                                    (scope === 'individual' && !selectedEntityId) ||
-                                    (scope === 'store' && !selectedEntityId) ||
-                                    (scope === 'department' && !selectedEntityId)
-                                }
-                            >
-                                <Plus className="h-4 w-4 mr-2" /> Add to List
-                            </Button>
+                            {/* Selected Chips */}
+                            <div className="flex flex-wrap gap-2 mt-2 min-h-[40px]">
+                                {assignments.length === 0 && <span className="text-sm text-muted-foreground italic py-2">No recipients added yet.</span>}
+                                {assignments.map((a, idx) => (
+                                    <Badge key={idx} variant="secondary" className="gap-2 py-1 pl-2 pr-1">
+                                        {a.label}
+                                        <div
+                                            className="rounded-full hover:bg-destructive hover:text-destructive-foreground p-0.5 cursor-pointer transition-colors"
+                                            onClick={() => removeAssignment(idx)}
+                                        >
+                                            <X className="h-3 w-3" />
+                                        </div>
+                                    </Badge>
+                                ))}
+                            </div>
                         </div>
-
-                        {/* Selected Chips */}
-                        <div className="flex flex-wrap gap-2 mt-2 min-h-[40px]">
-                            {assignments.length === 0 && <span className="text-sm text-muted-foreground italic py-2">No recipients added yet.</span>}
-                            {assignments.map((a, idx) => (
-                                <Badge key={idx} variant="secondary" className="gap-2 py-1 pl-2 pr-1">
-                                    {a.label}
-                                    <div
-                                        className="rounded-full hover:bg-destructive hover:text-destructive-foreground p-0.5 cursor-pointer transition-colors"
-                                        onClick={() => removeAssignment(idx)}
-                                    >
-                                        <X className="h-3 w-3" />
-                                    </div>
-                                </Badge>
-                            ))}
-                        </div>
-                    </div>
-
+                    )}
                 </div>
 
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleSubmit} disabled={!title || assignments.length === 0}>
-                        Create {assignments.length > 1 ? `Tasks (${assignments.length} groups)` : 'Task'}
+                    <Button onClick={handleSubmit} disabled={!title || (!taskToEdit && assignments.length === 0)}>
+                        {taskToEdit ? "Save Changes" : `Create ${assignments.length > 1 ? `Tasks (${assignments.length})` : 'Task'}`}
                     </Button>
                 </DialogFooter>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }

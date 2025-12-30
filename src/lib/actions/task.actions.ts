@@ -18,6 +18,8 @@ export async function createTask(data: {
     assignments: { type: string; id: string }[];
     todos: string[];
     creatorId: string;
+    requiresSubmission?: boolean;
+    requiredFileNames?: string[];
 }) {
     try {
         await connectToDB();
@@ -74,6 +76,8 @@ export async function createTask(data: {
             createdBy: data.creatorId,
             assignedTo: assignedTo,
             todos: data.todos.map(text => ({ text, completed: false })),
+            requiresSubmission: data.requiresSubmission || false,
+            requiredFileNames: data.requiredFileNames || [],
             status: 'todo', // Global status
             completedBy: []
         });
@@ -299,5 +303,90 @@ export async function addTaskComment(taskId: string, userId: string, text: strin
         return { success: true };
     } catch (error) {
         return { success: false, error: "Failed to add comment" };
+    }
+}
+
+// --- Update Task Details ---
+export async function updateTask(taskId: string, data: {
+    title: string;
+    description: string;
+    priority: string;
+    deadline?: string;
+    requiresSubmission?: boolean;
+    requiredFileNames?: string[];
+    todos: string[];
+}) {
+    try {
+        await connectToDB();
+
+        await Task.findByIdAndUpdate(taskId, {
+            title: data.title,
+            description: data.description,
+            priority: data.priority,
+            deadline: data.deadline ? new Date(data.deadline) : undefined,
+            requiresSubmission: data.requiresSubmission,
+            requiredFileNames: data.requiredFileNames || [],
+            todos: data.todos.map(text => ({ text, completed: false }))
+        });
+
+        revalidatePath("/dashboard");
+        return { success: true };
+    } catch (error) {
+        console.error("Error updating task:", error);
+        return { success: false, error: "Failed to update task" };
+    }
+}
+
+// --- Submissions ---
+export async function submitTaskFile(taskId: string, userId: string, fileUrl: string, fileName?: string, requirementName?: string) {
+    try {
+        await connectToDB();
+
+        // 1. Add Submission
+        // We use { new: true } to get the updated task and check requirements
+        const task = await Task.findByIdAndUpdate(taskId, {
+            $push: {
+                submissions: {
+                    userId,
+                    fileUrl,
+                    fileName: fileName || "File",
+                    requirementName,
+                    submittedAt: new Date()
+                }
+            }
+        }, { new: true });
+
+        // 2. Check Completion Logic
+        let shouldComplete = true;
+
+        if (task.requiredFileNames && task.requiredFileNames.length > 0) {
+            // Check if user has submitted all required files
+            // submissions userId is ObjectId
+            const userSubmissions = task.submissions?.filter((s: any) =>
+                s.userId.toString() === userId
+            ) || [];
+
+            const submittedRequirements = new Set(
+                userSubmissions.map((s: any) => s.requirementName).filter(Boolean)
+            );
+
+            // Check if all required names are in submitted set
+            const allMet = task.requiredFileNames.every((req: string) => submittedRequirements.has(req));
+            if (!allMet) shouldComplete = false;
+        }
+
+        if (shouldComplete) {
+            await Task.findByIdAndUpdate(taskId, {
+                $addToSet: {
+                    completedBy: { userId, completedAt: new Date() }
+                }
+            });
+        }
+
+        revalidatePath("/dashboard");
+        return { success: true };
+    } catch (error) {
+        console.error("Submission error:", error);
+        return { success: false, error: "Failed to submit file" };
     }
 }

@@ -50,6 +50,20 @@ export const ourFileRouter = {
             console.log("Profile image upload complete", file.url);
             return { uploadedBy: metadata.userId };
         }),
+
+    taskAttachment: f({
+        image: { maxFileSize: "8MB", maxFileCount: 1 },
+        pdf: { maxFileSize: "8MB", maxFileCount: 1 },
+    })
+        .middleware(async ({ req }) => {
+            const user = await auth(req);
+            if (!user) throw new UploadThingError("Unauthorized");
+            return { userId: user.id };
+        })
+        .onUploadComplete(async ({ metadata, file }) => {
+            console.log("Task attachment uploaded", file.url);
+            return { uploadedBy: metadata.userId, url: file.url };
+        }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

@@ -116,6 +116,9 @@ export default async function TaskAnalyticsPage(props: { params: Promise<{ id: s
                         taskId={task._id}
                         currentUserId={session.user.id}
                         isCompleted={isCompletedByMe}
+                        task={task}
+                        canEdit={isCreator || isManager}
+                        isAssigned={isAssigned}
                     />
                 </div>
             </div>
@@ -252,23 +255,49 @@ export default async function TaskAnalyticsPage(props: { params: Promise<{ id: s
                                             {completedUsers.length === 0 ? (
                                                 <div className="py-8 text-center text-muted-foreground text-sm">No completions yet.</div>
                                             ) : (
-                                                completedUsers.map((cb: any, idx: number) => (
-                                                    <div key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-background transition-colors opacity-75">
-                                                        <Avatar className="h-8 w-8 border">
-                                                            <AvatarImage src={cb.userId.image} />
-                                                            <AvatarFallback>{cb.userId.firstName?.[0]}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center justify-between">
-                                                                <p className="text-sm font-medium truncate">{cb.userId.firstName} {cb.userId.lastName}</p>
-                                                                <CheckCircle2 className="h-3 w-3 text-green-600" />
+                                                completedUsers.map((cb: any, idx: number) => {
+                                                    const uId = cb.userId?._id?.toString() || cb.userId?.toString();
+                                                    const userSubmissions = task.submissions?.filter((s: any) =>
+                                                        (s.userId?._id || s.userId)?.toString() === uId
+                                                    ) || [];
+
+                                                    return (
+                                                        <div key={idx} className="flex items-start gap-3 p-2 rounded-lg hover:bg-background transition-colors opacity-75 border-b last:border-0 border-dashed">
+                                                            <Avatar className="h-8 w-8 border mt-1">
+                                                                <AvatarImage src={cb.userId.image} />
+                                                                <AvatarFallback>{cb.userId.firstName?.[0]}</AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center justify-between">
+                                                                    <p className="text-sm font-medium truncate">{cb.userId.firstName} {cb.userId.lastName}</p>
+                                                                    <CheckCircle2 className="h-3 w-3 text-green-600" />
+                                                                </div>
+                                                                <p className="text-xs text-muted-foreground truncate">
+                                                                    {format(new Date(cb.completedAt), "MMM d, h:mm a")}
+                                                                </p>
+                                                                {/* Submitted Files List */}
+                                                                {userSubmissions.length > 0 && (
+                                                                    <div className="mt-2 space-y-1">
+                                                                        {userSubmissions.map((sub: any, sIdx: number) => (
+                                                                            <div key={sIdx} className="flex items-center gap-2 text-xs">
+                                                                                <span className="font-semibold text-muted-foreground">{sub.requirementName || "File"}:</span>
+                                                                                <a
+                                                                                    href={sub.fileUrl}
+                                                                                    target="_blank"
+                                                                                    rel="noopener noreferrer"
+                                                                                    className="text-blue-600 hover:underline flex items-center gap-1 font-medium truncate max-w-[150px]"
+                                                                                    title={sub.fileName}
+                                                                                >
+                                                                                    {sub.fileName || "View"}
+                                                                                </a>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            <p className="text-xs text-muted-foreground truncate">
-                                                                {format(new Date(cb.completedAt), "MMM d, h:mm a")}
-                                                            </p>
                                                         </div>
-                                                    </div>
-                                                ))
+                                                    );
+                                                })
                                             )}
                                         </TabsContent>
                                     </div>

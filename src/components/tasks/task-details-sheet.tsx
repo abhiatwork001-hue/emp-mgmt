@@ -1,5 +1,5 @@
 "use client";
-
+import { CreateTaskDialog } from "@/components/tasks/create-task-dialog";
 import { useState } from "react";
 import { format } from "date-fns";
 import {
@@ -9,12 +9,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-    MessageSquare, CheckCircle2, Clock, Calendar, type LucideIcon, User
+    MessageSquare, CheckCircle2, Clock, Calendar, type LucideIcon, User, Edit
 } from "lucide-react";
 import { addTaskComment, updateTaskStatus } from "@/lib/actions/task.actions";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Link from "next/link";
+import { UploadDropzone } from "@/lib/uploadthing";
+import { FileIcon, Download, UploadCloud } from "lucide-react";
 
 interface TaskDetailsSheetProps {
     task: any;
@@ -26,6 +28,7 @@ interface TaskDetailsSheetProps {
 export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskDetailsSheetProps) {
     const [commentText, setCommentText] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
 
     if (!task) return null;
 
@@ -36,6 +39,8 @@ export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskD
     };
 
     const isCompletedByMe = task.completedBy?.some((cb: any) => cb.userId === currentUserId);
+    const isSubmittedByMe = task.submissions?.some((s: any) => s.userId === currentUserId);
+
     const isAssigned = task.assignedTo?.some((a: any) => {
         const id = a.id?._id || a.id;
         return id?.toString() === currentUserId;
@@ -70,9 +75,16 @@ export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskD
                         <SheetTitle className="text-xl font-bold leading-tight">
                             {task.title}
                         </SheetTitle>
-                        <Badge variant="secondary" className={priorities[task.priority]}>
-                            {task.priority}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                            {task.createdBy && (task.createdBy._id === currentUserId || task.createdBy === currentUserId) && (
+                                <Button variant="outline" size="sm" onClick={() => setIsEditOpen(true)} className="h-6 text-xs gap-1 px-2.5">
+                                    <Edit className="h-3 w-3" /> Edit
+                                </Button>
+                            )}
+                            <Badge variant="secondary" className={priorities[task.priority]}>
+                                {task.priority}
+                            </Badge>
+                        </div>
                     </div>
                     <div>
                         <Button variant="outline" size="sm" asChild className="w-full">
@@ -145,6 +157,35 @@ export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskD
                         </div>
                     )}
 
+                    {/* Submissions Section */}
+                    {task.submissions && task.submissions.length > 0 && (
+                        <div className="space-y-3 pt-4 border-t">
+                            <h4 className="text-sm font-semibold flex items-center gap-2">
+                                <FileIcon className="h-4 w-4" /> Submissions
+                            </h4>
+                            <div className="grid grid-cols-1 gap-2">
+                                {task.submissions.map((sub: any, idx: number) => (
+                                    <div key={idx} className="flex justify-between items-center bg-muted/40 p-3 rounded-md border border-border/50">
+                                        <div className="flex items-center gap-3">
+                                            <div className="bg-background p-1.5 rounded-full border">
+                                                <User className="h-3 w-3" />
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-xs">Submitted by User</span>
+                                                <a href={sub.fileUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium">
+                                                    {sub.fileName || "View Document"} <Download className="h-3 w-3" />
+                                                </a>
+                                            </div>
+                                        </div>
+                                        <Badge variant="outline" className="text-[10px] h-5">
+                                            {format(new Date(sub.submittedAt), "MMM d, h:mm a")}
+                                        </Badge>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Comments Section */}
                     <div className="space-y-4 pt-4 border-t">
                         <h4 className="text-sm font-semibold flex items-center gap-2">
@@ -183,24 +224,67 @@ export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskD
                             className="min-h-[80px] resize-none"
                         />
                     </div>
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col gap-4">
                         {isAssigned ? (
-                            <Button
-                                variant={isCompletedByMe ? "outline" : "default"}
-                                className={isCompletedByMe ? "border-green-600 text-green-600 hover:bg-green-50" : ""}
-                                onClick={handleToggleStatus}
-                            >
-                                {isCompletedByMe ? "Mark as Incomplete" : "Mark as Complete"}
-                            </Button>
+                            task.requiresSubmission && !isCompletedByMe ? (
+                                <div className="w-full bg-muted/20 p-4 rounded-lg border-2 border-dashed border-muted-foreground/20">
+                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                                        <UploadCloud className="h-4 w-4" /> Upload Required File
+                                    </h4>
+                                    <UploadDropzone
+                                        endpoint="taskAttachment"
+                                        onClientUploadComplete={async (res: any) => {
+                                            if (res && res[0]) {
+                                                await import("@/lib/actions/task.actions").then(mod =>
+                                                    mod.submitTaskFile(task._id, currentUserId, res[0].url, res[0].name)
+                                                );
+                                                onClose();
+                                            }
+                                        }}
+                                        onUploadError={(error: Error) => {
+                                            alert(`Upload failed: ${error.message}`);
+                                        }}
+                                        appearance={{
+                                            button: "bg-primary text-primary-foreground hover:bg-primary/90 w-full",
+                                            container: "w-full"
+                                        }}
+                                    />
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between w-full">
+                                    <Button
+                                        variant={isCompletedByMe ? "outline" : "default"}
+                                        className={isCompletedByMe ? "border-green-600 text-green-600 hover:bg-green-50 w-full md:w-auto" : "w-full md:w-auto"}
+                                        onClick={handleToggleStatus}
+                                    >
+                                        {isCompletedByMe ? "Mark as Incomplete" : "Mark as Complete"}
+                                    </Button>
+                                    <div />
+                                </div>
+                            )
                         ) : (
-                            <div /> // Spacer
+                            <div />
                         )}
-                        <Button onClick={handleComment} disabled={!commentText.trim() || isSubmitting}>
-                            {isSubmitting ? "Posting..." : "Post Comment"}
-                        </Button>
+
+                        <div className="flex items-center justify-between pt-2">
+                            <span />
+                            <Button onClick={handleComment} disabled={!commentText.trim() || isSubmitting} variant="ghost" size="sm">
+                                Post Comment
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </SheetContent>
+
+            {isEditOpen && (
+                <CreateTaskDialog
+                    open={isEditOpen}
+                    onOpenChange={setIsEditOpen}
+                    currentUserId={currentUserId}
+                    currentUser={{ _id: currentUserId, roles: [] }} // Limited context is fine for edit as assignments are hidden
+                    taskToEdit={task}
+                />
+            )}
         </Sheet>
     );
 }

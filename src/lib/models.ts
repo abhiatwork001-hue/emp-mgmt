@@ -715,6 +715,17 @@ export interface ITask extends Document {
         completedAt: Date;
     }[];
 
+    // Submissions
+    requiresSubmission: boolean;
+    requiredFileNames: string[];
+    submissions: {
+        userId: ObjectId;
+        fileUrl: string;
+        fileName?: string;
+        requirementName?: string;
+        submittedAt: Date;
+    }[];
+
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -749,8 +760,18 @@ const TaskSchema = new Schema<ITask>({
     readBy: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
     completedBy: [{
         userId: { type: Schema.Types.ObjectId, ref: 'Employee' },
-        completedAt: { type: Date, default: Date.now }
+        completedAt: { type: Date }
     }],
+
+    requiresSubmission: { type: Boolean, default: false },
+    requiredFileNames: { type: [String], default: [] },
+    submissions: [{
+        userId: { type: Schema.Types.ObjectId, ref: 'Employee' },
+        fileUrl: { type: String },
+        fileName: { type: String },
+        requirementName: { type: String },
+        submittedAt: { type: Date, default: Date.now }
+    }]
 }, { timestamps: true });
 
 export interface INote extends Document {
@@ -1233,3 +1254,60 @@ const FoodSchema = new Schema<IFood>({
 
 export const Category = mongoose.models.Category || mongoose.model<ICategory>('Category', CategorySchema);
 export const Food = mongoose.models.Food || mongoose.model<IFood>('Food', FoodSchema);
+
+// --- Messaging Models ---
+
+export interface IMessage extends Document {
+    conversationId: ObjectId;
+    sender: ObjectId;
+    content: string;
+    attachments?: {
+        url: string;
+        type: 'image' | 'file';
+        name?: string;
+    }[];
+    readBy: ObjectId[];
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+export interface IConversation extends Document {
+    participants: ObjectId[];
+    type: 'direct' | 'group';
+    name?: string;
+    lastMessage?: {
+        content: string;
+        sender: ObjectId;
+        createdAt: Date;
+    };
+    admins?: ObjectId[];
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const MessageSchema = new Schema<IMessage>({
+    conversationId: { type: Schema.Types.ObjectId, ref: 'Conversation', required: true },
+    sender: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
+    content: { type: String, default: "" }, // Made optional (default empty) for implementation ease
+    attachments: [{
+        url: String,
+        type: { type: String, enum: ['image', 'file'] },
+        name: String
+    }],
+    readBy: [{ type: Schema.Types.ObjectId, ref: 'Employee' }]
+}, { timestamps: true });
+
+const ConversationSchema = new Schema<IConversation>({
+    participants: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
+    type: { type: String, enum: ['direct', 'group'], default: 'direct' },
+    name: { type: String },
+    lastMessage: {
+        content: String,
+        sender: { type: Schema.Types.ObjectId, ref: 'Employee' },
+        createdAt: Date
+    },
+    admins: [{ type: Schema.Types.ObjectId, ref: 'Employee' }]
+}, { timestamps: true });
+
+export const Conversation = mongoose.models.Conversation || mongoose.model<IConversation>('Conversation', ConversationSchema);
+export const Message = mongoose.models.Message || mongoose.model<IMessage>('Message', MessageSchema);
