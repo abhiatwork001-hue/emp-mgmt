@@ -210,7 +210,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                 newDate
             );
 
-            router.push(`/dashboard/schedules/${newSchedule._id}`);
+            router.push(`/dashboard/schedules/${newSchedule.slug || newSchedule._id}`);
         } catch (error) {
             console.error("Navigation failed", error);
             setActionLoading(false);

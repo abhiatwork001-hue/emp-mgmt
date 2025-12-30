@@ -1,4 +1,4 @@
-import { getPositionById, getEmployeesInPosition } from "@/lib/actions/position.actions";
+import { getPositionById, getPositionBySlug, getEmployeesInPosition } from "@/lib/actions/position.actions";
 import { getAllRoles } from "@/lib/actions/role.actions";
 import { PositionFormDialog } from "@/components/positions/position-form-dialog";
 import { PositionEmployeesList } from "@/components/positions/position-employees-list";
@@ -11,10 +11,10 @@ import { redirect } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
 import { getLocalized } from "@/lib/utils";
 
-export default async function PositionDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export default async function PositionDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
     const [position, roles, t, locale] = await Promise.all([
-        getPositionById(id),
+        getPositionBySlug(slug),
         getAllRoles(),
         getTranslations("Common"),
         getLocale()
@@ -24,7 +24,7 @@ export default async function PositionDetailsPage({ params }: { params: Promise<
         redirect("/dashboard/positions");
     }
 
-    const employees = await getEmployeesInPosition(id);
+    const employees = await getEmployeesInPosition(position._id);
 
     return (
         <div className="space-y-6">

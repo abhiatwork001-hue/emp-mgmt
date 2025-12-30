@@ -152,12 +152,21 @@ export async function respondToOvertimeRequest(requestId: string, reviewerId: st
     }
 }
 
-export async function getPendingOvertimeRequests() {
+export async function getPendingOvertimeRequests(filters: any = {}) {
     try {
         await connectToDB();
 
-        // Fetch ALL pending
-        const requests = await OvertimeRequest.find({ status: 'pending' })
+        const query: any = { status: 'pending' };
+
+        if (filters.storeId) {
+            // Find employees in that store
+            const employeesInStore = await Employee.find({ storeId: filters.storeId }).select("_id");
+            const empIds = employeesInStore.map(e => e._id);
+            query.employeeId = { $in: empIds };
+        }
+
+        // Fetch pending
+        const requests = await OvertimeRequest.find(query)
             .populate({
                 path: 'employeeId',
                 select: 'firstName lastName storeId',

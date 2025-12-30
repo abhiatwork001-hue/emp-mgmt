@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getTaskById } from "@/lib/actions/task.actions";
+import { getTaskById, getTaskBySlug } from "@/lib/actions/task.actions";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,14 +18,14 @@ import { Employee } from "@/lib/models";
 import connectToDB from "@/lib/db";
 import { cn } from "@/lib/utils";
 
-export default async function TaskAnalyticsPage(props: { params: Promise<{ id: string }> }) {
-    const params = await props.params;
+export default async function TaskAnalyticsPage(props: { params: Promise<{ slug: string }> }) {
+    const { slug } = await props.params;
 
     const session = await getServerSession(authOptions);
     if (!session) redirect("/login");
 
     await connectToDB();
-    const task = await getTaskById(params.id);
+    const task = await getTaskBySlug(slug);
     if (!task) notFound();
 
     // Fetch User for Roles

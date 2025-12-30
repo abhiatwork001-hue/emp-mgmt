@@ -11,6 +11,8 @@ import { authOptions } from "@/lib/auth";
 import { triggerNotification } from "@/lib/actions/notification.actions";
 
 // ... (existing imports, but inserted triggerNotification above)
+import { slugify } from "@/lib/utils";
+import * as crypto from "crypto";
 
 // --- Create Task ---
 export async function createTask(data: {
@@ -71,8 +73,16 @@ export async function createTask(data: {
             id
         }));
 
+        // Generate Slug
+        let baseSlug = slugify(data.title);
+        let slug = baseSlug;
+        while (await Task.findOne({ slug })) {
+            slug = `${baseSlug}-${crypto.randomBytes(2).toString('hex')}`;
+        }
+
         const newTask = await Task.create({
             title: data.title,
+            slug: slug,
             description: data.description,
             priority: data.priority,
             deadline: data.deadline ? new Date(data.deadline) : undefined,
@@ -99,7 +109,7 @@ export async function createTask(data: {
                     type: "info",
                     category: "system", // or 'task' if available
                     recipients: recipientIds,
-                    link: "/dashboard",
+                    link: `/dashboard/tasks/${newTask.slug}`,
                     senderId: data.creatorId,
                     metadata: { taskId: newTask._id }
                 });
@@ -170,6 +180,22 @@ export async function getTaskById(taskId: string) {
         return null;
     }
 }
+
+export async function getTaskBySlug(slug: string) {
+    try {
+        await connectToDB();
+        const task = await Task.findOne({ slug })
+            .populate('createdBy', 'firstName lastName image')
+            .populate('assignedTo.id', 'firstName lastName image')
+            .populate('comments.userId', 'firstName lastName image')
+            .lean();
+
+        return JSON.parse(JSON.stringify(task));
+    } catch (error) {
+        console.error("Error fetching task by slug:", error);
+        return null;
+    }
+}
 // --- Update Task Status (Individual Completion) ---
 export async function updateTaskStatus(taskId: string, status: string, userId: string) {
     try {
@@ -219,7 +245,7 @@ export async function updateTaskStatus(taskId: string, status: string, userId: s
                         type: "success",
                         category: "system",
                         recipients: [creatorId],
-                        link: "/dashboard",
+                        link: `/dashboard/tasks/${updatedTask.slug || taskId}`,
                         senderId: userId,
                         metadata: { taskId }
                     });
@@ -309,7 +335,7 @@ export async function addTaskComment(taskId: string, userId: string, text: strin
                         type: "info",
                         category: "system",
                         recipients: Array.from(recipients),
-                        link: "/dashboard",
+                        link: `/dashboard/tasks/${task.slug || taskId}`,
                         senderId: userId,
                         metadata: { taskId }
                     });
@@ -338,7 +364,7 @@ export async function updateTask(taskId: string, data: {
     try {
         await connectToDB();
 
-        await Task.findByIdAndUpdate(taskId, {
+        const updateData: any = {
             title: data.title,
             description: data.description,
             priority: data.priority,
@@ -346,7 +372,20 @@ export async function updateTask(taskId: string, data: {
             requiresSubmission: data.requiresSubmission,
             requiredFileNames: data.requiredFileNames || [],
             todos: data.todos.map(text => ({ text, completed: false }))
-        });
+        };
+
+        // Update slug if title changes
+        const currentTask = await Task.findById(taskId);
+        if (currentTask && data.title !== currentTask.title) {
+            let baseSlug = slugify(data.title);
+            let slug = baseSlug;
+            while (await Task.findOne({ slug, _id: { $ne: taskId } })) {
+                slug = `${baseSlug}-${crypto.randomBytes(2).toString('hex')}`;
+            }
+            updateData.slug = slug;
+        }
+
+        await Task.findByIdAndUpdate(taskId, updateData);
 
         const session = await getServerSession(authOptions);
         if (session?.user) {

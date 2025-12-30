@@ -19,10 +19,11 @@ interface EmployeeDashboardProps {
     employee: any;
     todaysCoworkers?: any[];
     currentScheduleId?: string | null;
+    currentScheduleSlug?: string | null;
     daysUntilNextDayOff?: number;
 }
 
-export function EmployeeDashboard({ employee, todaysCoworkers = [], currentScheduleId, daysUntilNextDayOff = 0 }: EmployeeDashboardProps) {
+export function EmployeeDashboard({ employee, todaysCoworkers = [], currentScheduleId, currentScheduleSlug, daysUntilNextDayOff = 0 }: EmployeeDashboardProps) {
     const router = useRouter();
     const [greeting, setGreeting] = useState("");
 
@@ -118,13 +119,11 @@ export function EmployeeDashboard({ employee, todaysCoworkers = [], currentSched
                 <div className="lg:col-span-2 space-y-6">
                     <EmployeeScheduleTab employeeId={employee._id.toString()} />
 
-                    {currentScheduleId && (
-                        <div className="flex justify-end">
-                            <Link href={`/dashboard/schedules/${currentScheduleId}`} className="text-sm text-primary hover:underline">
-                                View Full Schedule &rarr;
-                            </Link>
-                        </div>
-                    )}
+                    <div className="flex justify-end">
+                        <Link href={`/dashboard/schedules/${currentScheduleSlug || currentScheduleId}`} className="text-sm text-primary hover:underline">
+                            View Full Schedule &rarr;
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Sidebar: Quick Actions */}
@@ -184,8 +183,8 @@ export function EmployeeDashboard({ employee, todaysCoworkers = [], currentSched
                                     <div className="text-sm text-muted-foreground text-center py-2">No other coworkers on shift today.</div>
                                 )}
 
-                                {currentScheduleId && (
-                                    <Link href={`/dashboard/schedules/${currentScheduleId}`} className="text-xs text-muted-foreground pt-2 text-center block hover:text-primary transition-colors">
+                                {(currentScheduleSlug || currentScheduleId) && (
+                                    <Link href={`/dashboard/schedules/${currentScheduleSlug || currentScheduleId}`} className="text-xs text-muted-foreground pt-2 text-center block hover:text-primary transition-colors">
                                         View full schedule details
                                     </Link>
                                 )}

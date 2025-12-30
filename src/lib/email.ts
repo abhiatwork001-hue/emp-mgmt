@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-const DEFAULT_COMPANY_NAME = "The Chick Ecosystem";
+const DEFAULT_COMPANY_NAME = "LaGasy";
 
 export const sendWelcomeEmail = async (email: string, firstName: string, companyName: string = DEFAULT_COMPANY_NAME, otp: string) => {
     const fromAddress = process.env.EMAIL_FROM || `"${companyName}" <${process.env.EMAIL_USER}>`;

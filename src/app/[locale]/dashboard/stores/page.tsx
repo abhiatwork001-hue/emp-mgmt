@@ -16,7 +16,7 @@ export default async function StoresPage() {
     // Server-side Role Check
     const employee = await getEmployeeById(user.id);
     const roles = (employee?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-    const allowedRoles = ["owner", "admin", "hr", "super_user"];
+    const allowedRoles = ["owner", "admin", "hr", "super_user", "tech"];
 
     if (!roles.some((r: string) => allowedRoles.includes(r))) {
         redirect("/dashboard"); // Or show forbidden

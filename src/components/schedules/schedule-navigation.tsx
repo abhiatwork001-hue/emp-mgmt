@@ -39,8 +39,8 @@ export default function ScheduleNavigation() {
             // Signature: getOrCreateSchedule(storeId, storeDepartmentId, startDate)
             const schedule = await getOrCreateSchedule(storeId, departmentId, today);
 
-            if (schedule && schedule._id) {
-                router.push(`/dashboard/schedules/${schedule._id}`);
+            if (schedule && (schedule.slug || schedule._id)) {
+                router.push(`/dashboard/schedules/${schedule.slug || schedule._id}`);
             } else {
                 alert("Could not access schedule");
             }

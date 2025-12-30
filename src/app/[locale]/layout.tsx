@@ -24,16 +24,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Chick Main",
-  description: "Employee Management System",
-  manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: "Chick Main",
+  title: "LaGasy",
+  description: "Employee Management System for LaGasy Restaurant Group",
+  icons: {
+    icon: "/logo_lagasy.png",
   },
-  formatDetection: {
-    telephone: false,
+  openGraph: {
+    title: "LaGasy",
+    description: "Employee Management System",
   },
 };
 

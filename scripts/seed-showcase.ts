@@ -17,9 +17,11 @@ import {
     Task,
     VacationRequest,
     AbsenceRequest,
-    INote,
+    Note,
+    Notice,
     IExtraHourRequest
-} from "../src/lib/models"; // Ensure this import path is correct
+} from "../src/lib/models";
+import { slugify } from "../src/lib/utils";
 
 // --- Settings ---
 const STORE_COUNT = 10;
@@ -159,6 +161,7 @@ async function seed() {
     for (const pName of positionsNames) {
         const pos = await Position.create({
             name: pName,
+            slug: slugify(pName),
             roles: [rolesMap.get("employee")._id],
             level: 1,
             active: true
@@ -166,12 +169,12 @@ async function seed() {
         positions.push(pos);
     }
     // Specific positions for heads
-    const managerPos = await Position.create({ name: "Manager", roles: [rolesMap.get("store_manager")._id], level: 3 });
-    const headPos = await Position.create({ name: "Department Head", roles: [rolesMap.get("department_head")._id], level: 3 });
-    const storeHeadPos = await Position.create({ name: "Shift Leader", roles: [rolesMap.get("store_department_head")._id], level: 2 });
-    const ownerPos = await Position.create({ name: "Owner", roles: [rolesMap.get("owner")._id], level: 5 });
-    const hrPos = await Position.create({ name: "HR Officer", roles: [rolesMap.get("hr")._id], level: 4 });
-    const techPos = await Position.create({ name: "Tech Lead", roles: [rolesMap.get("tech")._id], level: 4 });
+    const managerPos = await Position.create({ name: "Manager", slug: slugify("Manager"), roles: [rolesMap.get("store_manager")._id], level: 3 });
+    const headPos = await Position.create({ name: "Department Head", slug: slugify("Department Head"), roles: [rolesMap.get("department_head")._id], level: 3 });
+    const storeHeadPos = await Position.create({ name: "Shift Leader", slug: slugify("Shift Leader"), roles: [rolesMap.get("store_department_head")._id], level: 2 });
+    const ownerPos = await Position.create({ name: "Owner", slug: slugify("Owner"), roles: [rolesMap.get("owner")._id], level: 5 });
+    const hrPos = await Position.create({ name: "HR Officer", slug: slugify("HR Officer"), roles: [rolesMap.get("hr")._id], level: 4 });
+    const techPos = await Position.create({ name: "Tech Lead", slug: slugify("Tech Lead"), roles: [rolesMap.get("tech")._id], level: 4 });
 
     // --- 7. Employees ---
     console.log(`Creating ${TOTAL_EMPLOYEES} Employees...`);
@@ -186,6 +189,7 @@ async function seed() {
         const emp = await Employee.create({
             firstName,
             lastName,
+            slug: slugify(`${firstName} ${lastName}`) + "-" + faker.string.alphanumeric(4),
             email,
             password: passwordHash,
             dob: faker.date.birthdate({ min: 18, max: 60, mode: 'age' }),
@@ -346,8 +350,10 @@ async function seed() {
             const deadline = faker.date.soon({ days: 30 });
             const isOverdue = Math.random() > 0.8;
 
+            const title = faker.hacker.verb() + " " + faker.hacker.noun();
             await Task.create({
-                title: faker.hacker.verb() + " " + faker.hacker.noun(),
+                title: title,
+                slug: slugify(title) + "-" + faker.string.alphanumeric(4),
                 description: faker.lorem.sentence(),
                 createdBy: admin._id,
                 assignedTo: [{ type: 'individual', id: emp._id }],
@@ -405,16 +411,67 @@ async function seed() {
         // 30% Schedules Approved/Published
         const status = Math.random() > 0.5 ? 'published' : 'review';
 
+        const week = getWeekNumber(currentWeekStart);
+        const year = currentWeekStart.getFullYear();
+        const deptName = (deptEmps[0] as any)?.storeDepartmentId?.name || "dept"; // simplified
+
         await Schedule.create({
             storeId: sd.storeId,
             storeDepartmentId: sd._id,
-            weekNumber: getWeekNumber(currentWeekStart),
-            year: currentWeekStart.getFullYear(),
+            slug: slugify(`${year}-w${week}-${sd.name}-${faker.string.alphanumeric(4)}`),
+            weekNumber: week,
+            year: year,
             dateRange: { startDate: currentWeekStart, endDate: new Date(currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000) },
             status: status,
             createdBy: admin._id,
             days: days
         });
+    }
+
+    // --- 10. Notices ---
+    console.log("Generating Notices...");
+    const noticeScopes: ('global' | 'store' | 'store_department')[] = ['global', 'store', 'store_department'];
+    for (let i = 0; i < 15; i++) {
+        const scope = faker.helpers.arrayElement(noticeScopes);
+        const title = faker.company.catchPhrase();
+        let targetId = null;
+
+        if (scope === 'store') {
+            targetId = faker.helpers.arrayElement(stores)._id;
+        } else if (scope === 'store_department') {
+            targetId = faker.helpers.arrayElement(fetchedStoreDepts)._id;
+        }
+
+        await Notice.create({
+            title: title,
+            slug: slugify(title) + "-" + faker.string.alphanumeric(6),
+            content: faker.lorem.paragraphs(2),
+            priority: faker.helpers.arrayElement(['normal', 'urgent']),
+            targetScope: scope,
+            targetId: targetId,
+            createdBy: faker.helpers.arrayElement(allEmployees)._id,
+            createdAt: faker.date.recent({ days: 30 })
+        });
+    }
+
+    // --- 11. Personal Notes/Todos ---
+    console.log("Generating Personal Notes...");
+    for (const emp of allEmployees) {
+        if (Math.random() > 0.5) {
+            const numNotes = faker.number.int({ min: 1, max: 4 });
+            for (let n = 0; n < numNotes; n++) {
+                const title = faker.lorem.words(3);
+                await Note.create({
+                    userId: emp._id,
+                    title: title,
+                    slug: slugify(title) + "-" + faker.string.alphanumeric(6),
+                    content: faker.lorem.sentence(),
+                    isTask: Math.random() > 0.5,
+                    completed: Math.random() > 0.7,
+                    priority: faker.helpers.arrayElement(['low', 'medium', 'high'])
+                });
+            }
+        }
     }
 
     console.log("Seeding Complete!");

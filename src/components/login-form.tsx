@@ -85,8 +85,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                         <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors duration-500" />
                         <div className="relative w-full h-full ring-1 ring-white/20 rounded-full p-2.5 bg-black/40 backdrop-blur-sm shadow-inner overflow-hidden">
                             <Image
-                                src="/logo_chick.png"
-                                alt="The Chick Logo"
+                                src="/logo_lagasy.png"
+                                alt="LaGasy Logo"
                                 fill
                                 className="object-cover rounded-full scale-110 group-hover:scale-125 transition-transform duration-700"
                                 priority
@@ -100,7 +100,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                         className="text-center"
                     >
                         <h1 className="text-4xl font-black tracking-tighter text-foreground mb-1">
-                            CHICK<span className="text-primary">.</span> <span className="font-light opacity-60">ECOSYSTEM</span>
+                            LA<span className="text-primary">GASY</span> <span className="font-light opacity-60">GLOBAL</span>
                         </h1>
                         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/60">INTELLIGENT OPERATIONS CENTER</p>
                     </motion.div>
@@ -136,7 +136,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                                             <Input
                                                 id="email"
                                                 type="email"
-                                                placeholder="name@thechick.com"
+                                                placeholder="name@lagasy.com"
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 className="pl-14 focus:pl-6 bg-white/5 border-white/5 text-foreground focus:ring-primary/20 focus:border-primary/40 h-14 rounded-2xl transition-all relative z-10"

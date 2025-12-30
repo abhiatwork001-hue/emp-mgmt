@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { logAction } from "./log.actions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { slugify } from "@/lib/utils";
 
 type PositionData = Partial<IPosition>;
 
@@ -22,6 +23,18 @@ export async function getAllPositions() {
 
 export async function createPosition(data: PositionData) {
     await dbConnect();
+
+    // Generate Slug
+    if (data.name) {
+        let baseSlug = slugify(data.name);
+        let slug = baseSlug;
+        let counter = 1;
+        while (await Position.findOne({ slug })) {
+            slug = `${baseSlug}-${counter++}`;
+        }
+        data.slug = slug;
+    }
+
     const newPos = await Position.create(data);
     revalidatePath("/dashboard/positions");
 
@@ -41,6 +54,21 @@ export async function createPosition(data: PositionData) {
 
 export async function updatePosition(id: string, data: PositionData) {
     await dbConnect();
+
+    // Update Slug if name changes
+    if (data.name) {
+        const currentPos = await Position.findById(id);
+        if (currentPos && data.name !== currentPos.name) {
+            let baseSlug = slugify(data.name);
+            let slug = baseSlug;
+            let counter = 1;
+            while (await Position.findOne({ slug, _id: { $ne: id } })) {
+                slug = `${baseSlug}-${counter++}`;
+            }
+            data.slug = slug;
+        }
+    }
+
     const updated = await Position.findByIdAndUpdate(id, data, { new: true }).lean();
     revalidatePath("/dashboard/positions");
 
@@ -71,6 +99,15 @@ export async function archivePosition(id: string) {
 export async function getPositionById(id: string) {
     await dbConnect();
     const position = await Position.findById(id)
+        .populate("roles", "name permissions")
+        .lean();
+    if (!position) return null;
+    return JSON.parse(JSON.stringify(position));
+}
+
+export async function getPositionBySlug(slug: string) {
+    await dbConnect();
+    const position = await Position.findOne({ slug })
         .populate("roles", "name permissions")
         .lean();
     if (!position) return null;
@@ -142,7 +179,7 @@ export async function removeEmployeeFromPosition(employeeId: string) {
 
     await employee.save();
 
-    revalidatePath(`/dashboard/employees/${employeeId}`);
+    revalidatePath(`/dashboard/employees/${employee.slug}`);
     revalidatePath("/dashboard/positions");
 
     const session = await getServerSession(authOptions);

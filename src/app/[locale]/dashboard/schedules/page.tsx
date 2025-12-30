@@ -40,7 +40,7 @@ export default async function SchedulesPage() {
             const latestSchedule = schedules.find((s: any) => ["published", "approved"].includes(s.status));
 
             if (latestSchedule) {
-                redirect(`/dashboard/schedules/${latestSchedule._id}`);
+                redirect(`/dashboard/schedules/${latestSchedule.slug || latestSchedule._id}`);
             }
         } catch (error) {
             console.error("Auto-redirect error:", error);

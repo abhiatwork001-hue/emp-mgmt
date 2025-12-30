@@ -3,6 +3,8 @@
 import connectToDB from "@/lib/db";
 import { PersonalTodo } from "@/lib/models";
 import { revalidatePath } from "next/cache";
+import { slugify } from "@/lib/utils";
+import * as crypto from "crypto";
 
 export async function getNotes(userId: string) {
     try {
@@ -24,9 +26,17 @@ export async function createNote(data: {
 }) {
     try {
         await connectToDB();
+        const title = data.title || "Note";
+        let baseSlug = slugify(title);
+        let slug = baseSlug;
+        while (await PersonalTodo.findOne({ slug })) {
+            slug = `${baseSlug}-${crypto.randomBytes(2).toString('hex')}`;
+        }
+
         const newNote = await PersonalTodo.create({
             userId: data.userId,
-            title: data.title || "Note",
+            title,
+            slug,
             content: data.content,
             isTask: data.isTask || false,
             deadline: data.deadline ? new Date(data.deadline) : undefined,
@@ -73,10 +83,23 @@ export async function updateNote(noteId: string, data: {
 }) {
     try {
         await connectToDB();
-        const updatedNote = await PersonalTodo.findByIdAndUpdate(noteId, {
+        const updateData: any = {
             ...data,
             deadline: data.deadline ? new Date(data.deadline) : undefined
-        }, { new: true });
+        };
+
+        // Update slug if title changes
+        const currentNote = await PersonalTodo.findById(noteId);
+        if (currentNote && data.title && data.title !== currentNote.title) {
+            let baseSlug = slugify(data.title);
+            let slug = baseSlug;
+            while (await PersonalTodo.findOne({ slug, _id: { $ne: noteId } })) {
+                slug = `${baseSlug}-${crypto.randomBytes(2).toString('hex')}`;
+            }
+            updateData.slug = slug;
+        }
+
+        const updatedNote = await PersonalTodo.findByIdAndUpdate(noteId, updateData, { new: true });
 
         revalidatePath("/dashboard");
         return { success: true, note: JSON.parse(JSON.stringify(updatedNote)) };

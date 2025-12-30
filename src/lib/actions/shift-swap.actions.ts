@@ -44,7 +44,8 @@ export async function getEmployeeUpcomingShifts(userId: string) {
                                 startTime: shift.startTime,
                                 endTime: shift.endTime,
                                 dateStr: new Date(day.date).toLocaleDateString(),
-                                storeId: schedule.storeId // Include storeId for filtering
+                                storeId: schedule.storeId, // Include storeId for filtering
+                                slug: schedule.slug // Include slug
                             });
                         }
                     });
@@ -258,12 +259,12 @@ export async function respondToSwapRequest(requestId: string, action: 'approved'
             type: "success",
             category: "schedule",
             recipients: [{ userId: request.requestorId, read: false }],
-            link: "/dashboard/schedules/" + request.requestorShift.scheduleId
+            link: `/dashboard/schedules/${schedule1.slug || request.requestorShift.scheduleId}`
         });
 
         revalidatePath("/dashboard");
-        revalidatePath(`/dashboard/schedules/${request.requestorShift.scheduleId}`);
-        revalidatePath(`/dashboard/schedules/${request.targetShift.scheduleId}`);
+        revalidatePath(`/dashboard/schedules/${schedule1.slug || request.requestorShift.scheduleId}`);
+        revalidatePath(`/dashboard/schedules/${schedule2.slug || request.targetShift.scheduleId}`);
 
         return { success: true };
 

@@ -9,6 +9,8 @@ import { authOptions } from "@/lib/auth";
 import { triggerNotification } from "@/lib/actions/notification.actions";
 import { getEmployeeById } from "@/lib/actions/employee.actions"; // Import employee fetcher
 import { logAction } from "./log.actions";
+import { slugify } from "@/lib/utils";
+import * as crypto from "crypto";
 
 const MANAGE_SCHEDULE_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr"];
 
@@ -63,13 +65,47 @@ export async function getScheduleById(id: string) {
     return JSON.parse(JSON.stringify({ ...schedule, absences }));
 }
 
+export async function getScheduleBySlug(slug: string) {
+    await dbConnect();
+    const schedule = await Schedule.findOne({ slug })
+        .populate("storeId", "name")
+        .populate("storeDepartmentId", "name")
+        .populate("createdBy", "firstName lastName")
+        .populate({
+            path: "days.shifts.employees",
+            select: "firstName lastName image positionId contract",
+            populate: { path: "positionId", select: "name" }
+        })
+        .populate("approvalHistory.changedBy", "firstName lastName")
+        .lean();
+
+    if (!schedule) return null;
+
+    const absences = await AbsenceRecord.find({
+        date: { $gte: schedule.dateRange.startDate, $lte: schedule.dateRange.endDate },
+    }).lean();
+
+    return JSON.parse(JSON.stringify({ ...schedule, absences }));
+}
+
 export async function createSchedule(data: any) {
     await dbConnect();
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized");
     await checkSchedulePermission((session.user as any).id);
 
-    const newSchedule = await new Schedule(data).save();
+    const scheduleData = { ...data };
+    if (!scheduleData.slug) {
+        const dept = await StoreDepartment.findById(data.storeDepartmentId).select('slug');
+        let baseSlug = slugify(`${data.year}-w${data.weekNumber}-${dept?.slug || 'dept'}`);
+        let slug = baseSlug;
+        while (await Schedule.findOne({ slug })) {
+            slug = `${baseSlug}-${crypto.randomBytes(2).toString('hex')}`;
+        }
+        scheduleData.slug = slug;
+    }
+
+    const newSchedule = await new Schedule(scheduleData).save();
 
     // Log Action
     await logAction({
@@ -81,6 +117,7 @@ export async function createSchedule(data: any) {
         details: { weekNumber: newSchedule.weekNumber, year: newSchedule.year }
     });
 
+    revalidatePath(`/dashboard/schedules/${newSchedule.slug}`);
     revalidatePath("/dashboard/schedules");
     return JSON.parse(JSON.stringify(newSchedule));
 }
@@ -94,6 +131,11 @@ export async function updateSchedule(id: string, data: any) {
     const updated = await Schedule.findByIdAndUpdate(id, data, { new: true })
         .populate("storeId", "name")
         .populate("storeDepartmentId", "name")
+        .populate({
+            path: "days.shifts.employees",
+            select: "firstName lastName image positionId contract",
+            populate: { path: "positionId", select: "name" }
+        })
         .lean();
 
     // Log Action
@@ -106,7 +148,7 @@ export async function updateSchedule(id: string, data: any) {
         details: { status: updated.status }
     });
 
-    revalidatePath(`/dashboard/schedules/${id}`);
+    revalidatePath(`/dashboard/schedules/${updated.slug}`);
     revalidatePath("/dashboard/schedules");
 
     // Notification: If updating a pending schedule, notify Approvers
@@ -131,7 +173,7 @@ export async function updateSchedule(id: string, data: any) {
                     type: "info",
                     category: "schedule",
                     recipients: recipientIds,
-                    link: `/dashboard/browsing/schedules/${id}`,
+                    link: `/dashboard/browsing/schedules/${updated.slug}`,
                     senderId: (session.user as any).id,
                     relatedStoreId: (updated.storeId as any)?._id,
                     relatedDepartmentId: (updated.storeDepartmentId as any)?._id
@@ -177,6 +219,11 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         .populate("storeId", "name")
         .populate("storeDepartmentId", "name")
         .populate("createdBy", "firstName lastName")
+        .populate({
+            path: "days.shifts.employees",
+            select: "firstName lastName image positionId contract",
+            populate: { path: "positionId", select: "name" }
+        })
         .lean();
 
     // Log Action
@@ -194,7 +241,7 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         details: { status, comment }
     });
 
-    revalidatePath(`/dashboard/schedules/${id}`);
+    revalidatePath(`/dashboard/schedules/${updated.slug}`);
 
     // Notification Logic
     try {
@@ -226,7 +273,7 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
                     type: "info",
                     category: "schedule",
                     recipients: recipientIds,
-                    link: `/dashboard/browsing/schedules/${id}`, // Assuming admin view link
+                    link: `/dashboard/browsing/schedules/${updated.slug}`, // Assuming admin view link
                     senderId: userId,
                     relatedStoreId: (updated.storeId as any)?._id,
                     relatedDepartmentId: (updated.storeDepartmentId as any)?._id
@@ -264,7 +311,7 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
                     type: "success",
                     category: "schedule",
                     recipients: recipients,
-                    link: `/dashboard/schedules/${id}`,
+                    link: `/dashboard/schedules/${updated.slug}`,
                     senderId: userId,
                     relatedStoreId: (updated.storeId as any)?._id,
                     relatedDepartmentId: (updated.storeDepartmentId as any)?._id
@@ -283,7 +330,7 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
                         type: "error",
                         category: "schedule",
                         recipients: [creatorId],
-                        link: `/dashboard/schedules/${id}`,
+                        link: `/dashboard/schedules/${updated.slug}`,
                         senderId: userId,
                         relatedStoreId: (updated.storeId as any)?._id,
                         relatedDepartmentId: (updated.storeDepartmentId as any)?._id
@@ -353,12 +400,20 @@ export async function getOrCreateSchedule(storeId: string, storeDepartmentId: st
             events: []
         });
     }
+    // Generate slug properly BEFORE creation to satisfy required field validation
+    const dept = await StoreDepartment.findById(storeDepartmentId).select('slug');
+    let baseSlug = slugify(`${year}-w${weekNumber}-${dept?.slug || 'dept'}`);
+    let slug = baseSlug;
+    while (await Schedule.findOne({ slug })) {
+        slug = `${baseSlug}-${crypto.randomBytes(2).toString('hex')}`;
+    }
 
     const newSchedule = await Schedule.create({
         storeId,
         storeDepartmentId,
         weekNumber,
         year,
+        slug, // Include slug here
         dateRange: {
             startDate: isoMonday,
             endDate: endOfWeek
@@ -372,6 +427,9 @@ export async function getOrCreateSchedule(storeId: string, storeDepartmentId: st
             createdAt: new Date()
         }]
     });
+
+    revalidatePath(`/dashboard/schedules/${newSchedule.slug}`);
+    revalidatePath("/dashboard/schedules");
 
     return JSON.parse(JSON.stringify(newSchedule));
 }
@@ -406,7 +464,7 @@ export async function copyPreviousSchedule(currentScheduleId: string, userId: st
     const searchEnd = new Date(targetPrevStart);
     searchEnd.setHours(searchEnd.getHours() + 12);
 
-    console.log(`[CopySchedule] Current Start: ${currentStart.toISOString()}, Looking for Prev Start between: ${searchStart.toISOString()} and ${searchEnd.toISOString()}`);
+    console.log(`[CopySchedule] Current Start: ${currentStart.toISOString()}, Looking for Prev Start between: ${searchStart.toISOString()} and ${searchEnd.toISOString()} `);
 
     // 3. Find previous schedule by DATE range
     const prevSchedule = await Schedule.findOne({
@@ -419,7 +477,7 @@ export async function copyPreviousSchedule(currentScheduleId: string, userId: st
     }).lean();
 
     if (!prevSchedule) {
-        throw new Error(`No schedule found for the previous week (Expected start around ${targetPrevStart.toDateString()})`);
+        throw new Error(`No schedule found for the previous week(Expected start around ${targetPrevStart.toDateString()})`);
     }
 
     // 4. Map shifts
@@ -453,7 +511,7 @@ export async function copyPreviousSchedule(currentScheduleId: string, userId: st
             approvalHistory: {
                 status: currentSchedule.status,
                 changedBy: userId,
-                comment: `Copied from Week starting ${new Date(prevSchedule.dateRange.startDate).toLocaleDateString()}`,
+                comment: `Copied from Week starting ${new Date(prevSchedule.dateRange.startDate).toLocaleDateString()} `,
                 createdAt: new Date()
             }
         }
@@ -467,7 +525,7 @@ export async function copyPreviousSchedule(currentScheduleId: string, userId: st
         })
         .lean();
 
-    revalidatePath(`/dashboard/schedules/${currentScheduleId}`);
+    revalidatePath(`/ dashboard / schedules / ${updated.slug} `);
     return JSON.parse(JSON.stringify(updated));
 }
 
@@ -598,8 +656,8 @@ export async function getDashboardData(date: Date = new Date(), storeIdFilter?: 
                 const employees = new Set();
                 sch.days.forEach((day: any) => {
                     day.shifts.forEach((shift: any) => {
-                        const start = new Date(`1970-01-01T${shift.startTime}Z`);
-                        const end = new Date(`1970-01-01T${shift.endTime}Z`);
+                        const start = new Date(`1970-01-01T${shift.startTime} Z`);
+                        const end = new Date(`1970-01-01T${shift.endTime} Z`);
                         let diff = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
                         if (diff < 0) diff += 24; // Handle overnight
                         totalHours += diff;
@@ -651,9 +709,12 @@ export async function getDashboardData(date: Date = new Date(), storeIdFilter?: 
     }));
 }
 
-export async function getPendingSchedules() {
+export async function getPendingSchedules(storeId?: string) {
     await dbConnect();
-    const schedules = await Schedule.find({ status: 'pending' })
+    const query: any = { status: 'pending' };
+    if (storeId) query.storeId = storeId;
+
+    const schedules = await Schedule.find(query)
         .populate("storeId", "name")
         .populate("storeDepartmentId", "name")
         .populate("createdBy", "firstName lastName")

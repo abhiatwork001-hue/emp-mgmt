@@ -36,6 +36,7 @@ interface Employee {
     joinedOn?: string;
     contract?: { employmentType?: string };
     passwordResetRequested?: boolean;
+    slug: string;
 }
 
 interface FilterOption {
@@ -226,7 +227,7 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
                             >
-                                <Link href={`/dashboard/employees/${emp._id}`} className="block hover:bg-primary/5 transition-all group border-b last:border-0 md:border-0 relative">
+                                <Link href={`/dashboard/employees/${emp.slug}`} className="block hover:bg-primary/5 transition-all group border-b last:border-0 md:border-0 relative">
                                     {/* Link overlay to handle full card click while buttons still work */}
                                     <div className="flex flex-col gap-3 p-6 md:hidden">
                                         <div className="flex items-center justify-between">

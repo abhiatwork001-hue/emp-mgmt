@@ -11,14 +11,15 @@ export async function getUpcomingBirthdays(storeId?: string) {
         await connectToDB();
 
         const query: any = {
-            dateOfBirth: { $exists: true, $ne: null }
+            dob: { $exists: true, $ne: null },
+            active: true
         };
 
         if (storeId) {
             query.storeId = storeId;
         }
 
-        const employees = await Employee.find(query).select('firstName lastName dateOfBirth image').lean();
+        const employees = await Employee.find(query).select('firstName lastName dob image').lean();
 
         const today = new Date();
         const currentYear = today.getFullYear();
@@ -26,7 +27,7 @@ export async function getUpcomingBirthdays(storeId?: string) {
         limitDate.setDate(today.getDate() + 30); // Look 30 days ahead
 
         const upcoming = employees.map((emp: any) => {
-            const dob = new Date(emp.dateOfBirth);
+            const dob = new Date(emp.dob);
             // set DOB to this year
             let nextBirthday = new Date(currentYear, dob.getMonth(), dob.getDate());
 

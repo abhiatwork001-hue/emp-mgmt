@@ -56,8 +56,8 @@ export default function ScheduleDashboardClient({ restrictedStoreId }: { restric
         setNavigatingId(departmentId);
         try {
             const schedule = await getOrCreateSchedule(storeId, departmentId, date);
-            if (schedule && schedule._id) {
-                router.push(`/dashboard/schedules/${schedule._id}`);
+            if (schedule && (schedule.slug || schedule._id)) {
+                router.push(`/dashboard/schedules/${schedule.slug || schedule._id}`);
             }
         } catch (error) {
             console.error("Navigation failed", error);

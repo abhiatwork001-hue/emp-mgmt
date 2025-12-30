@@ -14,6 +14,7 @@ interface EmployeeStatus {
     store: string;
     image?: string;
     status: string; // "Active" | "On Vacation" | "Absent"
+    slug: string;
 }
 
 export function EmployeeStatusList({ employees }: { employees: EmployeeStatus[] }) {
@@ -64,7 +65,7 @@ export function EmployeeStatusList({ employees }: { employees: EmployeeStatus[] 
 
                         <div className="ml-14 flex items-center gap-2">
                             <Button variant="outline" size="sm" className="h-8 border-zinc-700 bg-transparent text-slate-300 hover:bg-slate-800" asChild>
-                                <Link href={`/dashboard/employees/${emp._id}`}>
+                                <Link href={`/dashboard/employees/${emp.slug}`}>
                                     <User className="mr-2 h-3 w-3" /> View Profile
                                 </Link>
                             </Button>

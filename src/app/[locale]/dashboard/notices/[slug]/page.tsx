@@ -1,4 +1,4 @@
-import { getNoticeById } from "@/lib/actions/notice.actions";
+import { getNoticeById, getNoticeBySlug } from "@/lib/actions/notice.actions";
 import { getEmployeeById } from "@/lib/actions/employee.actions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -11,12 +11,12 @@ import { Button } from "@/components/ui/button";
 import { CommentSection } from "@/components/notices/comment-section";
 import { CreateNoticeDialog } from "@/components/notices/create-notice-dialog";
 
-export default async function NoticeDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function NoticeDetailPage({ params }: { params: Promise<{ slug: string }> }) {
     const session = await getServerSession(authOptions);
     if (!session?.user) redirect("/");
 
-    const { id } = await params;
-    const notice = await getNoticeById(id);
+    const { slug } = await params;
+    const notice = await getNoticeBySlug(slug);
     if (!notice) notFound();
 
     const currentUserId = (session.user as any).id;

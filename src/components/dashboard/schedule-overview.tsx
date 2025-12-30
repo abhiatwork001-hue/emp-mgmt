@@ -12,6 +12,7 @@ interface ScheduleSummary {
     storeId: { name: string };
     storeDepartmentId: { name: string };
     dateRange: { startDate: string; endDate: string };
+    slug: string;
     status: string;
     createdBy: { firstName: string; lastName: string };
 }
@@ -87,7 +88,7 @@ export function ScheduleOverview({ schedules }: { schedules: ScheduleSummary[] }
 
                             <div className="mt-4 flex justify-end gap-2">
                                 <Button variant="outline" size="sm" className="h-8 border-zinc-700 bg-transparent text-slate-300 hover:bg-slate-800" asChild>
-                                    <Link href={`/dashboard/schedules/${schedule._id}`}>View Schedule</Link>
+                                    <Link href={`/dashboard/schedules/${schedule.slug || schedule._id}`}>View Schedule</Link>
                                 </Button>
                             </div>
                         </div>

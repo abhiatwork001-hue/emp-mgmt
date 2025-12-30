@@ -47,7 +47,7 @@ export async function updateVacationTracker(
 
     await employee.save();
     revalidatePath("/dashboard/profile");
-    revalidatePath(`/dashboard/employees/${employeeId}`);
+    revalidatePath(`/dashboard/employees/${employee.slug}`);
     return JSON.parse(JSON.stringify(employee.vacationTracker));
 }
 
@@ -119,6 +119,7 @@ export async function createVacationRequest(data: VacationRequestData) {
             createdAt: new Date()
         });
 
+        const session = await getServerSession(authOptions);
         const actorId = (session?.user as any)?.id || data.employeeId;
 
         await logAction({
@@ -176,8 +177,9 @@ export async function createVacationRequest(data: VacationRequestData) {
             }
         }
 
+        const emp = await Employee.findById(data.employeeId).select("slug");
         revalidatePath("/dashboard/vacations");
-        revalidatePath(`/dashboard/employees/${data.employeeId}`);
+        revalidatePath(`/dashboard/employees/${emp?.slug || data.employeeId}`);
         revalidatePath("/dashboard/employees");
         revalidatePath("/dashboard");
         return JSON.parse(JSON.stringify(newRequest));
@@ -280,8 +282,9 @@ export async function approveVacationRequest(requestId: string, approverId: stri
         });
     } catch (e) { console.error("Vacation Approve Notification Error:", e); }
 
+    const emp = await Employee.findById(request.employeeId).select("slug");
     revalidatePath("/dashboard/vacations");
-    revalidatePath(`/dashboard/employees/${request.employeeId}`);
+    revalidatePath(`/dashboard/employees/${emp?.slug || request.employeeId}`);
     revalidatePath("/dashboard");
     return JSON.parse(JSON.stringify(request));
 }
@@ -326,8 +329,9 @@ export async function rejectVacationRequest(requestId: string, reviewerId: strin
         });
     } catch (e) { console.error("Vacation Reject Notification Error:", e); }
 
+    const emp = await Employee.findById(request.employeeId).select("slug");
     revalidatePath("/dashboard/vacations");
-    revalidatePath(`/dashboard/employees/${request.employeeId}`);
+    revalidatePath(`/dashboard/employees/${emp?.slug || request.employeeId}`);
     return JSON.parse(JSON.stringify(request));
 }
 

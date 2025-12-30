@@ -53,7 +53,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
     const employee = await getEmployeeById((session.user as any).id);
     if (!employee) {
-        return <div className="p-8 text-white">Employee record not found. Please contact admin.</div>;
+        redirect("/api/auth/signout?callbackUrl=/login");
     }
 
     // Determine Role & Dashboard Type
@@ -62,8 +62,14 @@ export default async function DashboardPage(props: DashboardPageProps) {
     const allRolesRaw = [...new Set([...directRoles, ...positionRoles])];
 
     // Normalize to match Sidebar/Permission keys
-    const normalize = (r: string) => r.toLowerCase().replace(/ /g, "_");
-    const allRoles = allRolesRaw.map(normalize);
+    // Normalize to match Sidebar/Permission keys
+    const normalize = (r: any) => {
+        if (!r) return "";
+        if (typeof r === "object" && r.name) return r.name.toLowerCase().replace(/ /g, "_");
+        if (typeof r === "string") return r.toLowerCase().replace(/ /g, "_");
+        return String(r).toLowerCase();
+    };
+    const allRoles = allRolesRaw.map(normalize).filter(Boolean);
 
     const isOwner = allRoles.includes("owner");
     const isAdmin = allRoles.includes("admin");
@@ -82,6 +88,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
     } else {
         // Priority Based View Selection
         if (allRoles.includes("super_user")) viewRole = "super_user";
+        else if (allRoles.includes("tech")) viewRole = "tech";
         else if (isOwner) viewRole = "owner";
         else if (isAdmin) viewRole = "admin";
         else if (allRoles.includes("hr")) viewRole = "hr";
@@ -110,20 +117,14 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
     // Render Helper
     async function renderDashboard() {
-        if (["owner", "admin", "hr", "super_user", "store_manager"].includes(viewRole)) {
+        if (["owner", "admin", "hr", "super_user", "store_manager", "tech"].includes(viewRole)) {
             const storeId = employee.storeId?._id || employee.storeId;
-            let pendingVacations = await getAllVacationRequests({ status: 'pending' });
-            let pendingAbsences = await getAllAbsenceRequests({ status: 'pending' });
-            let pendingOvertime = await getPendingOvertimeRequests();
-            let pendingSchedules = await getPendingSchedules();
+            const sid = (viewRole === "store_manager" && storeId) ? storeId.toString() : undefined;
 
-            if (viewRole === "store_manager" && storeId) {
-                const sid = storeId.toString();
-                pendingVacations = pendingVacations.filter((r: any) => (r.employeeId?.storeId?._id || r.employeeId?.storeId)?.toString() === sid);
-                pendingAbsences = pendingAbsences.filter((r: any) => (r.employeeId?.storeId?._id || r.employeeId?.storeId)?.toString() === sid);
-                pendingOvertime = pendingOvertime.filter((r: any) => (r.employeeId?.storeId?._id || r.employeeId?.storeId)?.toString() === sid);
-                pendingSchedules = pendingSchedules.filter((s: any) => (s.storeId?._id || s.storeId)?.toString() === sid);
-            }
+            let pendingVacations = await getAllVacationRequests({ status: 'pending', storeId: sid });
+            let pendingAbsences = await getAllAbsenceRequests({ status: 'pending', storeId: sid });
+            let pendingOvertime = await getPendingOvertimeRequests({ storeId: sid });
+            let pendingSchedules = await getPendingSchedules(sid);
 
             const storeEmployees = storeId
                 ? await getEmployeesByStore(storeId)
@@ -132,6 +133,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
             // Fetch current schedule to count shifts
             let todayShiftsCount = 0;
             let currentScheduleId = null;
+            let currentScheduleSlug = null;
             let todaysCoworkers: any[] = [];
 
             if (storeId) {
@@ -146,6 +148,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
                 if (currentSchedule) {
                     currentScheduleId = currentSchedule._id;
+                    currentScheduleSlug = currentSchedule.slug;
                     const todayStr = today.toISOString().split('T')[0];
                     const todayNode = currentSchedule.days?.find((d: any) =>
                         new Date(d.date).toISOString().split('T')[0] === todayStr
@@ -198,6 +201,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 storeStats={storeStats}
                 todaysCoworkers={todaysCoworkers}
                 currentScheduleId={currentScheduleId}
+                currentScheduleSlug={currentScheduleSlug}
                 currentUserRole={viewRole}
             />;
         }
@@ -243,6 +247,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
         const scheduleData = await getEmployeeScheduleView(employee._id, today);
         let todaysCoworkers: any[] = [];
         let currentScheduleId = null;
+        let currentScheduleSlug = null;
 
         if (scheduleData && scheduleData.days) {
             // Find today's shifts
@@ -282,6 +287,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
         if (currentSchedule) {
             currentScheduleId = currentSchedule._id;
+            currentScheduleSlug = currentSchedule.slug;
             // Extract coworkers from today's shifts in this schedule
             const todayDate = new Date();
             const todayStr = todayDate.toISOString().split('T')[0];
@@ -357,6 +363,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
             employee={employee}
             todaysCoworkers={todaysCoworkers}
             currentScheduleId={currentScheduleId}
+            currentScheduleSlug={currentScheduleSlug}
             daysUntilNextDayOff={daysUntilNextDayOff}
         />;
     }
@@ -413,7 +420,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
                         </FadeIn>
 
                         {/* Admin/HR Analytics Section */}
-                        {["admin", "hr", "owner", "super_user"].includes(viewRole) && (
+                        {["admin", "hr", "owner", "super_user", "tech"].includes(viewRole) && (
                             <FadeIn delay={0.4} className="pt-8">
                                 <div className="bg-primary/5 p-1 rounded-3xl border border-primary/10">
                                     <StoreTaskProgress />

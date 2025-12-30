@@ -7,6 +7,8 @@ import * as bcrypt from "bcryptjs";
 import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
 import { logAction } from "./log.actions";
 import * as crypto from 'crypto';
+import { slugify } from "@/lib/utils";
+import { getAugmentedRolesAndPermissions } from "../auth-utils";
 
 type EmployeeData = Partial<IEmployee>;
 
@@ -129,9 +131,62 @@ export async function getEmployeeById(id: string) {
         })
         .select("-password")
         .select("-password");
-    // .lean(); // We need virtuals (remainingDays) to be validated/present, so we return Document and let JSON.stringify invoke toJSON virtuals
+    if (!employee) return null;
 
-    return JSON.parse(JSON.stringify(employee));
+    const employeeObj = JSON.parse(JSON.stringify(employee));
+
+    // Augment with roles/permissions
+    const { roles, permissions } = getAugmentedRolesAndPermissions(employeeObj, employee.positionId);
+    employeeObj.roles = roles;
+    employeeObj.permissions = permissions;
+
+    return employeeObj;
+}
+
+export async function getEmployeeBySlug(slug: string) {
+    await dbConnect();
+    const { Position, StoreDepartment, VacationRecord, AbsenceRecord } = require("@/lib/models");
+
+    const employee = await Employee.findOne({ slug })
+        .populate("storeId", "name")
+        .populate({
+            path: "positionId",
+            select: "name level roles",
+            populate: { path: "roles", select: "name permissions" }
+        })
+        .populate("storeDepartmentId", "name")
+        .populate({
+            path: "positionHistory.positionId",
+            select: "name"
+        })
+        .populate({
+            path: "positionHistory.storeId",
+            select: "name"
+        })
+        .populate({
+            path: "positionHistory.storeDepartmentId",
+            select: "name"
+        })
+        .populate({
+            path: "vacations",
+            options: { sort: { from: -1 } }
+        })
+        .populate({
+            path: "absences",
+            options: { sort: { date: -1 } }
+        })
+        .select("-password");
+
+    if (!employee) return null;
+
+    const employeeObj = JSON.parse(JSON.stringify(employee));
+
+    // Augment with roles/permissions
+    const { roles, permissions } = getAugmentedRolesAndPermissions(employeeObj, employee.positionId);
+    employeeObj.roles = roles;
+    employeeObj.permissions = permissions;
+
+    return employeeObj;
 }
 
 export async function createEmployee(data: EmployeeData) {
@@ -145,6 +200,17 @@ export async function createEmployee(data: EmployeeData) {
     const salt = await bcrypt.genSalt(10);
     data.password = await bcrypt.hash(rawOtp, salt);
     data.isPasswordChanged = false;
+
+    // Generate Slug
+    if (data.firstName && data.lastName) {
+        let baseSlug = slugify(`${data.firstName} ${data.lastName}`);
+        let slug = baseSlug;
+        let counter = 1;
+        while (await Employee.findOne({ slug })) {
+            slug = `${baseSlug}-${counter++}`;
+        }
+        data.slug = slug;
+    }
 
     // Initialize Position History if position assigned
     if (data.positionId) {
@@ -175,7 +241,7 @@ export async function createEmployee(data: EmployeeData) {
 
     // Get company name for email
     const company = await Company.findOne({});
-    const companyName = company?.name || "The Chick";
+    const companyName = company?.name || "LaGasy";
 
     // Send Welcome Email
     try {
@@ -237,7 +303,7 @@ export async function confirmPasswordReset(employeeId: string) {
     await employee.save();
 
     const company = await Company.findOne({});
-    const companyName = company?.name || "The Chick";
+    const companyName = company?.name || "LaGasy";
 
     // Send Reset Email
     try {
@@ -272,6 +338,24 @@ export async function updateEmployee(id: string, data: EmployeeData) {
     if (data.password) {
         const salt = await bcrypt.genSalt(10);
         data.password = await bcrypt.hash(data.password, salt);
+    }
+
+    // Update Slug if name changes
+    if (data.firstName || data.lastName) {
+        const currentEmployee = await Employee.findById(id);
+        if (currentEmployee) {
+            const newFirstName = data.firstName || currentEmployee.firstName;
+            const newLastName = data.lastName || currentEmployee.lastName;
+            if (newFirstName !== currentEmployee.firstName || newLastName !== currentEmployee.lastName) {
+                let baseSlug = slugify(`${newFirstName} ${newLastName}`);
+                let slug = baseSlug;
+                let counter = 1;
+                while (await Employee.findOne({ slug, _id: { $ne: id } })) {
+                    slug = `${baseSlug}-${counter++}`;
+                }
+                data.slug = slug;
+            }
+        }
     }
 
     // Handle Position History Update
@@ -352,11 +436,11 @@ export async function assignEmployeesToStore(storeId: string, employeeIds: strin
 
     // 2. Update Store (add to employees array)
     // We should use $addToSet to avoid duplicates
-    await Store.findByIdAndUpdate(storeId, {
+    const store = await Store.findByIdAndUpdate(storeId, {
         $addToSet: { employees: { $each: employeeIds } }
-    });
+    }).select("slug");
 
-    revalidatePath(`/dashboard/stores/${storeId}`);
+    revalidatePath(`/dashboard/stores/${store?.slug || storeId}`);
 
     // Log Action (Note: assignedBy is not passed, but we can assume SYSTEM or update signature later)
     // For now, minimal intrusive logging
@@ -464,8 +548,9 @@ export async function removeEmployeeFromStore(storeId: string, employeeId: strin
 
     await employee.save();
 
-    revalidatePath(`/dashboard/stores/${storeId}`);
+    const store = await Store.findById(storeId).select("slug");
+    revalidatePath(`/dashboard/stores/${store?.slug || storeId}`);
     revalidatePath("/dashboard/employees");
-    revalidatePath(`/dashboard/employees/${employeeId}`);
+    revalidatePath(`/dashboard/employees/${employee.slug}`);
     return { success: true };
 }

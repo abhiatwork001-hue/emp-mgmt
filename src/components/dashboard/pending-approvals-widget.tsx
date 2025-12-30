@@ -83,7 +83,7 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             date: new Date(i.updatedAt || i.createdAt),
             details: `Schedule Week ${i.weekNumber}`,
             createdAt: new Date(i.createdAt),
-            link: `/dashboard/schedules/${i._id}`
+            link: `/dashboard/schedules/${i.slug || i._id}`
         }))
     ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Newest first
 

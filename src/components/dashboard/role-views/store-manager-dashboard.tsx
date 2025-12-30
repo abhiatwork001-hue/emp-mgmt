@@ -32,12 +32,13 @@ interface StoreManagerDashboardProps {
     };
     todaysCoworkers?: any[];
     currentScheduleId?: string | null;
+    currentScheduleSlug?: string | null;
     currentUserRole?: string;
 }
 
 import { motion } from "framer-motion";
 
-export function StoreManagerDashboard({ employee, pendingRequests, requests, storeStats, todaysCoworkers = [], currentScheduleId, currentUserRole = "store_manager" }: StoreManagerDashboardProps) {
+export function StoreManagerDashboard({ employee, pendingRequests, requests, storeStats, todaysCoworkers = [], currentScheduleId, currentScheduleSlug, currentUserRole = "store_manager" }: StoreManagerDashboardProps) {
     const [greeting, setGreeting] = useState("");
     const t = useTranslations("Common");
 
@@ -134,8 +135,8 @@ export function StoreManagerDashboard({ employee, pendingRequests, requests, sto
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                                             Working Today
                                         </span>
-                                        {currentScheduleId && (
-                                            <Link href={`/dashboard/schedules/${currentScheduleId}`} className="text-[10px] font-bold text-primary hover:underline transition-all group/link">
+                                        {(currentScheduleSlug || currentScheduleId) && (
+                                            <Link href={`/dashboard/schedules/${currentScheduleSlug || currentScheduleId}`} className="text-[10px] font-bold text-primary hover:underline transition-all group/link">
                                                 VIEW FULL SCHEDULE <span className="inline-block group-hover:translate-x-1 transition-transform">&rarr;</span>
                                             </Link>
                                         )}

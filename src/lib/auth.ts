@@ -3,6 +3,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import dbConnect from "@/lib/db";
 import { Employee, Position } from "@/lib/models";
 import bcrypt from "bcryptjs";
+import { getAugmentedRolesAndPermissions } from "./auth-utils";
 
 export const authOptions: NextAuthOptions = {
     providers: [
@@ -46,39 +47,9 @@ export const authOptions: NextAuthOptions = {
                     }
                     console.log("[Auth] Password valid");
 
-                    // Determine roles/permissions
-                    // 1. Check direct role assignment
-                    let roles: string[] = [];
-                    if (employee.roles && employee.roles.length > 0) {
-                        roles = [...employee.roles];
-                    } else if (employee.role) { // Legacy fallback
-                        roles.push(employee.role);
-                    }
-
-                    // 2. Check position-based role and permissions
-                    let permissions: string[] = [];
-                    if (employee.positionId) {
-                        const position = await Position.findById(employee.positionId);
-                        if (position) {
-                            const posName = position.name.toLowerCase();
-                            if (posName.includes('owner') || posName.includes('partner')) roles.push('owner');
-                            if (posName.includes('hr')) roles.push('hr');
-                            if (posName.includes('store manager')) roles.push('store_manager');
-                            if (posName.includes('department head')) roles.push('department_head');
-
-                            // Functional Permissions
-                            if (position.permissions && position.permissions.length > 0) {
-                                permissions = [...position.permissions];
-                            }
-                        }
-                    }
-
-                    // Deduplicate and Normalize
-                    const uniqueRoles = Array.from(new Set(roles.map(r => r.toLowerCase())));
-                    if (uniqueRoles.length === 0) uniqueRoles.push('employee');
-
-                    console.log("[Auth] Roles assigned:", uniqueRoles);
-                    console.log("[Auth] Permissions assigned:", permissions);
+                    // Determine roles/permissions using unified helper
+                    const position = employee.positionId ? await Position.findById(employee.positionId).populate('roles') : null;
+                    const { roles: uniqueRoles, permissions } = getAugmentedRolesAndPermissions(employee, position);
 
                     return {
                         id: employee._id.toString(),

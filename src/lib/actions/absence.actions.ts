@@ -58,8 +58,9 @@ export async function createAbsenceRequest(data: AbsenceRequestData) {
         }
     } catch (notifErr) { console.error("Absence Notification Error:", notifErr); }
 
+    const emp = await Employee.findById(data.employeeId).select("slug");
     revalidatePath("/dashboard/absences");
-    revalidatePath(`/dashboard/employees/${data.employeeId}`);
+    revalidatePath(`/dashboard/employees/${emp?.slug || data.employeeId}`);
 
     const session = await getServerSession(authOptions);
     const actorId = session?.user ? (session.user as any).id : data.employeeId;
@@ -149,8 +150,9 @@ export async function approveAbsenceRequest(requestId: string, approverId: strin
         });
     } catch (e) { console.error("Absence Approve Notification Error:", e); }
 
+    const emp = await Employee.findById(request.employeeId).select("slug");
     revalidatePath("/dashboard/absences");
-    revalidatePath(`/dashboard/employees/${request.employeeId}`);
+    revalidatePath(`/dashboard/employees/${emp?.slug || request.employeeId}`);
 
     const session = await getServerSession(authOptions);
     if (session?.user) {
@@ -210,8 +212,9 @@ export async function rejectAbsenceRequest(requestId: string, reviewerId: string
         });
     } catch (e) { console.error("Absence Reject Notification Error:", e); }
 
+    const emp = await Employee.findById(request.employeeId).select("slug");
     revalidatePath("/dashboard/absences");
-    revalidatePath(`/dashboard/employees/${request.employeeId}`);
+    revalidatePath(`/dashboard/employees/${emp?.slug || request.employeeId}`);
 
     const session = await getServerSession(authOptions);
     if (session?.user) {

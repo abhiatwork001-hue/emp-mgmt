@@ -92,6 +92,7 @@ export interface IRole extends Document {
 
 export interface IPosition extends Document {
     name: string;
+    slug: string; // Added slug
     level?: number;
     roles: ObjectId[]; // Reference to Role
     permissions?: string[]; // Granular functional permissions
@@ -123,6 +124,7 @@ export interface IEmployee extends Document {
     image?: string;
     firstName: string;
     lastName: string;
+    slug: string; // Added slug
     dob?: Date;
     phone?: string;
     address?: string; // Home address
@@ -221,6 +223,7 @@ export interface IDay {
 export interface ISchedule extends Document {
     storeId: ObjectId;
     storeDepartmentId: ObjectId;
+    slug: string; // Added slug
     weekNumber: number;
     year: number;
     dateRange: {
@@ -424,6 +427,7 @@ const RoleSchema = new Schema<IRole>({
 
 const PositionSchema = new Schema<IPosition>({
     name: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
     level: { type: Number },
     roles: [{ type: Schema.Types.ObjectId, ref: 'Role' }],
     permissions: [{ type: String }],
@@ -438,6 +442,7 @@ const PositionSchema = new Schema<IPosition>({
 const EmployeeSchema = new Schema<IEmployee>({
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true },
     password: { type: String },
     image: { type: String },
@@ -536,6 +541,7 @@ const ScheduleApprovalLogSchema = new Schema({
 const ScheduleSchema = new Schema<ISchedule>({
     storeId: { type: Schema.Types.ObjectId, ref: 'Store', required: true }, // Denormalized for easier querying
     storeDepartmentId: { type: Schema.Types.ObjectId, ref: 'StoreDepartment', required: true },
+    slug: { type: String, required: true, unique: true },
     weekNumber: { type: Number, required: true },
     year: { type: Number, required: true },
     dateRange: {
@@ -684,6 +690,7 @@ const NotificationSchema = new Schema<INotification>({
 
 export interface ITask extends Document {
     title: string;
+    slug: string; // Added slug
     description?: string;
     createdBy: ObjectId;
 
@@ -738,6 +745,7 @@ export interface ITask extends Document {
 
 const TaskSchema = new Schema<ITask>({
     title: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
     description: { type: String },
     createdBy: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
 
@@ -783,6 +791,7 @@ const TaskSchema = new Schema<ITask>({
 export interface INote extends Document {
     userId: ObjectId;
     title: string;
+    slug: string; // Added slug
     content: string; // was text
     isTask: boolean; // toggle to generic note vs todo
     completed: boolean;
@@ -797,6 +806,7 @@ export interface INote extends Document {
 const NoteSchema = new Schema<INote>({
     userId: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
     title: { type: String, default: "New Note" },
+    slug: { type: String, required: true, unique: true },
     content: { type: String, required: true },
     isTask: { type: Boolean, default: false },
     completed: { type: Boolean, default: false },
@@ -986,6 +996,7 @@ const ProductSchema = new Schema<IProduct>({
 // --- Notices ---
 export interface INotice extends Document {
     title: string;
+    slug: string; // Added slug
     content: string; // HTML/Markdown
     attachments: string[];
     priority: 'normal' | 'urgent';
@@ -1007,6 +1018,7 @@ export interface INotice extends Document {
 
 const NoticeSchema = new Schema<INotice>({
     title: { type: String, required: true },
+    slug: { type: String, required: true, unique: true },
     content: { type: String, required: true },
     attachments: [{ type: String }],
     priority: { type: String, enum: ['normal', 'urgent'], default: 'normal' },

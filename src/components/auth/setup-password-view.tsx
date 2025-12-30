@@ -47,10 +47,9 @@ export function SetupPasswordView() {
             });
 
             toast.success("Password secured successfully!");
-            // Refresh to trigger server re-render of layout
-            router.refresh();
-            // Also push to dashboard to ensure valid URL if we were on some other route
-            router.push("/dashboard");
+            // Force hard redirect to ensure Layout re-evaluates server-side session/cookies
+            // and clears any stale Router cache.
+            window.location.href = "/dashboard";
         } catch (error) {
             console.error(error);
             toast.error("Failed to update password.");

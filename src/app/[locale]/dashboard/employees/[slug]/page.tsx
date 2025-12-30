@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getEmployeeById } from "@/lib/actions/employee.actions";
+import { getEmployeeBySlug } from "@/lib/actions/employee.actions";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,12 +16,12 @@ import { ProfileWorkTab } from "@/components/employees/profile-work-tab";
 import { AssignTaskButton } from "@/components/employees/assign-task-button";
 import { format } from "date-fns";
 
-export default async function EmployeeDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EmployeeDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
     const session = await getServerSession(authOptions);
     if (!session) redirect("/login");
 
-    const { id } = await params;
-    const employee = await getEmployeeById(id);
+    const { slug } = await params;
+    const employee = await getEmployeeBySlug(slug);
 
     if (!employee) {
         return <div>Employee not found</div>;

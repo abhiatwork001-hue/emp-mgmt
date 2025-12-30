@@ -138,7 +138,7 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
                                                 <Badge variant="outline" className="font-black text-[10px] tracking-widest uppercase bg-muted/40 text-muted-foreground border-border/40 px-3 py-1">STORE</Badge>
                                             )}
                                         </div>
-                                        <Link href={`/dashboard/notices/${notice._id}`}>
+                                        <Link href={`/dashboard/notices/${notice.slug}`}>
                                             <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-primary/5 hover:text-primary">
                                                 <ChevronRight className="h-5 w-5" />
                                             </Button>
@@ -146,7 +146,7 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
                                     </div>
 
                                     <div className="space-y-1.5">
-                                        <Link href={`/dashboard/notices/${notice._id}`} className="group/link block">
+                                        <Link href={`/dashboard/notices/${notice.slug}`} className="group/link block">
                                             <CardTitle className="text-2xl font-black text-foreground/90 group-hover/link:text-primary transition-colors leading-tight">
                                                 {notice.title}
                                             </CardTitle>
@@ -185,7 +185,7 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
                                     </div>
                                 </ScrollArea>
                                 <div className="mt-8 pb-8">
-                                    <Link href={`/dashboard/notices/${notice._id}`}>
+                                    <Link href={`/dashboard/notices/${notice.slug}`}>
                                         <Button className="w-full bg-foreground text-background font-black text-xs tracking-[0.2em] rounded-xl h-12 hover:bg-primary hover:text-primary-foreground transition-all duration-300">
                                             ENGAGE ANNOUNCEMENT
                                         </Button>

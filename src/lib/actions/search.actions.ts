@@ -128,7 +128,7 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
 
     const [employees, stores, foods] = await Promise.all([
         Employee.find(employeeFilter)
-            .select("firstName lastName email image positionId")
+            .select("firstName lastName email image positionId slug")
             .populate("positionId", "name translations")
             .limit(5)
             .lean(),
@@ -155,7 +155,7 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             id: emp._id.toString(),
             name: `${emp.firstName} ${emp.lastName}`,
             subtext: positionName,
-            url: `/dashboard/employees/${emp._id}`,
+            url: `/dashboard/employees/${emp.slug}`,
             image: emp.image
         });
     });

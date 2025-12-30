@@ -60,7 +60,7 @@ export function CreateScheduleDialog({ storeId, preSelectedDepartmentId, trigger
             const schedule = await getOrCreateSchedule(storeId, selectedDepartment, date, "SESSION_USER_ID_PLACEHOLDER");
 
             setOpen(false);
-            router.push(`/dashboard/schedules/${schedule._id}`);
+            router.push(`/dashboard/schedules/${schedule.slug || schedule._id}`);
         } catch (error) {
             console.error("Failed to create/get schedule", error);
             alert("Failed to create schedule. Please try again.");

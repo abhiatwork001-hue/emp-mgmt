@@ -4,6 +4,8 @@ import connectToDB from "@/lib/db";
 import { Notice, Employee, StoreDepartment } from "@/lib/models";
 import { revalidatePath } from "next/cache";
 import { triggerNotification } from "@/lib/actions/notification.actions";
+import { slugify } from "@/lib/utils";
+import * as crypto from "crypto";
 
 export async function createNotice(data: {
     title: string;
@@ -64,8 +66,16 @@ export async function createNotice(data: {
             }
         }
 
+        // Generate Slug
+        let baseSlug = slugify(data.title);
+        let slug = baseSlug;
+        while (await Notice.findOne({ slug })) {
+            slug = `${baseSlug}-${crypto.randomBytes(2).toString('hex')}`;
+        }
+
         const newNotice = await Notice.create({
             title: data.title,
+            slug: slug,
             content: data.content,
             priority: 'normal',
             targetScope: data.targetScope,
@@ -180,7 +190,7 @@ export async function getNoticesForUser(userId: string) {
             criteria.push({ targetScope: 'store', targetId: user.storeId });
         }
 
-        const userRoles = user.roles || [];
+        const normalizedRoles = (user.roles || []).map((r: string) => r.toLowerCase().trim());
 
         // Store Dept Scope
         if (user.storeDepartmentId?._id) {
@@ -190,7 +200,7 @@ export async function getNoticesForUser(userId: string) {
                 $or: [
                     { targetRole: null },
                     { targetRole: { $exists: false } },
-                    { targetRole: { $in: userRoles } }
+                    { targetRole: { $in: user.roles } } // Original roles for exact match if needed, but normalized is safer if they match
                 ]
             });
 
@@ -201,10 +211,13 @@ export async function getNoticesForUser(userId: string) {
         }
 
         // Role Group Scope (Global OR Store-Scoped)
-        if (userRoles.length > 0) {
+        if (normalizedRoles.length > 0) {
             criteria.push({
                 targetScope: 'role_group',
-                targetRole: { $in: userRoles },
+                // We use original roles from DB for $in check because targetRole in Notice model 
+                // might be exactly as stored in DB (e.g. "Store Manager").
+                // However, the check isAdminOrHR uses normalized.
+                targetRole: { $in: user.roles },
                 $or: [
                     { targetId: null },
                     { targetId: { $exists: false } },
@@ -217,7 +230,7 @@ export async function getNoticesForUser(userId: string) {
         criteria.push({ createdBy: userId });
 
         // Admin Visibility (HR/Owner/Admin see marked notices)
-        const isAdminOrHR = userRoles.some((r: string) => ['admin', 'hr', 'owner', 'super_user'].includes(r));
+        const isAdminOrHR = normalizedRoles.some((r: string) => ['admin', 'hr', 'owner', 'super_user'].includes(r));
         if (isAdminOrHR) {
             criteria.push({ visibleToAdmin: true });
         }
@@ -256,6 +269,25 @@ export async function getNoticeById(noticeId: string) {
         return JSON.parse(JSON.stringify(notice));
     } catch (error) {
         console.error("Get Notice Error:", error);
+        return null;
+    }
+}
+
+export async function getNoticeBySlug(slug: string) {
+    try {
+        await connectToDB();
+        const notice = await Notice.findOne({ slug })
+            .populate('createdBy', 'firstName lastName image')
+            .populate({
+                path: 'comments.userId',
+                model: Employee,
+                select: 'firstName lastName image'
+            });
+
+        if (!notice) return null;
+        return JSON.parse(JSON.stringify(notice));
+    } catch (error) {
+        console.error("Get Notice By Slug Error:", error);
         return null;
     }
 }
@@ -308,7 +340,7 @@ export async function addComment(noticeId: string, userId: string, content: stri
                         type: "info",
                         category: "announcement",
                         recipients: validRecipients,
-                        link: `/dashboard/notices/${noticeId}`, // Specific notice link
+                        link: `/dashboard/notices/${notice.slug}`, // Specific notice link
                         senderId: userId,
                         metadata: { noticeId }
                     });
@@ -353,9 +385,19 @@ export async function updateNotice(noticeId: string, userId: string, data: Parti
         if (data.visibleToAdmin !== undefined) notice.visibleToAdmin = data.visibleToAdmin;
         if (data.expiresAt !== undefined) notice.expiresAt = data.expiresAt ? new Date(data.expiresAt) : null;
 
+        // Update slug if title changes
+        if (data.title && data.title !== notice.title) {
+            let baseSlug = slugify(data.title);
+            let slug = baseSlug;
+            while (await Notice.findOne({ slug, _id: { $ne: noticeId } })) {
+                slug = `${baseSlug}-${crypto.randomBytes(2).toString('hex')}`;
+            }
+            notice.slug = slug;
+        }
+
         await notice.save();
         revalidatePath('/dashboard/notices');
-        revalidatePath(`/dashboard/notices/${noticeId}`);
+        revalidatePath(`/dashboard/notices/${notice.slug}`);
         revalidatePath('/dashboard');
         return { success: true };
     } catch (error) {

@@ -7,6 +7,7 @@ import { SetupPasswordView } from "@/components/auth/setup-password-view";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ContentWrapper } from "@/components/layout/content-wrapper";
 import { CallProvider } from "@/context/call-context";
+import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
     children,
@@ -19,6 +20,12 @@ export default async function DashboardLayout({
 
     // Fetch full employee to get department info
     const employee = userId ? await getEmployeeById(userId) : null;
+
+    // If session exists but employee not found, redirect to login to clear session
+    if (session && userId && !employee) {
+        redirect("/api/auth/signout?callbackUrl=/login");
+    }
+
     const userRoles = employee?.roles || user.roles || [];
 
     // Explicitly check for false. If it's undefined/null, we assume true (legacy users)
@@ -47,6 +54,7 @@ export default async function DashboardLayout({
     const normalizedRoles = userRoles.map((r: string) => normalize(r));
 
     if (normalizedRoles.includes("super_user")) primaryRole = "super_user";
+    else if (normalizedRoles.includes("tech")) primaryRole = "tech"; // High priority
     else if (normalizedRoles.includes("owner")) primaryRole = "owner";
     else if (normalizedRoles.includes("admin")) primaryRole = "admin";
     else if (normalizedRoles.includes("hr")) primaryRole = "hr";
