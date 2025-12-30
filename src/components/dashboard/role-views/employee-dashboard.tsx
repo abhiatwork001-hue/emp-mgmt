@@ -14,6 +14,7 @@ import { RequestVacationDialog } from "@/components/vacations/request-vacation-d
 import { ReportAbsenceDialog } from "@/components/absences/report-absence-dialog";
 import { HolidayWidget } from "@/components/dashboard/widgets/holiday-widget";
 import { BirthdayWidget } from "@/components/dashboard/widgets/birthday-widget";
+import { HolidayGreetingWidget } from "@/components/dashboard/widgets/holiday-greeting-widget";
 
 interface EmployeeDashboardProps {
     employee: any;
@@ -155,6 +156,9 @@ export function EmployeeDashboard({ employee, todaysCoworkers = [], currentSched
                             />
                         </CardContent>
                     </Card>
+
+                    {/* Holiday Greeting */}
+                    <HolidayGreetingWidget />
 
                     {/* Holiday Widget */}
                     <HolidayWidget storeId={employee.storeId?._id || employee.storeId} />

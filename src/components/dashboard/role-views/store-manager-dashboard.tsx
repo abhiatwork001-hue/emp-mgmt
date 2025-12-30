@@ -12,6 +12,7 @@ import { PendingApprovalsWidget } from "@/components/dashboard/pending-approvals
 import { CredentialManager } from "@/components/credentials/credential-list";
 import { BirthdayWidget } from "@/components/dashboard/widgets/birthday-widget";
 import { HolidayWidget } from "@/components/dashboard/widgets/holiday-widget";
+import { HolidayGreetingWidget } from "@/components/dashboard/widgets/holiday-greeting-widget";
 import { EmployeeScheduleTab } from "@/components/employees/employee-schedule-tab";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -220,6 +221,11 @@ export function StoreManagerDashboard({ employee, pendingRequests, requests, sto
                                 ))}
                             </CardContent>
                         </Card>
+                    </motion.div>
+
+                    {/* Holiday Greeting */}
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
+                        <HolidayGreetingWidget />
                     </motion.div>
 
                     {/* Birthday Widget */}
