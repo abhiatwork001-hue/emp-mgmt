@@ -8,6 +8,7 @@ import { logAction } from "./log.actions";
 
 export async function getConversations(userId: string) {
     try {
+        if (!userId) return []; // Validate userId
         await connectToDB();
         const conversations = await Conversation.find({
             participants: userId,

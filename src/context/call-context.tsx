@@ -46,6 +46,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         if (isDebug) console.log(`[CallDebug] ${msg}`);
     };
 
+    const [retryTrigger, setRetryTrigger] = useState(0);
+
     // Initialize PeerJS
     useEffect(() => {
         if (!session?.user) return;
@@ -53,20 +55,20 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         // Use user ID as Peer ID
         const peerId = (session.user as any).id;
 
-        // Prevent double-init in Strict Mode or rapid updates
-        if (peerRef.current && peerRef.current.id === peerId && !peerRef.current.disconnected) {
+        // Prevent double-init in Strict Mode or rapid updates (unless forcing retry)
+        if (peerRef.current && peerRef.current.id === peerId && !peerRef.current.disconnected && !peerRef.current.destroyed) {
             LOG(`PeerJS already initialized with ID: ${peerId}. Skipping re-initialization.`);
             return;
         }
 
-        // Cleanup function for previous instance if it exists but is different or disconnected
+        // Cleanup function for previous instance if it exists
         if (peerRef.current) {
             LOG(`Destroying previous PeerJS instance with ID: ${peerRef.current.id}`);
             peerRef.current.destroy();
             peerRef.current = null;
         }
 
-        LOG(`Initializing PeerJS with ID: ${peerId}`);
+        LOG(`Initializing PeerJS with ID: ${peerId} (Attempt ${retryTrigger + 1})`);
 
         const peer = new Peer(peerId, {
             // Using PeerJS cloud server (free tier)
@@ -81,13 +83,6 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
         peer.on('call', async (incomingCall) => {
             LOG("Receiving incoming call...");
-
-            // Extract metadata from metadata field if possible, otherwise use dummy
-            // Note: PeerJS call doesn't pass complex metadata in valid handshake easily without custom modification
-            // For MVP, we fetch caller details from the peerId or just show "Unknown Caller" or pass via extra data channel
-            // Simpler MVP: The caller ID is the user ID. We can't easily sync name without a DB lookup or data connection.
-            // WORKAROUND: We will open a DataConnection FIRST for metadata, then call.
-            // FOR NOW: Just accept the stream.
 
             // Extract metadata if available
             const metadata = incomingCall.metadata || {};
@@ -108,12 +103,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         });
 
         peer.on('error', (err: any) => {
-            console.error("PeerJS Error:", err);
             if (err.type === 'unavailable-id') {
-                // ID is taken. This likely means a zombie connection from hot-reload.
-                // We could try to reconnect or just wait.
-                // For now, let's just log it.
-                console.warn("Peer ID is taken. You might have another tab open or a stale connection.");
+                // ID is taken. This handles zombie connections (common in dev/refresh).
+                const delay = Math.min(2000 * (retryTrigger + 1), 10000); // Exponential backoff capped at 10s
+                console.warn(`Peer ID taken. Retrying in ${delay}ms (Attempt ${retryTrigger + 1})...`);
+
+                setTimeout(() => {
+                    setRetryTrigger(prev => prev + 1);
+                }, delay);
+            } else {
+                console.error("PeerJS Error:", err);
             }
         });
 
@@ -124,10 +123,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 peerRef.current.destroy();
                 peerRef.current = null;
                 setMyPeer(null);
-                setActiveCall(null); // Clear any active calls linked to this peer
+                setActiveCall(null);
             }
         };
-    }, [(session?.user as any)?.id]); // Dependency is strictly the ID string now
+    }, [(session?.user as any)?.id, retryTrigger]); // Dependency includes retryTrigger
 
     // Handle Active Call Stream Updates
     useEffect(() => {

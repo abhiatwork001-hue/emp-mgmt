@@ -29,18 +29,25 @@ export async function getAllStores() {
  */
 export async function getAllStoresWithStats() {
     await dbConnect();
-    // Aggregation to count departments
-    // Store has 'employees' array, so size of that is employee count.
-    // StoreDepartment has 'storeId', so we need to reverse lookup or lookups.
-
+    // Aggregation to count departments and employees dynamically
     const stores = await Store.aggregate([
-        // { $match: { active: true } }, // Returns all stores now
+        // { $match: { active: true } }, 
         {
             $lookup: {
-                from: "storedepartments", // collection name for StoreDepartment
+                from: "storedepartments",
                 localField: "_id",
                 foreignField: "storeId",
-                as: "departments"
+                as: "departments_list"
+            }
+        },
+        // Lookup employees where storeId matches store._id
+        {
+            $lookup: {
+                from: "employees",
+                localField: "_id",
+                foreignField: "storeId",
+                pipeline: [{ $project: { _id: 1 } }], // Fetch only IDs for performance
+                as: "employees_list"
             }
         },
         // Lookup manager details (assuming managers[0] is the main manager)
@@ -57,14 +64,15 @@ export async function getAllStoresWithStats() {
         },
         {
             $addFields: {
-                employeeCount: { $size: { $ifNull: ["$employees", []] } },
-                departmentCount: { $size: { $ifNull: ["$departments", []] } },
-                manager: { $arrayElemAt: ["$managerDetails", 0] } // Flatten array to object
+                employeeCount: { $size: { $ifNull: ["$employees_list", []] } },
+                departmentCount: { $size: { $ifNull: ["$departments_list", []] } },
+                manager: { $arrayElemAt: ["$managerDetails", 0] }
             }
         },
         {
             $project: {
-                departments: 0, // Remove heavy arrays
+                departments_list: 0,
+                employees_list: 0,
                 managerDetails: 0
             }
         }

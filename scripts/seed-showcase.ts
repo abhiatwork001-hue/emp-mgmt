@@ -1,489 +1,426 @@
-
+import "dotenv/config";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import dotenv from "dotenv";
+import { faker } from "@faker-js/faker";
 import {
-    Employee,
     Company,
-    Store,
     GlobalDepartment,
+    Store,
     StoreDepartment,
-    Role,
+    Employee,
     Position,
+    Role,
     Schedule,
-    VacationRequest,
-    AbsenceRequest,
-    Task,
-    Notification,
-    Note,
+    ShiftDefinition,
     VacationRecord,
     AbsenceRecord,
-    ShiftDefinition,
-    Notice
-} from "../src/lib/models";
+    Task,
+    VacationRequest,
+    AbsenceRequest,
+    INote,
+    IExtraHourRequest
+} from "../src/lib/models"; // Ensure this import path is correct
 
-dotenv.config({ path: ".env" });
+// --- Settings ---
+const STORE_COUNT = 10;
+const GLOBAL_DEPT_COUNT = 14;
+const STORE_DEPTS_PER_STORE = 7;
+const TOTAL_EMPLOYEES = 216;
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI) {
-    console.error("MONGODB_URI is likely not defined in .env.local");
-    process.exit(1);
-}
-
-// Data Sources
-const STORE_LOCATIONS = [
-    { name: "Lisbon Downtown", address: "Rua Augusta 100, Lisbon" },
-    { name: "Porto Riverside", address: "Cais da Ribeira 20, Porto" },
-    { name: "Algarve Beach", address: "Av. dos Descobrimentos 5, Albufeira" },
-    { name: "Coimbra Central", address: "Largo da Portagem 1, Coimbra" },
-    { name: "Braga Historic", address: "Praça da República 10, Braga" },
-    { name: "Cascais Marina", address: "Marina de Cascais, Cascais" },
-    { name: "Sintra Palace", address: "Rua das Padarias 2, Sintra" },
-    { name: "Evora Ancient", address: "Praça do Giraldo 5, Evora" },
-    { name: "Faro Airport", address: "Aeroporto de Faro, Faro" },
-    { name: "Madeira Island", address: "Av. do Mar 10, Funchal" }
-];
-
-const GLOBAL_DEPTS = [
-    "Kitchen", "Front of House", "Bar", "Management",
-    "HR", "Logistics", "Maintenance", "Security",
-    "Cleaning", "Marketing", "Finance", "IT",
-    "Delivery", "Events"
-];
-
-const POSITIONS_BY_DEPT: any = {
-    "Kitchen": ["Head Chef", "Sous Chef", "Chef de Partie", "Commis Chef", "Dishwasher"],
-    "Front of House": ["Maître d'", "Head Waiter", "Waiter", "Runner", "Host"],
-    "Bar": ["Head Bartender", "Mixologist", "Bartender", "Barback"],
-    "Management": ["Store Manager", "Assistant Manager", "Supervisor"],
-    "HR": ["HR Manager", "Recruiter", "HR Assistant"],
-    "Logistics": ["Logistics Manager", "Driver", "Stock Clerk"],
-    "Maintenance": ["Maintenance Head", "Technician", "Handyman"],
-    "Security": ["Head of Security", "Security Guard", "Doorman"],
-    "Cleaning": ["Cleaning Supervisor", "Cleaner", "Sanitation Specialist"],
-    "Marketing": ["Marketing Manager", "Social Media Coordinator", "Designer"],
-    "Finance": ["Finance Manager", "Accountant", "Cashier"],
-    "IT": ["IT Manager", "System Admin", "Helpdesk"],
-    "Delivery": ["Delivery Coordinator", "Driver", "Rider"],
-    "Events": ["Events Manager", "Coordinator", "Host"]
+const ROLES_DISTIBUTION = {
+    owner: 2,
+    hr: 2,
+    tech: 1,
+    // total fixed: 5. 
+    // Computed:
+    // Store Managers: 10 (1 per store)
+    // Store Dept Heads: 70 (1 per store dept)
+    // Global Dept Heads: 14 (1 per global dept)
+    // Total Heads: 94
+    // Remaining for regular staff: 216 - 5 - 94 = 117
 };
-
-const FIRST_NAMES = ["Maria", "Joao", "Ana", "Pedro", "Sofia", "Tiago", "Ines", "Diogo", "Beatriz", "Ricardo", "Mariana", "Bruno", "Carolina", "Andre", "Rita", "Miguel", "Catarina", "Francisco", "Lara", "Luis"];
-const LAST_NAMES = ["Silva", "Santos", "Ferreira", "Pereira", "Oliveira", "Costa", "Rodrigues", "Martins", "Jesus", "Sousa", "Fernandes", "Goncalves", "Gomes", "Lopes", "Marques", "Alves", "Almeida", "Ribeiro", "Pinto", "Carvalho"];
-
-function getRandomName() {
-    const first = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
-    const last = LAST_NAMES[Math.floor(Math.random() * LAST_NAMES.length)];
-    return { first, last };
-}
 
 async function seed() {
     console.log("Connecting to MongoDB...");
-    await mongoose.connect(MONGODB_URI!);
+    if (!process.env.MONGODB_URI) {
+        throw new Error("MONGODB_URI is not defined");
+    }
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log("Connected.");
 
-    // 1. Wipe Data
     console.log("Wiping database...");
     await Promise.all([
-        Employee.deleteMany({}),
         Company.deleteMany({}),
-        Store.deleteMany({}),
         GlobalDepartment.deleteMany({}),
+        Store.deleteMany({}),
         StoreDepartment.deleteMany({}),
-        Role.deleteMany({}),
+        Employee.deleteMany({}),
         Position.deleteMany({}),
+        Role.deleteMany({}),
         Schedule.deleteMany({}),
-        VacationRequest.deleteMany({}),
-        AbsenceRequest.deleteMany({}),
-        Task.deleteMany({}),
-        Notification.deleteMany({}),
-        Note.deleteMany({}),
         ShiftDefinition.deleteMany({}),
         VacationRecord.deleteMany({}),
         AbsenceRecord.deleteMany({}),
-        Notice.deleteMany({})
+        Task.deleteMany({}),
+        VacationRequest.deleteMany({}),
+        AbsenceRequest.deleteMany({})
     ]);
     console.log("Database wiped.");
 
-    // 2. Global Departments
-    console.log("Creating Global Departments...");
-    const globalDeptDocs = await Promise.all(GLOBAL_DEPTS.map(async (name) => {
-        return await GlobalDepartment.create({
-            name,
-            slug: name.toLowerCase().replace(/\s+/g, '-'),
-            hasHead: true
-        });
-    }));
-    const globalDeptMap = globalDeptDocs.reduce((acc, gd) => ({ ...acc, [gd.name]: gd }), {} as any);
-
-    // 3. Roles
+    // --- 1. Roles ---
     console.log("Creating Roles...");
-    const ROLE_NAMES = ["Store Manager", "Employee", "Department Head", "Store Department Head", "Owner", "Admin", "HR", "Super User"];
-    const roles: any = {};
-    for (const name of ROLE_NAMES) {
-        roles[name] = await Role.create({ name, permissions: [], active: true });
+    const rolesData = [
+        { name: "super_user", permissions: ["manage_system", "view_logs", "manage_store"], description: "Super User" },
+        { name: "owner", permissions: ["manage_store", "manage_finance", "view_reports"], description: "Owner" },
+        { name: "admin", permissions: ["manage_system", "manage_users"], description: "Administrator" },
+        { name: "hr", permissions: ["manage_employees", "approve_vacations"], description: "Human Resources" },
+        { name: "tech", permissions: ["manage_system", "view_logs"], description: "Technical Support" },
+        { name: "store_manager", permissions: ["manage_store", "create_schedule"], description: "Store Manager" },
+        { name: "department_head", permissions: ["manage_department"], description: "Global Department Head" },
+        { name: "store_department_head", permissions: ["manage_store_department", "create_schedule"], description: "Store Department Head" },
+        { name: "employee", permissions: ["view_schedule", "request_vacation"], description: "Regular Employee" }
+    ];
+
+    const rolesMap = new Map();
+    for (const r of rolesData) {
+        const doc = await Role.create(r);
+        rolesMap.set(r.name, doc);
     }
 
-    // 4. Positions
-    console.log("Creating Positions...");
-    const positionDocs: any[] = [];
-    const positionMap: any = {};
-
-    for (const deptName of GLOBAL_DEPTS) {
-        const posNames = POSITIONS_BY_DEPT[deptName] || [];
-        for (const pName of posNames) {
-            const pos = await Position.create({
-                name: pName,
-                roles: [roles["Employee"]._id], // Default base role
-                active: true
-            });
-            positionDocs.push(pos);
-            positionMap[pName] = pos;
-        }
-    }
-
-    // 5. Company
+    // --- 2. Company ---
+    console.log("Creating Company...");
     const company = await Company.create({
-        name: "Chick Main Showcase",
-        taxNumber: "500100200",
-        address: "HQ Lisbon",
-        active: true,
-        globalDepartments: globalDeptDocs.map(d => d._id)
+        name: "Chick Ecosystems Ltd.",
+        taxNumber: "999888777",
+        address: "123 Innovation Drive, Tech City",
+        totalVacationsPerYear: 22,
+        active: true
     });
 
-    // 6. Stores & Store Departments
-    console.log("Creating Stores...");
+    // --- 3. Global Departments ---
+    console.log(`Creating ${GLOBAL_DEPT_COUNT} Global Departments...`);
+    const globalDepts = [];
+    for (let i = 0; i < GLOBAL_DEPT_COUNT; i++) {
+        const name = faker.commerce.department() + (i > 5 ? ` ${i}` : ""); // Ensure uniqueish
+        const dept = await GlobalDepartment.create({
+            name: name,
+            slug: faker.helpers.slugify(name).toLowerCase(),
+            description: faker.company.catchPhrase(),
+            hasHead: true,
+            active: true
+        });
+        globalDepts.push(dept);
+    }
+    await company.updateOne({ $set: { globalDepartments: globalDepts.map(d => d._id) } });
+
+    // --- 4. Stores ---
+    console.log(`Creating ${STORE_COUNT} Stores...`);
     const stores = [];
-
-    // Helper to pick 6 random departments (always include Management, Kitchen, FOH + 3 others)
-    const getStoreDepts = () => {
-        const required = ["Management", "Kitchen", "Front of House"];
-        const others = GLOBAL_DEPTS.filter(d => !required.includes(d));
-        // Shuffle others
-        const shuffled = others.sort(() => 0.5 - Math.random());
-        return [...required, ...shuffled.slice(0, 3)];
-    };
-
-    for (const loc of STORE_LOCATIONS) {
+    for (let i = 0; i < STORE_COUNT; i++) {
+        const city = faker.location.city();
+        const street = faker.location.street();
+        const storeName = `${city} Branch`;
         const store = await Store.create({
             companyId: company._id,
-            name: loc.name,
-            slug: loc.name.toLowerCase().replace(/\s+/g, '-'),
-            address: loc.address,
-            contactEmail: `${loc.name.replace(/\s+/g, '').toLowerCase()}@chickmain.com`
+            name: storeName,
+            slug: faker.helpers.slugify(storeName).toLowerCase() + `-${i}`,
+            address: `${street}, ${city}`,
+            minEmployees: 10,
+            active: true
         });
+        stores.push(store);
+    }
+    await company.updateOne({ $set: { branches: stores.map(s => s._id) } });
 
-        // Create Store Depts
-        const deptNames = getStoreDepts();
-        const storeDepts = [];
-        for (const dName of deptNames) {
-            const gd = globalDeptMap[dName];
+    // --- 5. Store Departments ---
+    console.log(`Creating Store Departments (${STORE_COUNT} * ${STORE_DEPTS_PER_STORE})...`);
+    const allStoreDepts = [];
+    for (const store of stores) {
+        // Pick 7 global depts to instantiate in this store
+        const deptSubset = globalDepts.slice(0, STORE_DEPTS_PER_STORE);
+        for (const gd of deptSubset) {
             const sd = await StoreDepartment.create({
                 storeId: store._id,
                 globalDepartmentId: gd._id,
-                name: dName,
+                name: gd.name, // Keeping same name
                 slug: `${store.slug}-${gd.slug}`,
-                targetEmployees: 5
+                minEmployees: 2,
+                targetEmployees: 5,
+                active: true
             });
-            storeDepts.push(sd);
+            allStoreDepts.push(sd);
         }
-        stores.push({ store, storeDepts });
     }
 
-    // 7. Employees
-    console.log("Creating Employees...");
-    const hashedPassword = await bcrypt.hash("123456", 10);
-    const allDetailEmployees: any[] = [];
-
-    const createUser = async (data: any) => {
-        // Ensure email uniqueness fallback
-        let email = data.email;
-        let counter = 1;
-        while (await Employee.findOne({ email })) {
-            email = email.replace('@', `${counter}@`);
-            counter++;
-        }
-
-        const res = await Employee.create({
-            password: hashedPassword,
-            hourlyRate: 12 + Math.random() * 10,
-            contractType: "Full-Time",
-            isPasswordChanged: true,
-            nif: Math.floor(100000000 + Math.random() * 900000000).toString(),
-            joinedOn: new Date(new Date().setFullYear(new Date().getFullYear() - Math.floor(Math.random() * 3))),
-            dob: new Date(1980 + Math.floor(Math.random() * 20), Math.floor(Math.random() * 12), Math.floor(Math.random() * 28)),
-            ...data,
-            email // use unique
+    // --- 6. Positions ---
+    console.log("Creating Positions...");
+    const positions = [];
+    const positionsNames = ["Junior Staff", "Senior Staff", "Specialist", "Assistant", "Coordinator"];
+    for (const pName of positionsNames) {
+        const pos = await Position.create({
+            name: pName,
+            roles: [rolesMap.get("employee")._id],
+            level: 1,
+            active: true
         });
+        positions.push(pos);
+    }
+    // Specific positions for heads
+    const managerPos = await Position.create({ name: "Manager", roles: [rolesMap.get("store_manager")._id], level: 3 });
+    const headPos = await Position.create({ name: "Department Head", roles: [rolesMap.get("department_head")._id], level: 3 });
+    const storeHeadPos = await Position.create({ name: "Shift Leader", roles: [rolesMap.get("store_department_head")._id], level: 2 });
+    const ownerPos = await Position.create({ name: "Owner", roles: [rolesMap.get("owner")._id], level: 5 });
+    const hrPos = await Position.create({ name: "HR Officer", roles: [rolesMap.get("hr")._id], level: 4 });
+    const techPos = await Position.create({ name: "Tech Lead", roles: [rolesMap.get("tech")._id], level: 4 });
 
-        const emp = Array.isArray(res) ? res[0] : res;
-        allDetailEmployees.push(emp);
-        return emp as any;
+    // --- 7. Employees ---
+    console.log(`Creating ${TOTAL_EMPLOYEES} Employees...`);
+    const allEmployees: any[] = [];
+    const passwordHash = await bcrypt.hash("123456", 10);
+
+    const createEmp = async (roleName: string, positionId: any, storeId?: any, deptId?: any, employmentType: string = "Contracted") => {
+        const firstName = faker.person.firstName();
+        const lastName = faker.person.lastName();
+        const email = faker.internet.email({ firstName, lastName }).toLowerCase();
+
+        const emp = await Employee.create({
+            firstName,
+            lastName,
+            email,
+            password: passwordHash,
+            dob: faker.date.birthdate({ min: 18, max: 60, mode: 'age' }),
+            phone: faker.phone.number(),
+            address: faker.location.streetAddress(),
+            joinedOn: faker.date.past({ years: 5 }),
+            roles: [roleName],
+            storeId,
+            storeDepartmentId: deptId,
+            positionId,
+            contract: {
+                weeklyHours: roleName === "employee" && Math.random() > 0.7 ? 20 : 40,
+                workingDays: [1, 2, 3, 4, 5],
+                employmentType: employmentType,
+                vacationAllowed: employmentType === "Contracted"
+            },
+            active: true,
+            vacationTracker: {
+                defaultDays: 22,
+                year: new Date().getFullYear(),
+                remainingDays: 22 // Logical default
+            }
+        });
+        return emp;
     };
 
-    // A. Tech (1)
-    await createUser({
-        firstName: "Tech", lastName: "Admin", email: "tech@chickmain.com",
-        roles: ["Admin", "Super User"],
-        address: "Server Room 1"
-    });
+    // A. Special Roles (5)
+    // Owners (2)
+    for (let i = 0; i < 2; i++) allEmployees.push(await createEmp("owner", ownerPos._id));
+    // HR (2)
+    for (let i = 0; i < 2; i++) allEmployees.push(await createEmp("hr", hrPos._id));
+    // Tech (1)
+    for (let i = 0; i < 1; i++) allEmployees.push(await createEmp("tech", techPos._id));
 
-    // B. Owners (2)
-    await createUser({ firstName: "Owner", lastName: "One", email: "owner1@chickmain.com", roles: ["Owner"] });
-    await createUser({ firstName: "Owner", lastName: "Two", email: "owner2@chickmain.com", roles: ["Owner"] });
-
-    // C. HR (2)
-    await createUser({ firstName: "HR", lastName: "Director", email: "hr.director@chickmain.com", roles: ["HR"] });
-    await createUser({ firstName: "HR", lastName: "Assistant", email: "hr.assist@chickmain.com", roles: ["HR"] });
-
-    // D. Global Dept Heads & SubHeads (14 * 2 = 28)
-    for (const gd of globalDeptDocs) {
-        // Head
-        const head = await createUser({
-            firstName: "Head", lastName: gd.name,
-            email: `head.${gd.slug}@chickmain.com`,
-            roles: ["Department Head"],
-            positionId: positionMap[POSITIONS_BY_DEPT[gd.name]?.[0]]?._id
-        });
-        // SubHead
-        const sub = await createUser({
-            firstName: "Sub", lastName: gd.name,
-            email: `sub.${gd.slug}@chickmain.com`,
-            roles: ["Department Head"], // using same role for permission simplicity, or make new one
-            positionId: positionMap[POSITIONS_BY_DEPT[gd.name]?.[1] || POSITIONS_BY_DEPT[gd.name]?.[0]]?._id
-        });
-
-        await GlobalDepartment.findByIdAndUpdate(gd._id, {
-            departmentHead: [head._id],
-            subHead: [sub._id]
-        });
+    // B. Store Managers (10)
+    for (const store of stores) {
+        const mgr = await createEmp("store_manager", managerPos._id, store._id);
+        allEmployees.push(mgr);
+        await store.updateOne({ $push: { managers: mgr._id } });
     }
 
-    // E. Store Hierarchies
-    for (const { store, storeDepts } of stores) {
-        // 1. Store Manager & Sub (2)
-        const manPos = positionMap["Store Manager"];
-        const sm = await createUser({
-            firstName: "Manager", lastName: store.name.split(' ')[0],
-            email: `manager.${store.slug}@chickmain.com`,
-            storeId: store._id,
-            roles: ["Store Manager"],
-            positionId: manPos?._id
-        });
-        const subSm = await createUser({
-            firstName: "SubManager", lastName: store.name.split(' ')[0],
-            email: `sub.${store.slug}@chickmain.com`,
-            storeId: store._id,
-            roles: ["Store Manager"],
-            positionId: positionMap["Assistant Manager"]?._id
-        });
+    // C. Global Dept Heads (14)
+    for (const gd of globalDepts) {
+        const head = await createEmp("department_head", headPos._id); // Not attached to a store yet? Or HQ?
+        allEmployees.push(head);
+        await gd.updateOne({ $push: { departmentHead: head._id } });
+    }
 
-        await Store.findByIdAndUpdate(store._id, {
-            managers: [sm._id],
-            subManagers: [subSm._id]
-        });
+    // D. Store Dept Heads (70) -- attached to Store Depts
+    // Also we track remaining slots.
+    let remainingEmployees = TOTAL_EMPLOYEES - allEmployees.length;
+    // We have 70 Store Depts. We MUST put a head in each.
+    // Wait, 216 - 5 - 10 - 14 = 187.
+    // 187 > 70. So we can put 1 head per store dept.
 
-        // 2. Store Dept Heads & SubHeads (6 depts * 2 = 12)
-        for (const sd of storeDepts) {
-            const hRole = roles["Store Department Head"];
-            // Find appropriate position
-            const posList = POSITIONS_BY_DEPT[sd.name] || [];
+    // Flatten store depts for easier iteration
+    // Iterate stores again to access their depts logic
+    // Actually I can just query StoreDepartment.
+    const fetchedStoreDepts = await StoreDepartment.find({});
 
-            const head = await createUser({
-                firstName: "Head", lastName: `${store.name.split(' ')[0]}-${sd.name}`,
-                email: `head.${sd.slug}@chickmain.com`,
-                storeId: store._id,
-                storeDepartmentId: sd._id,
-                roles: ["Store Department Head"],
-                positionId: positionMap[posList[0] || "Employee"]?._id
-            });
-            const sub = await createUser({
-                firstName: "Sub", lastName: `${store.name.split(' ')[0]}-${sd.name}`,
-                email: `sub.${sd.slug}@chickmain.com`,
-                storeId: store._id,
-                storeDepartmentId: sd._id,
-                roles: ["Store Department Head"],
-                positionId: positionMap[posList[1] || posList[0] || "Employee"]?._id
-            });
+    for (const sd of fetchedStoreDepts) {
+        const head = await createEmp("store_department_head", storeHeadPos._id, sd.storeId, sd._id);
+        allEmployees.push(head);
+        await StoreDepartment.findByIdAndUpdate(sd._id, { $push: { headOfDepartment: head._id } });
+        remainingEmployees--;
+    }
 
-            await StoreDepartment.findByIdAndUpdate(sd._id, {
-                headOfDepartment: [head._id],
-                subHead: [sub._id]
-            });
+    // E. Regular Employees (Rest ~117)
+    // Distributed randomly across Store Departments
+    const employmentTypes = ["Contracted", "Part-Time", "Freelancer"];
 
-            // 3. Regular Employees (~3 per dept? User wants ~200 total)
-            // Currently ~160 created (Stores: 10 * (2 + 6*2) = 140) + 33 global = 173.
-            // Need ~30 more. Let's add 1 extra employee to 3 random depts per store.
+    while (remainingEmployees > 0) {
+        const randomSD = fetchedStoreDepts[Math.floor(Math.random() * fetchedStoreDepts.length)];
+        const randomPos = positions[Math.floor(Math.random() * positions.length)];
+        const empType = employmentTypes[Math.floor(Math.random() * employmentTypes.length)];
 
-            if (["Kitchen", "Front of House", "Bar"].includes(sd.name)) {
-                const { first, last } = getRandomName();
-                const emp = await createUser({
-                    firstName: first, lastName: last,
-                    email: `${first}.${last}.${Math.floor(Math.random() * 1000)}@chickmain.com`,
-                    storeId: store._id,
-                    storeDepartmentId: sd._id,
-                    roles: ["Employee"],
-                    positionId: positionMap[posList[posList.length - 1] || "Employee"]?._id
-                });
+        // Ensure "Freelancer" or "PartTime" logic in db (using "Contracted" mostly for simplicity or as requested)
+        // User asked: "put some as part timer, freelancer and contracted"
+        const type = empType === "Part-Time" ? "Contracted" : empType; // Map part-time to contracted with less hours?
+        // Actually schema supports "Contracted", "Freelancer", "Extra".
 
-                // Position history for this employee
-                await Employee.findByIdAndUpdate(emp._id, {
-                    $push: {
-                        positionHistory: {
-                            positionId: emp.positionId,
-                            storeId: emp.storeId,
-                            storeDepartmentId: emp.storeDepartmentId,
-                            reason: "Initial Hire",
-                            from: new Date(2024, 0, 1),
-                            assignedBy: sm._id
-                        }
-                    }
-                });
-            }
+        const emp = await createEmp(
+            "employee",
+            randomPos._id,
+            randomSD.storeId,
+            randomSD._id,
+            empType === "Part-Time" ? "Contracted" : (empType === "Freelancer" ? "Freelancer" : "Contracted")
+        );
+        // Correct weekly hours for part time inside createEmp if needed
+        if (empType === "Part-Time") {
+            emp.contract!.weeklyHours = 20;
+            await emp.save();
         }
+
+        allEmployees.push(emp);
+        await StoreDepartment.findByIdAndUpdate(randomSD._id, { $push: { employees: emp._id } });
+        remainingEmployees--;
     }
 
-    // 8. Schedules (Past 2 months = ~8-9 weeks)
-    console.log("Generating Schedules & Shifts...");
-    const weeks = [-8, -7, -6, -5, -4, -3, -2, -1, 0, 1]; // next week is 1
-    const today = new Date();
+    // --- 8. Generate History & Data ---
+    console.log("Generating Histories (Vacation, Absence, Position, Tasks, etc.)...");
 
-    for (const { store, storeDepts } of stores) {
-        for (const dept of storeDepts) {
-            // Get employees in this dept
-            const deptEmployees = allDetailEmployees.filter(e => e.storeDepartmentId?.toString() === dept._id.toString());
-            // also include dept head/sub if they are linked to this dept
-            // (Note: in step 7 we assigned storeDepartmentId to heads/subs too)
+    const admin = allEmployees.find(e => e.roles.includes("tech")) || allEmployees[0];
 
-            if (deptEmployees.length === 0) continue;
+    for (const emp of allEmployees) {
+        const isOld = Math.random() > 0.3; // 70% have history
 
-            for (const weekOffset of weeks) {
-                // Determine Week Start (Monday)
-                const d = new Date(today);
-                const currentDay = d.getDay(); // 0=Sun, 1=Mon
-                const distanceToMonday = (currentDay + 6) % 7;
-                d.setDate(d.getDate() - distanceToMonday + (weekOffset * 7));
-                d.setHours(0, 0, 0, 0);
-
-                const weekStart = new Date(d);
-                const weekEnd = new Date(weekStart);
-                weekEnd.setDate(weekStart.getDate() + 6);
-                weekEnd.setHours(23, 59, 59, 999);
-
-                const days = [];
-                for (let i = 0; i < 7; i++) {
-                    const date = new Date(weekStart);
-                    date.setDate(weekStart.getDate() + i);
-
-                    const dayShifts = [];
-                    // Random shifts for employees
-                    const shuffledEmps = deptEmployees.sort(() => 0.5 - Math.random());
-
-                    // Morning Shift
-                    if (shuffledEmps.length > 0) {
-                        dayShifts.push({
-                            shiftName: "Morning",
-                            startTime: "09:00",
-                            endTime: "17:00",
-                            breakMinutes: 60,
-                            color: "#F59E0B",
-                            employees: shuffledEmps.slice(0, Math.ceil(shuffledEmps.length / 2)).map(e => e._id),
-                            requiredHeadcount: 2
-                        });
+        // Position History
+        if (isOld) {
+            await Employee.findByIdAndUpdate(emp._id, {
+                $push: {
+                    positionHistory: {
+                        positionId: emp.positionId,
+                        storeId: emp.storeId,
+                        storeDepartmentId: emp.storeDepartmentId,
+                        reason: "Initial Hire",
+                        from: faker.date.past({ years: 2 }),
+                        to: faker.date.recent({ days: 100 }),
+                        assignedBy: admin._id
                     }
-                    // Evening Shift
-                    if (shuffledEmps.length > 1) {
-                        dayShifts.push({
-                            shiftName: "Evening",
-                            startTime: "17:00",
-                            endTime: "01:00",
-                            breakMinutes: 60,
-                            color: "#3B82F6",
-                            employees: shuffledEmps.slice(Math.ceil(shuffledEmps.length / 2)).map(e => e._id),
-                            requiredHeadcount: 2
-                        });
-                    }
-
-                    days.push({
-                        date,
-                        shifts: dayShifts
-                    });
                 }
+            });
+        }
 
-                await Schedule.create({
-                    storeId: store._id,
-                    storeDepartmentId: dept._id,
-                    weekNumber: getWeekNumber(weekStart),
-                    year: weekStart.getFullYear(),
-                    dateRange: { startDate: weekStart, endDate: weekEnd },
-                    status: 'published',
-                    createdBy: deptEmployees[0]._id, // Head
-                    days
-                });
-            }
+        // Vacations
+        // 1-3 Past records
+        const numVacs = faker.number.int({ min: 1, max: 3 });
+        for (let k = 0; k < numVacs; k++) {
+            const start = faker.date.past({ years: 1 });
+            const end = new Date(start);
+            end.setDate(start.getDate() + 5);
+            await VacationRecord.create({
+                employeeId: emp._id,
+                year: start.getFullYear(),
+                from: start,
+                to: end,
+                totalDays: 5,
+                approvedBy: admin._id
+            });
+        }
+
+        // Absences
+        if (Math.random() > 0.6) {
+            const date = faker.date.recent({ days: 60 });
+            await AbsenceRecord.create({
+                employeeId: emp._id,
+                date: date,
+                type: 'sick',
+                reason: 'Medical',
+                approvedBy: admin._id
+            });
+        }
+
+        // Tasks
+        const numTasks = faker.number.int({ min: 0, max: 5 });
+        for (let k = 0; k < numTasks; k++) {
+            const status = faker.helpers.arrayElement(['todo', 'in_progress', 'completed']);
+            const deadline = faker.date.soon({ days: 30 });
+            const isOverdue = Math.random() > 0.8;
+
+            await Task.create({
+                title: faker.hacker.verb() + " " + faker.hacker.noun(),
+                description: faker.lorem.sentence(),
+                createdBy: admin._id,
+                assignedTo: [{ type: 'individual', id: emp._id }],
+                status: isOverdue && status !== 'completed' ? 'todo' : status,
+                deadline: isOverdue ? faker.date.recent({ days: 10 }) : deadline,
+                priority: faker.helpers.arrayElement(['low', 'medium', 'high'])
+            });
         }
     }
 
-    // 9. Tasks & Notifications
-    console.log("Generating Tasks & Notices...");
-    // Overdue Task
-    const someone = allDetailEmployees[10]; // Random
-    await Task.create({
-        title: "Submit Monthly Report (Overdue)",
-        description: "Please submit the financial report.",
-        createdBy: someone._id,
-        assignedTo: [{ type: 'store', id: stores[0].store._id }],
-        deadline: new Date(new Date().setDate(new Date().getDate() - 5)),
-        status: 'todo',
-        priority: 'high'
-    });
+    // --- 9. Schedules & Overtime ---
+    console.log("Generating Schedules...");
+    const currentWeekStart = new Date();
+    // Align to Monday
+    const dy = currentWeekStart.getDay();
+    const diff = currentWeekStart.getDate() - dy + (dy === 0 ? -6 : 1);
+    currentWeekStart.setDate(diff);
 
-    // Pending Task
-    await Task.create({
-        title: "Inventory Check",
-        description: "Verify stock levels for kitchen.",
-        createdBy: someone._id,
-        assignedTo: [{ type: 'store_department', id: stores[0].storeDepts[0]._id }],
-        deadline: new Date(new Date().setDate(new Date().getDate() + 2)),
-        status: 'in_progress',
-        priority: 'medium'
-    });
+    // Create schedule for each Store Department
+    for (const sd of fetchedStoreDepts) {
+        // Find employees in this dept
+        const deptEmps = await Employee.find({ storeDepartmentId: sd._id });
+        if (deptEmps.length === 0) continue;
 
-    // Completed Task
-    await Task.create({
-        title: "Onboard New Staff",
-        description: "Setup accounts.",
-        createdBy: someone._id,
-        assignedTo: [{ type: 'individual', id: allDetailEmployees[20]._id }],
-        deadline: new Date(),
-        status: 'completed',
-        completedBy: [{ userId: allDetailEmployees[20]._id, completedAt: new Date() }]
-    });
+        const days = [];
+        for (let d = 0; d < 7; d++) {
+            const dayDate = new Date(currentWeekStart);
+            dayDate.setDate(currentWeekStart.getDate() + d);
 
-    // Notice
-    await Notice.create({
-        title: "Welcome to Chick Main",
-        content: "We are happy to announce our new system launch!",
-        targetScope: 'global',
-        createdBy: someone._id,
-        priority: 'normal'
-    });
+            const shifts = [];
+            // Create Morning and Evening shifts
+            shifts.push({
+                shiftName: "Morning",
+                startTime: "09:00",
+                endTime: "17:00",
+                color: "#16a34a",
+                employees: deptEmps.slice(0, Math.ceil(deptEmps.length / 2)).map(e => e._id),
+                isOvertime: false
+            });
+            shifts.push({
+                shiftName: "Evening",
+                startTime: "17:00",
+                endTime: "23:00",
+                color: "#2563eb",
+                employees: deptEmps.slice(Math.ceil(deptEmps.length / 2)).map(e => e._id),
+                isOvertime: false
+            });
 
-    // Vacation Request (Past & Future)
-    await VacationRequest.create({
-        employeeId: someone._id,
-        requestedFrom: new Date(),
-        requestedTo: new Date(new Date().setDate(new Date().getDate() + 3)),
-        totalDays: 3,
-        status: 'pending'
-    });
+            days.push({
+                date: dayDate,
+                shifts: shifts
+            });
+        }
+
+        // 30% Schedules Approved/Published
+        const status = Math.random() > 0.5 ? 'published' : 'review';
+
+        await Schedule.create({
+            storeId: sd.storeId,
+            storeDepartmentId: sd._id,
+            weekNumber: getWeekNumber(currentWeekStart),
+            year: currentWeekStart.getFullYear(),
+            dateRange: { startDate: currentWeekStart, endDate: new Date(currentWeekStart.getTime() + 6 * 24 * 60 * 60 * 1000) },
+            status: status,
+            createdBy: admin._id,
+            days: days
+        });
+    }
 
     console.log("Seeding Complete!");
     process.exit(0);
 }
 
-// ISO 8601 week number
 function getWeekNumber(d: Date) {
     d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -492,7 +429,7 @@ function getWeekNumber(d: Date) {
     return weekNo;
 }
 
-seed().catch(err => {
-    console.error(err);
+seed().catch(e => {
+    console.error(e);
     process.exit(1);
 });
