@@ -25,6 +25,7 @@ import {
     MessageSquare,
     ChevronLeft,
     ChevronRight,
+    ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -41,7 +42,7 @@ const routeGroups = [
     { title: "Overview", routes: ["Home", "Notices", "Messages", "Tasks", "Notes"] },
     { title: "Operations", routes: ["Stores", "Departments", "Recipes", "Schedule", "Tips"] },
     { title: "Team Management", routes: ["Employees", "Positions", "Vacations", "Absences"] },
-    { title: "Account", routes: ["Profile", "Approvals", "Settings"] },
+    { title: "Account", routes: ["Profile", "Approvals", "Activities", "Settings"] },
 ];
 
 const routes = [
@@ -61,6 +62,7 @@ const routes = [
     { label: "Positions", icon: Briefcase, href: "/dashboard/positions", color: "text-blue-700" },
     { label: "Tips", icon: Coins, href: "/dashboard/tips", color: "text-yellow-600" },
     { label: "Profile", icon: User, href: "/dashboard/profile", color: "text-indigo-500" },
+    { label: "Activities", icon: ShieldAlert, href: "/dashboard/activities", color: "text-red-700" },
     { label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
 
@@ -97,6 +99,13 @@ export function Sidebar({
         const filtered = group.routes.map(label => {
             const route = routes.find(r => r.label === label);
             if (!route) return null;
+
+            if (route.label === "Activities") {
+                // Only SuperUser, Tech, Owner, HR, Admin
+                if (["super_user", "tech", "owner", "hr", "admin"].includes(effectiveRole)) return route;
+                return null;
+            }
+
             if (route.label === "Stores") {
                 if (["owner", "admin", "super_user", "hr", "tech"].includes(effectiveRole)) return route;
                 // Functional check for store management

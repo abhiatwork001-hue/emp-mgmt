@@ -1377,6 +1377,42 @@ ActionLogSchema.index({ storeId: 1, createdAt: -1 });
 ActionLogSchema.index({ action: 1, createdAt: -1 });
 ActionLogSchema.index({ targetId: 1 });
 
+
 export const Conversation = mongoose.models.Conversation || mongoose.model<IConversation>('Conversation', ConversationSchema);
 export const Message = mongoose.models.Message || mongoose.model<IMessage>('Message', MessageSchema);
 export const ActionLog = mongoose.models.ActionLog || mongoose.model<IActionLog>('ActionLog', ActionLogSchema);
+
+// --- Report a Problem ---
+export interface IProblem extends Document {
+    reporter: ObjectId; // Ref to Employee
+    recipientRole: 'chef' | 'head_of_department' | 'store_department_head' | 'store_manager' | 'hr' | 'owner' | 'admin';
+    priority: 'low' | 'medium' | 'high';
+    type: string;
+    description: string;
+    relatedStoreId?: ObjectId;
+    relatedDepartmentId?: ObjectId;
+    status: 'open' | 'in_progress' | 'resolved' | 'dismissed';
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const ProblemSchema = new Schema<IProblem>({
+    reporter: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
+    recipientRole: {
+        type: String,
+        enum: ['chef', 'head_of_department', 'store_department_head', 'store_manager', 'hr', 'owner', 'admin'],
+        required: true
+    },
+    priority: { type: String, enum: ['low', 'medium', 'high'], required: true },
+    type: { type: String, required: true },
+    description: { type: String, required: true },
+    relatedStoreId: { type: Schema.Types.ObjectId, ref: 'Store' },
+    relatedDepartmentId: { type: Schema.Types.ObjectId, ref: 'StoreDepartment' }, // Or GlobalDepartment, dynamic based on context
+    status: {
+        type: String,
+        enum: ['open', 'in_progress', 'resolved', 'dismissed'],
+        default: 'open'
+    }
+}, { timestamps: true });
+
+export const Problem = mongoose.models.Problem || mongoose.model<IProblem>('Problem', ProblemSchema);

@@ -66,6 +66,17 @@ export const ourFileRouter = {
             console.log("Task attachment uploaded", file.url);
             return { uploadedBy: metadata.userId, url: file.url };
         }),
+
+    messageAttachment: f({ image: { maxFileSize: "8MB", maxFileCount: 5 }, pdf: { maxFileSize: "16MB", maxFileCount: 5 }, video: { maxFileSize: "32MB", maxFileCount: 1 }, text: { maxFileSize: "8MB", maxFileCount: 5 } })
+        .middleware(async ({ req }) => {
+            const user = await auth(req);
+            if (!user) throw new UploadThingError("Unauthorized");
+            return { userId: user.id };
+        })
+        .onUploadComplete(async ({ metadata, file }) => {
+            console.log("Message attachment uploaded", file.url);
+            return { uploadedBy: metadata.userId, url: file.url };
+        }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

@@ -20,6 +20,7 @@ import { ModeToggle } from "@/components/ui/mode-toggle";
 import { GlobalSearch } from "@/components/global-search";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Breadcrumbs } from "./breadcrumbs";
+import { ReportProblemDialog } from "@/components/dashboard/report-problem-dialog";
 
 export function Header({
     userRole = "employee",
@@ -50,6 +51,9 @@ export function Header({
             <div className="flex justify-end items-center gap-x-4">
                 <ModeToggle />
                 <LanguageSwitcher />
+
+                {/* Report Problem */}
+                <ReportProblemDialog reporterId={(session?.user as any)?.id} />
 
                 {/* Notifications */}
                 <NotificationBell userId={(session?.user as any)?.id} />

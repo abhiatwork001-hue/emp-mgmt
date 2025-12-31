@@ -12,7 +12,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { sendMessage, markMessagesAsRead, toggleReaction, deleteConversation, toggleMuteConversation } from "@/lib/actions/message.actions";
 import { cn } from "@/lib/utils";
 import { UploadButton, useUploadThing } from "@/lib/uploadthing";
-import { useCall } from "@/context/call-context";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -157,7 +156,6 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const { startCall } = useCall();
     const audioChunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const longPressTimer = useRef<NodeJS.Timeout | null>(null);
