@@ -44,28 +44,46 @@ export async function triggerNotification(data: NotificationTriggerData) {
 
         const plainNotification = JSON.parse(JSON.stringify(notification));
 
-        // 2. Trigger Pusher Events (Fan-out)
-        // We trigger an event for EACH recipient so they receive it on their private channel
-        const triggerPromises = data.recipients.map(async (userId) => { // Changed to async
-            // Real-time (Pusher)
-            await pusherServer.trigger(`user-${userId}`, "notification:new", {
-                ...plainNotification,
-                // We format it for the frontend to look like a personal notification
-                // The frontend expects { read: boolean } at the top level usually, 
-                // but since we send the whole doc, the frontend selector will need to be smart 
-                // OR we send a personalized payload.
-                // Let's send the doc, and let frontend handle it.
-            });
+        // 2. Trigger Pusher Events with retry logic
+        const triggerPromises = data.recipients.map(async (userId) => {
+            let retries = 3;
+            let lastError;
 
-            // Background (Web Push)
-            await sendPushNotification(userId, {
-                title: data.title,
-                body: data.message,
-                url: data.link || "/dashboard"
-            });
+            while (retries > 0) {
+                try {
+                    // Real-time (Pusher)
+                    await pusherServer.trigger(`user-${userId}`, "notification:new", {
+                        ...plainNotification,
+                        read: false // Add read status for this specific user
+                    });
+
+                    // Background (Web Push)
+                    await sendPushNotification(userId, {
+                        title: data.title,
+                        body: data.message,
+                        url: data.link || "/dashboard"
+                    });
+
+                    return; // Success, exit retry loop
+                } catch (error) {
+                    lastError = error;
+                    retries--;
+                    console.error(`Pusher trigger failed for user ${userId}, retries left: ${retries}`, error);
+
+                    if (retries > 0) {
+                        // Wait before retry (exponential backoff)
+                        await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
+                    }
+                }
+            }
+
+            // If all retries failed, log but don't throw (notification is still in DB)
+            if (lastError) {
+                console.error(`Failed to send real-time notification to user ${userId} after 3 retries:`, lastError);
+            }
         });
 
-        await Promise.all(triggerPromises);
+        await Promise.allSettled(triggerPromises); // Use allSettled to not fail if some triggers fail
 
         return { success: true, notification: plainNotification };
     } catch (error) {

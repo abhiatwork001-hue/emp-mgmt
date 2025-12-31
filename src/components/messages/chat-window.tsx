@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Send, ArrowLeft, MoreVertical, Phone, Video, Paperclip, X, File as FileIcon, Check, CheckCheck, Clock, Download, Smile, Info, Trash, BellOff, Bell, Mic, StopCircle, Play, Pause, FastForward, PhoneOff } from "lucide-react";
+import { Send, ArrowLeft, MoreVertical, Paperclip, X, File as FileIcon, Check, CheckCheck, Clock, Download, Smile, Info, Trash, BellOff, Bell, Mic, StopCircle, Play, Pause, FastForward } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -561,14 +561,6 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => {
-                        const otherParticipant = conversation.type === 'group' ? null : conversation.participants.find((p: any) => (p._id || p) !== currentUserId);
-                        if (otherParticipant) startCall(otherParticipant._id || otherParticipant, otherParticipant.firstName, otherParticipant.image, false);
-                    }}><Phone className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => {
-                        const otherParticipant = conversation.type === 'group' ? null : conversation.participants.find((p: any) => (p._id || p) !== currentUserId);
-                        if (otherParticipant) startCall(otherParticipant._id || otherParticipant, otherParticipant.firstName, otherParticipant.image, true);
-                    }}><Video className="h-4 w-4" /></Button>
 
                     <Sheet>
                         <SheetTrigger asChild>

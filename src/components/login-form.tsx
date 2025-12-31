@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter as useNextRouter } from "next/navigation";
+import { useRouter } from "@/i18n/routing"; // Locale-aware router
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
     const [isLoading, setIsLoading] = useState(false);
     const [view, setView] = useState<"login" | "forgot">("login");
     const [error, setError] = useState("");
-    const router = useRouter();
+    const router = useRouter(); // Locale-aware router
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -47,7 +48,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                 toast.error("Login failed. Check your credentials.");
             } else {
                 toast.success("Welcome back!");
-                router.push("/dashboard");
+                router.push("/dashboard"); // Now uses locale-aware routing
             }
         } catch (err) {
             setError("Something went wrong");

@@ -6,7 +6,6 @@ import { getEmployeeById } from "@/lib/actions/employee.actions";
 import { SetupPasswordView } from "@/components/auth/setup-password-view";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ContentWrapper } from "@/components/layout/content-wrapper";
-import { CallProvider } from "@/context/call-context";
 import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({
@@ -63,32 +62,28 @@ export default async function DashboardLayout({
     else if (normalizedRoles.includes("store_department_head")) primaryRole = "store_department_head";
 
     return (
-        <CallProvider>
-            <div className="flex h-screen overflow-hidden bg-background text-foreground">
+        <div className="flex h-screen overflow-hidden bg-background text-foreground">
+            {isPasswordChanged ? (
+                <>
+                    {/* Sidebar Wrapper */}
+                    <div className="hidden md:flex h-full z-[80] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0 overflow-visible">
+                        <Sidebar userRole={primaryRole} departmentName={deptName} storeSlug={storeSlug} />
+                    </div>
 
-
-                {isPasswordChanged ? (
-                    <>
-                        {/* Sidebar Wrapper */}
-                        <div className="hidden md:flex h-full z-[80] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0 overflow-visible">
-                            <Sidebar userRole={primaryRole} departmentName={deptName} storeSlug={storeSlug} />
-                        </div>
-
-                        {/* Main Content Area */}
-                        <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
-                            <Header userRole={primaryRole} departmentName={deptName} />
-                            <ContentWrapper>
-                                {children}
-                            </ContentWrapper>
-                            <BottomNav />
-                        </main>
-                    </>
-                ) : (
-                    <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden items-center justify-center bg-background">
-                        <SetupPasswordView />
+                    {/* Main Content Area */}
+                    <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
+                        <Header userRole={primaryRole} departmentName={deptName} />
+                        <ContentWrapper>
+                            {children}
+                        </ContentWrapper>
+                        <BottomNav />
                     </main>
-                )}
-            </div>
-        </CallProvider>
+                </>
+            ) : (
+                <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden items-center justify-center bg-background">
+                    <SetupPasswordView />
+                </main>
+            )}
+        </div>
     );
 }

@@ -23,6 +23,7 @@ interface NotificationBellProps {
 export function NotificationBell({ userId }: NotificationBellProps) {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [useFallback, setUseFallback] = useState(false);
     const router = useRouter();
 
     // 1. Fetch initial history
@@ -37,28 +38,66 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         init();
     }, [userId]);
 
-    // 2. Real-time Subscription
+    // 2. Real-time Subscription with Pusher
     useEffect(() => {
         if (!userId) return;
 
-        // Channel name must match what we trigger on server
         const channel = pusherClient.subscribe(`user-${userId}`);
 
+        // Monitor connection state
+        const checkConnection = () => {
+            const state = pusherClient.connection.state;
+            if (state === 'failed' || state === 'unavailable') {
+                console.warn('⚠️ Pusher connection failed, switching to polling');
+                setUseFallback(true);
+            } else if (state === 'connected') {
+                setUseFallback(false);
+            }
+        };
+
+        // Check connection every 10 seconds
+        const connectionCheck = setInterval(checkConnection, 10000);
+        checkConnection(); // Initial check
+
         channel.bind("notification:new", (newNotif: any) => {
-            console.log("New Notification Received:", newNotif);
+            console.log("✅ New Notification Received:", newNotif);
             setNotifications((prev) => [newNotif, ...prev]);
             setUnreadCount((prev) => prev + 1);
 
-            // Optional: Browser Notification API
-            if (Notification.permission === "granted") {
-                new Notification("ChickMaster", { body: newNotif.message });
+            // Browser Notification API
+            if (typeof window !== 'undefined' && Notification.permission === "granted") {
+                new Notification("LaGasy", { body: newNotif.message });
             }
         });
 
         return () => {
+            clearInterval(connectionCheck);
             pusherClient.unsubscribe(`user-${userId}`);
         };
     }, [userId]);
+
+    // 3. Fallback Polling (activates when Pusher fails)
+    useEffect(() => {
+        if (!userId || !useFallback) return;
+
+        console.log('🔄 Using fallback polling for notifications');
+
+        const pollNotifications = async () => {
+            try {
+                const data = await getUserNotifications(userId);
+                setNotifications(data);
+                setUnreadCount(data.filter((n: any) => !n.read).length);
+            } catch (error) {
+                console.error('Polling error:', error);
+            }
+        };
+
+        // Poll every 30 seconds when using fallback
+        const pollInterval = setInterval(pollNotifications, 30000);
+        pollNotifications(); // Initial poll
+
+        return () => clearInterval(pollInterval);
+    }, [userId, useFallback]);
 
     const handleRead = async (id: string, link?: string) => {
         if (!userId) return;
