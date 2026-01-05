@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, Mail, Phone, MapPin, Building2, Calendar, FileText, Clock, CreditCard } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmployeeScheduleTab } from "@/components/employees/employee-schedule-tab";
-import { EditEmployeeDialog } from "@/components/employees/edit-employee-dialog";
+import { Link } from "@/i18n/routing";
 import { RequestVacationDialog } from "@/components/vacations/request-vacation-dialog";
 import { ReportAbsenceDialog } from "@/components/absences/report-absence-dialog";
 import { ProfileWorkTab } from "@/components/employees/profile-work-tab";
@@ -148,7 +148,11 @@ export default async function EmployeeDetailsPage({ params }: { params: Promise<
                                 </div>
 
                                 <div className="flex flex-col gap-3 pt-4">
-                                    <EditEmployeeDialog employee={employee} />
+                                    <Button asChild className="w-full">
+                                        <Link href={`/dashboard/employees/${employee.slug}/edit`}>
+                                            <Edit className="h-4 w-4 mr-2" /> Edit Employee
+                                        </Link>
+                                    </Button>
                                     <AssignTaskButton employee={employee} currentUser={session.user} />
                                 </div>
                             </div>

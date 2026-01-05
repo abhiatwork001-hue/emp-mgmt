@@ -1,7 +1,7 @@
 {
-    "name": "Chick Ecosystem",
-    "short_name": "Chick",
-    "description": "Premium Employee Management & Operations Ecosystem",
+    "name": "Chickinho Global",
+    "short_name": "Chickinho",
+    "description": "Chickinho Intelligent Operations Center",
     "start_url": "/dashboard",
     "display": "standalone",
     "orientation": "portrait-primary",

@@ -34,7 +34,7 @@ export function Header({
     const locale = useLocale();
 
     return (
-        <div className="flex items-center justify-between p-4 px-8 border-b border-border/40 bg-background/60 backdrop-blur-md sticky top-0 z-40">
+        <div className="flex items-center justify-between p-4 px-4 md:px-8 border-b border-border/40 bg-background/60 backdrop-blur-md sticky top-0 z-40">
             <div className="flex items-center gap-4">
                 <div className="md:hidden">
                     <MobileSidebar userRoles={userRoles} departmentName={departmentName} />

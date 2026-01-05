@@ -1,5 +1,7 @@
 "use client";
 
+import { DASHBOARD_URL } from "@/lib/utils";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -12,7 +14,7 @@ import { toast } from "sonner";
 import { Lock, ShieldCheck, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-export function SetupPasswordView() {
+export function SetupPasswordView({ userId: initialUserId }: { userId?: string }) {
     const { data: session, update } = useSession();
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -32,7 +34,7 @@ export function SetupPasswordView() {
 
         setIsLoading(true);
         try {
-            const userId = (session?.user as any)?.id;
+            const userId = initialUserId || (session?.user as any)?.id;
             if (!userId) throw new Error("User ID not found");
 
             await changePassword(userId, password);
@@ -49,7 +51,7 @@ export function SetupPasswordView() {
             toast.success("Password secured successfully!");
             // Force hard redirect to ensure Layout re-evaluates server-side session/cookies
             // and clears any stale Router cache.
-            window.location.href = "/dashboard";
+            window.location.href = DASHBOARD_URL;
         } catch (error) {
             console.error(error);
             toast.error("Failed to update password.");

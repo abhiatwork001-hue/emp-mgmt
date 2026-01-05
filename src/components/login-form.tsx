@@ -21,7 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Mail, Lock, ArrowRight, ChevronLeft, Loader2, Eye, EyeOff } from "lucide-react";
 import { requestPasswordReset } from "@/lib/actions/employee.actions";
-import { cn } from "@/lib/utils";
+import { cn, DASHBOARD_URL } from "@/lib/utils";
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
     const [email, setEmail] = useState("");
@@ -49,7 +49,12 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                 toast.error("Login failed. Check your credentials.");
             } else {
                 toast.success("Welcome back!");
-                router.push("/dashboard"); // Now uses locale-aware routing
+                // Using hard/window location might be safer if router.push fails in prod, but let's stick to router with variable first
+                // If user meant "production error" as in client-side navigation glitch, maybe window.location is better?
+                // But stick to router.push for SPA feel unless instructed.
+                // The user said "variable... cause in production its making error".
+                // I will use imports.
+                router.push(DASHBOARD_URL); // Now uses locale-aware routing
             }
         } catch (err) {
             setError("Something went wrong");

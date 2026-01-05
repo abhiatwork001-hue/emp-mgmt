@@ -214,176 +214,182 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
                 </div>
             </motion.div>
 
-            <Card glass premium className="p-0 overflow-hidden border-border/40">
-                {/* Header */}
-                <div className="hidden md:grid md:grid-cols-12 md:gap-4 p-5 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30 border-b">
-                    <div className="col-span-4 pl-4">{t("employees")}</div>
-                    <div className="col-span-2">{t("positions")}</div>
-                    <div className="col-span-2">Status & Actions</div>
-                    <div className="col-span-2">{t("stores")}</div>
-                    <div className="col-span-1">{t("departments")}</div>
-                    <div className="col-span-1">Edit</div>
-                </div>
-
-                {/* Rows */}
-                <div className="divide-y divide-border/20">
-                    <AnimatePresence>
-                        {initialEmployees.map((emp, index) => (
-                            <motion.div
-                                key={emp._id}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                            >
-                                <Link href={`/dashboard/employees/${emp.slug}`} className="block hover:bg-primary/5 transition-all group border-b last:border-0 md:border-0 relative">
-                                    {/* Link overlay to handle full card click while buttons still work */}
-                                    <div className="flex flex-col gap-3 p-6 md:hidden">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <Avatar className="h-12 w-12 border-2 border-border group-hover:border-primary/50 transition-all shadow-sm">
-                                                    <AvatarImage src={emp.image} alt={`${emp.firstName} ${emp.lastName}`} />
-                                                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                                                        {emp.firstName?.[0]}{emp.lastName?.[0]}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="text-foreground font-bold group-hover:text-primary transition-colors">{emp.firstName} {emp.lastName}</p>
-                                                    <p className="text-xs text-muted-foreground">{emp.email}</p>
-                                                </div>
-                                            </div>
-                                            {emp.active ? (
-                                                <Badge className="bg-emerald-500/10 text-emerald-600 border-0 text-[10px] font-bold uppercase tracking-tighter">{t('active')}</Badge>
-                                            ) : (
-                                                <Badge className="bg-red-500/10 text-red-600 border-0 text-[10px] font-bold uppercase tracking-tighter">{t('inactive')}</Badge>
-                                            )}
-                                        </div>
-
-                                        {emp.passwordResetRequested && (
-                                            <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 p-2 rounded-lg flex items-center justify-between mt-1">
-                                                <span className="text-[10px] font-bold text-amber-700 dark:text-amber-500 flex items-center gap-1 uppercase">
-                                                    <ShieldAlert className="h-3.5 w-3.5" /> Identity Reset
-                                                </span>
-                                                <Button size="sm" className="h-7 px-3 bg-amber-600 text-white border-0" onClick={(e) => handleConfirmReset(e, emp._id)}>Confirm</Button>
-                                            </div>
-                                        )}
-
-                                        <div className="flex items-center justify-between mt-2">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Balance</span>
-                                                <span className="text-sm font-semibold">{(emp.vacationTracker?.defaultDays || 0) + (emp.vacationTracker?.rolloverDays || 0) - (emp.vacationTracker?.usedDays || 0)} Days Left</span>
-                                            </div>
-                                            <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                                                <VacationCorrectionDialog
-                                                    employeeId={emp._id}
-                                                    currentTracker={emp.vacationTracker}
-                                                    onUpdate={() => router.refresh()}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4 text-sm mt-2 p-3 bg-muted/20 rounded-xl border border-border/40">
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{t("positions")}</span>
-                                                <span className="font-semibold text-foreground/90">{getLocalized(emp.positionId, "name", locale) || "No Position"}</span>
-                                            </div>
-                                            <div className="flex flex-col gap-1">
-                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{t("stores")}</span>
-                                                <div className="flex items-center gap-1.5 text-foreground/80">
-                                                    <MapPin className="h-3 w-3 text-primary/60" />
-                                                    <span className="truncate font-semibold">{getLocalized(emp.storeId, "name", locale) || "-"}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Desktop View (Grid) */}
-                                    <div className="hidden md:grid md:grid-cols-12 md:gap-4 md:p-5 md:items-center">
-                                        <div className="col-span-4 flex items-center gap-4 pl-2">
-                                            <div className="relative">
-                                                <Avatar className="h-12 w-12 border-2 border-border group-hover:border-primary/50 transition-all shadow-md">
-                                                    <AvatarImage src={emp.image} alt={`${emp.firstName} ${emp.lastName}`} />
-                                                    <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                                                        {emp.firstName?.[0]}{emp.lastName?.[0]}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                {emp.active && (
-                                                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-background rounded-full" />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <p className="text-foreground font-bold text-base group-hover:text-primary transition-colors">{emp.firstName} {emp.lastName}</p>
-                                                <p className="text-xs text-muted-foreground font-medium">{emp.email}</p>
-                                            </div>
-                                        </div>
-                                        <div className="col-span-2 text-sm font-semibold text-foreground/90">
-                                            {getLocalized(emp.positionId, "name", locale) || "No Position"}
-                                        </div>
-                                        <div className="col-span-2">
-                                            <div className="flex flex-col gap-2">
-                                                {emp.active ? (
-                                                    <Badge className="w-fit bg-emerald-500/10 text-emerald-600 border-0 text-[10px] font-bold uppercase hover:bg-emerald-500/20">{t('active')}</Badge>
-                                                ) : (
-                                                    <Badge className="w-fit bg-red-500/10 text-red-600 border-0 text-[10px] font-bold uppercase hover:bg-red-500/20">{t('inactive')}</Badge>
-                                                )}
-                                                {emp.passwordResetRequested && (
-                                                    <motion.div
-                                                        initial={{ scale: 0.9, opacity: 0 }}
-                                                        animate={{ scale: 1, opacity: 1 }}
-                                                        className="flex flex-col gap-1.5"
-                                                    >
-                                                        <Badge variant="outline" className="w-fit text-[9px] border-amber-500/50 text-amber-700 bg-amber-50 gap-1 animate-pulse uppercase font-extrabold">
-                                                            <ShieldAlert className="h-3 w-3" /> Reset Req
-                                                        </Badge>
-                                                        <Button
-                                                            size="sm"
-                                                            className="h-7 px-3 text-[9px] gap-1 bg-amber-600 hover:bg-amber-700 text-white border-0 shadow-lg shadow-amber-200 dark:shadow-none font-bold uppercase tracking-tight"
-                                                            onClick={(e) => handleConfirmReset(e, emp._id)}
-                                                        >
-                                                            <KeyRound className="h-3 w-3" /> Confirm Reset
-                                                        </Button>
-                                                    </motion.div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <div className="col-span-1 flex items-center justify-center" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                                            <VacationCorrectionDialog
-                                                employeeId={emp._id}
-                                                currentTracker={emp.vacationTracker}
-                                                onUpdate={() => router.refresh()}
-                                            />
-                                        </div>
-                                        <div className="col-span-2 text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                            <div className="p-1.5 rounded-lg bg-muted/50">
-                                                <MapPin className="h-3.5 w-3.5 text-primary/60" />
-                                            </div>
-                                            <span className="truncate max-w-[120px]" title={getLocalized(emp.storeId, "name", locale)}>
-                                                {getLocalized(emp.storeId, "name", locale) || "-"}
-                                            </span>
-                                        </div>
-                                        <div className="col-span-1 text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                            <div className="p-1.5 rounded-lg bg-muted/50">
-                                                <Briefcase className="h-3.5 w-3.5 text-primary/60" />
-                                            </div>
-                                            <span className="truncate max-w-[80px]" title={getLocalized(emp.storeDepartmentId, "name", locale)}>
-                                                {getLocalized(emp.storeDepartmentId, "name", locale) || "-"}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </Link>
-                            </motion.div>
-                        ))}
-                    </AnimatePresence>
-
-                    {initialEmployees.length === 0 && (
-                        <div className="p-20 text-center flex flex-col items-center justify-center text-muted-foreground bg-accent/5">
-                            <div className="p-6 rounded-full bg-muted/20 mb-6">
-                                <Search className="h-12 w-12 opacity-20" />
-                            </div>
-                            <p className="text-xl font-bold text-foreground">No matching employees</p>
-                            <p className="text-sm mt-1">Try adjusting your filters or searching for another name.</p>
-                            <Button variant="link" onClick={clearFilters} className="mt-4 font-bold text-primary">Clear all filters</Button>
+            <Card glass premium className="p-0 overflow-hidden border-border/40 flex flex-col">
+                <div className="overflow-x-auto">
+                    <div className="min-w-[1000px]">
+                        {/* Header */}
+                        {/* Header */}
+                        <div className="hidden md:grid md:grid-cols-12 md:gap-4 p-5 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30 border-b">
+                            <div className="col-span-4 pl-4">{t("employees")}</div>
+                            <div className="col-span-2">{t("positions")}</div>
+                            <div className="col-span-2">Status & Actions</div>
+                            <div className="col-span-1 text-center">Balance</div>
+                            <div className="col-span-2">{t("stores")}</div>
+                            <div className="col-span-1">{t("departments")}</div>
                         </div>
-                    )}
+
+                        {/* Rows */}
+                        <div className="divide-y divide-border/20">
+                            <AnimatePresence>
+                                {initialEmployees.map((emp, index) => (
+                                    <motion.div
+                                        key={emp._id}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.05 }}
+                                    >
+                                        <Link href={`/dashboard/employees/${emp.slug}`} className="block hover:bg-primary/5 transition-all group border-b last:border-0 md:border-0 relative">
+                                            {/* Link overlay to handle full card click while buttons still work */}
+                                            <div className="flex flex-col gap-3 p-6 md:hidden">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                        <Avatar className="h-12 w-12 border-2 border-border group-hover:border-primary/50 transition-all shadow-sm">
+                                                            <AvatarImage src={emp.image} alt={`${emp.firstName} ${emp.lastName}`} />
+                                                            <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                                                {emp.firstName?.[0]}{emp.lastName?.[0]}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        <div>
+                                                            <p className="text-foreground font-bold group-hover:text-primary transition-colors">{emp.firstName} {emp.lastName}</p>
+                                                            <p className="text-xs text-muted-foreground">{emp.email}</p>
+                                                        </div>
+                                                    </div>
+                                                    {emp.active ? (
+                                                        <Badge className="bg-emerald-500/10 text-emerald-600 border-0 text-[10px] font-bold uppercase tracking-tighter">{t('active')}</Badge>
+                                                    ) : (
+                                                        <Badge className="bg-red-500/10 text-red-600 border-0 text-[10px] font-bold uppercase tracking-tighter">{t('inactive')}</Badge>
+                                                    )}
+                                                </div>
+
+                                                {emp.passwordResetRequested && (
+                                                    <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 p-2 rounded-lg flex items-center justify-between mt-1">
+                                                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-500 flex items-center gap-1 uppercase">
+                                                            <ShieldAlert className="h-3.5 w-3.5" /> Identity Reset
+                                                        </span>
+                                                        <Button size="sm" className="h-7 px-3 bg-amber-600 text-white border-0" onClick={(e) => handleConfirmReset(e, emp._id)}>Confirm</Button>
+                                                    </div>
+                                                )}
+
+                                                <div className="flex items-center justify-between mt-2">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Balance</span>
+                                                        <span className="text-sm font-semibold">{(emp.vacationTracker?.defaultDays || 0) + (emp.vacationTracker?.rolloverDays || 0) - (emp.vacationTracker?.usedDays || 0)} Days Left</span>
+                                                    </div>
+                                                    <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                                                        <VacationCorrectionDialog
+                                                            employeeId={emp._id}
+                                                            currentTracker={emp.vacationTracker}
+                                                            onUpdate={() => router.refresh()}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="grid grid-cols-2 gap-4 text-sm mt-2 p-3 bg-muted/20 rounded-xl border border-border/40">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{t("positions")}</span>
+                                                        <span className="font-semibold text-foreground/90">{getLocalized(emp.positionId, "name", locale) || "No Position"}</span>
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{t("stores")}</span>
+                                                        <div className="flex items-center gap-1.5 text-foreground/80">
+                                                            <MapPin className="h-3 w-3 text-primary/60" />
+                                                            <span className="truncate font-semibold">{getLocalized(emp.storeId, "name", locale) || "-"}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Desktop View (Grid) */}
+                                            <div className="hidden md:grid md:grid-cols-12 md:gap-4 md:p-5 md:items-center">
+                                                <div className="col-span-4 flex items-center gap-4 pl-2">
+                                                    <div className="relative">
+                                                        <Avatar className="h-12 w-12 border-2 border-border group-hover:border-primary/50 transition-all shadow-md">
+                                                            <AvatarImage src={emp.image} alt={`${emp.firstName} ${emp.lastName}`} />
+                                                            <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                                                                {emp.firstName?.[0]}{emp.lastName?.[0]}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                        {emp.active && (
+                                                            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-background rounded-full" />
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-foreground font-bold text-base group-hover:text-primary transition-colors truncate max-w-[180px]">{emp.firstName} {emp.lastName}</p>
+                                                        <p className="text-xs text-muted-foreground font-medium truncate max-w-[180px]">{emp.email}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="col-span-2 text-sm font-semibold text-foreground/90 truncate">
+                                                    {getLocalized(emp.positionId, "name", locale) || "No Position"}
+                                                </div>
+                                                <div className="col-span-2">
+                                                    <div className="flex flex-col gap-2">
+                                                        {emp.active ? (
+                                                            <Badge className="w-fit bg-emerald-500/10 text-emerald-600 border-0 text-[10px] font-bold uppercase hover:bg-emerald-500/20">{t('active')}</Badge>
+                                                        ) : (
+                                                            <Badge className="w-fit bg-red-500/10 text-red-600 border-0 text-[10px] font-bold uppercase hover:bg-red-500/20">{t('inactive')}</Badge>
+                                                        )}
+                                                        {emp.passwordResetRequested && (
+                                                            <motion.div
+                                                                initial={{ scale: 0.9, opacity: 0 }}
+                                                                animate={{ scale: 1, opacity: 1 }}
+                                                                className="flex flex-col gap-1.5"
+                                                            >
+                                                                <Badge variant="outline" className="w-fit text-[9px] border-amber-500/50 text-amber-700 bg-amber-50 gap-1 animate-pulse uppercase font-extrabold">
+                                                                    <ShieldAlert className="h-3 w-3" /> Reset Req
+                                                                </Badge>
+                                                                <Button
+                                                                    size="sm"
+                                                                    className="h-7 px-3 text-[9px] gap-1 bg-amber-600 hover:bg-amber-700 text-white border-0 shadow-lg shadow-amber-200 dark:shadow-none font-bold uppercase tracking-tight"
+                                                                    onClick={(e) => handleConfirmReset(e, emp._id)}
+                                                                >
+                                                                    <KeyRound className="h-3 w-3" /> Confirm Reset
+                                                                </Button>
+                                                            </motion.div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="col-span-1 flex items-center justify-center" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                                                    <VacationCorrectionDialog
+                                                        employeeId={emp._id}
+                                                        currentTracker={emp.vacationTracker}
+                                                        onUpdate={() => router.refresh()}
+                                                    />
+                                                </div>
+                                                <div className="col-span-2 text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                                    <div className="p-1.5 rounded-lg bg-muted/50">
+                                                        <MapPin className="h-3.5 w-3.5 text-primary/60" />
+                                                    </div>
+                                                    <span className="truncate max-w-[140px]" title={getLocalized(emp.storeId, "name", locale)}>
+                                                        {getLocalized(emp.storeId, "name", locale) || "-"}
+                                                    </span>
+                                                </div>
+                                                <div className="col-span-1 text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                                    <div className="p-1.5 rounded-lg bg-muted/50">
+                                                        <Briefcase className="h-3.5 w-3.5 text-primary/60" />
+                                                    </div>
+                                                    <span className="truncate max-w-[100px]" title={getLocalized(emp.storeDepartmentId, "name", locale)}>
+                                                        {getLocalized(emp.storeDepartmentId, "name", locale) || "-"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+
+                            {initialEmployees.length === 0 && (
+                                <div className="p-20 text-center flex flex-col items-center justify-center text-muted-foreground bg-accent/5">
+                                    <div className="p-6 rounded-full bg-muted/20 mb-6">
+                                        <Search className="h-12 w-12 opacity-20" />
+                                    </div>
+                                    <p className="text-xl font-bold text-foreground">No matching employees</p>
+                                    <p className="text-sm mt-1">Try adjusting your filters or searching for another name.</p>
+                                    <Button variant="link" onClick={clearFilters} className="mt-4 font-bold text-primary">Clear all filters</Button>
+
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </Card>
 

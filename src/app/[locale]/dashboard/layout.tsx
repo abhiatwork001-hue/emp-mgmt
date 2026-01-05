@@ -85,7 +85,7 @@ export default async function DashboardLayout({
                 </>
             ) : (
                 <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden items-center justify-center bg-background">
-                    <SetupPasswordView />
+                    <SetupPasswordView userId={userId} />
                 </main>
             )}
         </div>

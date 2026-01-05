@@ -161,7 +161,8 @@
         "noShifts": "No shifts assigned.",
         "underHours": "{hours} / {contract}h",
         "underDays": "{days} / {contract} Days",
-        "scheduleActions": "Actions"
+        "scheduleActions": "Actions",
+        "shiftDetails": "Shift Details"
     },
     "Profile": {
         "personal": "Personal",

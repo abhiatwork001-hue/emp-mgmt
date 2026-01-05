@@ -127,18 +127,23 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                     nif: formData.nif
                 } : formData;
 
-                await updateEmployee(employee._id, submissionData);
+                const updatedEmp = await updateEmployee(employee._id, submissionData);
                 toast.success("Employee updated successfully");
-            } else {
-                await createEmployee(formData);
-                toast.success("Employee created successfully");
-            }
 
-            router.refresh();
-            if (onSuccess) onSuccess();
-            else if (!isEdit) {
-                // Redirect on create success if not handling locally
-                router.push("/dashboard/employees");
+                // Redirect to the new slug (if name changed, slug changed)
+                if (updatedEmp && updatedEmp.slug) {
+                    router.push(`/dashboard/employees/${updatedEmp.slug}`);
+                } else {
+                    router.refresh();
+                }
+            } else {
+                const newEmp = await createEmployee(formData);
+                toast.success("Employee created successfully");
+                if (newEmp && newEmp.slug) {
+                    router.push(`/dashboard/employees/${newEmp.slug}`);
+                } else {
+                    router.push("/dashboard/employees");
+                }
             }
         } catch (error) {
             console.error(error);

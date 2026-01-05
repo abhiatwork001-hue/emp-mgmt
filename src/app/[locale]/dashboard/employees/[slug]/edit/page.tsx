@@ -1,15 +1,16 @@
 
 import { EmployeeForm } from "@/components/employees/employee-form";
-import { getEmployeeById } from "@/lib/actions/employee.actions";
+import { getEmployeeBySlug } from "@/lib/actions/employee.actions";
 import { notFound } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 
-export default async function EditEmployeePage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-    const employee = await getEmployeeById(id);
+export default async function EditEmployeePage({ params }: { params: Promise<{ slug: string }> }) {
+    const { slug } = await params;
+
+    // We use getEmployeeBySlug because we are in the [slug] route
+    const employee = await getEmployeeBySlug(slug);
 
     if (!employee) {
         notFound();
@@ -19,7 +20,7 @@ export default async function EditEmployeePage({ params }: { params: Promise<{ i
         <div className="container mx-auto py-8 max-w-5xl space-y-6">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" asChild>
-                    <Link href="/dashboard/employees">
+                    <Link href={`/dashboard/employees/${slug}`}>
                         <ArrowLeft className="h-5 w-5" />
                     </Link>
                 </Button>

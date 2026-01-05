@@ -142,7 +142,8 @@ export function VacationAnalytics() {
                                 {yoyData.map((entry, index) => (
                                     <Cell
                                         key={`cell-${index}`}
-                                        fill={index === 1 ? 'var(--primary)' : 'var(--muted)'}
+                                        fill={index === 1 ? 'var(--primary)' : 'var(--muted-foreground)'}
+                                        fillOpacity={index === 1 ? 1 : 0.5}
                                         strokeWidth={0}
                                     />
                                 ))}

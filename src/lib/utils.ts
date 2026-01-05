@@ -5,6 +5,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export const DASHBOARD_URL = process.env.NODE_ENV === "production"
+  ? "https://emp-mgmt-rho.vercel.app/en/dashboard"
+  : "/dashboard";
+
 /**
  * Gets a localized string from an object with translations.
  * Falls back to the default field if translations for the locale are missing.
