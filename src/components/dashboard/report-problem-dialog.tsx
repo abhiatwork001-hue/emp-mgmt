@@ -39,6 +39,7 @@ const formSchema = z.object({
     recipientRole: z.string().min(1, "Recipient is required"),
     priority: z.enum(["low", "medium", "high"]),
     type: z.string().min(1, "Type is required"),
+    title: z.string().min(5, "Title must be at least 5 characters"),
     description: z.string().min(10, "Description must be at least 10 characters"),
 });
 
@@ -58,6 +59,7 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
             recipientRole: "",
             priority: "medium",
             type: "",
+            title: "",
             description: "",
         },
     });
@@ -70,6 +72,7 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
                 recipientRole: values.recipientRole,
                 priority: values.priority,
                 type: values.type,
+                title: values.title,
                 description: values.description,
                 relatedStoreId: storeId,
                 relatedDepartmentId: departmentId,
@@ -187,6 +190,20 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
                                 )}
                             />
                         </div>
+
+                        <FormField
+                            control={form.control}
+                            name="title"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Problem Title</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Brief title of the issue" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         <FormField
                             control={form.control}

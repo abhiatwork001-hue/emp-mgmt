@@ -26,7 +26,9 @@ export const authOptions: NextAuthOptions = {
                     await dbConnect();
 
                     console.log("[Auth] Finding employee:", credentials.email);
-                    const employee = await Employee.findOne({ email: credentials.email });
+                    const employee = await Employee.findOne({ email: credentials.email })
+                        .select("firstName lastName email password roles positionId isPasswordChanged")
+                        .lean();
 
                     if (!employee) {
                         console.log("[Auth] Employee not found");
@@ -47,8 +49,13 @@ export const authOptions: NextAuthOptions = {
                     }
                     console.log("[Auth] Password valid");
 
-                    // Determine roles/permissions using unified helper
-                    const position = employee.positionId ? await Position.findById(employee.positionId).populate('roles') : null;
+                    // Determine roles/permissions using unified helper (using .lean() for position)
+                    const position = employee.positionId
+                        ? await Position.findById(employee.positionId)
+                            .populate({ path: 'roles', select: 'name permissions' })
+                            .select('name permissions roles')
+                            .lean()
+                        : null;
                     const { roles: uniqueRoles, permissions } = getAugmentedRolesAndPermissions(employee, position);
 
                     // Aggressive Sanitization
@@ -87,10 +94,14 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         async session({ session, token }) {
             if (session?.user) {
-                (session.user as any).id = token.sub;
-                (session.user as any).roles = token.roles;
-                (session.user as any).permissions = token.permissions;
-                (session.user as any).isPasswordChanged = token.isPasswordChanged;
+                // Surgically rebuild the user object to avoid leaking any extra data
+                session.user = {
+                    ...session.user,
+                    id: token.sub,
+                    roles: token.roles as string[],
+                    permissions: token.permissions as string[],
+                    isPasswordChanged: token.isPasswordChanged as boolean
+                } as any;
             }
             return session;
         },
@@ -107,6 +118,7 @@ export const authOptions: NextAuthOptions = {
     session: {
         strategy: "jwt",
     },
+    secret: process.env.NEXTAUTH_SECRET,
     pages: {
         signIn: "/login",
     },

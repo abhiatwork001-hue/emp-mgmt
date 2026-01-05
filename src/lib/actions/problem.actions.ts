@@ -11,6 +11,7 @@ interface ReportProblemData {
     recipientRole: string; // 'chef' | 'head_of_department' | 'store_department_head' | 'store_manager' | 'hr' | 'owner' | 'admin'
     priority: string;
     type: string;
+    title: string;
     description: string;
     relatedStoreId?: string;
     relatedDepartmentId?: string; // Store Department ID
@@ -24,6 +25,7 @@ export async function reportProblem(data: ReportProblemData) {
         const newProblem = await Problem.create({
             reportedBy: data.reporterId,
             recipientRole: data.recipientRole,
+            title: data.title,
             priority: data.priority,
             type: data.type,
             description: data.description,
