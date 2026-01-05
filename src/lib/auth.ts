@@ -51,14 +51,32 @@ export const authOptions: NextAuthOptions = {
                     const position = employee.positionId ? await Position.findById(employee.positionId).populate('roles') : null;
                     const { roles: uniqueRoles, permissions } = getAugmentedRolesAndPermissions(employee, position);
 
-                    return {
-                        id: employee._id.toString(),
-                        email: employee.email,
+                    // Aggressive Sanitization
+                    const sanitizedRoles = uniqueRoles.map(r => String(r)).filter(r => r.length < 100);
+                    const sanitizedPermissions = permissions.map(p => {
+                        const s = typeof p === 'string' ? p : (p as any).type || String(p);
+                        return String(s);
+                    }).filter(p => p.length < 200);
+
+                    const authData = {
+                        id: String(employee._id),
+                        email: String(employee.email),
                         name: `${employee.firstName} ${employee.lastName}`,
-                        roles: uniqueRoles,
-                        permissions: permissions,
+                        roles: sanitizedRoles,
+                        permissions: sanitizedPermissions,
                         isPasswordChanged: employee.isPasswordChanged !== false
                     };
+
+                    console.log("[Auth] Successfully authorized. Payload keys:", Object.keys(authData));
+                    console.log("[Auth] Roles count:", uniqueRoles.length, "Permissions count:", permissions.length);
+                    const payloadSize = JSON.stringify(authData).length;
+                    console.log("[Auth] Estimated payload size:", payloadSize, "bytes");
+
+                    if (payloadSize > 2000) {
+                        console.warn("[Auth] WARNING: payload size is unusually large!");
+                    }
+
+                    return authData;
                 } catch (error) {
                     console.error("[Auth] Error in authorize:", error);
                     return null;

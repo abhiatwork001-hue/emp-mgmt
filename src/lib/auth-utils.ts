@@ -38,8 +38,14 @@ export function getAugmentedRolesAndPermissions(employee: any, position?: any) {
     }
 
     // Deduplicate and Normalize
-    const uniqueRoles = Array.from(new Set(roles.map(r => r.toLowerCase().trim())));
+    const uniqueRoles = Array.from(new Set(roles.map(r => String(r).toLowerCase().trim())));
     if (uniqueRoles.length === 0) uniqueRoles.push('employee');
 
-    return { roles: uniqueRoles, permissions: Array.from(new Set(permissions)) };
+    // Ensure permissions are strings (sometimes Mongoose returns { type: '...' } objects if schema is weirdly defined)
+    const normalizedPermissions = permissions.map(p => typeof p === 'string' ? p : (p as any).type || String(p));
+
+    return {
+        roles: uniqueRoles,
+        permissions: Array.from(new Set(normalizedPermissions))
+    };
 }

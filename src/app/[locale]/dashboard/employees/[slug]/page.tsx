@@ -14,6 +14,7 @@ import { RequestVacationDialog } from "@/components/vacations/request-vacation-d
 import { ReportAbsenceDialog } from "@/components/absences/report-absence-dialog";
 import { ProfileWorkTab } from "@/components/employees/profile-work-tab";
 import { AssignTaskButton } from "@/components/employees/assign-task-button";
+import { CancelRecordButton } from "@/components/dashboard/cancel-record-button";
 import { format } from "date-fns";
 
 export default async function EmployeeDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -26,6 +27,12 @@ export default async function EmployeeDetailsPage({ params }: { params: Promise<
     if (!employee) {
         return <div>Employee not found</div>;
     }
+
+    const userRoles = (session?.user as any)?.roles || [];
+    const isPrivileged = userRoles.some((r: string) =>
+        ["hr", "tech", "owner", "admin", "super_user"].includes(r.toLowerCase())
+    );
+    const actorId = (session?.user as any)?.id;
 
     return (
         <div className="space-y-6">
@@ -282,9 +289,18 @@ export default async function EmployeeDetailsPage({ params }: { params: Promise<
                                                                 {vac.totalDays} Total Days
                                                             </div>
                                                         </div>
-                                                        <Badge variant="outline" className="text-muted-foreground">
-                                                            {vac.year}
-                                                        </Badge>
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge variant="outline" className="text-muted-foreground mr-2">
+                                                                {vac.year}
+                                                            </Badge>
+                                                            {isPrivileged && (
+                                                                <CancelRecordButton
+                                                                    recordId={vac._id.toString()}
+                                                                    actorId={actorId}
+                                                                    type="vacation"
+                                                                />
+                                                            )}
+                                                        </div>
                                                     </div>
                                                 ))
                                             ) : (
@@ -317,9 +333,18 @@ export default async function EmployeeDetailsPage({ params }: { params: Promise<
                                                                 <h4 className="font-medium">{abs.reason || "Unspecified Absence"}</h4>
                                                                 <p className="text-xs text-muted-foreground">{format(new Date(abs.date), "MMM dd, yyyy")}</p>
                                                             </div>
-                                                            <Badge variant={abs.approvedBy ? "default" : "destructive"} className="text-xs">
-                                                                {abs.approvedBy ? "Approved" : "Pending/Unexcused"}
-                                                            </Badge>
+                                                            <div className="flex items-center gap-2">
+                                                                <Badge variant={abs.approvedBy ? "default" : "destructive"} className="text-xs">
+                                                                    {abs.approvedBy ? "Approved" : "Pending/Unexcused"}
+                                                                </Badge>
+                                                                {isPrivileged && abs.approvedBy && (
+                                                                    <CancelRecordButton
+                                                                        recordId={abs._id.toString()}
+                                                                        actorId={actorId}
+                                                                        type="absence"
+                                                                    />
+                                                                )}
+                                                            </div>
                                                         </div>
                                                         {abs.shiftRef && (
                                                             <div className="mt-2 text-sm text-muted-foreground">

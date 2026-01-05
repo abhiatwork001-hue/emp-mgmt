@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { createEmployee, updateEmployee } from "@/lib/actions/employee.actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,12 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
     const isEdit = mode === "edit" || !!employee;
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const { data: session } = useSession();
+
+    const userRoles = (session?.user as any)?.roles || [];
+    const isPrivileged = userRoles.some((r: string) =>
+        ["hr", "tech", "owner", "admin", "super_user"].includes(r.toLowerCase())
+    );
 
     const [formData, setFormData] = useState({
         image: employee?.image || "",
@@ -59,7 +66,13 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
             workingDays: employee?.contract?.workingDays || [1, 2, 3, 4, 5],
         },
         roles: employee?.roles || [],
-        documents: employee?.documents || []
+        documents: employee?.documents || [],
+        vacationTracker: {
+            ...(employee?.vacationTracker || {}),
+            defaultDays: employee?.vacationTracker?.defaultDays ?? 22,
+            rolloverDays: employee?.vacationTracker?.rolloverDays ?? 0,
+            usedDays: employee?.vacationTracker?.usedDays ?? 0,
+        }
     });
 
     const addDocument = () => {
@@ -109,6 +122,16 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
             newDays = [...currentDays, dayValue];
         }
         handleContractChange("workingDays", newDays);
+    };
+
+    const handleVacationTrackerChange = (field: string, value: number) => {
+        setFormData(prev => ({
+            ...prev,
+            vacationTracker: {
+                ...prev.vacationTracker,
+                [field]: value
+            }
+        }));
     };
 
     const onSubmit = async (e: React.FormEvent) => {
@@ -426,6 +449,75 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                             <span className="text-sm font-semibold">{day.label}</span>
                                         </div>
                                     ))}
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {!isSelfService && isPrivileged && (
+                    <Card glass className="p-0 overflow-hidden border-border/40">
+                        <div className="bg-primary/5 px-6 py-4 border-b border-primary/10">
+                            <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                                Vacation Balance Management
+                                <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest border-primary/20 text-primary">Override Only</Badge>
+                            </h3>
+                        </div>
+                        <CardContent className="p-8">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                <div className="space-y-2">
+                                    <Label htmlFor="defaultDays">Annual Allowance (Current Year)</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            id="defaultDays"
+                                            type="number"
+                                            value={formData.vacationTracker.defaultDays}
+                                            onChange={(e) => handleVacationTrackerChange("defaultDays", Number(e.target.value))}
+                                            className="h-11 bg-background/50"
+                                        />
+                                        <span className="text-xs font-bold text-muted-foreground">DAYS</span>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground italic">Standard entitlement for the contract.</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="rolloverDays">Rollover (From Previous Year)</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            id="rolloverDays"
+                                            type="number"
+                                            value={formData.vacationTracker.rolloverDays}
+                                            onChange={(e) => handleVacationTrackerChange("rolloverDays", Number(e.target.value))}
+                                            className="h-11 bg-background/50"
+                                        />
+                                        <span className="text-xs font-bold text-muted-foreground">DAYS</span>
+                                    </div>
+                                    <p className="text-[10px] text-muted-foreground italic">Carry over from the last period.</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="usedDays">Used Days (Correction)</Label>
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            id="usedDays"
+                                            type="number"
+                                            value={formData.vacationTracker.usedDays}
+                                            onChange={(e) => handleVacationTrackerChange("usedDays", Number(e.target.value))}
+                                            className="h-11 bg-background/50"
+                                        />
+                                        <span className="text-xs font-bold text-muted-foreground">DAYS</span>
+                                    </div>
+                                    <p className="text-[10px] text-orange-500 font-bold uppercase tracking-tight">Used as manual correction only.</p>
+                                </div>
+                            </div>
+
+                            <div className="mt-6 p-4 rounded-xl bg-muted/50 border border-border flex justify-between items-center">
+                                <div className="text-sm font-medium">Resulting Total Balance:</div>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex flex-col items-end">
+                                        <div className="text-2xl font-black text-primary">
+                                            {(formData.vacationTracker.defaultDays + formData.vacationTracker.rolloverDays) - formData.vacationTracker.usedDays}
+                                        </div>
+                                        <div className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Available Days Remaining</div>
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>

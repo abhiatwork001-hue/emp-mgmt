@@ -1004,3 +1004,26 @@ export async function findConflictingShifts(
 
     return JSON.parse(JSON.stringify(conflicts));
 }
+
+export async function deleteSchedule(id: string, userId: string) {
+    await dbConnect();
+    await checkSchedulePermission(userId);
+
+    const schedule = await Schedule.findById(id);
+    if (!schedule) throw new Error("Schedule not found");
+
+    // Log Action
+    await logAction({
+        action: 'DELETE_SCHEDULE',
+        performedBy: userId,
+        storeId: schedule.storeId.toString(),
+        targetId: id,
+        targetModel: 'Schedule',
+        details: { weekNumber: schedule.weekNumber, year: schedule.year, status: schedule.status }
+    });
+
+    await Schedule.findByIdAndDelete(id);
+
+    revalidatePath("/dashboard/schedules");
+    return { success: true };
+}

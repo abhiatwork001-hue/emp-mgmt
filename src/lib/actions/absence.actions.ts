@@ -234,6 +234,59 @@ export async function rejectAbsenceRequest(requestId: string, reviewerId: string
 
     return JSON.parse(JSON.stringify(request));
 }
+
+export async function cancelAbsenceRecord(recordId: string, actorId: string) {
+    await dbConnect();
+
+    // Permission check (using same logic as approve)
+    const actor = await Employee.findById(actorId).select("roles");
+    const roles = (actor?.roles || []).map((r: string) => r.toLowerCase());
+    const isPrivileged = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech', 'super_user'].includes(r));
+    if (!isPrivileged) throw new Error("Unauthorized to cancel absence records");
+
+    const record = await AbsenceRecord.findById(recordId);
+    if (!record) throw new Error("Record not found");
+
+    const employeeId = record.employeeId;
+
+    // 1. Remove from Employee absences list
+    await Employee.findByIdAndUpdate(employeeId, {
+        $pull: { absences: recordId }
+    });
+
+    // 2. Find and update potential matching request to 'cancelled'
+    try {
+        await AbsenceRequest.findOneAndUpdate(
+            {
+                employeeId,
+                date: record.date,
+                status: 'approved'
+            },
+            { status: 'cancelled' }
+        );
+    } catch (e) {
+        console.error("Could not find matching absence request to cancel:", e);
+    }
+
+    // 3. Log Action
+    await logAction({
+        action: 'CANCEL_ABSENCE',
+        performedBy: actorId,
+        targetId: recordId,
+        targetModel: 'AbsenceRecord',
+        details: { employeeId, date: record.date }
+    });
+
+    // 4. Delete Record
+    await AbsenceRecord.findByIdAndDelete(recordId);
+
+    revalidatePath("/dashboard/absences");
+    const emp = await Employee.findById(employeeId).select("slug");
+    revalidatePath(`/dashboard/employees/${emp?.slug || employeeId}`);
+
+    return { success: true };
+}
+
 export async function getPendingAbsenceRequests() {
     await dbConnect();
     const requests = await AbsenceRequest.find({ status: 'pending' })

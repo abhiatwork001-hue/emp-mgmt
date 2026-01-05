@@ -343,6 +343,58 @@ export async function rejectVacationRequest(requestId: string, reviewerId: strin
     return JSON.parse(JSON.stringify(request));
 }
 
+export async function cancelVacationRecord(recordId: string, actorId: string) {
+    await dbConnect();
+    await checkApprovalPermission(actorId);
+
+    const record = await VacationRecord.findById(recordId);
+    if (!record) throw new Error("Record not found");
+
+    const employeeId = record.employeeId;
+    const totalDays = record.totalDays;
+
+    // 1. Revert Employee Tracker & Remove from vacations list
+    await Employee.findByIdAndUpdate(employeeId, {
+        $inc: { "vacationTracker.usedDays": -totalDays },
+        $pull: { vacations: recordId }
+    });
+
+    // 2. Find and update potential matching request to 'cancelled'
+    // This is a heuristic search as there's no direct ID link
+    try {
+        await VacationRequest.findOneAndUpdate(
+            {
+                employeeId,
+                requestedFrom: record.from,
+                requestedTo: record.to,
+                status: 'approved'
+            },
+            { status: 'cancelled' }
+        );
+    } catch (e) {
+        console.error("Could not find matching request to cancel:", e);
+    }
+
+    // 3. Log Action
+    await logAction({
+        action: 'CANCEL_VACATION',
+        performedBy: actorId,
+        targetId: recordId,
+        targetModel: 'VacationRecord',
+        details: { employeeId, totalDays }
+    });
+
+    // 4. Delete Record
+    await VacationRecord.findByIdAndDelete(recordId);
+
+    revalidatePath("/dashboard/vacations");
+    const emp = await Employee.findById(employeeId).select("slug");
+    revalidatePath(`/dashboard/employees/${emp?.slug || employeeId}`);
+    revalidatePath("/dashboard");
+
+    return { success: true };
+}
+
 // --- Records (if needed independently) ---
 export async function getVacationRecords(employeeId: string) {
     await dbConnect();

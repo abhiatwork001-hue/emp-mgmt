@@ -29,7 +29,7 @@ import { OvertimeRequestDialog } from "@/components/schedules/overtime-request-d
 import { MobileScheduleView } from "./mobile-view";
 import { ShiftDetailsDialog } from "@/components/schedules/shift-details-dialog";
 import { useRouter } from "next/navigation";
-import { getOrCreateSchedule, updateScheduleStatus, updateSchedule, copyPreviousSchedule, findConflictingShifts } from "@/lib/actions/schedule.actions";
+import { getOrCreateSchedule, updateScheduleStatus, updateSchedule, copyPreviousSchedule, findConflictingShifts, deleteSchedule } from "@/lib/actions/schedule.actions";
 import { toast } from "sonner";
 import {
     ChevronLeft, ChevronRight, Save, User, Users, ArrowLeft, Loader2, Copy, Trash2, X, Plus, Filter, Tag, Check, XCircle, Clock, Calendar, Edit2,
@@ -175,6 +175,8 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
     // Shift Details Dialog State
     const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
     const [targetDetailsShift, setTargetDetailsShift] = useState<any>(null);
+
+    const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
 
     // We need to re-derive employees map client-side or pass it clean
     const getAllEmployees = () => {
@@ -461,6 +463,21 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
             setRejectionReason("");
         } catch (error) {
             console.error("Status update failed", error);
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleDeleteSchedule = async () => {
+        setDeleteAlertOpen(false);
+        setActionLoading(true);
+        try {
+            await deleteSchedule(schedule._id, userId);
+            toast.success("Schedule deleted successfully");
+            router.push("/dashboard/schedules");
+        } catch (error) {
+            console.error("Delete failed", error);
+            toast.error("Failed to delete schedule");
         } finally {
             setActionLoading(false);
         }
@@ -886,6 +903,18 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                         <DropdownMenuItem onClick={handleExportCSV} className="gap-2 cursor-pointer">
                             <FileText className="h-4 w-4" /> Export CSV
                         </DropdownMenuItem>
+
+                        {canApproveSchedule() && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    onClick={() => setDeleteAlertOpen(true)}
+                                    className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                                >
+                                    <Trash2 className="h-4 w-4" /> Delete Schedule
+                                </DropdownMenuItem>
+                            </>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
@@ -1580,6 +1609,30 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                     </ScrollArea>
                 </DialogContent>
             </Dialog>
+            <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+                <AlertDialogContent className="bg-popover border-border text-popover-foreground">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete the schedule for Week {schedule.weekNumber}, {schedule.year}. This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                handleDeleteSchedule();
+                            }}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={actionLoading}
+                        >
+                            {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                            Confirm Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
         </div >
     );
