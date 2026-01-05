@@ -238,7 +238,7 @@ export async function getProblems(options: GetProblemsOptions) {
         const employee = await Employee.findById(userId).select('roles role storeId storeDepartmentId');
         const roles = employee?.roles?.map((r: string) => r.toLowerCase().replace(/ /g, '_')) || [];
         if (employee?.role) roles.push(employee.role.toLowerCase().replace(/ /g, '_'));
-        const uniqueRoles = [...new Set(roles)];
+        const uniqueRoles = Array.from(new Set(roles as string[]));
 
         const query: any = {};
 

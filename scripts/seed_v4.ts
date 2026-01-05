@@ -144,7 +144,7 @@ async function seed() {
     const passwordHash = await bcrypt.hash("Chick2026!", 10);
     const emps = [];
 
-    const createEmp = async (data: any) => {
+    const createEmp = async (data: any): Promise<any> => {
         const firstName = data.firstName || faker.person.firstName();
         const lastName = data.lastName || faker.person.lastName();
         const email = data.email || faker.internet.email({ firstName, lastName }).toLowerCase();
@@ -175,14 +175,14 @@ async function seed() {
 
     // D. Global Dept Heads (5)
     for (const gd of gDeptsDocs) {
-        const head = await createEmp({ roles: ["department_head"], positionId: posGH._id });
+        const head: any = await createEmp({ roles: ["department_head"], positionId: posGH._id });
         await gd.updateOne({ $push: { departmentHead: head._id } });
         emps.push(head);
     }
 
     // E. Store Managers (6)
     for (const store of stores) {
-        const mgr = await createEmp({ roles: ["store_manager"], positionId: posSM._id, storeId: store._id });
+        const mgr: any = await createEmp({ roles: ["store_manager"], positionId: posSM._id, storeId: store._id });
         await store.updateOne({ $push: { managers: mgr._id } });
         emps.push(mgr);
     }

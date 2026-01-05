@@ -311,7 +311,7 @@ async function seed() {
                         };
                     })
                 });
-                if (status === 'rejected' || Math.random() > 0.8) {
+                if ((status as any) === 'rejected' || Math.random() > 0.8) {
                     await Schedule.findByIdAndUpdate(sched._id, { $push: { approvalHistory: { status: 'rejected', changedBy: owner1._id, comment: "Please adjust weekend coverage.", createdAt: new Date() } } });
                 }
             }
