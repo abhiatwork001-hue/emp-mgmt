@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { Mail, Lock, ArrowRight, ChevronLeft, Loader2, Eye, EyeOff } from "lucide-react";
 import { requestPasswordReset } from "@/lib/actions/employee.actions";
+import { useParams } from "next/navigation";
 import { cn, DASHBOARD_URL } from "@/lib/utils";
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
@@ -31,6 +32,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
     const [error, setError] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter(); // Locale-aware router
+    const params = useParams();
+    const locale = params?.locale as string || "en";
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -48,8 +51,15 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                 setError("Invalid email or password");
                 toast.error("Login failed. Check your credentials.");
             } else {
-                // Using hard/window location for maximum reliability in production
-                window.location.href = DASHBOARD_URL;
+                toast.success("Welcome back!");
+
+                // Construct explicit localized path for maximum reliability
+                const targetPath = `/${locale}${DASHBOARD_URL}`;
+
+                // Use a short delay to allow the toast to be seen and session to settle
+                setTimeout(() => {
+                    window.location.href = targetPath;
+                }, 500);
             }
         } catch (err) {
             setError("Something went wrong");

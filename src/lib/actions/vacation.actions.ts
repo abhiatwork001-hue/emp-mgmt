@@ -14,6 +14,7 @@ import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { logAction } from "./log.actions";
+import { calculateWorkingDays } from "@/lib/holidays";
 
 const dbConnect = connectToDB;
 
@@ -60,16 +61,6 @@ type VacationRequestData = {
     bypassValidation?: boolean;
 }
 
-function calculateWorkingDays(startDate: Date, endDate: Date): number {
-    let count = 0;
-    const curDate = new Date(startDate);
-    while (curDate <= endDate) {
-        const dayOfWeek = curDate.getDay();
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) count++;
-        curDate.setDate(curDate.getDate() + 1);
-    }
-    return count;
-}
 export async function createVacationRequest(data: VacationRequestData) {
     await dbConnect();
 
@@ -85,6 +76,11 @@ export async function createVacationRequest(data: VacationRequestData) {
 
     const start = new Date(data.requestedFrom);
     const end = new Date(data.requestedTo);
+
+    // Normalize dates to start of day to avoid time-of-day math errors
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
     const calculatedDays = calculateWorkingDays(start, end);
     let finalTotalDays = calculatedDays;
 
@@ -241,21 +237,28 @@ export async function approveVacationRequest(requestId: string, approverId: stri
     if (!request) throw new Error("Request not found");
     if (request.status !== 'pending') throw new Error("Request is not pending");
 
+    const start = new Date(request.requestedFrom);
+    const end = new Date(request.requestedTo);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    const finalDays = calculateWorkingDays(start, end);
+
     // 1. Create Vacation Record
     const record = await VacationRecord.create({
         employeeId: request.employeeId,
-        from: request.requestedFrom,
-        to: request.requestedTo,
-        totalDays: request.totalDays,
-        year: request.requestedFrom.getFullYear(),
+        from: start,
+        to: end,
+        totalDays: finalDays,
+        year: start.getFullYear(),
         approvedBy: approverId
     });
 
     // 2. Update Employee Tracker & Add to Vacations list
     await Employee.findByIdAndUpdate(request.employeeId, {
         $inc: {
-            "vacationTracker.pendingRequests": -request.totalDays,
-            "vacationTracker.usedDays": request.totalDays
+            "vacationTracker.pendingRequests": -request.totalDays, // Use original requested days for decrement
+            "vacationTracker.usedDays": finalDays // Use recalculated standardized days for balance
         },
         $push: { vacations: record._id }
     });
