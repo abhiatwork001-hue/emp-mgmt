@@ -138,6 +138,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
             // Fetch current schedule to count shifts
             let todayShiftsCount = 0;
+            let totalScheduledHours = 0;
             let currentScheduleId = null;
             let currentScheduleSlug = null;
             let todaysCoworkers: any[] = [];
@@ -161,6 +162,24 @@ export default async function DashboardPage(props: DashboardPageProps) {
                     );
                     if (todayNode) {
                         todayShiftsCount = todayNode.shifts?.reduce((acc: number, s: any) => acc + (s.employees?.length || 0), 0) || 0;
+                    }
+
+                    // Calculate Total Weekly Hours
+                    currentSchedule.days?.forEach((day: any) => {
+                        day.shifts?.forEach((shift: any) => {
+                            if (!shift.startTime || !shift.endTime) return;
+                            const [sh, sm] = shift.startTime.split(':').map(Number);
+                            const [eh, em] = shift.endTime.split(':').map(Number);
+                            let mins = (eh * 60 + em) - (sh * 60 + sm);
+                            if (mins < 0) mins += 24 * 60;
+                            mins -= (shift.breakMinutes || 0);
+                            const hours = Math.max(0, mins) / 60;
+                            totalScheduledHours += hours * (shift.employees?.length || 0);
+                        });
+                    });
+
+                    if (todayNode) {
+                        // Populate coworkers for manager
 
                         // Populate coworkers for manager
                         if (viewRole === "store_manager") {
@@ -217,7 +236,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
             const storeStats = {
                 totalEmployees: Array.isArray(storeEmployees) ? storeEmployees.length : 0,
                 onVacation: Array.isArray(storeEmployees) ? storeEmployees.filter((e: any) => e.status === 'vacation').length : 0,
-                todayShifts: todayShiftsCount
+                todayShifts: todayShiftsCount,
+                totalHours: Math.round(totalScheduledHours * 10) / 10
             };
 
             // --- Operations Radar Calculation ---
@@ -570,46 +590,22 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
     const dashboardContent = await renderDashboard();
 
-    // Roles that use the new Unified Dashboard structure
-    const shouldUseNewLayout = ["owner", "admin", "hr", "super_user", "store_manager", "tech", "department_head", "store_department_head"].includes(viewRole);
-
-    if (shouldUseNewLayout) {
-        return (
-            <div className="min-h-screen bg-transparent">
-                <div className="space-y-4 p-4 md:p-8 max-w-[98%] mx-auto relative z-10">
-                    <FadeIn y={-20}>
-                        <DashboardHeader
-                            session={session}
-                            viewRole={viewRole}
-                            employee={employee}
-                            stores={stores}
-                            depts={depts}
-                            localStoreDepartments={localStoreDepartments}
-                            canSwitchRoles={canSwitchRoles}
-                        />
-                    </FadeIn>
-                    <div className="mt-2">
-                        {dashboardContent}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // Fallback for basic Employee View (already has its own internal structure in EmployeeDashboard)
+    // Unified Unified Dashboard Structure for ALL Roles
     return (
         <div className="min-h-screen bg-transparent">
-            <div className="space-y-4 p-4 md:p-8 max-w-[1600px] mx-auto relative z-10">
-                <DashboardHeader
-                    session={session}
-                    viewRole={viewRole}
-                    employee={employee}
-                    stores={stores}
-                    depts={depts}
-                    localStoreDepartments={localStoreDepartments}
-                    canSwitchRoles={canSwitchRoles}
-                />
-                <div className="mt-6">
+            <div className="space-y-4 p-4 md:p-8 max-w-[98%] mx-auto relative z-10">
+                <FadeIn y={-20}>
+                    <DashboardHeader
+                        session={session}
+                        viewRole={viewRole}
+                        employee={employee}
+                        stores={stores}
+                        depts={depts}
+                        localStoreDepartments={localStoreDepartments}
+                        canSwitchRoles={canSwitchRoles}
+                    />
+                </FadeIn>
+                <div className="mt-2 text-primary">
                     {dashboardContent}
                 </div>
             </div>

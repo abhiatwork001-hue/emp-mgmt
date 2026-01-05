@@ -24,6 +24,7 @@ interface LogFilterOptions {
     skip?: number;
     userId?: string; // To scope to a specific user (Employee View)
     userRoles?: string[]; // To handle Tech vs Owner/HR permissions
+    targetId?: string;
 }
 
 export async function logAction(data: LogData) {
@@ -70,6 +71,9 @@ export async function getActionLogs(options: LogFilterOptions = {}) {
 
         // 4. Store Filter
         if (options.storeId) query.storeId = options.storeId;
+
+        // Target Filter
+        if (options.targetId) query.targetId = options.targetId;
 
         // 5. User Scope (Employee View)
         // If userId is provided, show logs performed by them OR targeting them

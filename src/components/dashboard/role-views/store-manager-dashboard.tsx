@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, ClipboardList, Users, Package, TrendingUp, AlertCircle, ShoppingCart, MessageSquare, Sun, CheckCircle2, Palmtree } from "lucide-react";
+import { Calendar, ClipboardList, Users, Package, TrendingUp, AlertCircle, ShoppingCart, MessageSquare, Sun, CheckCircle2, Palmtree, Store } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
@@ -46,6 +46,7 @@ interface StoreManagerDashboardProps {
         totalEmployees: number;
         onVacation: number;
         todayShifts: number;
+        totalHours?: number;
     };
     todaysCoworkers?: any[];
     currentScheduleId?: string | null;
@@ -91,11 +92,14 @@ export function StoreManagerDashboard({
         activeEmployees: Math.max(0, storeStats.totalEmployees - storeStats.onVacation),
         absentToday: 0,
         pendingApprovals: pendingRequests.length,
-        totalHours: 0
+        totalHours: storeStats.totalHours || 0
     };
 
     const isHighLevel = ["owner", "admin", "hr", "super_user", "tech"].includes(currentUserRole);
     const isDeptLevel = ["department_head", "store_department_head"].includes(currentUserRole);
+
+    const userStoreId = typeof employee.storeId === 'object' ? employee.storeId?._id : employee.storeId;
+    const effectiveStoreId = userStoreId || stores[0]?._id;
 
     const hasSchedule = currentScheduleId && currentScheduleId !== "null";
     const hasCoworkers = Array.isArray(todaysCoworkers) && todaysCoworkers.length > 0;
@@ -173,7 +177,12 @@ export function StoreManagerDashboard({
                 absences={requests?.absences || []}
                 schedules={requests?.schedules || []}
                 compact={false}
+                role={currentUserRole}
             />
+        ),
+
+        "credential-manager": (
+            <CredentialManager storeId={effectiveStoreId || ""} userId={employee._id} />
         ),
 
         "management-suite": (
@@ -205,6 +214,18 @@ export function StoreManagerDashboard({
                         </div>
                     </Link>
 
+                    {effectiveStoreId && (
+                        <Link href={`/dashboard/stores/${effectiveStoreId}`} className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-muted/50 hover:border-primary/50 transition-all group shadow-sm shrink-0">
+                            <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform shrink-0">
+                                <Store className="h-5 w-5" />
+                            </div>
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <span className="text-sm font-black italic text-foreground truncate">My Store</span>
+                                <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">Settings & Details</span>
+                            </div>
+                        </Link>
+                    )}
+
                     {/* Add more vertical actions if needed or spacers */}
                 </CardContent>
             </Card>
@@ -223,11 +244,11 @@ export function StoreManagerDashboard({
 
         "insights-panel": <InsightsPanel />,
 
-        "problem-stats": <ProblemStatsWidget userId={employee._id} role={currentUserRole} storeId={stores[0]?._id || employee.storeId} />,
+        "problem-stats": <ProblemStatsWidget userId={employee._id} role={currentUserRole} storeId={effectiveStoreId} />,
 
         "notice-board": <NoticeBoard userId={employee._id} />,
 
-        "birthday-widget": <BirthdayWidget storeId={stores[0]?._id || employee.storeId || ""} currentUserId={employee._id} />,
+        "birthday-widget": <BirthdayWidget storeId={effectiveStoreId || ""} currentUserId={employee._id} />,
 
         "my-schedule": <EmployeeScheduleTab employeeId={employee._id} />,
 
@@ -235,7 +256,7 @@ export function StoreManagerDashboard({
 
         "holiday-greeting": <HolidayGreetingWidget />,
 
-        "holiday-widget": <HolidayWidget storeId={stores[0]?._id || employee.storeId || ""} />
+        "holiday-widget": <HolidayWidget storeId={effectiveStoreId || ""} />
     };
 
     const sidebarContent = {
@@ -299,6 +320,9 @@ export function StoreManagerDashboard({
                         </div>
                         <div className="flex-1">
                             {widgets["task-board"]}
+                        </div>
+                        <div>
+                            {widgets["credential-manager"]}
                         </div>
                     </div>
                     <div className="h-full">

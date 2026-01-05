@@ -8,6 +8,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "@/i18n/routing";
 import { Separator } from "@/components/ui/separator";
 
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { getActionLogs } from "@/lib/actions/log.actions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
     AlertDialog,
@@ -61,6 +63,9 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState<Date | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [logs, setLogs] = useState<any[]>([]);
+    const [showLogs, setShowLogs] = useState(false);
+    const [logsLoading, setLogsLoading] = useState(false);
 
     // Derived State
     // Derived State
@@ -740,114 +745,162 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                     </div>
                 </div>
 
-                {/* Status Actions */}
-                <div className="flex items-center gap-2 flex-wrap">
-                    {/* Send for Approval - Prominent */}
-                    {isEditMode && canEdit && (schedule.status === 'draft' || schedule.status === 'rejected') && (
+                {/* Cancel Editing / Discard Draft */}
+                {isEditMode && schedule.status === 'draft' && canEdit && (
+                    <Button
+                        variant="outline"
+                        className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                        onClick={async () => {
+                            if (hasUnsavedChanges) {
+                                if (!confirm(t('discardChangesConfirm') || "You have unsaved changes. Discard them?")) return;
+                            }
+                            setActionLoading(true);
+                            try {
+                                // We need a specific action that allows managers to revert to published
+                                // even if they don't have "publish" permission generally.
+                                await updateScheduleStatus(schedule._id, 'published', userId, "Reverted edit mode (no changes)", false);
+                                toast.success("Exited edit mode");
+                                window.location.reload();
+                            } catch (error) {
+                                console.error("Cancel failed", error);
+                                toast.error(t('cancelEditFailed') || "Failed to cancel edit");
+                            } finally {
+                                setActionLoading(false);
+                            }
+                        }}
+                        disabled={actionLoading}
+                    >
+                        <XCircle className="mr-2 h-4 w-4" />
+                        {t('cancelEdit') || "Cancel Edit"}
+                    </Button>
+                )}
+
+                {/* Send for Approval - Prominent */}
+                {isEditMode && canEdit && (schedule.status === 'draft' || schedule.status === 'rejected') && (
+                    <Button
+                        className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                        onClick={() => handleStatusActionClick('pending')}
+                        disabled={actionLoading || !weekDays.every(d => d.isHoliday || d.shifts.length > 0)}
+                    >
+                        {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                        {t('sendForApproval')}
+                    </Button>
+                )}
+
+                {/* Approve/Reject - Prominent for Managers */}
+                {(schedule.status === 'pending' || schedule.status === 'review') && canApproveSchedule() && (
+                    <>
                         <Button
-                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                            onClick={() => handleStatusActionClick('pending')}
-                            disabled={actionLoading || !weekDays.every(d => d.isHoliday || d.shifts.length > 0)}
+                            variant="destructive"
+                            onClick={() => handleStatusActionClick('rejected')}
+                            disabled={actionLoading}
                         >
-                            {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                            {t('sendForApproval')}
+                            <XCircle className="mr-2 h-4 w-4" /> {tc('reject')}
                         </Button>
-                    )}
-
-                    {/* Approve/Reject - Prominent for Managers */}
-                    {(schedule.status === 'pending' || schedule.status === 'review') && canApproveSchedule() && (
-                        <>
-                            <Button
-                                variant="destructive"
-                                onClick={() => handleStatusActionClick('rejected')}
-                                disabled={actionLoading}
-                            >
-                                <XCircle className="mr-2 h-4 w-4" /> {tc('reject')}
-                            </Button>
-                            <Button
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                                onClick={() => handleStatusActionClick('published')}
-                                disabled={actionLoading}
-                            >
-                                <CheckCircle2 className="mr-2 h-4 w-4" /> {t('approve')}
-                            </Button>
-                        </>
-                    )}
+                        <Button
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => handleStatusActionClick('published')}
+                            disabled={actionLoading}
+                        >
+                            <CheckCircle2 className="mr-2 h-4 w-4" /> {t('approve')}
+                        </Button>
+                    </>
+                )}
 
 
 
-                    {/* Edit Published/Pending - Prominent */
-                        (canEditPending() || canRevertPublished()) && (
-                            <Button
-                                variant="outline"
-                                onClick={() => handleStatusActionClick('draft')}
-                                disabled={actionLoading}
-                                className="border-border hover:bg-muted"
-                            >
-                                <Edit2 className="mr-2 h-4 w-4" /> {tc('edit')}
-                            </Button>
-                        )
-                    }
-                    {/* Draft Indicator */}
-                    {schedule.status === 'draft' && canEdit && (
-                        <div className="hidden sm:flex items-center px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-md border border-emerald-100">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-                            Editing Active
-                        </div>
-                    )}
+                {/* Edit Published/Pending - Prominent */
+                    (canEditPending() || canRevertPublished()) && (
+                        <Button
+                            variant="outline"
+                            onClick={() => handleStatusActionClick('draft')}
+                            disabled={actionLoading}
+                            className="border-border hover:bg-muted"
+                        >
+                            <Edit2 className="mr-2 h-4 w-4" /> {tc('edit')}
+                        </Button>
+                    )
+                }
+                {/* Draft Indicator */}
+                {schedule.status === 'draft' && canEdit && (
+                    <div className="hidden sm:flex items-center px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-md border border-emerald-100">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
+                        Editing Active
+                    </div>
+                )}
 
-                    <Separator orientation="vertical" className="h-6 mx-2 hidden sm:block" />
+                <Separator orientation="vertical" className="h-6 mx-2 hidden sm:block" />
 
-                    {/* Consolidated Settings Menu */}
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="gap-2 print:hidden bg-background">
-                                <Settings className="h-4 w-4" />
-                                <span className="hidden sm:inline">{tc('settings') || "Settings"}</span>
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            <DropdownMenuLabel>{t('scheduleActions') || "Schedule Actions"}</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
+                {/* Consolidated Settings Menu */}
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="gap-2 print:hidden bg-background">
+                            <Settings className="h-4 w-4" />
+                            <span className="hidden sm:inline">{tc('settings') || "Settings"}</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel>{t('scheduleActions') || "Schedule Actions"}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
 
-                            {/* Copy Previous */}
-                            {isEditMode && (schedule.status === 'draft' || schedule.status === 'rejected') && (
-                                <DropdownMenuItem onClick={() => setCopyDialogOpen(true)} disabled={actionLoading}>
-                                    <Copy className="mr-2 h-4 w-4" /> {t('copyPrevious')}
-                                </DropdownMenuItem>
-                            )}
-
-                            {/* Toggle Scheduled Only */}
-                            <DropdownMenuItem onClick={() => setHideUnscheduled(!hideUnscheduled)}>
-                                {hideUnscheduled ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
-                                {hideUnscheduled ? "Show All Employees" : t('scheduledOnly')}
+                        {/* Copy Previous */}
+                        {isEditMode && (schedule.status === 'draft' || schedule.status === 'rejected') && (
+                            <DropdownMenuItem onClick={() => setCopyDialogOpen(true)} disabled={actionLoading}>
+                                <Copy className="mr-2 h-4 w-4" /> {t('copyPrevious')}
                             </DropdownMenuItem>
+                        )}
+
+                        {/* View Audit Logs (New) */}
+                        <DropdownMenuItem onClick={async () => {
+                            setLogsLoading(true);
+                            setShowLogs(true);
+                            try {
+                                const data = await getActionLogs({ targetId: schedule._id });
+                                setLogs(data);
+                            } catch (e) {
+                                console.error("Failed to fetch logs", e);
+                                toast.error("Failed to load history");
+                            } finally {
+                                setLogsLoading(false);
+                            }
+                        }}>
+                            <div className="flex items-center">
+                                <FileText className="mr-2 h-4 w-4" /> View Changes Log
+                            </div>
+                        </DropdownMenuItem>
+
+                        {/* Toggle Scheduled Only */}
+                        <DropdownMenuItem onClick={() => setHideUnscheduled(!hideUnscheduled)}>
+                            {hideUnscheduled ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
+                            {hideUnscheduled ? "Show All Employees" : t('scheduledOnly')}
+                        </DropdownMenuItem>
 
 
 
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel>Export</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuLabel>Export</DropdownMenuLabel>
 
-                            <DropdownMenuItem onClick={handlePrint} className="gap-2 cursor-pointer">
-                                <Printer className="h-4 w-4" /> Print / Save PDF
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={handleExportCSV} className="gap-2 cursor-pointer">
-                                <FileText className="h-4 w-4" /> Export CSV
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
+                        <DropdownMenuItem onClick={handlePrint} className="gap-2 cursor-pointer">
+                            <Printer className="h-4 w-4" /> Print / Save PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportCSV} className="gap-2 cursor-pointer">
+                            <FileText className="h-4 w-4" /> Export CSV
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
 
             {/* Validation Warning */}
-            {!weekDays.every(d => d.isHoliday || d.shifts.length > 0) && (isEditMode && canEdit) && (
-                <div className="flex justify-end -mt-4 mb-2 print:hidden">
-                    <p className="text-[10px] text-amber-600 font-medium flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
-                        <AlertCircle className="h-3 w-3" />
-                        Complete all days to enable submission
-                    </p>
-                </div>
-            )}
+            {
+                !weekDays.every(d => d.isHoliday || d.shifts.length > 0) && (isEditMode && canEdit) && (
+                    <div className="flex justify-end -mt-4 mb-2 print:hidden">
+                        <p className="text-[10px] text-amber-600 font-medium flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                            <AlertCircle className="h-3 w-3" />
+                            Complete all days to enable submission
+                        </p>
+                    </div>
+                )
+            }
 
 
             {/* Mobile View */}
@@ -860,6 +913,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                     onAddShift={handleAddClick}
                     onDeleteShift={confirmDeleteShift}
                     isToday={isToday}
+                    currentUserId={userId}
                 />
             </div>
 
@@ -1470,6 +1524,62 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                 employeeName={targetDetailsShift?.employeeName || ""}
                 storeName={targetDetailsShift?.storeName}
             />
+
+            <Dialog open={showLogs} onOpenChange={setShowLogs}>
+                <DialogContent className="max-w-2xl bg-card border-border">
+                    <DialogHeader>
+                        <DialogTitle>Schedule Changes History</DialogTitle>
+                    </DialogHeader>
+                    <ScrollArea className="h-[400px] border rounded-md p-4">
+                        {logsLoading ? (
+                            <div className="flex justify-center items-center h-full">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : logs.length === 0 ? (
+                            <div className="text-center text-muted-foreground py-8">
+                                No recorded changes for this schedule.
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {logs.map((log) => (
+                                    <div key={log._id} className="flex flex-col gap-1 pb-4 border-b last:border-0 last:pb-0">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Avatar className="h-6 w-6">
+                                                    <AvatarImage src={log.performedBy?.image} />
+                                                    <AvatarFallback>{log.performedBy?.firstName?.[0] || "?"}</AvatarFallback>
+                                                </Avatar>
+                                                <span className="font-semibold text-sm">
+                                                    {log.performedBy ? `${log.performedBy.firstName} ${log.performedBy.lastName}` : "System"}
+                                                </span>
+                                            </div>
+                                            <span className="text-xs text-muted-foreground">{format(new Date(log.createdAt), "MMM d, HH:mm")}</span>
+                                        </div>
+                                        <div className="pl-8 text-sm text-foreground/80">
+                                            <Badge variant="outline" className="text-[10px] mr-2 h-5">
+                                                {log.action.replace("UPDATE_SCHEDULE", "Update").replace("PUBLISH_SCHEDULE", "Publish").replace("REJECT_SCHEDULE", "Reject").replace("APPROVE_SCHEDULE", "Approve").replace(/_/g, " ")}
+                                            </Badge>
+                                        </div>
+                                        {log.details && (
+                                            <div className="pl-8 text-xs text-muted-foreground bg-muted/30 p-2 rounded mt-1">
+                                                {log.details.changes ? (
+                                                    <ul className="list-disc list-inside">
+                                                        {log.details.changes.map((c: string, i: number) => (
+                                                            <li key={i}>{c}</li>
+                                                        ))}
+                                                    </ul>
+                                                ) : (
+                                                    log.details.comment || (log.details.status ? `Status changed to ${log.details.status}` : JSON.stringify(log.details))
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </ScrollArea>
+                </DialogContent>
+            </Dialog>
 
         </div >
     );

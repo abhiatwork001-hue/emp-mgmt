@@ -128,6 +128,13 @@ export async function updateSchedule(id: string, data: any) {
     if (!session?.user) throw new Error("Unauthorized");
     await checkSchedulePermission((session.user as any).id);
 
+    // 1. Fetch current for Diffing
+    const currentSchedule = await Schedule.findById(id).populate({
+        path: "days.shifts.employees",
+        select: "firstName lastName"
+    }).lean();
+
+    // 2. Perform Update
     const updated = await Schedule.findByIdAndUpdate(id, data, { new: true })
         .populate("storeId", "name")
         .populate("storeDepartmentId", "name")
@@ -138,6 +145,45 @@ export async function updateSchedule(id: string, data: any) {
         })
         .lean();
 
+    // 3. Calc Diff (Basic)
+    let changes: string[] = [];
+    if (currentSchedule && data.days) {
+        try {
+            data.days.forEach((newDay: any, i: number) => {
+                const oldDay = currentSchedule.days[i];
+                if (!oldDay) return;
+
+                const dateStr = new Date(newDay.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
+
+                // Check Holidays
+                if (newDay.isHoliday !== oldDay.isHoliday) {
+                    changes.push(`${dateStr}: Marked as ${newDay.isHoliday ? 'Closed' : 'Open'}`);
+                }
+
+                // Check Shifts (Count or basic details)
+                // This is a naive diff. Ideally we track individual shift IDs but shifts are subdocs.
+                // We'll compare formatted strings of shifts to detect changes.
+                const fmt = (s: any) => `${s.startTime}-${s.endTime} (${s.employees?.length || 0})`;
+
+                const oldShifts = oldDay.shifts.map(fmt).sort().join(',');
+                const newShifts = newDay.shifts.map(fmt).sort().join(',');
+
+                if (oldShifts !== newShifts) {
+                    // Dig deeper if needed, or just say "Shifts changed"
+                    const added = newDay.shifts.length - oldDay.shifts.length;
+                    if (added > 0) changes.push(`${dateStr}: Added ${added} shift(s)`);
+                    else if (added < 0) changes.push(`${dateStr}: Removed ${Math.abs(added)} shift(s)`);
+                    else changes.push(`${dateStr}: Modified shifts`);
+                }
+            });
+        } catch (e) {
+            console.error("Diff calc error", e);
+            changes.push("Complex update occurred");
+        }
+    }
+
+    if (changes.length === 0 && data.days) changes.push("Minor adjustments");
+
     // Log Action
     await logAction({
         action: 'UPDATE_SCHEDULE',
@@ -145,7 +191,7 @@ export async function updateSchedule(id: string, data: any) {
         storeId: updated.storeId?._id?.toString() || updated.storeId?.toString(),
         targetId: id,
         targetModel: 'Schedule',
-        details: { status: updated.status }
+        details: { status: updated.status, changes: changes.slice(0, 10) } // Limit log size
     });
 
     revalidatePath(`/dashboard/schedules/${updated.slug}`);
@@ -187,7 +233,7 @@ export async function updateSchedule(id: string, data: any) {
     return JSON.parse(JSON.stringify(updated));
 }
 
-export async function updateScheduleStatus(id: string, status: string, userId: string, comment?: string) {
+export async function updateScheduleStatus(id: string, status: string, userId: string, comment?: string, notify: boolean = true) {
     await dbConnect();
     await checkSchedulePermission(userId);
 
@@ -198,7 +244,16 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         // Allowing Admin/Super User as well for system stability, alongside requested HR/Owner
         const hasAuthority = roles.some((r: string) => ['hr', 'owner', 'super_user', 'admin', 'tech'].includes(r));
 
-        if (!hasAuthority) {
+        // EXCEPTION: Allow Store Managers to "Publish" if they are reverting a Draft to Published (Cancel Edit)
+        // Check if the current schedule is in 'draft' status.
+        // We need to fetch the schedule first to check current status.
+        const currentSchedule = await Schedule.findById(id).select('status createdBy savedBy');
+
+        const isRevertingDraft = currentSchedule?.status === 'draft' && status === 'published';
+        const isManager = roles.includes('store_manager');
+        const isCreator = currentSchedule?.createdBy?.toString() === userId;
+
+        if (!hasAuthority && !(isRevertingDraft && (isManager || isCreator))) {
             throw new Error(`Permission Denied: Only HR, Owners, or Tech can ${status} schedules.`);
         }
     }
@@ -238,108 +293,107 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         storeId: updated.storeId?._id?.toString() || updated.storeId?.toString(),
         targetId: id,
         targetModel: 'Schedule',
-        details: { status, comment }
+        details: { status, comment, reversion: status === 'published' && comment?.includes('Reverted') }
     });
 
     revalidatePath(`/dashboard/schedules/${updated.slug}`);
 
     // Notification Logic
-    try {
-        const actor = await Employee.findById(userId).select("firstName lastName");
-        const actorName = actor ? `${actor.firstName} ${actor.lastName}` : "Someone";
+    // Notification Logic
+    if (notify) {
+        try {
+            const actor = await Employee.findById(userId).select("firstName lastName");
+            const actorName = actor ? `${actor.firstName} ${actor.lastName}` : "Someone";
 
-        const storeName = (updated.storeId as any)?.name || "Store";
-        const deptName = (updated.storeDepartmentId as any)?.name || "Department";
-        let title = "";
-        let message = "";
+            const storeName = (updated.storeId as any)?.name || "Store";
+            const deptName = (updated.storeDepartmentId as any)?.name || "Department";
+            let title = "";
+            let message = "";
 
-        if (status === 'review' || status === 'pending') { // 'pending' or 'review' depending on convention
-            title = "Schedule Sent for Approval";
-            message = `${actorName} sent a schedule for approval for ${deptName} at ${storeName}.`;
+            if (status === 'review' || status === 'pending') {
+                title = "Schedule Sent for Approval";
+                message = `${actorName} sent a schedule for approval for ${deptName} at ${storeName}.`;
 
-            // Notify HR and Owners
-            // We find employees with role 'hr' or 'owner' (case insensitive match usually required but sticking to simple regex/in)
-            const approvers = await Employee.find({
-                roles: { $in: [/^hr$/i, /^owner$/i] },
-                active: true
-            }).select("_id");
+                const approvers = await Employee.find({
+                    roles: { $in: [/^hr$/i, /^owner$/i] },
+                    active: true
+                }).select("_id");
 
-            const recipientIds = approvers.map(a => a._id.toString()).filter(id => id !== userId);
+                const recipientIds = approvers.map(a => a._id.toString()).filter(id => id !== userId);
 
-            if (recipientIds.length > 0) {
-                await triggerNotification({
-                    title,
-                    message,
-                    type: "info",
-                    category: "schedule",
-                    recipients: recipientIds,
-                    link: `/dashboard/browsing/schedules/${updated.slug}`, // Assuming admin view link
-                    senderId: userId,
-                    relatedStoreId: (updated.storeId as any)?._id,
-                    relatedDepartmentId: (updated.storeDepartmentId as any)?._id
-                });
-            }
-
-        } else if (status === 'published' || status === 'approved') {
-            title = "Schedule Approved & Published";
-            message = `The schedule for ${deptName} at ${storeName} has been approved and published.`;
-
-            const employeeIds = new Set<string>();
-
-            // Add Employees in Schedule
-            updated.days.forEach((day: any) => {
-                day.shifts.forEach((shift: any) => {
-                    shift.employees.forEach((emp: any) => {
-                        const empId = emp._id ? emp._id.toString() : emp.toString();
-                        employeeIds.add(empId);
-                    });
-                });
-            });
-
-            // Add Creator (Store Manager)
-            if (updated.createdBy) {
-                const creatorId = updated.createdBy._id ? updated.createdBy._id.toString() : updated.createdBy.toString();
-                employeeIds.add(creatorId);
-            }
-
-            const recipients = Array.from(employeeIds).filter(r => r !== userId);
-
-            if (recipients.length > 0) {
-                await triggerNotification({
-                    title,
-                    message,
-                    type: "success",
-                    category: "schedule",
-                    recipients: recipients,
-                    link: `/dashboard/schedules/${updated.slug}`,
-                    senderId: userId,
-                    relatedStoreId: (updated.storeId as any)?._id,
-                    relatedDepartmentId: (updated.storeDepartmentId as any)?._id
-                });
-            }
-        } else if (status === 'rejected') {
-            title = "Schedule Rejected";
-            message = `Your schedule for ${deptName} at ${storeName} was rejected by ${actorName}. Comment: ${comment || "None"}.`;
-
-            if (updated.createdBy) {
-                const creatorId = updated.createdBy._id ? updated.createdBy._id.toString() : updated.createdBy.toString();
-                if (creatorId !== userId) {
+                if (recipientIds.length > 0) {
                     await triggerNotification({
                         title,
                         message,
-                        type: "error",
+                        type: "info",
                         category: "schedule",
-                        recipients: [creatorId],
+                        recipients: recipientIds,
+                        link: `/dashboard/browsing/schedules/${updated.slug}`,
+                        senderId: userId,
+                        relatedStoreId: (updated.storeId as any)?._id,
+                        relatedDepartmentId: (updated.storeDepartmentId as any)?._id
+                    });
+                }
+
+            } else if (status === 'published' || status === 'approved') {
+                title = "Schedule Approved & Published";
+                message = `The schedule for ${deptName} at ${storeName} has been approved and published.`;
+
+                const employeeIds = new Set<string>();
+
+                updated.days.forEach((day: any) => {
+                    day.shifts.forEach((shift: any) => {
+                        shift.employees.forEach((emp: any) => {
+                            const empId = emp._id ? emp._id.toString() : emp.toString();
+                            employeeIds.add(empId);
+                        });
+                    });
+                });
+
+                if (updated.createdBy) {
+                    const creatorId = updated.createdBy._id ? updated.createdBy._id.toString() : updated.createdBy.toString();
+                    employeeIds.add(creatorId);
+                }
+
+                const recipients = Array.from(employeeIds).filter(r => r !== userId);
+
+                if (recipients.length > 0) {
+                    await triggerNotification({
+                        title,
+                        message,
+                        type: "success",
+                        category: "schedule",
+                        recipients: recipients,
                         link: `/dashboard/schedules/${updated.slug}`,
                         senderId: userId,
                         relatedStoreId: (updated.storeId as any)?._id,
                         relatedDepartmentId: (updated.storeDepartmentId as any)?._id
                     });
                 }
+            } else if (status === 'rejected') {
+                title = "Schedule Rejected";
+                message = `Your schedule for ${deptName} at ${storeName} was rejected by ${actorName}. Comment: ${comment || "None"}.`;
+
+                if (updated.createdBy) {
+                    const creatorId = updated.createdBy._id ? updated.createdBy._id.toString() : updated.createdBy.toString();
+                    if (creatorId !== userId) {
+                        await triggerNotification({
+                            title,
+                            message,
+                            type: "error",
+                            category: "schedule",
+                            recipients: [creatorId],
+                            link: `/dashboard/schedules/${updated.slug}`,
+                            senderId: userId,
+                            relatedStoreId: (updated.storeId as any)?._id,
+                            relatedDepartmentId: (updated.storeDepartmentId as any)?._id
+                        });
+                    }
+                }
             }
+        } catch (e) {
+            console.error("Error sending notification:", e);
         }
-    } catch (e) {
-        console.error("Error sending notification:", e);
     }
 
     return JSON.parse(JSON.stringify(updated));
@@ -533,7 +587,7 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
     const year = d.getUTCFullYear();
 
     // 2. Find ALL Schedules for this week that contain the employee
-    const schedules = await Schedule.find({
+    let schedules = await Schedule.find({
         year,
         weekNumber,
         "days.shifts.employees": employeeId
@@ -541,6 +595,23 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
         .populate("storeId", "name")
         .populate("storeDepartmentId", "name")
         .lean();
+
+    // FALLBACK: If no shifts assigned, find ANY published schedule for their store
+    // This allows managers/employees to see the week structure (holidays, etc.) even with 0 shifts
+    if (!schedules || schedules.length === 0) {
+        const employee = await Employee.findById(employeeId).select('storeId');
+        if (employee?.storeId) {
+            schedules = await Schedule.find({
+                year,
+                weekNumber,
+                storeId: employee.storeId,
+                status: 'published'
+            })
+                .populate("storeId", "name")
+                .populate("storeDepartmentId", "name")
+                .lean();
+        }
+    }
 
     if (!schedules || schedules.length === 0) return null;
 
@@ -891,7 +962,7 @@ export async function findConflictingShifts(
     excludeScheduleId: string
 ) {
     await dbConnect();
-    
+
     // Find all schedules that overlap with this date range, excluding the current one
     const schedules = await Schedule.find({
         _id: { $ne: excludeScheduleId },
@@ -900,10 +971,10 @@ export async function findConflictingShifts(
         ],
         "days.shifts.employees": { $in: employeeIds }
     })
-    .select('days storeId status storeDepartmentId slug')
-    .populate('storeId', 'name')
-    .populate('storeDepartmentId', 'name')
-    .lean();
+        .select('days storeId status storeDepartmentId slug')
+        .populate('storeId', 'name')
+        .populate('storeDepartmentId', 'name')
+        .lean();
 
     const conflicts: any[] = [];
 
@@ -914,18 +985,18 @@ export async function findConflictingShifts(
                 const affectedEmployees = shift.employees
                     // @ts-ignore
                     .filter((empId: any) => employeeIds.includes(empId.toString()));
-                
+
                 if (affectedEmployees.length > 0) {
-                     conflicts.push({
-                         date: day.date,
-                         startTime: shift.startTime,
-                         endTime: shift.endTime,
-                         storeName: sched.storeId?.name || "Unknown Store",
-                         departmentName: sched.storeDepartmentId?.name,
-                         status: sched.status,
-                         employeeIds: affectedEmployees,
-                         slug: sched.slug
-                     });
+                    conflicts.push({
+                        date: day.date,
+                        startTime: shift.startTime,
+                        endTime: shift.endTime,
+                        storeName: sched.storeId?.name || "Unknown Store",
+                        departmentName: sched.storeDepartmentId?.name,
+                        status: sched.status,
+                        employeeIds: affectedEmployees,
+                        slug: sched.slug
+                    });
                 }
             });
         });

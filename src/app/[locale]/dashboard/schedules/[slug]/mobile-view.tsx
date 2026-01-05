@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Clock, Calendar, MoreVertical, X, AlertCircle } from "lucide-react";
+import { Plus, Clock, Calendar, MoreVertical, X, AlertCircle, ChevronLeft, ChevronRight, User, Users } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
@@ -17,6 +18,7 @@ interface MobileScheduleViewProps {
     onAddShift: (date: string, employeeId?: string) => void;
     onDeleteShift: (date: string, index: number, employeeId?: string) => void;
     isToday: (date: Date) => boolean;
+    currentUserId?: string;
 }
 
 export function MobileScheduleView({
@@ -26,176 +28,221 @@ export function MobileScheduleView({
     onEditShift,
     onAddShift,
     onDeleteShift,
-    isToday
+    isToday,
+    currentUserId
 }: MobileScheduleViewProps) {
     const t = useTranslations("Schedule");
+    const [activeDayIndex, setActiveDayIndex] = useState(() => {
+        // Default to today if in range, otherwise 0
+        const todayIndex = weekDays.findIndex(d => isToday(new Date(d.date)));
+        return todayIndex !== -1 ? todayIndex : 0;
+    });
+
+    // Default to showing only my schedule if regular user, but show all for managers editing
+    const [showMyScheduleOnly, setShowMyScheduleOnly] = useState(!!currentUserId && !isEditMode);
+
+    const currentDay = weekDays[activeDayIndex];
+    if (!currentDay) return null;
+
+    const currentDate = new Date(currentDay.date);
+    const isDayClosed = currentDay.isHoliday;
+
+    // Filter unassigned shifts for this day
+    const unassignedShifts = currentDay.shifts.filter((s: any) => s.employees.length === 0);
+
+    const displayedEmployees = showMyScheduleOnly && currentUserId
+        ? employees.filter(e => e._id === currentUserId)
+        : employees;
 
     return (
-        <div className="md:hidden space-y-6">
-            {employees.map((emp) => {
-                // Calculate Stats per employee
-                let totalMinutes = 0;
-                let totalShifts = 0;
+        <div className="md:hidden flex flex-col h-[calc(100vh-200px)]">
+            {/* Day Navigation Tabs */}
+            <div className="flex items-center justify-between mb-4 gap-2">
+                <div className="flex items-center overflow-x-auto pb-2 -mx-4 px-4 gap-2 no-scrollbar flex-1">
+                    {weekDays.map((day, i) => {
+                        const date = new Date(day.date);
+                        const isActive = i === activeDayIndex;
+                        const isCurrent = isToday(date);
 
-                weekDays.forEach((day: any) => {
-                    day.shifts.forEach((s: any) => {
-                        if (s.employees.some((e: any) => e._id === emp._id)) {
-                            if (s.shiftName !== "Day Off") {
-                                const getM = (t: string) => {
-                                    if (!t) return 0;
-                                    const [h, m] = t.split(':').map(Number);
-                                    return h * 60 + (m || 0);
-                                };
-                                let dur = getM(s.endTime) - getM(s.startTime);
-                                if (dur < 0) dur += 24 * 60;
-                                if (s.breakMinutes) dur -= s.breakMinutes;
-                                totalMinutes += dur;
-                                totalShifts++;
-                            }
-                        }
-                    });
-                });
+                        return (
+                            <button
+                                key={i}
+                                onClick={() => setActiveDayIndex(i)}
+                                className={cn(
+                                    "flex flex-col items-center justify-center min-w-[60px] h-[70px] rounded-xl border transition-all shrink-0",
+                                    isActive
+                                        ? "bg-primary text-primary-foreground border-primary shadow-md scale-105"
+                                        : "bg-card border-border text-muted-foreground hover:bg-muted/50",
+                                    isCurrent && !isActive && "border-primary/50 bg-primary/5 text-primary"
+                                )}
+                            >
+                                <span className="text-[10px] uppercase font-bold tracking-wider opacity-80">
+                                    {format(date, "EEE")}
+                                </span>
+                                <span className="text-xl font-black leading-none">
+                                    {format(date, "d")}
+                                </span>
+                                {day.isHoliday && (
+                                    <span className="text-[8px] bg-red-500/20 text-red-500 px-1 rounded-full mt-1 font-bold">Closed</span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
 
-                const totalHours = totalMinutes / 60;
-                const contractHours = emp.contract?.weeklyHours || 40;
-                const contractDays = emp.contract?.workingDays?.length || 5;
-                const isUnderHours = totalHours < contractHours;
+            {/* Day Content Area */}
+            <div className="flex-1 overflow-y-auto pr-1 pb-20 space-y-6">
 
-                return (
-                    <Card key={emp._id} className="overflow-hidden border-border/60 shadow-sm">
-                        <CardHeader className="p-4 bg-muted/20 border-b border-border/40">
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="h-10 w-10 border border-border">
-                                        <AvatarImage src={emp.image} />
-                                        <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                                            {emp.firstName[0]}{emp.lastName[0]}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <h3 className="font-bold text-sm text-foreground">{emp.firstName} {emp.lastName}</h3>
-                                        <p className="text-xs text-muted-foreground">{emp.positionId?.name || "Employee"}</p>
+                {/* 1. Day Header Stats & Toggle */}
+                <div className="flex items-center justify-between px-1">
+                    <div>
+                        <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                            {format(currentDate, "MMMM d, yyyy")}
+                            {isDayClosed && <Badge variant="destructive" className="h-5 text-[10px]">CLOSED</Badge>}
+                        </h3>
+                        <p className="text-xs text-muted-foreground">
+                            {isDayClosed ? currentDay.holidayName : `${currentDay.shifts.length} shifts scheduled`}
+                        </p>
+                    </div>
+
+                    {currentUserId && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setShowMyScheduleOnly(!showMyScheduleOnly)}
+                            className={cn("h-8 text-xs gap-2", showMyScheduleOnly ? "bg-primary/10 text-primary border-primary/20" : "")}
+                        >
+                            {showMyScheduleOnly ? <User className="h-3 w-3" /> : <Users className="h-3 w-3" />}
+                            {showMyScheduleOnly ? "My View" : "Team View"}
+                        </Button>
+                    )}
+                </div>
+
+                {/* 2. Unassigned Shifts (Queue) */}
+                {!showMyScheduleOnly && unassignedShifts.length > 0 && (
+                    <div className="space-y-3">
+                        <h4 className="text-xs font-bold uppercase text-amber-500 flex items-center gap-2">
+                            <AlertCircle className="h-3 w-3" /> Unassigned Shifts
+                        </h4>
+                        {unassignedShifts.map((shift: any, idx: number) => (
+                            <div
+                                key={idx}
+                                onClick={() => isEditMode && onEditShift(shift, currentDay.date, currentDay.shifts.indexOf(shift))}
+                                className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 flex items-center justify-between"
+                            >
+                                <div className="flex items-center gap-2">
+                                    <div className="bg-amber-500/20 p-1.5 rounded-md text-amber-600">
+                                        <Clock className="h-4 w-4" />
                                     </div>
+                                    <span className="font-bold text-amber-700">{shift.startTime} - {shift.endTime}</span>
                                 </div>
-                                <div className="text-right">
-                                    <div className={cn("text-lg font-bold leading-none", isUnderHours ? "text-amber-500" : "text-emerald-600")}>
-                                        {totalHours.toFixed(1)}<span className="text-[10px] text-muted-foreground font-normal ml-0.5">hrs</span>
+                                <span className="text-xs text-amber-600 italic">Tap to assign</span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* 3. Employee List for this Day */}
+                <div className="space-y-3">
+                    {displayedEmployees.map((emp) => {
+                        // Find shifts for this employee on this day
+                        const empShifts = currentDay.shifts
+                            .map((s: any, idx: number) => ({ ...s, originalIndex: idx }))
+                            .filter((s: any) => s.employees.some((e: any) => e._id === emp._id));
+
+                        const hasShift = empShifts.length > 0;
+                        const isOff = hasShift && empShifts[0].shiftName === "Day Off";
+
+                        if (isDayClosed) return null;
+
+                        return (
+                            <div key={emp._id} className={cn(
+                                "flex items-center gap-3 p-3 rounded-2xl border transition-all",
+                                hasShift
+                                    ? (isOff ? "bg-muted/30 border-dashed border-border" : "bg-card border-border shadow-sm")
+                                    : "bg-muted/5 border-transparent opacity-80 hover:opacity-100"
+                            )}>
+                                {/* Avatar */}
+                                <Avatar className="h-10 w-10 border border-border shrink-0">
+                                    <AvatarImage src={emp.image} />
+                                    <AvatarFallback className="bg-muted text-muted-foreground font-bold text-xs">
+                                        {emp.firstName[0]}{emp.lastName[0]}
+                                    </AvatarFallback>
+                                </Avatar>
+
+                                {/* Content */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <span className="font-bold text-sm truncate">{emp.firstName} {emp.lastName}</span>
+                                        <span className="text-[10px] text-muted-foreground uppercase">{emp.positionId?.name?.substring(0, 12) || "Staff"}</span>
                                     </div>
-                                    <div className="text-[10px] text-muted-foreground mt-1">
-                                        / {contractHours} hrs target
-                                    </div>
+
+                                    {/* Slot */}
+                                    {hasShift ? (
+                                        <div className="space-y-2">
+                                            {empShifts.map((shift: any) => (
+                                                <button
+                                                    key={shift.originalIndex}
+                                                    onClick={() => isEditMode && onEditShift(shift, currentDay.date, shift.originalIndex)}
+                                                    className={cn(
+                                                        "w-full text-left text-xs p-2 rounded-lg border flex items-center justify-between group relative",
+                                                        isOff
+                                                            ? "bg-transparent border-transparent text-muted-foreground font-medium uppercase tracking-widest"
+                                                            : "bg-primary/5 border-primary/20 text-foreground font-medium"
+                                                    )}
+                                                    style={shift.color && !isOff ? { borderLeft: `3px solid ${shift.color}` } : {}}
+                                                >
+                                                    {isOff ? (
+                                                        <span>Day Off</span>
+                                                    ) : (
+                                                        <>
+                                                            <span>{shift.startTime} - {shift.endTime}</span>
+                                                            {shift.breakMinutes > 0 && <span className="opacity-50 text-[9px]">{shift.breakMinutes}m break</span>}
+                                                        </>
+                                                    )}
+
+                                                    {/* Delete Button (Visible on Touch/Hover if Edit Mode) */}
+                                                    {isEditMode && (
+                                                        <div
+                                                            className="ml-2 p-1 bg-destructive/10 text-destructive rounded-full"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                onDeleteShift(currentDay.date, shift.originalIndex, emp._id);
+                                                            }}
+                                                        >
+                                                            <X className="h-3 w-3" />
+                                                        </div>
+                                                    )}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        // Empty Slot -> Add Button
+                                        isEditMode && (
+                                            <button
+                                                onClick={() => onAddShift(currentDay.date, emp._id)}
+                                                className="w-full py-1.5 rounded-lg border border-dashed border-muted-foreground/30 text-muted-foreground/50 text-[10px] uppercase font-bold hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-colors flex items-center justify-center gap-1"
+                                            >
+                                                <Plus className="h-3 w-3" /> Add Shift
+                                            </button>
+                                        )
+                                    )}
                                 </div>
                             </div>
-                        </CardHeader>
-                        <CardContent className="p-0 divide-y divide-border/40">
-                            {weekDays.map((day, i) => {
-                                const date = new Date(day.date);
-                                const isCurrentDay = isToday(date);
-                                const empShiftsWithIndex = day.shifts
-                                    .map((s: any, idx: number) => ({ ...s, originalIndex: idx }))
-                                    .filter((s: any) =>
-                                        s.employees.some((e: any) => e._id === emp._id)
-                                    );
+                        );
+                    })}
+                </div>
 
-                                return (
-                                    <div
-                                        key={i}
-                                        className={cn(
-                                            "flex items-stretch min-h-[70px]",
-                                            isCurrentDay ? "bg-primary/5" : "bg-card"
-                                        )}
-                                    >
-                                        {/* Date Column */}
-                                        <div className={cn(
-                                            "w-16 flex flex-col items-center justify-center p-2 border-r border-border/40 shrink-0",
-                                            day.isHoliday ? "bg-muted/40" : ""
-                                        )}>
-                                            <span className="text-[10px] uppercase font-bold text-muted-foreground">
-                                                {format(date, "EEE")}
-                                            </span>
-                                            <span className={cn(
-                                                "text-lg font-bold leading-none mt-0.5",
-                                                isCurrentDay ? "text-primary" : "text-foreground"
-                                            )}>
-                                                {format(date, "d")}
-                                            </span>
-                                        </div>
-
-                                        {/* Shift Content */}
-                                        <div className="flex-1 p-2 relative">
-                                            {day.isHoliday ? (
-                                                <div className="h-full flex items-center gap-2 text-muted-foreground">
-                                                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-transparent text-[10px]">CLOSED</Badge>
-                                                    <span className="text-xs">{day.holidayName}</span>
-                                                </div>
-                                            ) : empShiftsWithIndex.length > 0 ? (
-                                                <div className="space-y-2">
-                                                    {empShiftsWithIndex.map((shift: any, _: number) => {
-                                                        const isDayOff = shift.shiftName === "Day Off";
-                                                        return (
-                                                            <div
-                                                                key={shift.originalIndex}
-                                                                onClick={() => isEditMode && onEditShift(shift, day.date, shift.originalIndex)}
-                                                                className={cn(
-                                                                    "relative rounded-md p-2 border transition-all",
-                                                                    isDayOff
-                                                                        ? "bg-muted/50 border-dashed border-border text-muted-foreground flex justify-center py-3"
-                                                                        : "bg-background border-border shadow-sm",
-                                                                    isEditMode ? "active:scale-[0.98]" : "",
-                                                                    shift.color ? `border-l-4` : "border-l-4 border-l-primary"
-                                                                )}
-                                                                style={shift.color && !isDayOff ? { borderLeftColor: shift.color } : {}}
-                                                            >
-                                                                {isDayOff ? (
-                                                                    <span className="text-xs font-bold uppercase tracking-widest">Day Off</span>
-                                                                ) : (
-                                                                    <div className="flex justify-between items-start">
-                                                                        <div>
-                                                                            <div className="text-xs font-bold flex items-center gap-1.5">
-                                                                                <Clock className="h-3 w-3 text-muted-foreground" />
-                                                                                {shift.startTime} - {shift.endTime}
-                                                                            </div>
-                                                                            {shift.notes && (
-                                                                                <p className="text-[10px] text-muted-foreground mt-1 line-clamp-1">{shift.notes}</p>
-                                                                            )}
-                                                                        </div>
-                                                                        {shift.breakMinutes > 0 && (
-                                                                            <Badge variant="secondary" className="text-[9px] h-4 px-1">{shift.breakMinutes}m break</Badge>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-
-                                                                {isEditMode && (
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            onDeleteShift(day.date, shift.originalIndex, emp._id);
-                                                                        }}
-                                                                        className="absolute -top-1.5 -right-1.5 bg-destructive text-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100"
-                                                                    >
-                                                                        <X className="h-3 w-3" />
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            ) : (
-                                                <div
-                                                    onClick={() => !day.isHoliday && isEditMode && onAddShift(day.date, emp._id)}
-                                                    className="h-full min-h-[40px] flex items-center justify-center rounded-md border-2 border-dashed border-border/40 text-muted-foreground/40 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
-                                                >
-                                                    {isEditMode ? <Plus className="h-5 w-5" /> : <span className="text-[10px] italic">No Shift</span>}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </CardContent>
-                    </Card>
-                );
-            })}
+                {isDayClosed && (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50">
+                        <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4">
+                            <Calendar className="h-8 w-8" />
+                        </div>
+                        <p className="font-medium">Store Closed</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

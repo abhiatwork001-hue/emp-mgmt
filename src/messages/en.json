@@ -162,6 +162,10 @@
         "underHours": "{hours} / {contract}h",
         "underDays": "{days} / {contract} Days",
         "scheduleActions": "Actions",
+        "cancelEdit": "Cancel Edit",
+        "discardChangesConfirm": "You have unsaved changes. Discard them?",
+        "editCancelled": "Edit cancelled, schedule republished",
+        "cancelEditFailed": "Failed to cancel edit",
         "shiftDetails": "Shift Details"
     },
     "Profile": {

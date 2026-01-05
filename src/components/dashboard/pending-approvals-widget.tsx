@@ -36,9 +36,10 @@ interface PendingApprovalsWidgetProps {
     absences: any[];
     schedules: any[];
     compact?: boolean;
+    role?: string; // Add role prop
 }
 
-export function PendingApprovalsWidget({ overtime, vacations, absences, schedules = [], compact = false }: PendingApprovalsWidgetProps) {
+export function PendingApprovalsWidget({ overtime, vacations, absences, schedules = [], compact = false, role }: PendingApprovalsWidgetProps) {
     const totalCount = overtime.length + vacations.length + absences.length + schedules.length;
     const { data: session } = useSession();
     const router = useRouter();
@@ -95,9 +96,12 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
     const hasMore = allItems.length > limit;
 
     // RBAC Check for Actions
-    // RBAC Check for Actions
-    const userRoles = (session?.user as any)?.roles || [];
-    const normalizedRoles = userRoles.map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    // Use prop role if provided (for view simulation), otherwise session roles
+    const sessionRoles = (session?.user as any)?.roles || [];
+    const effectiveRoles = role ? [role] : sessionRoles;
+    const normalizedRoles = effectiveRoles.map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+
+    // Explicitly check for high-level roles only. Store Manager is NOT included.
     const canApprove = normalizedRoles.some((r: string) => ["admin", "hr", "owner", "super_user", "tech"].includes(r));
 
     const handleAction = async (item: PendingItem, action: 'approve' | 'reject') => {
