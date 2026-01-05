@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { Mail, Lock, ArrowRight, ChevronLeft, Loader2 } from "lucide-react";
+import { Mail, Lock, ArrowRight, ChevronLeft, Loader2, Eye, EyeOff } from "lucide-react";
 import { requestPasswordReset } from "@/lib/actions/employee.actions";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +29,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
     const [isLoading, setIsLoading] = useState(false);
     const [view, setView] = useState<"login" | "forgot">("login");
     const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const router = useRouter(); // Locale-aware router
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -81,15 +82,15 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="relative w-28 h-28 mb-8 group"
+                        className="relative w-72 h-32 mb-4 group"
                     >
-                        <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl group-hover:bg-primary/30 transition-colors duration-500" />
-                        <div className="relative w-full h-full ring-1 ring-white/20 rounded-full p-2.5 bg-black/40 backdrop-blur-sm shadow-inner overflow-hidden">
+                        <div className="absolute inset-0 bg-primary/10 rounded-3xl blur-2xl group-hover:bg-primary/20 transition-colors duration-500" />
+                        <div className="relative w-full h-full p-2 transition-transform duration-500 hover:scale-105">
                             <Image
                                 src="/logo_chickinho.png"
                                 alt="Chickinho Logo"
                                 fill
-                                className="object-cover rounded-full scale-110 group-hover:scale-125 transition-transform duration-700"
+                                className="object-contain drop-shadow-2xl"
                                 priority
                             />
                         </div>
@@ -160,12 +161,20 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                                             <Lock className="absolute left-5 h-4 w-4 text-muted-foreground group-focus-within:text-primary group-focus-within:opacity-0 transition-all z-20 pointer-events-none" />
                                             <Input
                                                 id="password"
-                                                type="password"
+                                                type={showPassword ? "text" : "password"}
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
-                                                className="pl-14 focus:pl-6 bg-white/5 border-white/5 text-foreground focus:ring-primary/20 focus:border-primary/40 h-14 rounded-2xl transition-all relative z-10"
+                                                className="pl-14 pr-12 focus:pl-6 bg-white/5 border-white/5 text-foreground focus:ring-primary/20 focus:border-primary/40 h-14 rounded-2xl transition-all relative z-10"
                                                 required
                                             />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPassword(!showPassword)}
+                                                className="absolute right-5 z-20 text-muted-foreground hover:text-foreground transition-colors"
+                                                tabIndex={-1}
+                                            >
+                                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                            </button>
                                         </div>
                                     </div>
 
