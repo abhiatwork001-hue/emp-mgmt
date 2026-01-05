@@ -126,105 +126,122 @@ export function EmployeeDashboard({
                     </Card>
                 </div>
 
-                {/* 2. Main content area (ONLY if schedule exists) */}
+                {/* 2. Main Schedule - Full Width */}
                 {hasSchedule && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-                        {/* Schedule Area */}
-                        <div className={cn("h-full", todaysCoworkers.length === 0 && "lg:col-span-2")}>
-                            <Card className="h-full border shadow-sm overflow-hidden flex flex-col">
-                                <CardHeader className="py-3 px-4 bg-muted/5 border-b shrink-0">
-                                    <CardTitle className="text-md font-semibold flex items-center gap-2 text-primary">
-                                        <Calendar className="h-4 w-4" /> My Rota
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="flex-1 p-4">
-                                    <EmployeeScheduleTab employeeId={employee._id.toString()} />
-                                </CardContent>
-                            </Card>
-                        </div>
+                    <div className="w-full animate-in zoom-in-95 duration-500">
+                        <Card className="border shadow-sm overflow-hidden flex flex-col bg-card/50 backdrop-blur-sm">
+                            <CardHeader className="py-3 px-4 bg-muted/5 border-b shrink-0">
+                                <CardTitle className="text-md font-black italic flex items-center gap-2 text-primary uppercase tracking-tight">
+                                    <Calendar className="h-4 w-4" /> My Weekly Schedule
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-0">
+                                <EmployeeScheduleTab employeeId={employee._id.toString()} />
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
 
-                        {/* Team & Extra Stats */}
-                        {todaysCoworkers.length > 0 && (
-                            <div className="h-full">
-                                {/* Working Together */}
-                                <Card className="border-l-4 border-l-primary shadow-sm overflow-hidden h-full flex flex-col">
-                                    <CardHeader className="py-3 px-4 bg-muted/5 border-b shrink-0">
-                                        <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center justify-between">
-                                            <span className="flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Working with you today</span>
-                                            <Badge className="bg-primary/10 text-primary text-[9px] hover:bg-primary/20">{todaysCoworkers.length} active</Badge>
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1 overflow-y-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                    {/* Main Operations Card (Left Column - 2/3) */}
+                    <div className="lg:col-span-2 space-y-8">
+                        <Card className="p-6 border shadow-sm flex flex-col gap-8 bg-card/30">
+                            {/* 1. Request Buttons */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <RequestVacationDialog
+                                    employeeId={employee._id.toString()}
+                                    remainingDays={vacationTracker.remainingDays}
+                                    trigger={
+                                        <Button variant="outline" className="w-full justify-start h-16 rounded-2xl group/btn hover:border-primary/50 transition-all bg-card/50 shadow-sm border-l-4 border-l-primary">
+                                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mr-3 group-hover/btn:scale-110 transition-transform">
+                                                <Calendar className="h-5 w-5 text-primary" />
+                                            </div>
+                                            <div className="flex flex-col items-start min-w-0">
+                                                <span className="text-md font-black italic">Time Off</span>
+                                                <span className="text-[9px] text-muted-foreground uppercase font-black">Request Vacation</span>
+                                            </div>
+                                        </Button>
+                                    }
+                                />
+
+                                <ReportAbsenceDialog
+                                    employeeId={employee._id.toString()}
+                                    trigger={
+                                        <Button variant="outline" className="w-full justify-start h-16 rounded-2xl group/btn hover:border-destructive/50 transition-all bg-card/50 shadow-sm border-l-4 border-l-destructive">
+                                            <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center mr-3 group-hover/btn:scale-110 transition-transform">
+                                                <AlertCircle className="h-5 w-5 text-destructive" />
+                                            </div>
+                                            <div className="flex flex-col items-start min-w-0">
+                                                <span className="text-md font-black italic">Sick Report</span>
+                                                <span className="text-[9px] text-muted-foreground uppercase font-black">Report Absence</span>
+                                            </div>
+                                        </Button>
+                                    }
+                                />
+                            </div>
+
+                            {/* 2. Working Together (Full width within this card) */}
+                            {todaysCoworkers.length > 0 && (
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between px-1">
+                                        <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                                            <Users className="h-3 w-3 text-primary" /> Working with you today
+                                        </h3>
+                                        <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary">{todaysCoworkers.length} active</Badge>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                         {todaysCoworkers.map((cw: any, idx: number) => (
-                                            <div key={idx} className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-all group bg-muted/20 border border-border/40">
-                                                <Avatar className="h-9 w-9 border shadow-sm">
+                                            <div key={idx} className="flex items-center gap-2 p-2 rounded-xl bg-muted/20 border border-border/40 hover:bg-muted/30 transition-colors group">
+                                                <Avatar className="h-8 w-8 border shadow-sm group-hover:scale-110 transition-transform">
                                                     <AvatarImage src={cw.image} />
-                                                    <AvatarFallback className="bg-primary/10 text-primary font-black text-xs">
+                                                    <AvatarFallback className="text-[10px] bg-primary/5 text-primary font-bold">
                                                         {cw.firstName?.[0]}{cw.lastName?.[0]}
                                                     </AvatarFallback>
                                                 </Avatar>
                                                 <div className="min-w-0">
-                                                    <div className="text-xs font-bold text-foreground truncate">
+                                                    <div className="text-[11px] font-bold truncate">
                                                         {cw.firstName} {cw.lastName}
                                                     </div>
-                                                    <div className="text-[9px] text-muted-foreground uppercase font-black tracking-tight truncate">
+                                                    <div className="text-[8px] text-muted-foreground uppercase font-medium truncate">
                                                         {cw.position || "Employee"}
                                                     </div>
                                                 </div>
                                             </div>
                                         ))}
-                                    </CardContent>
-                                </Card>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="h-[1px] bg-border/50" />
+
+                            {/* 3. Holidays & Birthdays Grid (Half-Half) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
+                                        <Sun className="h-3 w-3 text-amber-500" /> Public Holidays
+                                    </h3>
+                                    <HolidayWidget storeId={employee.storeId?._id || employee.storeId} />
+                                </div>
+                                <div className="space-y-4">
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
+                                        <Star className="h-3 w-3 text-primary" /> Birthdays
+                                    </h3>
+                                    <BirthdayWidget storeId={employee.storeId?._id || employee.storeId} currentUserId={employee._id} />
+                                </div>
                             </div>
-                        )}
+                        </Card>
+
+                        <HolidayGreetingWidget />
                     </div>
-                )}
 
-                {/* 3. Services and External Widgets */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-                    {/* Services Grid */}
-                    <Card className="lg:col-span-2 p-6 border shadow-sm flex flex-col gap-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <RequestVacationDialog
-                                employeeId={employee._id.toString()}
-                                remainingDays={vacationTracker.remainingDays}
-                                trigger={
-                                    <Button variant="outline" className="w-full justify-start h-16 rounded-2xl group/btn hover:border-primary/50 transition-all bg-card/50 shadow-sm border-l-4 border-l-primary">
-                                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center mr-3 group-hover/btn:scale-110 transition-transform">
-                                            <Calendar className="h-5 w-5 text-primary" />
-                                        </div>
-                                        <div className="flex flex-col items-start min-w-0">
-                                            <span className="text-md font-black italic">Time Off</span>
-                                            <span className="text-[9px] text-muted-foreground uppercase font-black">Request Vacation</span>
-                                        </div>
-                                    </Button>
-                                }
-                            />
-
-                            <ReportAbsenceDialog
-                                employeeId={employee._id.toString()}
-                                trigger={
-                                    <Button variant="outline" className="w-full justify-start h-16 rounded-2xl group/btn hover:border-destructive/50 transition-all bg-card/50 shadow-sm border-l-4 border-l-destructive">
-                                        <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center mr-3 group-hover/btn:scale-110 transition-transform">
-                                            <AlertCircle className="h-5 w-5 text-destructive" />
-                                        </div>
-                                        <div className="flex flex-col items-start min-w-0">
-                                            <span className="text-md font-black italic">Sick Report</span>
-                                            <span className="text-[9px] text-muted-foreground uppercase font-black">Report Absence</span>
-                                        </div>
-                                    </Button>
-                                }
-                            />
-                        </div>
-                        <div className="h-[1px] bg-border/50" />
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                            <HolidayGreetingWidget />
-                            <HolidayWidget storeId={employee.storeId?._id || employee.storeId} />
-                        </div>
-                    </Card>
-
-                    <div className="h-full">
-                        <BirthdayWidget storeId={employee.storeId?._id || employee.storeId} currentUserId={employee._id} />
+                    {/* Right Column - System Status / Spare Space */}
+                    <div className="flex flex-col gap-6">
+                        {/* You can add more sidebar widgets here if needed, or leave for DashboardLayout sidebar */}
+                        <Card className="p-4 border border-dashed bg-muted/5 opacity-50 hidden lg:flex items-center justify-center min-h-[100px]">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/40 text-center">
+                                Modular Workspace<br />Ready for Add-ons
+                            </p>
+                        </Card>
                     </div>
                 </div>
 

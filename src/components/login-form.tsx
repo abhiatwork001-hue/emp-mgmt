@@ -48,13 +48,8 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                 setError("Invalid email or password");
                 toast.error("Login failed. Check your credentials.");
             } else {
-                toast.success("Welcome back!");
-                // Using hard/window location might be safer if router.push fails in prod, but let's stick to router with variable first
-                // If user meant "production error" as in client-side navigation glitch, maybe window.location is better?
-                // But stick to router.push for SPA feel unless instructed.
-                // The user said "variable... cause in production its making error".
-                // I will use imports.
-                router.push(DASHBOARD_URL); // Now uses locale-aware routing
+                // Using hard/window location for maximum reliability in production
+                window.location.href = DASHBOARD_URL;
             }
         } catch (err) {
             setError("Something went wrong");
