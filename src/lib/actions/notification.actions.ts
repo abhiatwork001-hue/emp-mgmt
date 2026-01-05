@@ -44,6 +44,9 @@ export async function triggerNotification(data: NotificationTriggerData) {
 
         const plainNotification = JSON.parse(JSON.stringify(notification));
 
+        // Optimization: Create a lightweight payload for Pusher (exclude recipients list which can be huge)
+        const { recipients, ...notificationForPusher } = plainNotification;
+
         // 2. Trigger Pusher Events with retry logic
         const triggerPromises = data.recipients.map(async (userId) => {
             let retries = 3;
@@ -53,7 +56,7 @@ export async function triggerNotification(data: NotificationTriggerData) {
                 try {
                     // Real-time (Pusher)
                     await pusherServer.trigger(`user-${userId}`, "notification:new", {
-                        ...plainNotification,
+                        ...notificationForPusher,
                         read: false // Add read status for this specific user
                     });
 

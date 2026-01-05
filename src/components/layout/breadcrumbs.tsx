@@ -8,10 +8,10 @@ import { cn } from "@/lib/utils";
 import { hasAccess } from "@/lib/rbac";
 
 export function Breadcrumbs({
-    userRole = "employee",
+    userRoles = ["employee"],
     departmentName = ""
 }: {
-    userRole?: string,
+    userRoles?: string[],
     departmentName?: string
 }) {
     const pathname = usePathname();
@@ -44,7 +44,7 @@ export function Breadcrumbs({
                 const pathToCheck = `/${breadcrumbParts.slice(0, index + 2).join("/")}`;
                 const href = pathToCheck; // i18n Link handles the locale prefix automatically if used via "@/i18n/routing"
 
-                const canAccess = hasAccess(userRole, pathToCheck, departmentName);
+                const canAccess = hasAccess(userRoles, pathToCheck, departmentName);
 
                 // ID Detection (24 chars hex)
                 const isId = part.length === 24 && /^[0-9a-fA-F]+$/.test(part);
@@ -54,13 +54,18 @@ export function Breadcrumbs({
                 if (isId) {
                     label = "Details";
                 } else {
-                    try {
-                        const translated = t(part.toLowerCase());
-                        if (translated && translated !== part.toLowerCase()) {
-                            label = translated;
+                    // Skip translation for slugs (e.g. chick-city-1-781) or if it contains digits
+                    const isSlug = /[0-9]/.test(part) || part.includes("-");
+
+                    if (!isSlug) {
+                        try {
+                            const translated = t(part.toLowerCase());
+                            if (translated && translated !== part.toLowerCase()) {
+                                label = translated;
+                            }
+                        } catch (e) {
+                            // Ignore translation errors
                         }
-                    } catch (e) {
-                        // Safe fallback is already handled by getMessageFallback or the default label
                     }
                 }
 

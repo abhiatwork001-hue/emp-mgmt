@@ -1,43 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Chick - Modern Workforce Management System
 
-## Getting Started
+[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38B2AC)](https://tailwindcss.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248)](https://www.mongodb.com/)
 
-First, run the development server:
+**Chick** is a premium, enterprise-grade workforce management application designed for modern restaurant chains and retail businesses. It unifies scheduling, communication, and HR tasks into a single, beautiful "Glassmorphic" interface.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Key Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 📅 Advanced Scheduling
+- **Shift Management:** Drag-and-drop schedule builder with conflict detection.
+- **Templates:** Save and reuse weekly schedules.
+- **Availability:** Employee availability tracking and time-off requests.
+- **Multi-Department:** Manage shifts across "Kitchen", "Service", "Bar", etc.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 💬 Real-Time Communication
+- **Instant Messaging:** Direct and Group chats with real-time delivery.
+- **Rich Media:** Send images, voice notes, and file attachments.
+- **Notifications:** Push notifications ensuring no message is missed.
+- **Announcements:** Broadcast important updates to specific roles or stores.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 🛡️ Role-Based Access Control (RBAC)
+- **Granular Permissions:** Custom views for Owners, HR, Managers, Dept Heads, and Staff.
+- **Audit Logs:** Track every critical action (Schedule Publish, Profile Edit, etc.) with detailed history.
+- **Secure:** Middleware-protected routes and API endpoints.
 
-## Learn More
+### 🌍 Application Features
+- **Internationalization:** Native support for multiple languages (en, de).
+- **Dark Mode:** Sleek visual design that adapts to user preference.
+- **PWA Ready:** Designed for mobile-first usage.
 
-To learn more about Next.js, take a look at the following resources:
+## 🛠️ Technology Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Framework:** [Next.js 14](https://nextjs.org/) (App Router, Server Actions)
+- **Language:** [TypeScript](https://www.typescriptlang.org/)
+- **Database:** [MongoDB](https://www.mongodb.com/) (Mongoose ODM)
+- **Authentication:** [NextAuth.js](https://next-auth.js.org/)
+- **Styling:** [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
+- **Real-time:** [Pusher](https://pusher.com/)
+- **File Storage:** [UploadThing](https://uploadthing.com/)
+- **Validation:** [Zod](https://zod.dev/)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📦 Getting Started
 
-## Deploy on Vercel
+### Prerequisites
+- Node.js 18+
+- MongoDB Database (Atlas or Local)
+- Pusher Account (for realtime features)
+- UploadThing Account (for file uploads)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Installation
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# employee-management-app
-# emp-mgmt
-# employee-management-app
-# employee-management-app
-# employee-management-app
-# employee-management-app
-# emp-mgmt
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/yourusername/chick.git
+    cd chick
+    ```
+
+2.  **Install dependencies**
+    ```bash
+    npm install
+    ```
+
+3.  **Environment Setup**
+    Create a `.env` file in the root directory:
+    ```env
+    # Database
+    MONGODB_URI=mongodb+srv://...
+
+    # Auth
+    NEXTAUTH_URL=http://localhost:3000
+    NEXTAUTH_SECRET=your_super_secret_key
+
+    # Pusher (Realtime)
+    NEXT_PUBLIC_PUSHER_KEY=...
+    NEXT_PUBLIC_PUSHER_CLUSTER=...
+    PUSHER_APP_ID=...
+    PUSHER_SECRET=...
+
+    # UploadThing (Files)
+    UPLOADTHING_SECRET=...
+    UPLOADTHING_APP_ID=...
+
+    # Email (Optional)
+    EMAIL_SERVER_HOST=...
+    EMAIL_SERVER_PORT=...
+    EMAIL_SERVER_USER=...
+    EMAIL_SERVER_PASSWORD=...
+    EMAIL_FROM=...
+    ```
+
+4.  **Run Development Server**
+    ```bash
+    npm run dev
+    ```
+    Open [http://localhost:3000](http://localhost:3000) to view the app.
+
+## 🤝 Contributing
+Contributions are welcome! Please fork the repository and create a pull request for any feature enhancements or bug fixes.
+
+## 📄 License
+This project is licensed under the MIT License.

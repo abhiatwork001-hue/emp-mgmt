@@ -73,8 +73,8 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
     );
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between px-1">
+        <div className="h-full flex flex-col gap-2">
+            <div className="flex items-center justify-between px-1 shrink-0">
                 <Link href="/dashboard/notices" className="group/title">
                     <div className="flex flex-col">
                         <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground/60 group-hover/title:text-primary transition-colors flex items-center gap-2">
@@ -116,14 +116,15 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 1.02, y: -10 }}
                     transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                    className="flex-1 min-h-0"
                 >
                     {notice && (
-                        <Card glass premium className="h-[400px] flex flex-col group overflow-hidden border-border/40 hover:border-primary/20 transition-all duration-500">
+                        <Card glass premium className="h-full flex flex-col group overflow-hidden border-border/40 hover:border-primary/20 transition-all duration-500">
                             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 group-hover:scale-125 transition-all duration-700 pointer-events-none">
                                 <Megaphone className="h-24 w-24 -rotate-12" />
                             </div>
 
-                            <CardHeader className="pb-4 relative z-10">
+                            <CardHeader className="pb-4 relative z-10 shrink-0">
                                 <div className="space-y-4">
                                     <div className="flex items-start justify-between gap-4">
                                         <div className="flex flex-wrap gap-2">
@@ -147,7 +148,7 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
 
                                     <div className="space-y-1.5">
                                         <Link href={`/dashboard/notices/${notice.slug}`} className="group/link block">
-                                            <CardTitle className="text-2xl font-black text-foreground/90 group-hover/link:text-primary transition-colors leading-tight">
+                                            <CardTitle className="text-2xl font-black text-foreground/90 group-hover/link:text-primary transition-colors leading-tight line-clamp-1">
                                                 {notice.title}
                                             </CardTitle>
                                         </Link>
@@ -178,16 +179,16 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
                             </CardHeader>
 
                             <CardContent className="flex-1 min-h-0 pt-0 flex flex-col relative z-10 px-8">
-                                <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-border/20 to-transparent mb-6" />
+                                <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-border/20 to-transparent mb-6 shrink-0" />
                                 <ScrollArea className="flex-1 -mr-4 pr-6">
                                     <div className="prose prose-sm dark:prose-invert max-w-none text-foreground/70 leading-relaxed font-medium italic">
                                         {notice.content}
                                     </div>
                                 </ScrollArea>
-                                <div className="mt-8 pb-8">
+                                <div className="mt-auto pt-6 pb-6 shrink-0">
                                     <Link href={`/dashboard/notices/${notice.slug}`}>
-                                        <Button className="w-full bg-foreground text-background font-black text-xs tracking-[0.2em] rounded-xl h-12 hover:bg-primary hover:text-primary-foreground transition-all duration-300">
-                                            ENGAGE ANNOUNCEMENT
+                                        <Button className="w-full bg-foreground text-background font-black text-xs tracking-[0.2em] rounded-xl h-10 hover:bg-primary hover:text-primary-foreground transition-all duration-300">
+                                            ENGAGE
                                         </Button>
                                     </Link>
                                 </div>

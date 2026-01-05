@@ -20,18 +20,19 @@ export default async function SchedulesPage() {
     // Let's use negative check: if user is "employee" and NOTHING ELSE high tier.
     // Actually, safer to check for PERMISSION to view.
     // View Schedules: Store Manager, Head, HR, Admin, Owner.
-    const ALLOWED_VIEW_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr", "employee"];
+    const ALLOWED_VIEW_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr", "employee", "tech"];
     const hasPermission = roles.some((r: string) => ALLOWED_VIEW_ROLES.includes(r));
 
     if (!hasPermission) redirect("/dashboard");
 
     // Redirect logic for simple employees: Go directly to their department's latest schedule
-    const isManagerial = roles.some((r: string) => ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr"].includes(r));
+    const isManagerial = roles.some((r: string) => ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr", "tech"].includes(r));
 
     if (!isManagerial && employee.storeDepartmentId) {
         const storeId = employee.storeId?._id || employee.storeId;
         const deptId = employee.storeDepartmentId?._id || employee.storeDepartmentId;
 
+        let redirectPath = null;
         try {
             // Fetch recent schedules for their department
             const schedules = await getSchedules(storeId, deptId);
@@ -40,16 +41,20 @@ export default async function SchedulesPage() {
             const latestSchedule = schedules.find((s: any) => ["published", "approved"].includes(s.status));
 
             if (latestSchedule) {
-                redirect(`/dashboard/schedules/${latestSchedule.slug || latestSchedule._id}`);
+                redirectPath = `/dashboard/schedules/${latestSchedule.slug || latestSchedule._id}`;
             }
         } catch (error) {
-            console.error("Auto-redirect error:", error);
+            console.error("Fetch schedule error:", error);
             // Fallthrough to main dashboard if error or no schedule
+        }
+
+        if (redirectPath) {
+            redirect(redirectPath);
         }
     }
 
     // Determine if user is restricted to a specific store
-    const isGlobalRole = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "department_head"].includes(r));
+    const isGlobalRole = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "department_head", "tech"].includes(r));
     const restrictedStoreId = !isGlobalRole ? (employee.storeId?._id || employee.storeId) : undefined;
 
     return (

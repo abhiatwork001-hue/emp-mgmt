@@ -49,7 +49,7 @@ export default async function PositionsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {positions.map((pos: any) => (
-                    <Link key={pos._id} href={`/dashboard/positions/${pos._id}`}>
+                    <Link key={pos._id} href={`/dashboard/positions/${pos.slug}`}>
                         <Card className="hover:bg-muted/50 transition-colors cursor-pointer border-border">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">

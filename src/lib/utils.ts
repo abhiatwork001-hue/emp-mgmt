@@ -30,3 +30,12 @@ export function slugify(text: string): string {
     .replace(/[^\w-]+/g, '') // remove all non-word chars
     .replace(/--+/g, '-'); // replace multiple - with single -
 }
+
+export function getISOWeekNumber(d: Date) {
+  const date = new Date(d.valueOf());
+  const day = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return { week: weekNo, year: date.getUTCFullYear() };
+}

@@ -22,6 +22,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useTranslations, useLocale } from "next-intl";
 import { getLocalized } from "@/lib/utils";
+import { VacationCorrectionDialog } from "@/components/dashboard/hr/vacation-correction-dialog";
 
 interface Employee {
     _id: string;
@@ -37,6 +38,12 @@ interface Employee {
     contract?: { employmentType?: string };
     passwordResetRequested?: boolean;
     slug: string;
+    vacationTracker?: {
+        defaultDays: number;
+        rolloverDays: number;
+        usedDays: number;
+        year: number;
+    };
 }
 
 interface FilterOption {
@@ -214,7 +221,8 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
                     <div className="col-span-2">{t("positions")}</div>
                     <div className="col-span-2">Status & Actions</div>
                     <div className="col-span-2">{t("stores")}</div>
-                    <div className="col-span-2">{t("departments")}</div>
+                    <div className="col-span-1">{t("departments")}</div>
+                    <div className="col-span-1">Edit</div>
                 </div>
 
                 {/* Rows */}
@@ -258,6 +266,20 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
                                                 <Button size="sm" className="h-7 px-3 bg-amber-600 text-white border-0" onClick={(e) => handleConfirmReset(e, emp._id)}>Confirm</Button>
                                             </div>
                                         )}
+
+                                        <div className="flex items-center justify-between mt-2">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Balance</span>
+                                                <span className="text-sm font-semibold">{(emp.vacationTracker?.defaultDays || 0) + (emp.vacationTracker?.rolloverDays || 0) - (emp.vacationTracker?.usedDays || 0)} Days Left</span>
+                                            </div>
+                                            <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                                                <VacationCorrectionDialog
+                                                    employeeId={emp._id}
+                                                    currentTracker={emp.vacationTracker}
+                                                    onUpdate={() => router.refresh()}
+                                                />
+                                            </div>
+                                        </div>
 
                                         <div className="grid grid-cols-2 gap-4 text-sm mt-2 p-3 bg-muted/20 rounded-xl border border-border/40">
                                             <div className="flex flex-col gap-1">
@@ -323,6 +345,13 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
                                                 )}
                                             </div>
                                         </div>
+                                        <div className="col-span-1 flex items-center justify-center" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                                            <VacationCorrectionDialog
+                                                employeeId={emp._id}
+                                                currentTracker={emp.vacationTracker}
+                                                onUpdate={() => router.refresh()}
+                                            />
+                                        </div>
                                         <div className="col-span-2 text-sm font-medium text-muted-foreground flex items-center gap-2">
                                             <div className="p-1.5 rounded-lg bg-muted/50">
                                                 <MapPin className="h-3.5 w-3.5 text-primary/60" />
@@ -331,11 +360,11 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
                                                 {getLocalized(emp.storeId, "name", locale) || "-"}
                                             </span>
                                         </div>
-                                        <div className="col-span-2 text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                        <div className="col-span-1 text-sm font-medium text-muted-foreground flex items-center gap-2">
                                             <div className="p-1.5 rounded-lg bg-muted/50">
                                                 <Briefcase className="h-3.5 w-3.5 text-primary/60" />
                                             </div>
-                                            <span className="truncate max-w-[120px]" title={getLocalized(emp.storeDepartmentId, "name", locale)}>
+                                            <span className="truncate max-w-[80px]" title={getLocalized(emp.storeDepartmentId, "name", locale)}>
                                                 {getLocalized(emp.storeDepartmentId, "name", locale) || "-"}
                                             </span>
                                         </div>

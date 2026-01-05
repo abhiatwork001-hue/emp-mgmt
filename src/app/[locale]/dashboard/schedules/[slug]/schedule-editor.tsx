@@ -25,14 +25,23 @@ import { ShiftDialog } from "@/components/schedules/shift-dialog";
 import { SwapRequestDialog } from "@/components/schedules/swap-request-dialog";
 import { OvertimeRequestDialog } from "@/components/schedules/overtime-request-dialog";
 import { MobileScheduleView } from "./mobile-view";
+import { ShiftDetailsDialog } from "@/components/schedules/shift-details-dialog";
 import { useRouter } from "next/navigation";
-import { getOrCreateSchedule, updateScheduleStatus, updateSchedule, copyPreviousSchedule } from "@/lib/actions/schedule.actions";
+import { getOrCreateSchedule, updateScheduleStatus, updateSchedule, copyPreviousSchedule, findConflictingShifts } from "@/lib/actions/schedule.actions";
 import { toast } from "sonner";
 import {
-    ChevronLeft, ChevronRight, Save, User, Users, ArrowLeft, Loader2, Copy, Trash2, X, Plus, Filter, Tag, Check, XCircle, Clock, Calendar,
-    ArrowRight, Lock, CheckCircle2, MoreVertical, Send, Printer, Settings, AlertTriangle, AlertCircle
+    ChevronLeft, ChevronRight, Save, User, Users, ArrowLeft, Loader2, Copy, Trash2, X, Plus, Filter, Tag, Check, XCircle, Clock, Calendar, Edit2,
+    ArrowRight, Lock, CheckCircle2, MoreVertical, Send, Printer, Settings, AlertTriangle, AlertCircle, FileDown, FileText, Eye, EyeOff
 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -40,7 +49,7 @@ import { Switch } from "@/components/ui/switch";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 
-export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSchedule: any, userId: string, canEdit: boolean }) {
+export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [], userStoreId, userDepartmentId }: { initialSchedule: any, userId: string, canEdit: boolean, userRoles: string[], userStoreId?: string, userDepartmentId?: string }) {
     const router = useRouter();
     const t = useTranslations("Schedule");
     const tc = useTranslations("Common");
@@ -54,12 +63,81 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
     // Derived State
+    // Derived State
     const isEditMode = canEdit && (schedule.status === 'draft' || schedule.status === 'rejected');
+
+    // Check if schedule is currently ongoing
+    const isOngoingWeek = () => {
+        const start = new Date(initialSchedule.dateRange.startDate);
+        const end = new Date(initialSchedule.dateRange.endDate);
+        const now = new Date();
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        return now >= start && now <= end;
+    };
+
+    // "ongoing week... only available to hr, owner, admins and then tech"
+    // "ongoing week... only available to hr, owner, admins and then tech"
+    // AND "storeManager of that store and that storeDepartmentHeads"
+    const canEditLockedSchedule = () => {
+        // 1. Global Privileged Roles
+        const GLOBAL_PRIVILEGED = ["hr", "owner", "admin", "tech", "super_user", "department_head"]; // Added department_head as potential global? Or keep strict.
+        // User asked for "storeManager of that store".
+        if (userRoles.some(r => GLOBAL_PRIVILEGED.includes(r.toLowerCase()))) return true;
+
+        // 2. Contextual Privileged Roles
+        const sId = typeof schedule.storeId === 'object' ? schedule.storeId._id : schedule.storeId;
+        const dId = typeof schedule.storeDepartmentId === 'object' ? schedule.storeDepartmentId._id : schedule.storeDepartmentId;
+
+        // Ensure we compare strings
+        const currentStoreId = sId?.toString();
+        const currentDeptId = dId?.toString();
+
+        if (userRoles.includes('store_manager')) {
+            // Must match store
+            if (userStoreId && userStoreId === currentStoreId) return true;
+        }
+
+        if (userRoles.includes('store_department_head')) {
+            // Must match store AND department
+            if (userStoreId && userStoreId === currentStoreId &&
+                userDepartmentId && userDepartmentId === currentDeptId) return true;
+        }
+
+        return false;
+    };
+
+    const canApproveSchedule = () => {
+        const APPROVERS = ["hr", "owner", "admin", "tech", "super_user", "department_head"];
+        return userRoles.some(r => APPROVERS.includes(r.toLowerCase()));
+    };
+
+
+
+    const canRevertPublished = () => {
+        if (!canEdit) return false;
+        if (schedule.status !== 'published') return false;
+
+        if (isOngoingWeek()) {
+            return canEditLockedSchedule();
+        }
+        return true;
+    };
+
+    // Can edit pending (retract)? Yes, if they are the managers.
+    const canEditPending = () => {
+        if (!canEdit) return false;
+        if (schedule.status !== 'pending' && schedule.status !== 'review') return false;
+        return canEditLockedSchedule();
+    };
+
+
 
     // Dialog State
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [editingShift, setEditingShift] = useState<{ shift: any, dayDate: string, index: number } | null>(null);
+    const [preselectedEmployeeId, setPreselectedEmployeeId] = useState<string | null>(null);
 
     // Alert Dialog States
     const [copyDialogOpen, setCopyDialogOpen] = useState(false);
@@ -76,7 +154,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
 
     // Delete Shift State
     const [deleteShiftAlertOpen, setDeleteShiftAlertOpen] = useState(false);
-    const [shiftToDelete, setShiftToDelete] = useState<{ dayDate: string, index: number } | null>(null);
+    const [shiftToDelete, setShiftToDelete] = useState<{ dayDate: string, index: number, employeeId?: string } | null>(null);
 
     // Filter State
     const [hideUnscheduled, setHideUnscheduled] = useState(false);
@@ -88,6 +166,10 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
     // Overtime Dialog State
     const [overtimeDialogOpen, setOvertimeDialogOpen] = useState(false);
     const [targetOvertimeShift, setTargetOvertimeShift] = useState<any>(null);
+
+    // Shift Details Dialog State
+    const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+    const [targetDetailsShift, setTargetDetailsShift] = useState<any>(null);
 
     // We need to re-derive employees map client-side or pass it clean
     const getAllEmployees = () => {
@@ -112,10 +194,11 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
         })
         : allEmployees;
 
-    const handleAddClick = (date: string) => {
+    const handleAddClick = (date: string, employeeId?: string) => {
         if (!isEditMode) return;
         setSelectedDate(new Date(date));
         setEditingShift(null); // Ensure we are in create mode
+        setPreselectedEmployeeId(employeeId || null);
         setIsDialogOpen(true);
     };
 
@@ -143,9 +226,41 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                     };
                 }
 
+                // Check for overlapping shifts for assigned employees
+                const hasOverlap = (s1: any, start2: string, end2: string) => {
+                    if (s1.shiftName === "Day Off" || start2 === "" || end2 === "") return false;
+
+                    const getM = (t: string) => {
+                        const [h, m] = t.split(':').map(Number);
+                        return h * 60 + (m || 0);
+                    };
+
+                    const start1M = getM(s1.startTime);
+                    const end1M = getM(s1.endTime);
+                    const start2M = getM(start2);
+                    const end2M = getM(end2);
+
+                    return (start1M < end2M && end1M > start2M);
+                };
+
+                // Filter out current shift if editing
+                const otherShifts = day.shifts.filter((_: any, idx: number) => idx !== editingShift?.index);
+
+                for (const emp of shiftData.employees) {
+                    const conflictingShift = otherShifts.find((s: any) =>
+                        s.employees.some((e: any) => e._id === emp._id) &&
+                        hasOverlap(s, shiftData.startTime, shiftData.endTime)
+                    );
+
+                    if (conflictingShift) {
+                        toast.error(`Cannot assign ${emp.firstName} ${emp.lastName}: Overlaps with existing shift (${conflictingShift.startTime} - ${conflictingShift.endTime})`);
+                        return day; // Return unchanged day
+                    }
+                }
+
                 const updatedShifts = [...day.shifts];
 
-                if (editingShift) {
+                if (typeof editingShift?.index === 'number') {
                     // Update existing shift
                     updatedShifts[editingShift.index] = {
                         ...updatedShifts[editingShift.index],
@@ -153,6 +268,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                         startTime: shiftData.startTime,
                         endTime: shiftData.endTime,
                         breakMinutes: shiftData.breakMinutes,
+                        color: shiftData.color,
                         employees: shiftData.employees,
                         notes: shiftData.notes,
                     };
@@ -163,11 +279,58 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                         startTime: shiftData.startTime,
                         endTime: shiftData.endTime,
                         breakMinutes: shiftData.breakMinutes,
+                        color: shiftData.color,
                         employees: shiftData.employees,
                         notes: shiftData.notes,
+                        originalIndex: undefined, // Will be set on render or next map
                         // In real app, generate temp ID
                     });
                 }
+
+                // --- Cross-Store Conflict Check ---
+                // We perform this check asynchronously and warn if issues found.
+                // We do NOT block the local optimistic update, but we show a warning Toast/Alert.
+                if (shiftData.employees?.length > 0 && shiftData.shiftName !== "Day Off") {
+                    findConflictingShifts(
+                        shiftData.employees.map((e: any) => e._id),
+                        { start: new Date(day.date).toISOString(), end: new Date(day.date).toISOString() },
+                        schedule._id
+                    ).then(conflicts => {
+                        if (conflicts && conflicts.length > 0) {
+                            // Check for overlaps with THIS shift
+                            const relevantConflicts = conflicts.filter((c: any) => {
+                                // Simple overlap check
+                                const getM = (t: string) => {
+                                    const [h, m] = t.split(':').map(Number);
+                                    return h * 60 + (m || 0);
+                                };
+                                const s1 = getM(shiftData.startTime);
+                                const e1 = getM(shiftData.endTime);
+                                const s2 = getM(c.startTime);
+                                const e2 = getM(c.endTime);
+                                return (s1 < e2 && e1 > s2);
+                            });
+
+                            if (relevantConflicts.length > 0) {
+                                const msg = relevantConflicts.map((c: any) =>
+                                    `${c.employeeIds[0]} at ${c.storeName} (${c.startTime}-${c.endTime})`
+                                ).join(', ');
+                                // We need names, but conflict returned filtered ID or populated obj?
+                                // action returns: employeeIds: affectedEmployees (which are objects if populated in shift, or strings)
+                                // checking action: affectedEmployees = shift.employees.filter... 
+                                // schedule.find... populate('days.shifts.employees') -> yes they are full objects
+
+                                const names = relevantConflicts.map((c: any) => {
+                                    const emp = c.employeeIds[0]; // The conflict logic pushed the matching employee object(s)
+                                    return `${emp.firstName} ${emp.lastName} is at ${c.storeName}`;
+                                }).join(' & ');
+
+                                toast.error(`Cross-Store Conflict Detected: ${names}`, { duration: 5000 });
+                            }
+                        }
+                    }).catch(err => console.error("Conflict check failed", err));
+                }
+                // ----------------------------------
 
                 return {
                     ...day,
@@ -348,8 +511,8 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
         }
     };
 
-    const confirmDeleteShift = (dayDate: string, index: number) => {
-        setShiftToDelete({ dayDate, index });
+    const confirmDeleteShift = (dayDate: string, index: number, employeeId?: string) => {
+        setShiftToDelete({ dayDate, index, employeeId });
         setDeleteShiftAlertOpen(true);
     };
 
@@ -357,6 +520,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
         let targetWeekDays = [...weekDays];
         let targetIndex = -1;
         let targetDateStr = "";
+        let targetEmployeeId = shiftToDelete?.employeeId;
 
         if (shiftToDelete) {
             targetDateStr = new Date(shiftToDelete.dayDate).toISOString().split('T')[0];
@@ -373,7 +537,19 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
             const dayDate = new Date(day.date).toISOString().split('T')[0];
             if (dayDate === targetDateStr) {
                 const updatedShifts = [...day.shifts];
-                updatedShifts.splice(targetIndex, 1);
+                const shiftToUpdate = updatedShifts[targetIndex];
+
+                if (targetEmployeeId && shiftToUpdate.employees.length > 1) {
+                    // Only remove the specific employee
+                    updatedShifts[targetIndex] = {
+                        ...shiftToUpdate,
+                        employees: shiftToUpdate.employees.filter((e: any) => e._id !== targetEmployeeId)
+                    };
+                } else {
+                    // Remove the entire shift
+                    updatedShifts.splice(targetIndex, 1);
+                }
+
                 return {
                     ...day,
                     shifts: updatedShifts
@@ -412,10 +588,97 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
             date.getFullYear() === today.getFullYear();
     };
 
+    // --- Export Handlers ---
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const handleExportCSV = () => {
+        try {
+            // 1. Headers
+            const dayHeaders = weekDays.map(d => new Date(d.date).toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }));
+            const headers = ["Employee Name", "Position", ...dayHeaders, "Total Hours", "Total Shifts"];
+
+            // 2. Rows
+            const rows = uniqueEmployees.map((emp: any) => {
+                let totalMinutes = 0;
+                let totalShifts = 0;
+                const shiftDetails: string[] = [];
+
+                weekDays.forEach((day: any) => {
+                    const shiftsForEmp = day.shifts.filter((s: any) => s.employees.some((e: any) => e._id === emp._id));
+
+                    if (shiftsForEmp.length > 0) {
+                        const shiftStrs = shiftsForEmp.map((s: any) => {
+                            if (s.shiftName === "Day Off") return "OFF";
+
+                            // Calc Duration
+                            const getM = (t: string) => {
+                                if (!t) return 0;
+                                const [h, m] = t.split(':').map(Number);
+                                return h * 60 + (m || 0);
+                            };
+                            let dur = getM(s.endTime) - getM(s.startTime);
+                            if (dur < 0) dur += 24 * 60;
+                            if (s.breakMinutes) dur -= s.breakMinutes;
+
+                            totalMinutes += dur;
+
+                            return `${s.startTime}-${s.endTime}`;
+                        }).join(" / ");
+
+                        // Don't count "OFF" shifts towards total shifts if strictly counting work
+                        if (shiftsForEmp.some((s: any) => s.shiftName !== "Day Off")) {
+                            totalShifts += shiftsForEmp.filter((s: any) => s.shiftName !== "Day Off").length;
+                        }
+
+                        shiftDetails.push(shiftStrs);
+                    } else {
+                        shiftDetails.push("");
+                    }
+                });
+
+                const totalHours = (totalMinutes / 60).toFixed(2);
+
+                // Escape entries for CSV
+                const safeEntry = (s: string) => `"${s.replace(/"/g, '""')}"`;
+
+                return [
+                    safeEntry(emp.firstName + " " + emp.lastName),
+                    safeEntry(emp.positionId?.name || "Staff"),
+                    ...shiftDetails.map(s => safeEntry(s)), // Ensure each day is a column
+                    safeEntry(totalHours),
+                    safeEntry(totalShifts.toString())
+                ].join(",");
+            });
+
+            const csvContent = [
+                headers.join(","),
+                ...rows
+            ].join("\n");
+
+            // 3. Download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `schedule_${new Date(schedule.dateRange.startDate).toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.success("Schedule exported to CSV");
+        } catch (error) {
+            console.error("Export failed", error);
+            toast.error("Failed to export CSV");
+        }
+    };
+
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 print-container print-scale">
             {/* Header */}
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 print:hidden">
                 <div className="flex items-center gap-3">
                     <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" asChild>
                         <Link href="/dashboard/schedules"><ChevronLeft className="h-4 w-4" /></Link>
@@ -440,8 +703,17 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
 
                     <div className="hidden md:block">
                         <div className="flex items-center gap-2">
+                            <div className="hidden xl:block text-[10px] text-red-500 bg-red-50 p-1 rounded border border-red-200" title="Debug Info">
+                                Roles: {userRoles.join(',')} |
+                                U_Store: {userStoreId || 'NA'} |
+                                S_Store: {typeof schedule.storeId === 'object' ? schedule.storeId._id : schedule.storeId} |
+                                LockedEdit: {canEditLockedSchedule() ? 'Y' : 'N'} |
+                                canEdit: {canEdit ? 'Y' : 'N'} |
+                                Status: {schedule.status} |
+                                PEND: {canEditPending() ? 'Y' : 'N'}
+                            </div>
                             <span className="font-semibold">{schedule.storeDepartmentId?.name}</span>
-                            <Badge variant={schedule.status === 'published' ? 'default' : schedule.status === 'pending' ? 'secondary' : 'outline'} className="capitalize">
+                            <Badge variant={schedule.status === 'published' ? 'default' : (schedule.status === 'pending' || schedule.status === 'review') ? 'secondary' : 'outline'} className="capitalize">
                                 {tc(schedule.status)}
                             </Badge>
                             {!isEditMode && <Badge variant="secondary" className="gap-1 bg-muted/50 border-border text-muted-foreground"><Lock className="h-3 w-3" /> {tc('viewOnly') || 'View Only'}</Badge>}
@@ -468,36 +740,22 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                     </div>
                 </div>
 
+                {/* Status Actions */}
                 <div className="flex items-center gap-2 flex-wrap">
-                    {(schedule.status === 'draft' || schedule.status === 'rejected') && (
-                        <>
-                            {isEditMode && (
-                                <Button
-                                    variant="outline"
-                                    onClick={() => setCopyDialogOpen(true)}
-                                    disabled={actionLoading}
-                                    className="mr-2 border-border hover:bg-muted"
-                                >
-                                    <Copy className="mr-2 h-4 w-4" /> {t('copyPrevious')}
-                                </Button>
-                            )}
-                            <Button
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                                onClick={() => handleStatusActionClick('pending')}
-                                disabled={actionLoading || !weekDays.every(d => d.isHoliday || d.shifts.length > 0)}
-                                style={{ display: (isEditMode && canEdit) ? 'flex' : 'none' }} // Hide via style to avoid complex conditional wrapping if needed, or just wrap
-                            >
-                                {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                                {t('sendForApproval')}
-                            </Button>
-                            {!weekDays.every(d => d.isHoliday || d.shifts.length > 0) && (isEditMode && canEdit) && (
-                                <p className="text-[10px] text-muted-foreground w-full text-right uppercase tracking-tight">Complete all days to enable</p>
-                            )}
-                        </>
+                    {/* Send for Approval - Prominent */}
+                    {isEditMode && canEdit && (schedule.status === 'draft' || schedule.status === 'rejected') && (
+                        <Button
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+                            onClick={() => handleStatusActionClick('pending')}
+                            disabled={actionLoading || !weekDays.every(d => d.isHoliday || d.shifts.length > 0)}
+                        >
+                            {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                            {t('sendForApproval')}
+                        </Button>
                     )}
 
-                    {/* Manager/Admin Actions */}
-                    {schedule.status === 'pending' && (
+                    {/* Approve/Reject - Prominent for Managers */}
+                    {(schedule.status === 'pending' || schedule.status === 'review') && canApproveSchedule() && (
                         <>
                             <Button
                                 variant="destructive"
@@ -506,15 +764,6 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                             >
                                 <XCircle className="mr-2 h-4 w-4" /> {tc('reject')}
                             </Button>
-                            {isEditMode && canEdit && (
-                                <Button
-                                    className="bg-primary hover:bg-primary/90 text-primary-foreground"
-                                    onClick={() => handleStatusActionClick('pending')}
-                                    disabled={actionLoading}
-                                >
-                                    <Send className="mr-2 h-4 w-4" /> {t('sendForApproval')}
-                                </Button>
-                            )}
                             <Button
                                 className="bg-emerald-600 hover:bg-emerald-700 text-white"
                                 onClick={() => handleStatusActionClick('published')}
@@ -525,45 +774,94 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                         </>
                     )}
 
-                    {schedule.status === 'published' && canEdit && (
-                        <Button
-                            variant="outline"
-                            onClick={() => handleStatusActionClick('draft')}
-                            disabled={actionLoading}
-                            className="border-border hover:bg-muted"
-                        >
-                            <X className="mr-2 h-4 w-4" /> {tc('edit')}
-                        </Button>
+
+
+                    {/* Edit Published/Pending - Prominent */
+                        (canEditPending() || canRevertPublished()) && (
+                            <Button
+                                variant="outline"
+                                onClick={() => handleStatusActionClick('draft')}
+                                disabled={actionLoading}
+                                className="border-border hover:bg-muted"
+                            >
+                                <Edit2 className="mr-2 h-4 w-4" /> {tc('edit')}
+                            </Button>
+                        )
+                    }
+                    {/* Draft Indicator */}
+                    {schedule.status === 'draft' && canEdit && (
+                        <div className="hidden sm:flex items-center px-3 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 rounded-md border border-emerald-100">
+                            <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
+                            Editing Active
+                        </div>
                     )}
 
-                    <Separator orientation="vertical" className="h-6 mx-2" />
+                    <Separator orientation="vertical" className="h-6 mx-2 hidden sm:block" />
 
-                    <div className="flex items-center space-x-2 mr-2">
-                        <Switch
-                            id="hide-unscheduled"
-                            checked={hideUnscheduled}
-                            onCheckedChange={setHideUnscheduled}
-                        />
-                        <Label htmlFor="hide-unscheduled" className="text-xs">{t('scheduledOnly')}</Label>
-                    </div>
+                    {/* Consolidated Settings Menu */}
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="gap-2 print:hidden bg-background">
+                                <Settings className="h-4 w-4" />
+                                <span className="hidden sm:inline">{tc('settings') || "Settings"}</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuLabel>{t('scheduleActions') || "Schedule Actions"}</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
 
-                    <Button variant="outline" size="sm"><Printer className="h-4 w-4" /></Button>
-                    <Button variant="outline" size="sm"><Settings className="h-4 w-4" /></Button>
+                            {/* Copy Previous */}
+                            {isEditMode && (schedule.status === 'draft' || schedule.status === 'rejected') && (
+                                <DropdownMenuItem onClick={() => setCopyDialogOpen(true)} disabled={actionLoading}>
+                                    <Copy className="mr-2 h-4 w-4" /> {t('copyPrevious')}
+                                </DropdownMenuItem>
+                            )}
+
+                            {/* Toggle Scheduled Only */}
+                            <DropdownMenuItem onClick={() => setHideUnscheduled(!hideUnscheduled)}>
+                                {hideUnscheduled ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
+                                {hideUnscheduled ? "Show All Employees" : t('scheduledOnly')}
+                            </DropdownMenuItem>
+
+
+
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Export</DropdownMenuLabel>
+
+                            <DropdownMenuItem onClick={handlePrint} className="gap-2 cursor-pointer">
+                                <Printer className="h-4 w-4" /> Print / Save PDF
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleExportCSV} className="gap-2 cursor-pointer">
+                                <FileText className="h-4 w-4" /> Export CSV
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
 
+            {/* Validation Warning */}
+            {!weekDays.every(d => d.isHoliday || d.shifts.length > 0) && (isEditMode && canEdit) && (
+                <div className="flex justify-end -mt-4 mb-2 print:hidden">
+                    <p className="text-[10px] text-amber-600 font-medium flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                        <AlertCircle className="h-3 w-3" />
+                        Complete all days to enable submission
+                    </p>
+                </div>
+            )}
 
 
             {/* Mobile View */}
-            <MobileScheduleView
-                employees={uniqueEmployees}
-                weekDays={weekDays}
-                isEditMode={isEditMode}
-                onEditShift={handleEditClick}
-                onAddShift={handleAddClick}
-                onDeleteShift={confirmDeleteShift}
-                isToday={isToday}
-            />
+            <div className="block md:hidden print:hidden">
+                <MobileScheduleView
+                    employees={uniqueEmployees}
+                    weekDays={weekDays}
+                    isEditMode={isEditMode}
+                    onEditShift={handleEditClick}
+                    onAddShift={handleAddClick}
+                    onDeleteShift={confirmDeleteShift}
+                    isToday={isToday}
+                />
+            </div>
 
             {/* Calendar Grid (Desktop) */}
             <div className="hidden md:block">
@@ -653,6 +951,9 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                                         );
                                     })}
                                     <th className="p-4 min-w-[100px] font-medium text-center">Total</th>
+                                    {(["hr", "owner", "tech", "super_user", "admin"].includes(userRoles[0])) && (
+                                        <th className="p-4 min-w-[100px] font-medium text-center text-primary italic">Est. Cost</th>
+                                    )}
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border">
@@ -700,9 +1001,11 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
 
                                                         {/* Schedule Alerts */}
                                                         <div className="flex flex-col gap-0.5 mt-1">
-                                                            <div className={`text-[10px] items-center gap-1 flex ${isUnderHours ? "text-amber-500 font-bold" : "text-primary text-muted-foreground/80"}`}>
-                                                                <Clock className="h-3 w-3" />
-                                                                {t('underHours', { hours: totalHours.toFixed(1), contract: contractHours })}
+                                                            <div className={`text-[10px] items-center gap-1 flex ${totalHours > contractHours ? "text-red-500 font-black animate-pulse" : isUnderHours ? "text-amber-500 font-bold" : "text-primary text-muted-foreground/80"}`}>
+                                                                <Clock className={`h-3 w-3 ${totalHours > contractHours ? "text-red-500" : ""}`} />
+                                                                {totalHours > contractHours
+                                                                    ? `Overtime: ${totalHours.toFixed(1)}h / ${contractHours}h`
+                                                                    : t('underHours', { hours: totalHours.toFixed(1), contract: contractHours })}
                                                             </div>
                                                             {isUnderDays && (
                                                                 <div className="text-[10px] text-amber-500 font-bold flex items-center gap-1">
@@ -715,16 +1018,18 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                                                 </div>
                                             </td>
                                             {weekDays.map((day: any, i: number) => {
-                                                const empShifts = day.shifts.filter((s: any) =>
-                                                    s.employees.some((e: any) => e._id === emp._id)
-                                                );
+                                                const empShiftsWithIndex = day.shifts
+                                                    .map((s: any, idx: number) => ({ ...s, originalIndex: idx }))
+                                                    .filter((s: any) =>
+                                                        s.employees.some((e: any) => e._id === emp._id)
+                                                    );
                                                 const isCurrentDay = isToday(new Date(day.date));
 
                                                 return (
                                                     <td
                                                         key={i}
                                                         className={`p-2 border-r border-border last:border-r-0 align-top transition-colors ${day.isHoliday ? 'bg-muted/30' : isCurrentDay ? 'bg-primary/5' : (isEditMode ? 'cursor-pointer hover:bg-muted/50' : '')}`}
-                                                        onClick={() => !day.isHoliday && handleAddClick(day.date)}
+                                                        onClick={() => !day.isHoliday && handleAddClick(day.date, emp._id)}
                                                         onDragOver={isEditMode && !day.isHoliday ? handleDragOver : undefined}
                                                         onDrop={isEditMode && !day.isHoliday ? (e) => handleDrop(e, day.date, emp._id) : undefined}
                                                     >
@@ -732,22 +1037,22 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                                                             <div className="h-full min-h-[50px] flex items-center justify-center text-muted-foreground/20 text-xs italic select-none">
 
                                                             </div>
-                                                        ) : empShifts.length > 0 ? (
+                                                        ) : empShiftsWithIndex.length > 0 ? (
                                                             <div className="space-y-1">
-                                                                {empShifts.map((shift: any, idx: number) => {
+                                                                {empShiftsWithIndex.map((shift: any, _: number) => {
                                                                     const isDayOff = shift.shiftName === "Day Off";
 
                                                                     if (isDayOff) {
                                                                         return (
                                                                             <div
-                                                                                key={idx}
+                                                                                key={shift.originalIndex}
                                                                                 draggable={isEditMode}
                                                                                 onDragStart={isEditMode ? (e) => handleDragStart(e, shift) : undefined}
                                                                                 className={`bg-muted/50 text-muted-foreground p-2 rounded text-xs border border-dashed border-border transition-colors group relative flex items-center justify-center ${isEditMode ? 'cursor-grab active:cursor-grabbing hover:bg-muted' : ''}`}
                                                                                 onClick={(e) => {
                                                                                     if (!isEditMode) return;
                                                                                     e.stopPropagation();
-                                                                                    handleEditClick(shift, day.date, idx);
+                                                                                    handleEditClick(shift, day.date, shift.originalIndex);
                                                                                 }}
                                                                             >
                                                                                 {isEditMode && (
@@ -755,7 +1060,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                                                                                         className="absolute -top-1.5 -right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground rounded-full p-0.5 cursor-pointer shadow-sm z-20 hover:scale-110"
                                                                                         onClick={(e) => {
                                                                                             e.stopPropagation();
-                                                                                            confirmDeleteShift(day.date, idx);
+                                                                                            confirmDeleteShift(day.date, shift.originalIndex, emp._id);
                                                                                         }}
                                                                                     >
                                                                                         <X className="h-3 w-3" />
@@ -810,7 +1115,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
 
                                                                     return (
                                                                         <div
-                                                                            key={idx}
+                                                                            key={shift.originalIndex}
                                                                             draggable={isEditMode}
                                                                             onDragStart={isEditMode ? (e) => handleDragStart(e, shift) : undefined}
                                                                             className={`p-2 rounded text-xs border border-border/50 transition-colors group relative ${!shift.color ? 'bg-primary/10 text-primary border-primary/20' : 'text-foreground'} ${isEditMode ? 'cursor-grab active:cursor-grabbing hover:opacity-90 shadow-sm' : ''} ${absence ? 'border-destructive/50 bg-destructive/10' : ''}`}
@@ -818,7 +1123,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
                                                                                 if (isEditMode) {
-                                                                                    handleEditClick(shift, day.date, idx);
+                                                                                    handleEditClick(shift, day.date, shift.originalIndex);
                                                                                 } else {
                                                                                     const isMyShift = shift.employees.some((e: any) => e._id === userId || e === userId);
 
@@ -835,10 +1140,22 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                                                                                     const endMinutes = eH * 60 + eM;
 
                                                                                     if (!isMyShift) {
-                                                                                        if (dayDate < today) return;
+                                                                                        // Check if shift is in the past or started
+                                                                                        const isPastOrStarted = (dayDate < today) || (dayDate.getTime() === today.getTime() && currentMinutes >= startMinutes);
 
-                                                                                        if (dayDate.getTime() === today.getTime() && currentMinutes >= startMinutes) {
-                                                                                            toast.error("Cannot swap a shift that has already started");
+                                                                                        // Check if user works at this store
+                                                                                        // schedule.storeId is likely populated, so we check _id
+                                                                                        const scheduleStoreId = schedule.storeId?._id || schedule.storeId;
+                                                                                        const worksAtStore = userStoreId && scheduleStoreId && userStoreId.toString() === scheduleStoreId.toString();
+
+                                                                                        if (isPastOrStarted || !worksAtStore) {
+                                                                                            setTargetDetailsShift({
+                                                                                                shift,
+                                                                                                date: day.date,
+                                                                                                employeeName: `${emp.firstName} ${emp.lastName}`,
+                                                                                                storeName: schedule.storeId?.name || "This Store"
+                                                                                            });
+                                                                                            setDetailsDialogOpen(true);
                                                                                             return;
                                                                                         }
 
@@ -887,7 +1204,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                                                                                     className="absolute -top-1.5 -right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground rounded-full p-0.5 cursor-pointer shadow-sm z-20 hover:scale-110"
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
-                                                                                        confirmDeleteShift(day.date, idx);
+                                                                                        confirmDeleteShift(day.date, shift.originalIndex, emp._id);
                                                                                     }}
                                                                                 >
                                                                                     <X className="h-3 w-3" />
@@ -919,7 +1236,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                                                                 {/* Recalculate daily total */}
                                                                 {(() => {
                                                                     let dayMins = 0;
-                                                                    empShifts.forEach((s: any) => {
+                                                                    empShiftsWithIndex.forEach((s: any) => {
                                                                         if (s.shiftName === "Day Off") return;
                                                                         const getM = (t: string) => {
                                                                             if (!t) return 0;
@@ -1020,9 +1337,28 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                 date={selectedDate}
                 storeId={schedule.storeId}
                 storeDepartmentId={schedule.storeDepartmentId?._id || schedule.storeDepartmentId}
-                initialData={editingShift ? { ...editingShift.shift, color: editingShift.shift.color } : undefined}
+                initialData={editingShift
+                    ? { ...editingShift.shift, color: editingShift.shift.color }
+                    : preselectedEmployeeId
+                        ? {
+                            startTime: "09:00",
+                            endTime: "17:00",
+                            shiftName: "Custom Shift",
+                            breakMinutes: 0,
+                            employees: [{ _id: preselectedEmployeeId }]
+                        }
+                        : undefined
+                }
                 onSave={handleSaveShift}
                 onDelete={handleDeleteFromDialog}
+                absences={schedule.absences}
+                currentDayShifts={(() => {
+                    const day = weekDays.find(d => new Date(d.date).toDateString() === selectedDate.toDateString());
+                    if (!day) return [];
+                    // Exclude the current shift being edited so employees in it aren't marked as "busy" (which would disable them if deselected)
+                    // If creating new, editingShift is null, so we filter nothing (all existing shifts are "busy")
+                    return day.shifts.filter((_: any, idx: number) => idx !== editingShift?.index);
+                })()}
             />
 
             {/* Copy Confirmation Dialog */}
@@ -1124,6 +1460,15 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit }: { initialSc
                 onOpenChange={setOvertimeDialogOpen}
                 userId={userId}
                 shift={targetOvertimeShift}
+            />
+
+            <ShiftDetailsDialog
+                open={detailsDialogOpen}
+                onOpenChange={setDetailsDialogOpen}
+                shift={targetDetailsShift?.shift}
+                date={targetDetailsShift ? new Date(targetDetailsShift.date) : new Date()}
+                employeeName={targetDetailsShift?.employeeName || ""}
+                storeName={targetDetailsShift?.storeName}
             />
 
         </div >

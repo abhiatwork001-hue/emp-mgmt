@@ -14,7 +14,7 @@ export async function getAllPositions() {
     await dbConnect();
     const positions = await Position.find({ active: true })
         .populate("roles", "name permissions")
-        .select("name level isStoreSpecific translations")
+        .select("name slug level isStoreSpecific translations")
         .sort({ level: 1 })
         .lean();
     /*     console.log("Fetched positions:", JSON.stringify(positions, null, 2)); */ // Debug log

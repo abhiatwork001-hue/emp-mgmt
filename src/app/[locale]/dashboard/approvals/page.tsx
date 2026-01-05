@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check, X, Clock, AlertCircle, Palmtree, CalendarDays } from "lucide-react";
 import { ApprovalsList } from "./approvals-list";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 export default async function ApprovalsPage() {
     const session = await getUserSession();
@@ -16,15 +17,10 @@ export default async function ApprovalsPage() {
 
     const isApprover = (session.roles || []).some((r: string) => {
         const normalized = r.toLowerCase().replace(/ /g, "_");
-        return ["owner", "hr", "admin", "super_user"].includes(normalized);
+        return ["owner", "hr", "admin", "super_user", "tech"].includes(normalized);
     });
     if (!isApprover) {
-        return (
-            <div className="p-8 text-center">
-                <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
-                <p className="text-muted-foreground">You do not have permission to view approvals.</p>
-            </div>
-        );
+        return <AccessDenied />;
     }
 
     const [overtime, vacations, absences, schedules] = await Promise.all([

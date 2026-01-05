@@ -12,6 +12,7 @@ import { slugify } from "@/lib/utils";
 type StoreDepartmentData = Partial<IStoreDepartment>;
 
 export async function getStoreDepartments(storeId: string) {
+    if (!storeId) return [];
     await dbConnect();
     // Return all departments (active and inactive) so we can manage them
     const depts = await StoreDepartment.find({ storeId })
@@ -21,6 +22,7 @@ export async function getStoreDepartments(storeId: string) {
 }
 
 export async function getAvailableGlobalDepartments(storeId: string) {
+    if (!storeId) return [];
     await dbConnect();
 
     // 1. Get all active global departments

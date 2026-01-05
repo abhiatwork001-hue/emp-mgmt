@@ -1,4 +1,6 @@
 import { getFoodBySlug, checkFinancialAccess } from "@/lib/actions/recipe.actions";
+import { getEmployeeById } from "@/lib/actions/employee.actions";
+import { GlobalDepartment } from "@/lib/models";
 import { getUserSession } from "@/lib/actions/auth.actions";
 import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +29,21 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ s
     }
 
     const canViewFinancials = session?.userId ? await checkFinancialAccess(session.userId) : false;
-    const canEdit = canViewFinancials; // Reuse logic for now, giving Power Users edit rights.
+
+    // Check if user is Kitchen Head for edit rights
+    let isKitchenHead = false;
+    let canEdit = false;
+
+    if (session?.userId) {
+        const user = await getEmployeeById(session.userId);
+        const roles = (user?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+        const isHighLevel = roles.some((r: string) => ["tech", "owner", "super_user", "hr", "admin"].includes(r));
+
+        const kitchenDept = await GlobalDepartment.findOne({ name: { $regex: /kitchen/i } }).select("departmentHead");
+        isKitchenHead = kitchenDept && kitchenDept.departmentHead?.map((id: any) => id.toString()).includes(session.userId);
+
+        canEdit = isHighLevel || isKitchenHead;
+    }
 
     // Calculate Unit Cost for Simulator (CostTotal * PortionSize / Yield)
     const yieldVal = Number(food.yieldAmount) || 1;
@@ -117,6 +133,28 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ s
                             </div>
                         </CardContent>
                     </Card>
+
+                    {canViewFinancials && (
+                        <Card className="border-border/50 shadow-sm overflow-hidden bg-card/50 backdrop-blur-sm">
+                            <CardHeader className="pb-3 bg-muted/10 border-b">
+                                <CardTitle className="text-sm font-black italic tracking-tight flex items-center gap-2 text-foreground">
+                                    <Calculator className="w-4 h-4 text-primary" />
+                                    Profitability Simulator
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-emerald-700/70 font-bold uppercase">Price (inc. Tax)</span>
+                                    <span className="font-black text-emerald-900">{Number(food.pvp || 0).toFixed(2)}€</span>
+                                </div>
+                                <ProfitSimulator
+                                    baseCost={food.costTotal || 0}
+                                    pvp={food.pvp || 0}
+                                    taxRatePercent={food.ivaPercent || 23}
+                                />
+                            </CardContent>
+                        </Card>
+                    )}
 
                     <Card>
                         <CardHeader className="pb-3">

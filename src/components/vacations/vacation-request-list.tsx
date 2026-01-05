@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface VacationRequestListProps {
     initialRequests: any[];
@@ -23,8 +25,15 @@ export function VacationRequestList({ initialRequests }: VacationRequestListProp
     const [requests, setRequests] = useState(initialRequests);
     const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
     const [filter, setFilter] = useState("");
+    const [selectedYear, setSelectedYear] = useState<string>("all");
     const t = useTranslations("Vacation");
     const tc = useTranslations("Common");
+
+    const currentYear = new Date().getFullYear();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
     const updateStatus = async (requestId: string, action: 'approve' | 'reject') => {
         if (!session?.user) return;
@@ -50,11 +59,25 @@ export function VacationRequestList({ initialRequests }: VacationRequestListProp
 
     const filteredRequests = requests.filter((r: any) => {
         const name = `${r.employeeId?.firstName} ${r.employeeId?.lastName}`.toLowerCase();
-        return name.includes(filter.toLowerCase());
+        const matchesName = name.includes(filter.toLowerCase());
+
+        if (selectedYear === "all") return matchesName;
+
+        const reqYear = new Date(r.requestedFrom).getFullYear().toString();
+        return matchesName && reqYear === selectedYear;
     });
 
     const pendingRequests = filteredRequests.filter((r: any) => r.status === 'pending');
-    const historyRequests = filteredRequests.filter((r: any) => r.status !== 'pending');
+
+    const upcomingRequests = filteredRequests.filter((r: any) => {
+        const toDate = new Date(r.requestedTo);
+        return r.status === 'approved' && toDate >= today;
+    });
+
+    const historicalRequests = filteredRequests.filter((r: any) => {
+        const toDate = new Date(r.requestedTo);
+        return (r.status === 'approved' && toDate < today) || r.status === 'rejected';
+    });
 
     return (
         <div className="space-y-4">
@@ -68,13 +91,28 @@ export function VacationRequestList({ initialRequests }: VacationRequestListProp
                 />
             </div>
 
-            <Tabs defaultValue="pending">
-                <TabsList className="bg-muted border border-border">
-                    <TabsTrigger value="pending">{tc('pending')} ({pendingRequests.length})</TabsTrigger>
-                    <TabsTrigger value="history">{tc('history')} ({historyRequests.length})</TabsTrigger>
-                </TabsList>
+            <Tabs defaultValue="pending" className="w-full">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                    <TabsList className="bg-muted/50 border border-border h-10">
+                        <TabsTrigger value="pending" className="px-4">{tc('pending')} ({pendingRequests.length})</TabsTrigger>
+                        <TabsTrigger value="upcoming" className="px-4">Upcoming ({upcomingRequests.length})</TabsTrigger>
+                        <TabsTrigger value="history" className="px-4">{tc('history')} ({historicalRequests.length})</TabsTrigger>
+                    </TabsList>
 
-                <TabsContent value="pending" className="space-y-4 mt-4">
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger className="w-[140px] bg-card">
+                            <SelectValue placeholder="Filter by Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Years</SelectItem>
+                            {years.map(y => (
+                                <SelectItem key={y} value={y}>{y}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <TabsContent value="pending" className="space-y-4 mt-2">
                     {pendingRequests.length === 0 ? (
                         <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg bg-muted/20">
                             {t('noPending')}
@@ -86,13 +124,25 @@ export function VacationRequestList({ initialRequests }: VacationRequestListProp
                     )}
                 </TabsContent>
 
-                <TabsContent value="history" className="space-y-4 mt-4">
-                    {historyRequests.length === 0 ? (
+                <TabsContent value="upcoming" className="space-y-4 mt-2">
+                    {upcomingRequests.length === 0 ? (
+                        <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg bg-muted/20">
+                            No upcoming vaccinations found for the selected filters.
+                        </div>
+                    ) : (
+                        upcomingRequests.map((req: any) => (
+                            <VacationRequestCard key={req._id} req={req} onAction={updateStatus} loading={loadingMap[req._id]} isHistory />
+                        ))
+                    )}
+                </TabsContent>
+
+                <TabsContent value="history" className="space-y-4 mt-2">
+                    {historicalRequests.length === 0 ? (
                         <div className="text-center py-12 text-muted-foreground border border-dashed border-border rounded-lg bg-muted/20">
                             {t('noHistory')}
                         </div>
                     ) : (
-                        historyRequests.map((req: any) => (
+                        historicalRequests.map((req: any) => (
                             <VacationRequestCard key={req._id} req={req} onAction={updateStatus} loading={loadingMap[req._id]} isHistory />
                         ))
                     )}

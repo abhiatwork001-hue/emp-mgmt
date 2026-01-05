@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { Calendar, ClipboardList, Package, MessageSquare, Sun, CheckCircle2 } fr
 import { PendingApprovalsCard } from "@/components/dashboard/pending-approvals-card";
 import { EmployeeScheduleTab } from "@/components/employees/employee-schedule-tab";
 import { HolidayWidget } from "@/components/dashboard/widgets/holiday-widget";
+import { ProblemStatsWidget } from "@/components/dashboard/widgets/problem-stats-widget";
 
 interface DepartmentHeadDashboardProps {
     employee: any;
@@ -20,22 +22,21 @@ interface DepartmentHeadDashboardProps {
 }
 
 export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats }: DepartmentHeadDashboardProps) {
-    const [greeting, setGreeting] = useState("");
-
-    useEffect(() => {
-        const hour = new Date().getHours();
-        if (hour < 12) setGreeting("Good Morning");
-        else if (hour < 18) setGreeting("Good Afternoon");
-        else setGreeting("Good Evening");
-    }, []);
-
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
+            <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+            >
+                <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest bg-muted/30 border-border/20 px-3 py-1 text-muted-foreground">
+                    Department Overview
+                </Badge>
+            </motion.div>
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight text-foreground">
-                        {greeting}, Head {employee.firstName}
+                        Head {employee.firstName}
                     </h2>
                     <p className="text-muted-foreground">
                         Overview for {employee.storeDepartmentId?.name || "Your Department"} at {employee.storeId?.name || "Store"}.
@@ -96,87 +97,87 @@ export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats }
                 </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Main Content */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* Pending Approvals */}
-                    {pendingRequests.length > 0 ? (
-                        <PendingApprovalsCard pendingRequests={pendingRequests} />
-                    ) : (
+            <div className="space-y-6">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    {/* Pending Approvals Area */}
+                    <div className="space-y-6">
+                        {pendingRequests.length > 0 ? (
+                            <PendingApprovalsCard pendingRequests={pendingRequests} />
+                        ) : (
+                            <Card className="bg-card border-border h-full flex flex-col justify-center items-center py-12">
+                                <CheckCircle2 className="h-12 w-12 text-emerald-400 mb-4 opacity-50" />
+                                <CardTitle className="text-emerald-400">All Caught Up</CardTitle>
+                                <p className="text-muted-foreground mt-2">No pending requests for your department.</p>
+                            </Card>
+                        )}
+                    </div>
+
+                    {/* Department Tools & Problems */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Card className="bg-card border-border">
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2 text-emerald-400">
-                                    <CheckCircle2 className="h-5 w-5" /> All Caught Up
-                                </CardTitle>
+                                <CardTitle className="text-sm font-bold uppercase tracking-wider">Department Tools</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <p className="text-muted-foreground">No pending requests for your department.</p>
+                            <CardContent className="space-y-2">
+                                {[
+                                    { icon: Calendar, label: "Create Schedule" },
+                                    { icon: Package, label: "Inventory Check" },
+                                    { icon: ClipboardList, label: "Assigned Tasks" },
+                                ].map((tool, i) => (
+                                    <Button key={i} variant="outline" className="w-full justify-start h-11 rounded-xl hover:bg-muted/50 transition-all">
+                                        <tool.icon className="mr-3 h-4 w-4 text-muted-foreground" />
+                                        <span className="font-semibold">{tool.label}</span>
+                                    </Button>
+                                ))}
                             </CardContent>
                         </Card>
-                    )}
 
-                    {/* Department Schedule Preview - reusing employee schedule tab but could be customized for dept view */}
-                    {/* Ideally we show the schedule for the whole department here. Using EmployeeScheduleTab for personal view + link to full dept schedule */}
-                    <Card className="bg-card border-border">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle>My Schedule</CardTitle>
-                            <Button variant="outline" size="sm">View Full Dept Schedule</Button>
+                        <div className="space-y-6">
+                            <ProblemStatsWidget
+                                userId={employee._id}
+                                role="department_head"
+                            />
+                            <HolidayWidget storeId={employee.storeId?._id || employee.storeId} />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    {/* Schedule Preview */}
+                    <Card className="bg-card border-border h-full">
+                        <CardHeader className="flex flex-row items-center justify-between bg-muted/20 border-b border-border/10 py-4">
+                            <CardTitle className="text-sm font-bold uppercase tracking-wider">My Schedule</CardTitle>
+                            <Button variant="ghost" size="sm" className="text-[10px] font-bold text-primary px-3">
+                                FULL DEPT VIEW &rarr;
+                            </Button>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="p-6">
                             <EmployeeScheduleTab employeeId={employee._id.toString()} />
                         </CardContent>
                     </Card>
-                </div>
-
-                {/* Sidebar */}
-                <div className="space-y-6">
-                    <Card className="bg-card border-border">
-                        <CardHeader>
-                            <CardTitle>Department Tools</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            <Button variant="outline" className="w-full justify-start">
-                                <Calendar className="mr-2 h-4 w-4" /> Create Schedule
-                            </Button>
-
-                            <Button variant="outline" className="w-full justify-start">
-                                <Package className="mr-2 h-4 w-4" /> Inventory Check
-                            </Button>
-
-                            <Button variant="outline" className="w-full justify-start">
-                                <ClipboardList className="mr-2 h-4 w-4" /> Assigned Tasks
-                            </Button>
-
-                            <Button variant="outline" className="w-full justify-start border-border hover:bg-muted text-foreground opacity-50 cursor-not-allowed" title="Coming Soon">
-                                <MessageSquare className="mr-2 h-4 w-4" /> Message Team
-                            </Button>
-                        </CardContent>
-                    </Card>
-
-                    {/* Holiday Widget */}
-                    <HolidayWidget storeId={employee.storeId?._id || employee.storeId} />
 
                     {/* Tasks */}
                     <Card className="bg-card border-border">
-                        <CardHeader>
-                            <CardTitle className="text-sm">Pending Tasks</CardTitle>
+                        <CardHeader className="bg-muted/20 border-b border-border/10 py-4">
+                            <CardTitle className="text-sm font-bold uppercase tracking-wider">Pending Team Tasks</CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border">
-                                    <div className="h-4 w-4 rounded border border-muted-foreground/30" />
-                                    <div className="flex-1">
-                                        <div className="font-medium text-sm">Approve overtime</div>
-                                        <div className="text-xs text-muted-foreground">John Doe - 2h</div>
+                        <CardContent className="p-6">
+                            <div className="grid grid-cols-1 gap-4">
+                                {[
+                                    { title: "Approve overtime", info: "John Doe - 2h" },
+                                    { title: "Submit defect report", info: "Coffee Machine" },
+                                ].map((task, i) => (
+                                    <div key={i} className="flex items-center gap-4 p-4 bg-muted/30 rounded-2xl border border-border/40 hover:bg-muted/50 transition-all group">
+                                        <div className="h-5 w-5 rounded-lg border-2 border-primary/20 group-hover:border-primary/50 transition-colors" />
+                                        <div className="flex-1">
+                                            <div className="font-bold text-sm tracking-tight">{task.title}</div>
+                                            <div className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5">{task.info}</div>
+                                        </div>
+                                        <Button variant="ghost" size="sm" className="rounded-full h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <CheckCircle2 className="h-4 w-4" />
+                                        </Button>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border">
-                                    <div className="h-4 w-4 rounded border border-muted-foreground/30" />
-                                    <div className="flex-1">
-                                        <div className="font-medium text-sm">Submit defect report</div>
-                                        <div className="text-xs text-muted-foreground">Coffee Machine</div>
-                                    </div>
-                                </div>
+                                ))}
                             </div>
                         </CardContent>
                     </Card>

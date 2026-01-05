@@ -1,16 +1,19 @@
-import { cn } from "@/lib/utils"
+// src/components/ui/skeleton.tsx
+import { cn } from '@/lib/utils';
 
-function Skeleton({
-    className,
-    ...props
-}: React.ComponentProps<"div">) {
-    return (
-        <div
-            data-slot="skeleton"
-            className={cn("bg-primary/10 animate-pulse rounded-md", className)}
-            {...props}
-        />
-    )
+interface SkeletonProps {
+    /** Width e.g., 'w-full', 'w-32' */
+    className?: string;
+    /** Height e.g., 'h-4', 'h-8' */
+    height?: string;
 }
 
-export { Skeleton }
+export function Skeleton({ className = '', height = 'h-4' }: SkeletonProps) {
+    return (
+        <div
+            className={cn('animate-pulse bg-muted rounded', height, className)}
+            role="status"
+            aria-label="loading"
+        />
+    );
+}

@@ -123,7 +123,11 @@ export async function createTask(data: {
             performedBy: data.creatorId,
             targetId: newTask._id.toString(),
             targetModel: 'Task',
-            details: { title: data.title }
+            details: {
+                title: data.title,
+                isGlobal: data.assignments.some(a => a.type === 'global_all' || a.type === 'global_role'),
+                storeId: data.assignments.find(a => a.type.startsWith('store'))?.id
+            }
         });
 
         revalidatePath("/dashboard");
@@ -260,7 +264,10 @@ export async function updateTaskStatus(taskId: string, status: string, userId: s
             performedBy: userId,
             targetId: taskId,
             targetModel: 'Task',
-            details: { status }
+            details: {
+                status,
+                title: updatedTask?.title
+            }
         });
 
         return { success: true };
@@ -344,6 +351,15 @@ export async function addTaskComment(taskId: string, userId: string, text: strin
         } catch (e) {
             console.error("Task Comment Notification Error:", e);
         }
+
+        // Log Action
+        await logAction({
+            action: 'COMMENT_TASK',
+            performedBy: userId,
+            targetId: taskId,
+            targetModel: 'Task',
+            details: { text: text.substring(0, 100) }
+        });
 
         return { success: true };
     } catch (error) {

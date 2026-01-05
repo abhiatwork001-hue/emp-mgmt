@@ -42,36 +42,48 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     useEffect(() => {
         if (!userId) return;
 
+        console.log(`📡 Subscribing to Pusher channel: user-${userId}`);
         const channel = pusherClient.subscribe(`user-${userId}`);
 
         // Monitor connection state
         const checkConnection = () => {
             const state = pusherClient.connection.state;
-            if (state === 'failed' || state === 'unavailable') {
-                console.warn('⚠️ Pusher connection failed, switching to polling');
+            if (state === 'failed' || state === 'unavailable' || state === 'disconnected') {
+                console.warn(`⚠️ Pusher state: ${state}, switching to polling fallback`);
                 setUseFallback(true);
             } else if (state === 'connected') {
                 setUseFallback(false);
             }
         };
 
-        // Check connection every 10 seconds
-        const connectionCheck = setInterval(checkConnection, 10000);
+        // Check connection more frequently
+        const connectionCheck = setInterval(checkConnection, 5000);
         checkConnection(); // Initial check
 
+        channel.bind("pusher:subscription_succeeded", () => {
+            console.log(`✅ Successfully subscribed to user-${userId}`);
+            setUseFallback(false);
+        });
+
+        channel.bind("pusher:subscription_error", (err: any) => {
+            console.error(`❌ Subscription error for user-${userId}:`, err);
+            setUseFallback(true);
+        });
+
         channel.bind("notification:new", (newNotif: any) => {
-            console.log("✅ New Notification Received:", newNotif);
+            console.log("🔔 New Notification Received:", newNotif);
             setNotifications((prev) => [newNotif, ...prev]);
             setUnreadCount((prev) => prev + 1);
 
             // Browser Notification API
             if (typeof window !== 'undefined' && Notification.permission === "granted") {
-                new Notification("LaGasy", { body: newNotif.message });
+                new Notification("LaGasy", { body: newNotif.message }); // Use correct App Name if possible
             }
         });
 
         return () => {
             clearInterval(connectionCheck);
+            channel.unbind_all();
             pusherClient.unsubscribe(`user-${userId}`);
         };
     }, [userId]);

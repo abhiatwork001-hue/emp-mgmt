@@ -70,7 +70,19 @@ export async function createSwapRequest(data: {
         await connectToDB();
 
         // 1. Validate shifts exist and users are still assigned
-        // (Simplified for MVP: Assumption is UI provides valid data, but robust app would double check DB)
+        // 2. Enforce same-department validation
+        const [requestor, targetEmployee] = await Promise.all([
+            Employee.findById(data.requestorId).select('storeDepartmentId firstName lastName'),
+            Employee.findById(data.targetUserId).select('storeDepartmentId')
+        ]);
+
+        if (!requestor || !targetEmployee) {
+            return { success: false, error: "Employee not found" };
+        }
+
+        if (requestor.storeDepartmentId?.toString() !== targetEmployee.storeDepartmentId?.toString()) {
+            return { success: false, error: "Shift swaps are only allowed within the same department." };
+        }
 
         const newRequest = await ShiftSwapRequest.create({
             requestorId: data.requestorId,
@@ -80,9 +92,7 @@ export async function createSwapRequest(data: {
             status: 'pending'
         });
 
-        // 2. Notify Target User
-        // Need to find target user name
-        const requestor = await Employee.findById(data.requestorId).select('firstName lastName');
+        // 3. Notify Target User
 
         await Notification.create({
             title: "Shift Swap Request",

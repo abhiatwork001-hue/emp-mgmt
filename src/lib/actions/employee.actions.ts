@@ -554,3 +554,95 @@ export async function removeEmployeeFromStore(storeId: string, employeeId: strin
     revalidatePath(`/dashboard/employees/${employee.slug}`);
     return { success: true };
 }
+
+export async function getStoreEmployeesWithTodayStatus(storeId: string) {
+    await dbConnect();
+    const { Schedule, VacationRecord, AbsenceRecord } = require("@/lib/models");
+
+    // 1. Get all active employees for the store
+    const employees = await Employee.find({ storeId, active: true })
+        .populate("positionId", "name")
+        .populate("storeDepartmentId", "name")
+        .select("-password")
+        .lean();
+
+    // 2. Determine "Today" (Server time, ideally should use store timezone but simplifying to server UTC/Local for now)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().split('T')[0]; // Format used in DaySchedule: "YYYY-MM-DD"
+
+    // 3. Get Active Schedule for this week
+    // We need to find a schedule that covers 'today'.
+    // Schedule.dateRange.startDate <= today <= Schedule.dateRange.endDate
+    const schedule = await Schedule.findOne({
+        storeId,
+        "dateRange.startDate": { $lte: today },
+        "dateRange.endDate": { $gte: today },
+        status: "published" // Only consider published schedules for "Working" status
+    }).lean();
+
+    // 4. Get Today's Leaves (Vacations & Absences)
+    // Overlapping dates
+    const vacations = await VacationRecord.find({
+        employeeId: { $in: employees.map((e: any) => e._id) },
+        status: "approved",
+        from: { $lte: today },
+        to: { $gte: today }
+    }).lean();
+
+    const absences = await AbsenceRecord.find({
+        employeeId: { $in: employees.map((e: any) => e._id) },
+        status: "approved",
+        date: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) } // Match exact day
+    }).lean();
+
+    // 5. Map Status
+    const employeesWithStatus = employees.map((emp: any) => {
+        const empId = emp._id.toString();
+
+        // Default
+        let status = "day_off"; // or "not_scheduled"
+        let statusDetails = "";
+
+        // Check Leave
+        const vacation = vacations.find((v: any) => v.employeeId.toString() === empId);
+        if (vacation) {
+            status = "leave";
+            statusDetails = "Vacation: " + vacation.reason; // or type
+        }
+
+        const absence = absences.find((a: any) => a.employeeId.toString() === empId);
+        if (absence) {
+            status = "leave";
+            statusDetails = "Absence: " + absence.reason;
+        }
+
+        // Check Schedule (Override leave? Usually leave overrides schedule, checking logic...)
+        // If on leave, they are NOT working. So stick with leave.
+        if (status === "day_off" && schedule) {
+            // Find the DaySchedule for 'today'
+            // schedule.days is [ { date: Date, shifts: [] } ]
+            const daySchedule = schedule.days.find((d: any) => {
+                const dDate = new Date(d.date);
+                dDate.setHours(0, 0, 0, 0);
+                return dDate.getTime() === today.getTime();
+            });
+
+            if (daySchedule) {
+                const shift = daySchedule.shifts.find((s: any) => s.employees.some((e: any) => e.toString() === empId));
+                if (shift) {
+                    status = "working";
+                    statusDetails = `${shift.startTime} - ${shift.endTime}`;
+                }
+            }
+        }
+
+        return {
+            ...emp,
+            todayStatus: status,
+            statusDetails
+        };
+    });
+
+    return JSON.parse(JSON.stringify(employeesWithStatus));
+}

@@ -14,6 +14,7 @@ export type ITranslations = Record<string, {
 
 export interface ICompany extends Document {
     name: string;
+    logo?: string; // New field
     taxNumber?: string;
     address?: string;
     owners: { name: string; contact?: string; id?: ObjectId }[];
@@ -23,6 +24,13 @@ export interface ICompany extends Document {
     globalDepartments: ObjectId[]; // Reference to GlobalDepartment
     employees: ObjectId[]; // Reference to Employee
     active: boolean;
+    settings?: {
+        scheduleRules: {
+            deadlineDay: number; // 0-6
+            deadlineTime: string; // "HH:MM"
+            alertEnabled: boolean;
+        };
+    };
     archivedAt?: Date;
     createdAt?: Date;
     updatedAt?: Date;
@@ -54,6 +62,7 @@ export interface IStore extends Document {
     subManagers: ObjectId[];
     employees: ObjectId[];
     minEmployees?: number; // New field
+    maxEmployees?: number; // New field
     active: boolean;
     archivedAt?: Date;
     createdAt?: Date;
@@ -71,6 +80,7 @@ export interface IStoreDepartment extends Document {
     employees: ObjectId[];
     positionsAllowed?: ObjectId[]; // position ids
     minEmployees?: number; // New field
+    maxEmployees?: number; // New field
     targetEmployees?: number; // New field
     translations?: ITranslations;
     active: boolean;
@@ -195,6 +205,8 @@ export interface IShiftDefinition extends Document {
     color?: string; // Hex code
     breakMinutes?: number;
     description?: string;
+    requiredHeadcount?: number; // Target
+    maxAllowedHeadcount?: number; // Limit
     translations?: ITranslations;
     storeDepartmentId?: ObjectId;
     createdAt?: Date;
@@ -355,6 +367,7 @@ VacationTrackerSchema.virtual('remainingDays').get(function () {
 
 const CompanySchema = new Schema<ICompany>({
     name: { type: String, required: true },
+    logo: { type: String }, // New: Company Logo URL
     taxNumber: { type: String },
     address: { type: String },
     owners: [{
@@ -368,7 +381,14 @@ const CompanySchema = new Schema<ICompany>({
     globalDepartments: [{ type: Schema.Types.ObjectId, ref: 'GlobalDepartment' }],
     employees: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
     active: { type: Boolean, default: true },
-    archivedAt: { type: Date }
+    archivedAt: { type: Date },
+    settings: {
+        scheduleRules: {
+            deadlineDay: { type: Number, default: 2 }, // 2 = Tuesday
+            deadlineTime: { type: String, default: "17:00" },
+            alertEnabled: { type: Boolean, default: true }
+        }
+    }
 }, { timestamps: true });
 
 const GlobalDepartmentSchema = new Schema<IGlobalDepartment>({
@@ -395,6 +415,7 @@ const StoreSchema = new Schema<IStore>({
     subManagers: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
     employees: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
     minEmployees: { type: Number, default: 0 },
+    maxEmployees: { type: Number }, // New: Max limit
     active: { type: Boolean, default: true },
     archivedAt: { type: Date }
 }, { timestamps: true });
@@ -410,6 +431,7 @@ const StoreDepartmentSchema = new Schema<IStoreDepartment>({
     employees: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
     positionsAllowed: [{ type: Schema.Types.ObjectId, ref: 'Position' }],
     minEmployees: { type: Number, default: 0 },
+    maxEmployees: { type: Number }, // New: Max limit
     targetEmployees: { type: Number, default: 0 },
     translations: { type: Map, of: Object },
     active: { type: Boolean, default: true },
@@ -615,6 +637,8 @@ const ShiftDefinitionSchema = new Schema<IShiftDefinition>({
     color: { type: String },
     breakMinutes: { type: Number },
     description: { type: String },
+    requiredHeadcount: { type: Number, default: 1 }, // Default needed
+    maxAllowedHeadcount: { type: Number }, // New: Max allowed per shift (Limit)
     translations: { type: Map, of: Object },
     storeDepartmentId: { type: Schema.Types.ObjectId, ref: 'StoreDepartment' }
 }, { timestamps: true });
@@ -634,6 +658,63 @@ export const VacationRequest = mongoose.models.VacationRequest || mongoose.model
 export const AbsenceRecord = mongoose.models.AbsenceRecord || mongoose.model<IAbsenceRecord>('AbsenceRecord', AbsenceRecordSchema);
 export const AbsenceRequest = mongoose.models.AbsenceRequest || mongoose.model<IAbsenceRequest>('AbsenceRequest', AbsenceRequestSchema);
 export const ShiftDefinition = mongoose.models.ShiftDefinition || mongoose.model<IShiftDefinition>('ShiftDefinition', ShiftDefinitionSchema);
+
+// --- Problem Reporting Models ---
+
+export interface IProblem extends Document {
+    title: string;
+    description: string;
+    priority: "low" | "medium" | "high" | "critical";
+    status: "open" | "in_progress" | "resolved" | "wont_fix";
+    category: "bug" | "feature_request" | "account" | "other";
+
+    reportedBy: ObjectId;
+    storeId?: ObjectId; // Context
+
+    // Discussion
+    comments: {
+        userId: ObjectId;
+        userName: string;
+        userImage?: string;
+        text: string;
+        files?: string[]; // URLs
+        createdAt: Date;
+    }[];
+
+    // Resolution
+    resolvedBy?: ObjectId;
+    resolvedAt?: Date;
+    resolutionNotes?: string;
+
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const ProblemSchema = new Schema<IProblem>({
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    priority: { type: String, enum: ["low", "medium", "high", "critical"], default: "medium" },
+    status: { type: String, enum: ["open", "in_progress", "resolved", "wont_fix"], default: "open" },
+    category: { type: String, enum: ["bug", "feature_request", "account", "other"], default: "other" },
+
+    reportedBy: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
+    storeId: { type: Schema.Types.ObjectId, ref: 'Store' },
+
+    comments: [{
+        userId: { type: Schema.Types.ObjectId, ref: 'Employee' },
+        userName: { type: String },
+        userImage: { type: String },
+        text: { type: String },
+        files: [{ type: String }],
+        createdAt: { type: Date, default: Date.now }
+    }],
+
+    resolvedBy: { type: Schema.Types.ObjectId, ref: 'Employee' },
+    resolvedAt: { type: Date },
+    resolutionNotes: { type: String }
+}, { timestamps: true });
+
+export const Problem = mongoose.models.Problem || mongoose.model<IProblem>('Problem', ProblemSchema);
 
 
 // Leaving legacy aliases if needed temporarily, but preferably use new imports
@@ -1092,9 +1173,14 @@ const StoreCredentialSchema = new Schema<IStoreCredential>({
 // --- Tips Distribution ---
 export interface ITipsDistribution extends Document {
     storeId: ObjectId;
-    weekStartDate: Date;
-    weekEndDate: Date;
-    totalAmount: number;
+    weekStartDate: Date; // Overall start
+    weekEndDate: Date;   // Overall end
+    totalAmount: number; // Sum of all period amounts
+    periods?: {
+        startDate: Date;
+        endDate: Date;
+        amount: number;
+    }[];
     records: {
         employeeId: ObjectId;
         employeeName: string; // Snapshot
@@ -1102,6 +1188,11 @@ export interface ITipsDistribution extends Document {
         calculatedShares: number;
         adjustedShares: number;
         finalAmount: number;
+        periodDetails?: { // Optional breakdown
+            periodIndex: number;
+            shares: number;
+            amount: number;
+        }[];
     }[];
     status: 'draft' | 'finalized';
     finalizedBy?: ObjectId;
@@ -1115,13 +1206,23 @@ const TipsDistributionSchema = new Schema<ITipsDistribution>({
     weekStartDate: { type: Date, required: true },
     weekEndDate: { type: Date, required: true },
     totalAmount: { type: Number, required: true },
+    periods: [{
+        startDate: { type: Date, required: true },
+        endDate: { type: Date, required: true },
+        amount: { type: Number, required: true }
+    }],
     records: [{
         employeeId: { type: Schema.Types.ObjectId, ref: 'Employee' },
         employeeName: { type: String },
         shiftsWorked: { type: Number },
         calculatedShares: { type: Number },
         adjustedShares: { type: Number },
-        finalAmount: { type: Number }
+        finalAmount: { type: Number },
+        periodDetails: [{
+            periodIndex: { type: Number },
+            shares: { type: Number },
+            amount: { type: Number }
+        }]
     }],
     status: { type: String, enum: ['draft', 'finalized'], default: 'draft' },
     finalizedBy: { type: Schema.Types.ObjectId, ref: 'Employee' },
@@ -1382,37 +1483,4 @@ export const Conversation = mongoose.models.Conversation || mongoose.model<IConv
 export const Message = mongoose.models.Message || mongoose.model<IMessage>('Message', MessageSchema);
 export const ActionLog = mongoose.models.ActionLog || mongoose.model<IActionLog>('ActionLog', ActionLogSchema);
 
-// --- Report a Problem ---
-export interface IProblem extends Document {
-    reporter: ObjectId; // Ref to Employee
-    recipientRole: 'chef' | 'head_of_department' | 'store_department_head' | 'store_manager' | 'hr' | 'owner' | 'admin';
-    priority: 'low' | 'medium' | 'high';
-    type: string;
-    description: string;
-    relatedStoreId?: ObjectId;
-    relatedDepartmentId?: ObjectId;
-    status: 'open' | 'in_progress' | 'resolved' | 'dismissed';
-    createdAt: Date;
-    updatedAt: Date;
-}
 
-const ProblemSchema = new Schema<IProblem>({
-    reporter: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
-    recipientRole: {
-        type: String,
-        enum: ['chef', 'head_of_department', 'store_department_head', 'store_manager', 'hr', 'owner', 'admin'],
-        required: true
-    },
-    priority: { type: String, enum: ['low', 'medium', 'high'], required: true },
-    type: { type: String, required: true },
-    description: { type: String, required: true },
-    relatedStoreId: { type: Schema.Types.ObjectId, ref: 'Store' },
-    relatedDepartmentId: { type: Schema.Types.ObjectId, ref: 'StoreDepartment' }, // Or GlobalDepartment, dynamic based on context
-    status: {
-        type: String,
-        enum: ['open', 'in_progress', 'resolved', 'dismissed'],
-        default: 'open'
-    }
-}, { timestamps: true });
-
-export const Problem = mongoose.models.Problem || mongoose.model<IProblem>('Problem', ProblemSchema);

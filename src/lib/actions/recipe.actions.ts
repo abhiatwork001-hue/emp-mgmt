@@ -230,10 +230,22 @@ export async function updateFood(id: string, data: Partial<IFood>) {
     try {
         if (data.name) {
             data.slug = slugify(data.name);
+            // Ensure uniqueness if slug changed
+            const existing = await Food.findById(id);
+            if (existing && existing.slug !== data.slug) {
+                let count = 1;
+                let finalSlug = data.slug;
+                while (await Food.findOne({ slug: finalSlug, _id: { $ne: id } })) {
+                    finalSlug = `${data.slug}-${count++}`;
+                }
+                data.slug = finalSlug;
+            }
         }
-        const updated = await Food.findByIdAndUpdate(id, data, { new: true });
+        const updated = await Food.findByIdAndUpdate(id, data, { new: true }).lean();
+        if (!updated) throw new Error("Food not found");
+
         revalidatePath("/dashboard/recipes");
-        revalidatePath(`/dashboard/recipes/${updated.slug}`);
+        revalidatePath(`/dashboard/recipes/${(updated as any).slug}`);
 
         // Notification Logic
         try {
@@ -378,8 +390,8 @@ export async function checkFinancialAccess(userId: string) {
     if (!user) return false;
 
     const roles = user.roles || [];
-    // Allowed Roles: 'Admin', 'Owner', 'HR', 'Tech', 'SuperUser'
-    const allowedRoles = ["Admin", "Owner", "HR", "Tech", "SuperUser"];
+    // Allowed Roles: 'Owner', 'HR', 'Tech', 'SuperUser' (EXCLUDING Admin per requirement)
+    const allowedRoles = ["Owner", "HR", "Tech", "SuperUser"];
     const hasRole = roles.some((r: string) => allowedRoles.some(ar => r.toLowerCase() === ar.toLowerCase()));
 
     if (hasRole) return true;

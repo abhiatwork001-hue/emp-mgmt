@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getStoreBySlug } from "@/lib/actions/store.actions";
-import { getEmployeesByStore } from "@/lib/actions/employee.actions";
+import { getEmployeesByStore, getStoreEmployeesWithTodayStatus } from "@/lib/actions/employee.actions";
 import { getStoreDepartments } from "@/lib/actions/store-department.actions";
 import { AddDepartmentDialog } from "@/components/stores/add-department-dialog";
 import { AssignEmployeeDialog } from "@/components/stores/assign-employee-dialog";
@@ -18,6 +18,8 @@ import { Link } from "@/i18n/routing";
 import { StoreDepartmentsListClient } from "@/components/stores/store-departments-list-client";
 import { RemoveStoreManagerButton } from "@/components/stores/remove-store-manager-button";
 import { CreateScheduleDialog } from "@/components/schedules/create-schedule-dialog";
+import { CredentialManager } from "@/components/credentials/credential-list";
+
 
 export default async function StoreDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
     const session = await getServerSession(authOptions);
@@ -47,7 +49,7 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
     // "employee, storeManager and storeDepartmentHead cannot edit employee... or add employee... and manage team"
     const canManageEmployees = isGlobalAdmin;
 
-    const employees = await getEmployeesByStore(storeId);
+    const employees = await getStoreEmployeesWithTodayStatus(storeId);
     const storeDepartments = await getStoreDepartments(storeId);
 
     return (
@@ -153,7 +155,7 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
                             </Link>
                         </CardHeader>
                         <CardContent>
-                            <StoreDepartmentsListClient storeDepartments={storeDepartments} storeSlug={store.slug} />
+                            <StoreDepartmentsListClient storeDepartments={storeDepartments} storeSlug={store.slug} storeId={store._id.toString()} />
                         </CardContent>
                     </Card>
 
@@ -171,9 +173,12 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <StoreEmployeesList storeId={store._id} employees={employees} canManage={canManageEmployees} />
+                            <StoreEmployeesList storeId={store._id} employees={employees} canManage={canManageEmployees} departments={storeDepartments} />
                         </CardContent>
                     </Card>
+
+                    {/* Credentials Section */}
+                    <CredentialManager storeId={store._id.toString()} userId={(session.user as any).id} />
                 </div>
 
                 {/* Right Column - Quick Stats & Quick Actions */}

@@ -14,8 +14,8 @@ interface MobileScheduleViewProps {
     weekDays: any[];
     isEditMode: boolean;
     onEditShift: (shift: any, date: string, index: number) => void;
-    onAddShift: (date: string) => void;
-    onDeleteShift: (date: string, index: number) => void;
+    onAddShift: (date: string, employeeId?: string) => void;
+    onDeleteShift: (date: string, index: number, employeeId?: string) => void;
     isToday: (date: Date) => boolean;
 }
 
@@ -91,9 +91,11 @@ export function MobileScheduleView({
                             {weekDays.map((day, i) => {
                                 const date = new Date(day.date);
                                 const isCurrentDay = isToday(date);
-                                const empShifts = day.shifts.filter((s: any) =>
-                                    s.employees.some((e: any) => e._id === emp._id)
-                                );
+                                const empShiftsWithIndex = day.shifts
+                                    .map((s: any, idx: number) => ({ ...s, originalIndex: idx }))
+                                    .filter((s: any) =>
+                                        s.employees.some((e: any) => e._id === emp._id)
+                                    );
 
                                 return (
                                     <div
@@ -126,14 +128,14 @@ export function MobileScheduleView({
                                                     <Badge variant="outline" className="bg-destructive/10 text-destructive border-transparent text-[10px]">CLOSED</Badge>
                                                     <span className="text-xs">{day.holidayName}</span>
                                                 </div>
-                                            ) : empShifts.length > 0 ? (
+                                            ) : empShiftsWithIndex.length > 0 ? (
                                                 <div className="space-y-2">
-                                                    {empShifts.map((shift: any, idx: number) => {
+                                                    {empShiftsWithIndex.map((shift: any, _: number) => {
                                                         const isDayOff = shift.shiftName === "Day Off";
                                                         return (
                                                             <div
-                                                                key={idx}
-                                                                onClick={() => isEditMode && onEditShift(shift, day.date, idx)}
+                                                                key={shift.originalIndex}
+                                                                onClick={() => isEditMode && onEditShift(shift, day.date, shift.originalIndex)}
                                                                 className={cn(
                                                                     "relative rounded-md p-2 border transition-all",
                                                                     isDayOff
@@ -167,7 +169,7 @@ export function MobileScheduleView({
                                                                     <button
                                                                         onClick={(e) => {
                                                                             e.stopPropagation();
-                                                                            onDeleteShift(day.date, idx);
+                                                                            onDeleteShift(day.date, shift.originalIndex, emp._id);
                                                                         }}
                                                                         className="absolute -top-1.5 -right-1.5 bg-destructive text-white rounded-full p-0.5 shadow-sm opacity-0 group-hover:opacity-100"
                                                                     >
@@ -180,7 +182,7 @@ export function MobileScheduleView({
                                                 </div>
                                             ) : (
                                                 <div
-                                                    onClick={() => !day.isHoliday && isEditMode && onAddShift(day.date)}
+                                                    onClick={() => !day.isHoliday && isEditMode && onAddShift(day.date, emp._id)}
                                                     className="h-full min-h-[40px] flex items-center justify-center rounded-md border-2 border-dashed border-border/40 text-muted-foreground/40 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-all cursor-pointer"
                                                 >
                                                     {isEditMode ? <Plus className="h-5 w-5" /> : <span className="text-[10px] italic">No Shift</span>}

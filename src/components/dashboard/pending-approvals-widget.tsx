@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Clock, Palmtree, AlertCircle, ArrowRight, CheckCircle2, CalendarDays, Check, X, Eye } from "lucide-react";
+import { Clock, Palmtree, AlertCircle, ArrowRight, CheckCircle2, CalendarDays, Check, X, Eye, Square, CheckSquare } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { format } from "date-fns";
 import { useState } from "react";
@@ -15,6 +15,9 @@ import { respondToOvertimeRequest } from "@/lib/actions/overtime.actions";
 import { approveVacationRequest, rejectVacationRequest } from "@/lib/actions/vacation.actions";
 import { approveAbsenceRequest, rejectAbsenceRequest } from "@/lib/actions/absence.actions";
 import { updateScheduleStatus } from "@/lib/actions/schedule.actions";
+import { Checkbox } from "@/components/ui/checkbox";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface PendingItem {
     id: string;
@@ -32,19 +35,18 @@ interface PendingApprovalsWidgetProps {
     vacations: any[];
     absences: any[];
     schedules: any[];
+    compact?: boolean;
 }
 
-import { motion, AnimatePresence } from "framer-motion";
-import { cn } from "@/lib/utils";
-
-export function PendingApprovalsWidget({ overtime, vacations, absences, schedules = [] }: PendingApprovalsWidgetProps) {
+export function PendingApprovalsWidget({ overtime, vacations, absences, schedules = [], compact = false }: PendingApprovalsWidgetProps) {
     const totalCount = overtime.length + vacations.length + absences.length + schedules.length;
     const { data: session } = useSession();
     const router = useRouter();
     const [processingId, setProcessingId] = useState<string | null>(null);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
-    // Normalize items for list
-    const items: PendingItem[] = [
+    const allItems = [
         ...overtime.map(i => ({
             id: i._id,
             type: 'overtime' as const,
@@ -85,15 +87,26 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             createdAt: new Date(i.createdAt),
             link: `/dashboard/schedules/${i.slug || i._id}`
         }))
-    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()); // Newest first
+    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    // Limit to items for widget
+    const limit = compact ? 5 : 10;
+    const items = allItems.slice(0, limit);
+    const hasMore = allItems.length > limit;
+
+    // RBAC Check for Actions
+    // RBAC Check for Actions
+    const userRoles = (session?.user as any)?.roles || [];
+    const normalizedRoles = userRoles.map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const canApprove = normalizedRoles.some((r: string) => ["admin", "hr", "owner", "super_user", "tech"].includes(r));
 
     const handleAction = async (item: PendingItem, action: 'approve' | 'reject') => {
-        if (!session?.user) {
-            toast.error("Unauthorized");
+        if (!canApprove) {
+            toast.error("You are not authorized to perform this action.");
             return;
         }
         setProcessingId(item.id);
-        const userId = (session.user as any).id;
+        const userId = (session?.user as any).id;
 
         try {
             if (item.type === 'overtime') {
@@ -110,12 +123,74 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             }
             toast.success(`${action === 'approve' ? 'Approved' : 'Rejected'} successfully`);
             router.refresh();
+            // Remove from selection if present
+            const next = new Set(selectedIds);
+            next.delete(item.id);
+            setSelectedIds(next);
         } catch (error) {
             console.error(error);
             toast.error("Action failed");
         } finally {
             setProcessingId(null);
         }
+    };
+
+    const toggleSelection = (id: string) => {
+        const next = new Set(selectedIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedIds(next);
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.size === items.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(items.map(i => i.id)));
+        }
+    };
+
+    const handleBulkAction = async (action: 'approve' | 'reject') => {
+        if (!canApprove) return;
+        setIsBulkProcessing(true);
+        const ids = Array.from(selectedIds);
+        const failures: string[] = [];
+        const userId = (session?.user as any).id;
+
+        toast.loading(`Bulk ${action === 'approve' ? 'approving' : 'rejecting'} ${ids.length} items...`, { id: 'bulk-action' });
+
+        for (const id of ids) {
+            const item = items.find(i => i.id === id);
+            if (!item) continue;
+            try {
+                if (item.type === 'overtime') {
+                    await respondToOvertimeRequest(item.id, userId, action === 'approve' ? 'approved' : 'rejected', action === 'reject' ? 'Bulk Reject' : undefined);
+                } else if (item.type === 'vacation') {
+                    if (action === 'approve') await approveVacationRequest(item.id, userId);
+                    else await rejectVacationRequest(item.id, userId, "Bulk Reject");
+                } else if (item.type === 'absence') {
+                    if (action === 'approve') await approveAbsenceRequest(item.id, userId);
+                    else await rejectAbsenceRequest(item.id, userId, "Bulk Reject");
+                } else if (item.type === 'schedule') {
+                    const newStatus = action === 'approve' ? 'published' : 'rejected';
+                    await updateScheduleStatus(item.id, newStatus, userId, action === 'reject' ? "Bulk Reject" : undefined);
+                }
+            } catch (e) {
+                console.error(`Failed to ${action} ${id}`, e);
+                failures.push(item.employeeName);
+            }
+        }
+
+        toast.dismiss('bulk-action');
+        if (failures.length > 0) {
+            toast.warning(`Processed with errors. Failed: ${failures.join(', ')}`);
+        } else {
+            toast.success(`Bulk ${action} completed!`);
+        }
+
+        setSelectedIds(new Set());
+        router.refresh();
+        setIsBulkProcessing(false);
     };
 
     if (totalCount === 0) {
@@ -138,124 +213,162 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
     }
 
     return (
-        <Card glass premium className="border-destructive/10 overflow-hidden">
-            <CardHeader className="bg-destructive/5 border-b border-destructive/10 py-5 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-sm font-black tracking-widest flex items-center gap-3 text-destructive">
+        <Card glass premium className="border-destructive/10 overflow-hidden h-full flex flex-col">
+            <CardHeader className="bg-destructive/5 border-b border-destructive/10 py-5 flex flex-row items-center justify-between space-y-0 shrink-0">
+                <div className="flex items-center gap-3">
                     <div className="relative">
-                        <AlertCircle className="h-5 w-5 animate-pulse" />
+                        <AlertCircle className="h-5 w-5 animate-pulse text-destructive" />
                         <div className="absolute inset-0 bg-destructive/20 blur-lg rounded-full animate-ping" />
                     </div>
-                    CRITICAL APPROVALS
-                </CardTitle>
-                <Badge className="bg-destructive text-destructive-foreground font-black text-xs px-2.5 py-0.5 rounded-full ring-4 ring-destructive/10">
-                    {totalCount}
-                </Badge>
-            </CardHeader>
-            <CardContent className="p-0">
-                <div className="flex gap-3 p-4 border-b border-border/10 overflow-x-auto no-scrollbar">
-                    {schedules.length > 0 && (
-                        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-tighter text-blue-500 bg-blue-500/5 border-blue-500/20 whitespace-nowrap">
-                            {schedules.length} SCHEDULES
-                        </Badge>
-                    )}
-                    {overtime.length > 0 && (
-                        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-tighter text-orange-500 bg-orange-500/5 border-orange-500/20 whitespace-nowrap">
-                            {overtime.length} OVERTIME
-                        </Badge>
-                    )}
-                    {vacations.length > 0 && (
-                        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-tighter text-emerald-500 bg-emerald-500/5 border-emerald-500/20 whitespace-nowrap">
-                            {vacations.length} VACATIONS
-                        </Badge>
-                    )}
-                    {absences.length > 0 && (
-                        <Badge variant="outline" className="text-[10px] font-black uppercase tracking-tighter text-red-500 bg-red-500/5 border-red-500/20 whitespace-nowrap">
-                            {absences.length} ABSENCES
-                        </Badge>
-                    )}
-                </div>
-
-                <ScrollArea className="h-[400px]">
-                    <div className="p-0 divide-y divide-border/10">
-                        <AnimatePresence>
-                            {items.map((item, idx) => (
-                                <motion.div
-                                    key={`${item.type}-${item.id}`}
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 10 }}
-                                    transition={{ delay: idx * 0.05 }}
-                                    className="group p-5 hover:bg-muted/30 transition-all duration-300"
-                                >
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="space-y-1.5 flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <p className="text-sm font-black text-foreground/90 truncate group-hover:text-primary transition-colors">{item.employeeName}</p>
-                                                <div className="w-1 h-1 rounded-full bg-border/40" />
-                                                <p className="text-[10px] font-black uppercase tracking-tight text-muted-foreground/60">{item.storeName}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className={cn(
-                                                    "p-1.5 rounded-lg",
-                                                    item.type === 'overtime' && "bg-orange-500/10",
-                                                    item.type === 'vacation' && "bg-emerald-500/10",
-                                                    item.type === 'absence' && "bg-red-500/10",
-                                                    item.type === 'schedule' && "bg-blue-500/10"
-                                                )}>
-                                                    {item.type === 'overtime' && <Clock className="h-3 w-3 text-orange-500" />}
-                                                    {item.type === 'vacation' && <Palmtree className="h-3 w-3 text-emerald-500" />}
-                                                    {item.type === 'absence' && <AlertCircle className="h-3 w-3 text-red-500" />}
-                                                    {item.type === 'schedule' && <CalendarDays className="h-3 w-3 text-blue-500" />}
-                                                </div>
-                                                <p className="text-xs font-bold text-foreground/70">{item.details}</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right flex flex-col items-end gap-1 shrink-0">
-                                            <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground/40">{format(item.date, "MMM d, yyyy")}</p>
-                                            <div className="flex items-center gap-1">
-                                                <Link href={item.link}>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-muted-foreground/60 hover:text-primary hover:bg-primary/5">
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                </Link>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 rounded-lg text-destructive/40 hover:text-destructive hover:bg-destructive/5"
-                                                    disabled={processingId === item.id || !!processingId}
-                                                    onClick={() => handleAction(item, 'reject')}
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 rounded-lg text-emerald-500/40 hover:text-emerald-500 hover:bg-emerald-500/5 group/check"
-                                                    disabled={processingId === item.id || !!processingId}
-                                                    onClick={() => handleAction(item, 'approve')}
-                                                >
-                                                    {processingId === item.id ? (
-                                                        <Clock className="h-4 w-4 animate-spin" />
-                                                    ) : (
-                                                        <Check className="h-4 w-4 group-hover/check:scale-125 transition-transform" />
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </AnimatePresence>
+                    <div>
+                        <CardTitle className="text-sm font-black tracking-widest text-destructive">CRITICAL APPROVALS</CardTitle>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-70 mt-0.5">Action Required</p>
                     </div>
-                </ScrollArea>
-
-                <div className="p-4 bg-muted/5 border-t border-border/10">
-                    <Link href="/dashboard/approvals" className="block">
-                        <Button variant="ghost" className="w-full text-[10px] font-black uppercase tracking-[0.2em] group h-10 rounded-xl" size="sm">
-                            VIEW COMMAND CENTER <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform" />
-                        </Button>
-                    </Link>
                 </div>
+
+                <div className="flex items-center gap-2">
+                    {selectedIds.size > 0 && (
+                        <div className="flex items-center gap-2 mr-2 animate-in fade-in slide-in-from-right-4">
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-7 text-[10px] font-bold uppercase"
+                                onClick={() => handleBulkAction('reject')}
+                                disabled={isBulkProcessing}
+                            >
+                                Reject ({selectedIds.size})
+                            </Button>
+                            <Button
+                                size="sm"
+                                className="h-7 text-[10px] bg-emerald-600 hover:bg-emerald-700 font-bold uppercase"
+                                onClick={() => handleBulkAction('approve')}
+                                disabled={isBulkProcessing}
+                            >
+                                Approve ({selectedIds.size})
+                            </Button>
+                        </div>
+                    )}
+                    <Badge className="bg-destructive text-destructive-foreground font-black text-xs px-2.5 py-0.5 rounded-full ring-4 ring-destructive/10">
+                        {totalCount}
+                    </Badge>
+                </div>
+            </CardHeader>
+            <CardContent className="p-0 flex-1 flex flex-col min-h-0">
+                {items.length === 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-4 animate-in fade-in zoom-in duration-300">
+                        <div className="h-16 w-16 rounded-full bg-emerald-500/10 flex items-center justify-center ring-8 ring-emerald-500/5">
+                            <CheckCircle2 className="h-8 w-8 text-emerald-500" />
+                        </div>
+                        <div className="space-y-1">
+                            <h3 className="font-bold text-lg text-foreground">All approvals handled 🎉</h3>
+                            <p className="text-sm text-muted-foreground">Great job! You're all caught up.</p>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        <div className="flex items-center justify-between p-2 border-b border-border/10 bg-muted/5 shrink-0">
+                            <div className="flex items-center gap-2 px-2">
+                                <Checkbox
+                                    checked={selectedIds.size === items.length && items.length > 0}
+                                    onCheckedChange={toggleSelectAll}
+                                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                />
+                                <span className="text-[10px] font-bold uppercase text-muted-foreground">Select All</span>
+                            </div>
+
+                            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                                {schedules.length > 0 && <Badge variant="outline" className="text-[9px] font-black">{schedules.length} SCHED</Badge>}
+                                {overtime.length > 0 && <Badge variant="outline" className="text-[9px] font-black">{overtime.length} OT</Badge>}
+                                {vacations.length > 0 && <Badge variant="outline" className="text-[9px] font-black">{vacations.length} VAC</Badge>}
+                            </div>
+                        </div>
+
+                        <ScrollArea className={cn("min-h-0", compact ? "h-[300px]" : "flex-1")}>
+                            <div className="p-0 divide-y divide-border/10">
+                                <AnimatePresence>
+                                    {items.map((item, idx) => (
+                                        <motion.div
+                                            key={`${item.type}-${item.id}`}
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: 10 }}
+                                            transition={{ delay: idx * 0.05 }}
+                                            className={cn(
+                                                "group p-3 hover:bg-muted/30 transition-all duration-300 flex items-start gap-3",
+                                                selectedIds.has(item.id) && "bg-primary/5"
+                                            )}
+                                        >
+                                            <div className="pt-1">
+                                                <Checkbox
+                                                    checked={selectedIds.has(item.id)}
+                                                    onCheckedChange={() => toggleSelection(item.id)}
+                                                />
+                                            </div>
+
+                                            <div className="flex-1 min-w-0 space-y-0.5">
+                                                <div className="flex items-baseline gap-2">
+                                                    <p className="text-sm font-black text-foreground/90 truncate group-hover:text-primary transition-colors">{item.employeeName}</p>
+                                                    <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/50 truncate">{item.storeName}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className={cn(
+                                                        "p-0.5 rounded",
+                                                        item.type === 'overtime' && "text-orange-500",
+                                                        item.type === 'vacation' && "text-emerald-500",
+                                                        item.type === 'absence' && "text-red-500",
+                                                        item.type === 'schedule' && "text-blue-500"
+                                                    )}>
+                                                        {item.type === 'overtime' && <Clock className="h-3 w-3" />}
+                                                        {item.type === 'vacation' && <Palmtree className="h-3 w-3" />}
+                                                        {item.type === 'absence' && <AlertCircle className="h-3 w-3" />}
+                                                        {item.type === 'schedule' && <CalendarDays className="h-3 w-3" />}
+                                                    </div>
+                                                    <p className="text-xs font-medium text-muted-foreground">{item.details}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="text-right flex flex-col items-end gap-0.5 shrink-0">
+                                                <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/40">{format(item.date, "MMM d")}</p>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity h-6">
+                                                    {canApprove && (
+                                                        <>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-6 w-6 rounded text-destructive/40 hover:text-destructive hover:bg-destructive/5"
+                                                                disabled={processingId === item.id || !!processingId}
+                                                                onClick={() => handleAction(item, 'reject')}
+                                                            >
+                                                                <X className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-6 w-6 rounded text-emerald-500/40 hover:text-emerald-500 hover:bg-emerald-500/5"
+                                                                disabled={processingId === item.id || !!processingId}
+                                                                onClick={() => handleAction(item, 'approve')}
+                                                            >
+                                                                <Check className="h-3.5 w-3.5" />
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
+                            </div>
+                        </ScrollArea>
+
+                        <div className="p-3 bg-muted/5 border-t border-border/10 shrink-0">
+                            <Link href="/dashboard/approvals" className="block">
+                                <Button variant="ghost" className="w-full text-[10px] font-black uppercase tracking-[0.2em] group h-8 rounded-lg" size="sm">
+                                    {hasMore ? `VIEW ALL ${totalCount} REQUESTS` : "VIEW COMMAND CENTER"} <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                                </Button>
+                            </Link>
+                        </div>
+                    </>
+                )}
             </CardContent>
         </Card>
     );

@@ -23,10 +23,10 @@ import { Breadcrumbs } from "./breadcrumbs";
 import { ReportProblemDialog } from "@/components/dashboard/report-problem-dialog";
 
 export function Header({
-    userRole = "employee",
+    userRoles = ["employee"],
     departmentName = ""
 }: {
-    userRole?: string,
+    userRoles?: string[],
     departmentName?: string
 }) {
     const { data: session } = useSession();
@@ -37,10 +37,10 @@ export function Header({
         <div className="flex items-center justify-between p-4 px-8 border-b border-border/40 bg-background/60 backdrop-blur-md sticky top-0 z-40">
             <div className="flex items-center gap-4">
                 <div className="md:hidden">
-                    <MobileSidebar />
+                    <MobileSidebar userRoles={userRoles} departmentName={departmentName} />
                 </div>
                 <div className="hidden md:block">
-                    <Breadcrumbs userRole={userRole} departmentName={departmentName} />
+                    <Breadcrumbs userRoles={userRoles} departmentName={departmentName} />
                 </div>
             </div>
 
@@ -80,7 +80,7 @@ export function Header({
                             </div>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => signOut()}>
+                        <DropdownMenuItem onClick={() => signOut({ callbackUrl: `/${locale}/login` })}>
                             {t("logout")}
                         </DropdownMenuItem>
                     </DropdownMenuContent>

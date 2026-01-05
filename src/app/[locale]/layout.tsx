@@ -7,6 +7,7 @@ import { getMessages, getLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
+import { Toaster } from "sonner";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -24,13 +25,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "LaGasy",
-  description: "Employee Management System for LaGasy Restaurant Group",
+  title: "Chickinho",
+  description: "Employee Management System for Chickinho Restaurant Group",
   icons: {
-    icon: "/logo_lagasy.png",
+    icon: "/logo_chickinho.png",
+    shortcut: "/logo_chickinho.png",
+    apple: "/logo_chickinho.png",
   },
   openGraph: {
-    title: "LaGasy",
+    title: "Chickinho",
     description: "Employee Management System",
   },
 };
@@ -51,6 +54,8 @@ export default async function LocaleLayout({
 
   const messages = await getMessages();
 
+
+
   return (
     <html lang={locale} suppressHydrationWarning>
       <body
@@ -58,7 +63,10 @@ export default async function LocaleLayout({
       >
         <ServiceWorkerRegister />
         <NextIntlClientProvider messages={messages} locale={locale}>
-          <Providers>{children}</Providers>
+          <Providers>
+            {children}
+            <Toaster />
+          </Providers>
         </NextIntlClientProvider>
       </body>
     </html>

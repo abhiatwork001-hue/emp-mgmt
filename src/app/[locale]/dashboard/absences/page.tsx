@@ -6,10 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, History } from "lucide-react";
 import { AbsenceRequestList } from "@/components/absences/absence-request-list";
 import { ReportAbsenceDialog } from "@/components/absences/report-absence-dialog";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 import { getEmployeeById } from "@/lib/actions/employee.actions";
+import { YearSelector } from "@/components/layout/year-selector";
 
-export default async function AbsencesPage() {
+export default async function AbsencesPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
+    const { year } = await searchParams;
     const session = await getServerSession(authOptions);
     if (!session) redirect("/login");
 
@@ -28,15 +32,28 @@ export default async function AbsencesPage() {
         storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
     }
 
-    const requests = await getAllAbsenceRequests({ storeId: storeIdFilter });
+    const currentYear = year ? parseInt(year) : new Date().getFullYear();
+    const requests = await getAllAbsenceRequests({ storeId: storeIdFilter, year: currentYear });
 
     const pendingCount = requests.filter((r: any) => r.status === 'pending').length;
     const historyCount = requests.filter((r: any) => r.status !== 'pending').length;
 
+    const isGlobal = roles.some((r: string) => ["owner", "admin", "hr", "tech", "super_user"].includes(r));
+
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold tracking-tight text-white">Absence Management</h2>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight text-white">Absence Management</h1>
+                    <p className="text-zinc-400">Track and manage employee absences.</p>
+                </div>
+
+                {isGlobal && (
+                    <div className="flex items-center gap-2 bg-muted/40 p-1 rounded-lg border border-border/50 h-10 px-3">
+                        <YearSelector currentYear={currentYear} />
+                    </div>
+                )}
+
                 <ReportAbsenceDialog />
             </div>
 

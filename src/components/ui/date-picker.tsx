@@ -40,6 +40,7 @@ export function DatePicker({
     const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
         date ? new Date(date) : undefined
     );
+    const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
 
     // Sync internal state if prop changes
     React.useEffect(() => {
@@ -53,10 +54,11 @@ export function DatePicker({
     const handleSelect = (newDate: Date | undefined) => {
         setSelectedDate(newDate);
         setDate(newDate);
+        setIsPopoverOpen(false);
     };
 
     return (
-        <Popover>
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
             <PopoverTrigger asChild>
                 <Button
                     variant={"outline"}

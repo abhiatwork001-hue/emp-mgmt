@@ -17,11 +17,15 @@ import { revalidatePath } from "next/cache";
 // Let's make the Page server-side fetching data, and a Client Component for the List.
 
 import { VacationRequestList } from "@/components/vacations/vacation-request-list";
+import { Separator } from "@/components/ui/separator";
+import { format } from "date-fns";
 import { AdminRecordVacationDialog } from "@/components/vacations/admin-record-vacation-dialog";
+import { YearSelector } from "@/components/layout/year-selector";
 
 import { getEmployeeById } from "@/lib/actions/employee.actions";
 
-export default async function VacationsPage() {
+export default async function VacationsPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
+    const { year } = await searchParams;
     const session = await getServerSession(authOptions);
     if (!session) redirect("/login");
 
@@ -34,34 +38,41 @@ export default async function VacationsPage() {
     }
 
     // Determine strict scope
-    // If Store Manager or Store Dept Head, filter by THEIR store.
-    // If Admin/HR, see all (or pass no filter).
     let storeIdFilter = undefined;
     const isStoreLevel = roles.some((r: string) => ["store_manager", "store_department_head"].includes(r));
     const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "department_head"].includes(r));
 
-    // Priority: Global Level sees all, unless we want strict view for Dept Head too (Global Dept Head sees all stores?)
-    // Let's say Global Level overrides Store Level restriction.
     if (!isGlobalLevel && isStoreLevel) {
         storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
     }
 
-    const requests = await getAllVacationRequests({ storeId: storeIdFilter });
+    const currentYear = year ? parseInt(year) : new Date().getFullYear();
+    const requests = await getAllVacationRequests({ storeId: storeIdFilter, year: currentYear });
 
     // Calculate basic stats
     const pendingCount = requests.filter((r: any) => r.status === 'pending').length;
     const approvedCount = requests.filter((r: any) => r.status === 'approved').length;
 
+    // Role-based visibility
+    const isGlobal = roles.some((r: string) => ["owner", "admin", "hr", "tech", "super_user"].includes(r));
+    const isManager = roles.includes("store_manager");
+
     return (
         <div className="space-y-6">
-            <div className="flex justify-between items-center bg-[#1e293b] p-6 rounded-lg border border-zinc-800">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-white mb-2">Vacation Management</h1>
-                    <p className="text-zinc-400">Overview of all vacation requests</p>
+                    <h1 className="text-3xl font-bold tracking-tight">Vacations</h1>
+                    <p className="text-muted-foreground font-medium">Manage and review employee vacation requests.</p>
                 </div>
-                {/* Admin Tools */}
-                <AdminRecordVacationDialog />
+
+                {isGlobal && (
+                    <div className="flex items-center gap-2 bg-muted/40 p-1 rounded-lg border border-border/50 h-10 px-3">
+                        <YearSelector currentYear={currentYear} />
+                    </div>
+                )}
             </div>
+            {/* Admin Tools */}
+            <AdminRecordVacationDialog />
 
             <div className="grid gap-4 md:grid-cols-3">
                 <Card className="bg-[#1e293b] border-none text-white">

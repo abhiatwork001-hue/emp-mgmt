@@ -27,18 +27,19 @@ export function HolidayWidget({ storeId }: HolidayWidgetProps) {
     if (loading) return null;
 
     return (
-        <Card className="border-l-4 border-l-amber-500">
-            <CardHeader className="pb-3">
+
+        <Card className="border-l-4 border-l-amber-500 h-full flex flex-col">
+            <CardHeader className="pb-3 shrink-0">
                 <CardTitle className="text-base font-medium flex items-center">
                     <Palmtree className="mr-2 h-4 w-4 text-amber-500" />
                     Public Holidays (PT)
                 </CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 flex-1 min-h-0">
                 {holidays.length === 0 ? (
                     <div className="p-4 text-sm text-muted-foreground text-center">No upcoming holidays found.</div>
                 ) : (
-                    <ScrollArea className="h-[150px] px-4">
+                    <ScrollArea className="h-full px-4">
                         <div className="space-y-3 py-4">
                             {holidays.map((h, i) => (
                                 <div key={i} className="flex justify-between items-center group">

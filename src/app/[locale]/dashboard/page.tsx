@@ -118,8 +118,14 @@ export default async function DashboardPage(props: DashboardPageProps) {
     // Render Helper
     async function renderDashboard() {
         if (["owner", "admin", "hr", "super_user", "store_manager", "tech"].includes(viewRole)) {
-            const storeId = employee.storeId?._id || employee.storeId;
-            const sid = (viewRole === "store_manager" && storeId) ? storeId.toString() : undefined;
+            // FORCE Global View for high-level roles unless they explicitly switched to "store_manager"
+            // If viewRole is "store_manager", we respect their storeId.
+            // For others (Admin, Owner, etc.), we ignore their personal storeId to show Network stats.
+            const isStoreLevelRole = viewRole === "store_manager" || viewRole === "store_department_head";
+            const rawStoreId = employee.storeId?._id || employee.storeId;
+            const storeId = isStoreLevelRole ? rawStoreId : undefined;
+
+            const sid = storeId ? storeId.toString() : undefined;
 
             let pendingVacations = await getAllVacationRequests({ status: 'pending', storeId: sid });
             let pendingAbsences = await getAllAbsenceRequests({ status: 'pending', storeId: sid });
@@ -128,7 +134,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
             const storeEmployees = storeId
                 ? await getEmployeesByStore(storeId)
-                : (viewRole === "store_manager" ? [] : await getAllEmployees({}));
+                : await getAllEmployees({});
 
             // Fetch current schedule to count shifts
             let todayShiftsCount = 0;
@@ -181,6 +187,31 @@ export default async function DashboardPage(props: DashboardPageProps) {
                         }
                     }
                 }
+            } else {
+                // Global View - Aggregate today's shifts across all stores
+                const { getSchedules } = require("@/lib/actions/schedule.actions");
+                const today = new Date();
+                const todayStr = today.toISOString().split('T')[0];
+
+                // Fetch schedules for all stores in parallel for speed
+                const allSchedulesArrays = await Promise.all(stores.map((s: any) => getSchedules(s._id.toString())));
+
+                allSchedulesArrays.forEach(storeSchedules => {
+                    const currentSchedule = storeSchedules.find((s: any) => {
+                        const start = new Date(s.dateRange.startDate);
+                        const end = new Date(s.dateRange.endDate);
+                        return today >= start && today <= end;
+                    });
+
+                    if (currentSchedule) {
+                        const todayNode = currentSchedule.days?.find((d: any) =>
+                            new Date(d.date).toISOString().split('T')[0] === todayStr
+                        );
+                        if (todayNode) {
+                            todayShiftsCount += todayNode.shifts?.reduce((acc: number, s: any) => acc + (s.employees?.length || 0), 0) || 0;
+                        }
+                    }
+                });
             }
 
             const storeStats = {
@@ -189,9 +220,178 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 todayShifts: todayShiftsCount
             };
 
+            // --- Operations Radar Calculation ---
+            let operationsScore = 100;
+            let radarStatus: "optimal" | "warning" | "critical" = "optimal";
+            const alerts: any[] = [];
+
+            // 1. Staffing Metrics
+            // Fetch fresh store data for settings
+            const { getStoreById } = require("@/lib/actions/store.actions");
+            const fullStore = storeId ? await getStoreById(storeId.toString()) : null;
+
+            // Aggregate targets if global
+            let targetStaffing = 0;
+            let maxStaffing = 0;
+
+            if (storeId && fullStore) {
+                targetStaffing = fullStore.minEmployees || 0;
+                maxStaffing = fullStore.maxEmployees || 999;
+            } else {
+                // Network View - Sum of all stores
+                targetStaffing = stores.reduce((acc: number, s: any) => acc + (s.minEmployees || 0), 0);
+                maxStaffing = stores.reduce((acc: number, s: any) => acc + (s.maxEmployees || 999), 0);
+            }
+
+            const staffingMetric = {
+                label: storeId ? "Store Staffing" : "Network Staffing",
+                current: Array.isArray(storeEmployees) ? storeEmployees.filter((e: any) => e.active !== false).length : 0,
+                target: targetStaffing,
+                min: targetStaffing,
+                max: maxStaffing
+            };
+
+            // Eval Staffing
+            if (staffingMetric.current < staffingMetric.min) {
+                operationsScore -= 20;
+                radarStatus = "critical";
+                alerts.push({
+                    id: "staff-critical",
+                    type: "critical",
+                    title: "Understaffed",
+                    message: `Current staff (${staffingMetric.current}) is below minimum (${staffingMetric.min}).`,
+                    actionLabel: "Recruit",
+                    actionUrl: "/dashboard/employees"
+                });
+            } else if (staffingMetric.max && staffingMetric.current > staffingMetric.max) {
+                operationsScore -= 10;
+                radarStatus = "warning";
+                alerts.push({
+                    id: "staff-limit",
+                    type: "warning",
+                    title: "Overstaffed",
+                    message: `Exceeds max limit of ${staffingMetric.max} employees.`
+                });
+            }
+
+            // 2. Schedule Health & Smart Alerts
+            // Check next week
+            const nextWeekDate = new Date();
+            nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+            const { getISOWeekNumber } = require("@/lib/utils");
+            const nextWeekISO = getISOWeekNumber(nextWeekDate);
+
+            // Let's grab store schedules here to be safe and comprehensive
+            const { getSchedules } = require("@/lib/actions/schedule.actions");
+            const allStoreSchedules = storeId ? await getSchedules(storeId) : [];
+
+            // Advanced Alert Logic: Identify SPECIFIC missing entities
+            let missingEntityNames: string[] = [];
+            let nextWeekPublished = false;
+
+            if (storeId) {
+                // Store Manager View: Check Departments
+                const storeDepts = await getStoreDepartments(storeId.toString());
+                const nextWeekSchedules = await getSchedules(storeId, undefined, nextWeekISO.year, nextWeekISO.week);
+
+                // Map of Dept ID -> Schedule Status
+                const deptStatusMap = new Map();
+                nextWeekSchedules.forEach((s: any) => {
+                    if (s.status === 'published' || s.status === 'approved') {
+                        deptStatusMap.set(s.storeDepartmentId?._id?.toString() || s.storeDepartmentId?.toString(), true);
+                    }
+                });
+
+                missingEntityNames = storeDepts
+                    .filter((d: any) => d.active !== false && !deptStatusMap.has(d._id.toString()))
+                    .map((d: any) => d.name);
+
+                nextWeekPublished = missingEntityNames.length === 0;
+
+            } else {
+                // Network View (Owner/HR): Check Stores
+                // We need to fetch next week's schedules for ALL stores
+                // Optimization: Fetch all schedules for next week across the company
+                const { Schedule } = require("@/lib/models");
+                const allNextWeekSchedules = await Schedule.find({
+                    year: nextWeekISO.year,
+                    weekNumber: nextWeekISO.week,
+                    status: { $in: ['published', 'approved'] }
+                }).select('storeId').lean();
+
+                const fulfilledStoreIds = new Set(allNextWeekSchedules.map((s: any) => s.storeId.toString()));
+
+                missingEntityNames = stores
+                    .filter((s: any) => s.active !== false && !fulfilledStoreIds.has(s._id.toString()))
+                    .map((s: any) => s.name);
+
+                nextWeekPublished = missingEntityNames.length === 0;
+            }
+
+            const scheduleHealth = {
+                nextWeekPublished,
+                daysUntilDeadline: 2,
+                overdue: !nextWeekPublished && new Date().getDay() > 2,
+                missingEntities: missingEntityNames // Pass this data down
+            };
+
+            if (!nextWeekPublished) {
+                if (new Date().getDay() > 2) { // Late in week
+                    operationsScore -= 15;
+                    radarStatus = radarStatus === "optimal" ? "warning" : radarStatus;
+
+                    // Context-Aware Alert Actions
+                    const isManager = ["store_manager", "department_head", "store_department_head"].includes(viewRole);
+                    const entityLabel = storeId ? "Departments" : "Stores";
+                    const listStr = missingEntityNames.slice(0, 3).join(", ") + (missingEntityNames.length > 3 ? ` +${missingEntityNames.length - 3} more` : "");
+
+                    alerts.push({
+                        id: "sched-overdue",
+                        type: "warning",
+                        title: "Missing Schedules",
+                        message: `Next week's schedule missing for ${entityLabel}: ${listStr || "All"}.`,
+                        // Only show "Create" action link to roles that actually MAKE the schedule
+                        actionLabel: isManager ? "Create" : undefined,
+                        actionUrl: isManager ? "/dashboard/schedules" : undefined,
+                        meta: { missingEntities: missingEntityNames } // Pass full list for widget to render
+                    });
+                }
+            }
+
+            // 3. Approval Queue
+            const pendingRequests = mergeRequests(pendingVacations, pendingAbsences, pendingOvertime, pendingSchedules);
+            const totalPendingCount = pendingRequests.length;
+            if (totalPendingCount > 5) {
+                operationsScore -= 10;
+                alerts.push({
+                    id: "approval-queue",
+                    type: "info",
+                    title: "High Pending Volume",
+                    message: `${totalPendingCount} requests waiting review.`,
+                    actionLabel: "Review",
+                    actionUrl: "#approvals" // Anchor to widget
+                });
+            }
+
+            const operationsData = {
+                score: Math.max(0, operationsScore),
+                status: radarStatus,
+                alerts,
+                staffing: staffingMetric,
+                scheduleHealth
+            };
+
+            const defaultOperationsData = {
+                score: 100,
+                status: "optimal" as const,
+                alerts: [],
+                staffing: { label: "Network Staffing", current: 0, target: 0, min: 0, max: 0 },
+                scheduleHealth: { nextWeekPublished: true, daysUntilDeadline: 0, overdue: false, missingEntities: [] }
+            };
+
             return <StoreManagerDashboard
                 employee={employee}
-                pendingRequests={mergeRequests(pendingVacations, pendingAbsences, pendingOvertime, pendingSchedules)}
+                pendingRequests={pendingRequests}
                 requests={{
                     vacations: pendingVacations,
                     absences: pendingAbsences,
@@ -203,6 +403,13 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 currentScheduleId={currentScheduleId}
                 currentScheduleSlug={currentScheduleSlug}
                 currentUserRole={viewRole}
+                operationsData={operationsData || defaultOperationsData}
+                tasks={JSON.parse(JSON.stringify(tasks))}
+                personalTodos={personalTodos}
+                swapRequests={swapRequests}
+                stores={JSON.parse(JSON.stringify(stores))}
+                departments={JSON.parse(JSON.stringify(depts))}
+                managers={JSON.parse(JSON.stringify(managers))}
             />;
         }
 
@@ -255,19 +462,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
             const todayDay = scheduleData.days.find((d: any) => new Date(d.date).toISOString().split('T')[0] === todayStr);
 
             if (todayDay) {
-                // In getEmployeeScheduleView, we only returned the *user's* shifts. 
-                // To get coworkers, we really need the FULL schedule for those shifts or the store.
-                // But wait, `getEmployeeScheduleView` calculates data heavily.
-                // Maybe simpler: just pass the scheduleId if found, and let the component link to it.
-                // For "Working with you today", we need valid data. The current `getEmployeeScheduleView` filters shifts to ONLY the user.
-                // So we can't get coworkers from it.
-                // We should use `getScheduleById` or `getSchedules` for the store/dept if we want coworkers.
-                // Let's fallback to "View full schedule" link for now, and maybe mock coworkers or fetch efficiently if needed.
-                // Actually, let's grab the schedule ID from `scheduleData` (Wait, it returns a constructed object, not the doc).
-                // `scheduleData` structure: { weekNumber, year, dateRange, days: [...] }
-                // It misses the `_id` of the schedule document.
-                // I should check `getEmployeeScheduleView` again. It finds `schedules` array but returns a constructed object.
-                // I will modify `page.tsx` to just fetch the *raw* schedule for the store to find ID and coworkers.
+                // Logic maintained for employee view...
             }
         }
 
@@ -298,9 +493,6 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 todayNode.shifts.forEach((s: any) => {
                     s.employees?.forEach((e: any) => allShiftEmployees.add(e._id || e));
                 });
-                // This gives IDs. We need names. `getSchedules` only populates createdBy?
-                // `getSchedules` populates `storeDepartmentId`. It does NOT deep populate shift employees.
-                // We might need `getScheduleById` to get names.
             }
         }
 
@@ -353,8 +545,6 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 const diffTime = Math.abs(dDate.getTime() - todayDate.getTime());
                 daysUntilNextDayOff = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
             } else {
-                // If no day off found in this week (and we are at end of week), it might be next week.
-                // For now, if we don't see one, we can assume it's "Unknown" or "7+"
                 daysUntilNextDayOff = 7; // Placeholder for "Not this week"
             }
         }
@@ -365,84 +555,62 @@ export default async function DashboardPage(props: DashboardPageProps) {
             currentScheduleId={currentScheduleId}
             currentScheduleSlug={currentScheduleSlug}
             daysUntilNextDayOff={daysUntilNextDayOff}
+            personalTodos={personalTodos}
         />;
     }
 
     const t = await getTranslations("Common");
 
+    // UI Visiblity Control
+    const isPrivileged = ["admin", "hr", "owner", "super_user", "tech"].includes(viewRole);
+    // Recent Activity Only for Privileged Roles
+    const showRecentActivity = isPrivileged;
+    // Unified Sidebar logic: Always show utility sidebar for better visual density and quick access
+    const showSidebar = true;
+
+    const dashboardContent = await renderDashboard();
+
+    // Roles that use the new Unified Dashboard structure
+    const shouldUseNewLayout = ["owner", "admin", "hr", "super_user", "store_manager", "tech", "department_head", "store_department_head"].includes(viewRole);
+
+    if (shouldUseNewLayout) {
+        return (
+            <div className="min-h-screen bg-transparent">
+                <div className="space-y-4 p-4 md:p-8 max-w-[98%] mx-auto relative z-10">
+                    <FadeIn y={-20}>
+                        <DashboardHeader
+                            session={session}
+                            viewRole={viewRole}
+                            employee={employee}
+                            stores={stores}
+                            depts={depts}
+                            localStoreDepartments={localStoreDepartments}
+                            canSwitchRoles={canSwitchRoles}
+                        />
+                    </FadeIn>
+                    <div className="mt-2">
+                        {dashboardContent}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Fallback for basic Employee View (already has its own internal structure in EmployeeDashboard)
     return (
         <div className="min-h-screen bg-transparent">
-            <div className="space-y-10 p-4 md:p-8 max-w-[1600px] mx-auto relative z-10">
-                <FadeIn y={-20}>
-                    <DashboardHeader
-                        session={session}
-                        viewRole={viewRole}
-                        employee={employee}
-                        stores={stores}
-                        depts={depts}
-                        localStoreDepartments={localStoreDepartments}
-                        canSwitchRoles={canSwitchRoles}
-                    />
-                </FadeIn>
-
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                    {/* Main Content Area (3 cols) */}
-                    <div className="lg:col-span-3 space-y-10">
-                        {/* Swap & Notices - High Priority */}
-                        <ScaleIn delay={0.1}>
-                            <div className="space-y-6">
-                                <SwapRequestsWidget incomingRequests={swapRequests.incoming} userId={(session.user as any).id} />
-                                <NoticeBoard userId={(session.user as any).id} />
-                            </div>
-                        </ScaleIn>
-
-                        {/* Role Specific Stats/Widgets */}
-                        <FadeIn delay={0.2} className="premium-shadow rounded-3xl overflow-hidden">
-                            {await renderDashboard()}
-                        </FadeIn>
-
-                        {/* Task Management Section - Visible to All */}
-                        <FadeIn delay={0.3} className="space-y-6 pt-2">
-                            <div className="flex items-center gap-4 px-2">
-                                <Separator className="flex-1 bg-border/20" />
-                                <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/60 whitespace-nowrap">Collaborative Tasks</span>
-                                <Separator className="flex-1 bg-border/20" />
-                            </div>
-
-                            <TaskBoard
-                                tasks={JSON.parse(JSON.stringify(tasks))}
-                                currentUserId={(session.user as any).id}
-                                currentUser={JSON.parse(JSON.stringify(employee))}
-                                stores={JSON.parse(JSON.stringify(stores))}
-                                storeDepartments={JSON.parse(JSON.stringify(depts))}
-                                managers={JSON.parse(JSON.stringify(managers))}
-                            />
-                        </FadeIn>
-
-                        {/* Admin/HR Analytics Section */}
-                        {["admin", "hr", "owner", "super_user", "tech"].includes(viewRole) && (
-                            <FadeIn delay={0.4} className="pt-8">
-                                <div className="bg-primary/5 p-1 rounded-3xl border border-primary/10">
-                                    <StoreTaskProgress />
-                                </div>
-                            </FadeIn>
-                        )}
-                    </div>
-
-                    {/* Sidebar Area (1 col) - Personal Notes */}
-                    <FadeInRight delay={0.3} className="lg:col-span-1">
-                        <div className="sticky top-10 space-y-8">
-                            <RecentActivityWidget
-                                userId={!["admin", "hr", "owner", "super_user", "tech"].includes(viewRole) ? (session.user as any).id : undefined}
-                                userRoles={allRoles}
-                            />
-                            <ReminderWidget userId={(session.user as any).id} role={viewRole} />
-                            <PersonalTodoWidget
-                                initialTodos={personalTodos}
-                                userId={(session.user as any).id}
-                            />
-                        </div>
-                    </FadeInRight>
+            <div className="space-y-4 p-4 md:p-8 max-w-[1600px] mx-auto relative z-10">
+                <DashboardHeader
+                    session={session}
+                    viewRole={viewRole}
+                    employee={employee}
+                    stores={stores}
+                    depts={depts}
+                    localStoreDepartments={localStoreDepartments}
+                    canSwitchRoles={canSwitchRoles}
+                />
+                <div className="mt-6">
+                    {dashboardContent}
                 </div>
             </div>
         </div>

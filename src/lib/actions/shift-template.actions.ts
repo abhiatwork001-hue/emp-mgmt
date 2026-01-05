@@ -30,3 +30,15 @@ export async function createShiftDefinition(data: any) {
     const newShift = await ShiftDefinition.create(data);
     return JSON.parse(JSON.stringify(newShift));
 }
+
+export async function updateShiftDefinition(id: string, data: any) {
+    await dbConnect();
+    const updated = await ShiftDefinition.findByIdAndUpdate(id, data, { new: true });
+    return JSON.parse(JSON.stringify(updated));
+}
+
+export async function deleteShiftDefinition(id: string) {
+    await dbConnect();
+    await ShiftDefinition.findByIdAndDelete(id);
+    return { success: true };
+}

@@ -1,54 +1,73 @@
 // Role-based access config
 export const roleAccess: Record<string, string[]> = {
-    "super_user": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips"],
-    "tech": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips"],
-    "owner": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips"],
-    "admin": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips"],
-    "hr": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages"],
-    "store_manager": ["/dashboard", "/dashboard/notices", "/dashboard/stores", "/dashboard/schedules", "/dashboard/recipes", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips"],
-    "department_head": ["/dashboard", "/dashboard/notices", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/schedules", "/dashboard/recipes"],
-    "store_department_head": ["/dashboard", "/dashboard/notices", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/schedules", "/dashboard/recipes"],
-    "employee": ["/dashboard", "/dashboard/notices", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/profile"]
+    "super_user": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips", "/dashboard/activities", "/dashboard/settings", "/dashboard/credentials"],
+    "tech": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips", "/dashboard/activities", "/dashboard/settings", "/dashboard/problems", "/dashboard/credentials"],
+    "owner": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/activities", "/dashboard/settings", "/dashboard/problems", "/dashboard/credentials"],
+    "admin": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/activities", "/dashboard/problems", "/dashboard/settings", "/dashboard/credentials"],
+    "hr": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/settings", "/dashboard/problems", "/dashboard/activities", "/dashboard/credentials"],
+
+    // Store Manager - NO Employees/Positions/Approvals (Check context rules), NO Global Depts, NO Settings. HAS Tips.
+    // User Update: Employees/Positions removed. Approvals removed (view context only in widgets).
+    "store_manager": ["/dashboard", "/dashboard/notices", "/dashboard/stores", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips"],
+
+    // Dept Head (Global) - HAS Global Departments. NO Emp/Pos/Approv.
+    "department_head": ["/dashboard", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages"],
+
+    // Store Dept Head - NO Emp/Pos/Approv. Stores via context only.
+    "store_department_head": ["/dashboard", "/dashboard/notices", "/dashboard/stores", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages"],
+
+    // Employee - Basic Access
+    "employee": ["/dashboard", "/dashboard/notices", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages"]
 };
 
-// Mapping of functional permissions to paths
+// Mapping of functional permissions to paths (Overrides)
 export const permissionAccess: Record<string, string[]> = {
-    "create_schedule": ["/dashboard/schedules"],
-    "review_schedule": ["/dashboard/approvals", "/dashboard/schedules"],
-    "manage_store": ["/dashboard/stores"],
-    "create_employee": ["/dashboard/employees"],
-    "edit_employee": ["/dashboard/employees"],
-    "manage_storeDepartmentEmployee": ["/dashboard/employees", "/dashboard/stores"],
-    "manage_department": ["/dashboard/departments"],
-    "manage_storeDepartment": ["/dashboard/stores", "/dashboard/schedules"],
-    "manage_system": ["/dashboard/positions", "/dashboard/settings"],
-    "view_logs": ["/dashboard/settings"]
+    // "create_schedule": ["/dashboard/schedules"], // Covered by role
+    // "manage_system": ["/dashboard/settings"] // Covered by role
 };
 
-export const hasAccess = (role: string, path: string, deptName: string = "", permissions: string[] = []) => {
-    const normalizedRole = role.toLowerCase().replace(/ /g, "_");
+export const hasAccess = (roles: string | string[], path: string, deptName: string = "", permissions: string[] = []) => {
+    const rolesArray = Array.isArray(roles) ? roles : [roles];
 
-    // 1. Check Permissions first (Functional override)
-    for (const perm of permissions) {
-        const allowedPaths = permissionAccess[perm] || [];
-        if (allowedPaths.some(p => path === p || (path.startsWith(p + "/") && p !== "/dashboard"))) {
-            return true;
+    return rolesArray.some(role => {
+        const normalizedRole = role.toLowerCase().replace(/ /g, "_");
+
+        // Super users have access to everything
+        if (["super_user"].includes(normalizedRole)) return true;
+
+        // 1. Special Logic: Recipes (Kitchen Dept Only)
+        if (path === "/dashboard/recipes") {
+            const isKitchen = deptName.toLowerCase().includes("kitchen") ||
+                deptName.toLowerCase().includes("cocina") ||
+                deptName.toLowerCase().includes("cozinha") ||
+                permissions.includes("view_recipes");
+            const isAdminOrHR = ["admin", "hr", "tech", "owner", "super_user"].includes(normalizedRole);
+            return isKitchen || isAdminOrHR;
         }
-    }
 
-    const allowed = roleAccess[normalizedRole] || roleAccess["employee"] || [];
+        // 2. Special Logic: Settings (HR/Owner/Tech Only - Admin is EXCLUDED)
+        if (path === "/dashboard/settings") {
+            return ["hr", "owner", "tech", "super_user"].includes(normalizedRole);
+        }
 
-    // Exact match check
-    if (allowed.some(p => path === p)) return true;
+        // 3. Special Logic: Tips (Store Manager/Tech Only)
+        if (path === "/dashboard/tips") {
+            return ["store_manager", "tech", "super_user"].includes(normalizedRole);
+        }
 
-    // Sub-path check (for dynamic routes like /dashboard/stores/[id])
-    const isSubPath = allowed.some(p => path.startsWith(p + "/") && p !== "/dashboard");
+        // 4. Special Logic: Global Departments (Admin, HR, DeptHead Global Only)
+        if (path === "/dashboard/departments") {
+            return ["admin", "hr", "department_head", "tech", "super_user"].includes(normalizedRole);
+        }
 
-    if (path === "/dashboard/recipes") {
-        const isKitchenOrBar = deptName.toLowerCase().includes("kitchen") || deptName.toLowerCase().includes("bar") || normalizedRole.includes("chef") || normalizedRole.includes("barman");
-        const isAdmin = ["admin", "owner", "super_user", "tech"].includes(normalizedRole);
-        return isKitchenOrBar || isAdmin || allowed.includes(path);
-    }
+        // 5. Standard Role Lookup
+        const allowed = roleAccess[normalizedRole] || roleAccess["employee"] || [];
 
-    return isSubPath;
+        // Exact match check
+        if (allowed.some(p => path === p)) return true;
+
+        // Sub-path check
+        const isSubPath = allowed.some(p => path.startsWith(p + "/") && p !== "/dashboard");
+        return isSubPath;
+    });
 };

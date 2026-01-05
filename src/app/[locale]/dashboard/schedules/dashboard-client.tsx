@@ -110,16 +110,20 @@ export default function ScheduleDashboardClient({ restrictedStoreId }: { restric
     }).filter(Boolean) || [];
 
 
+    const { summary } = data || { summary: { total: 0, inProgress: 0, pending: 0, approved: 0, notStarted: 0, totalDepartments: 0 } };
+    const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+
     if (loading && !data) {
         return <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
     }
 
-    const { summary } = data || { summary: { total: 0, inProgress: 0, pending: 0, approved: 0, notStarted: 0, totalDepartments: 0 } };
-    const weekStart = startOfWeek(date, { weekStartsOn: 1 });
+    // Ensure hooks are consistent by not adding any hooks after this point (which is true)
+    // But to be absolutely safe, let's wrap the content in a fragment.
 
     return (
         <div className="space-y-6">
             {/* Top Controls */}
+
             <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-card p-4 rounded-lg border shadow-sm">
                 <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
                     <div className="w-full sm:w-[200px]">

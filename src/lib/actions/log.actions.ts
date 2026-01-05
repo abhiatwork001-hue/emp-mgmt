@@ -82,28 +82,34 @@ export async function getActionLogs(options: LogFilterOptions = {}) {
 
         // 6. Role-based Visibility (System-level)
         if (options.userRoles) {
-            const roles = options.userRoles.map(r => r.toLowerCase());
-            const isTech = roles.includes('tech') || roles.includes('super_user');
-            const isOwnerOrHR = roles.includes('owner') || roles.includes('hr') || roles.includes('admin');
+            const roles = options.userRoles.map(r => r.toLowerCase().replace(/ /g, '_'));
+            const isTech = roles.some(r => /tech|super_user|developer/i.test(r));
+            const isOwnerOrHR = roles.some(r => /owner|hr|admin/i.test(r));
 
             if (!isTech) {
                 // If not tech, exclude certain sensitive system actions or tech-only logs
                 const techOnlyActions = ['DEBUG_ACTION', 'SYSTEM_MAINTENANCE', 'DELETE_MESSAGE_FOR_ME'];
 
                 if (isOwnerOrHR) {
-                    // Owners/HR/Admins see "Business Actions"
-                    const businessActions = [
-                        'CREATE_EMPLOYEE', 'UPDATE_EMPLOYEE', 'ARCHIVE_EMPLOYEE',
-                        'APPROVE_SCHEDULE', 'REJECT_SCHEDULE', 'PUBLISH_SCHEDULE', 'SEND_FOR_APPROVAL',
-                        'APPROVE_VACATION', 'REJECT_VACATION', 'REQUEST_VACATION',
-                        'CREATE_STORE', 'UPDATE_STORE', 'CREATE_STORE_DEPARTMENT',
-                        'UPDATE_TASK', 'CREATE_TASK'
+                    // Owners/HR/Admins see EVERYTHING except purely technical system logs AND private messaging
+                    const privateActions = [
+                        'SEND_MESSAGE',
+                        'READ_MESSAGE',
+                        'CREATE_DIRECT_CHAT',
+                        'CREATE_GROUP_CHAT',
+                        'TOGGLE_REACTION',
+                        'DELETE_MESSAGE_FOR_EVERYONE',
+                        'DELETE_CONVERSATION',
+                        'TOGGLE_MUTE'
                     ];
-                    query.action = { $in: businessActions };
+                    query.action = { $nin: [...techOnlyActions, ...privateActions] };
                 } else {
-                    // Normal managers/employees only see their own logs if userId passed
-                    // Otherwise hide everything sensitive
-                    query.action = { $nin: techOnlyActions };
+                    // Normal managers/employees only see logs relevant to them
+                    if (!options.userId) {
+                        query._id = null; // Effectively return nothing if no user scope
+                    } else {
+                        query.action = { $nin: techOnlyActions };
+                    }
                 }
             }
         }

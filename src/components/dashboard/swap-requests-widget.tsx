@@ -41,8 +41,8 @@ export function SwapRequestsWidget({ incomingRequests, userId }: SwapRequestsWid
     };
 
     return (
-        <Card className="border-l-4 border-l-blue-500 bg-blue-50/10 mb-6">
-            <CardHeader className="pb-3">
+        <Card className="h-full border-l-4 border-l-blue-500 bg-blue-50/10 flex flex-col overflow-hidden">
+            <CardHeader className="pb-3 shrink-0">
                 <CardTitle className="text-lg flex items-center gap-2">
                     <ArrowLeftRight className="h-5 w-5 text-blue-500" />
                     Shift Swap Requests
@@ -51,7 +51,7 @@ export function SwapRequestsWidget({ incomingRequests, userId }: SwapRequestsWid
                     Colleagues want to swap shifts with you.
                 </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 flex-1 overflow-y-auto">
                 {requests.map((request) => (
                     <div key={request._id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3 border rounded-lg bg-card shadow-sm">
                         <div className="flex items-center gap-3">

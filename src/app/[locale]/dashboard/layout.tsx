@@ -66,17 +66,21 @@ export default async function DashboardLayout({
             {isPasswordChanged ? (
                 <>
                     {/* Sidebar Wrapper */}
-                    <div className="hidden md:flex h-full z-[80] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0 overflow-visible">
-                        <Sidebar userRole={primaryRole} departmentName={deptName} storeSlug={storeSlug} />
+                    <div className="hidden md:flex h-full z-[80] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0 overflow-visible print-hidden">
+                        <Sidebar userRoles={normalizedRoles} departmentName={deptName} storeSlug={storeSlug} />
                     </div>
 
                     {/* Main Content Area */}
-                    <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative">
-                        <Header userRole={primaryRole} departmentName={deptName} />
+                    <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative print:overflow-visible print:h-auto print:block">
+                        <div className="print-hidden">
+                            <Header userRoles={normalizedRoles} departmentName={deptName} />
+                        </div>
                         <ContentWrapper>
                             {children}
                         </ContentWrapper>
-                        <BottomNav />
+                        <div className="print-hidden">
+                            <BottomNav />
+                        </div>
                     </main>
                 </>
             ) : (

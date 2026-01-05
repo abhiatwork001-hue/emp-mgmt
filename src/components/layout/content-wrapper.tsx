@@ -15,7 +15,7 @@ export function ContentWrapper({ children }: ContentWrapperProps) {
     return (
         <div className={cn(
             "flex-1 min-w-0 overflow-hidden relative",
-            isMessagePage ? "px-0 pb-0" : "flex-1 overflow-y-auto px-4 md:px-8 pb-8"
+            isMessagePage ? "px-0 pb-0" : "flex-1 overflow-y-auto px-2 md:px-2 pb-8"
         )}>
             {children}
             {!isMessagePage && <BottomNavSpacer />}

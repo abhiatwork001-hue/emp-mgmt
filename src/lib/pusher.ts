@@ -18,8 +18,12 @@ export const pusherClient = new PusherClient(process.env.NEXT_PUBLIC_PUSHER_KEY!
 
 // Connection state monitoring
 if (typeof window !== 'undefined') {
+    if (!process.env.NEXT_PUBLIC_PUSHER_KEY || !process.env.NEXT_PUBLIC_PUSHER_CLUSTER) {
+        console.error("❌ Pusher Config Missing: NEXT_PUBLIC_PUSHER_KEY or NEXT_PUBLIC_PUSHER_CLUSTER not found.");
+    }
+
     pusherClient.connection.bind('connected', () => {
-        console.log('✅ Pusher connected');
+        console.log('✅ Pusher connected to cluster:', process.env.NEXT_PUBLIC_PUSHER_CLUSTER);
     });
 
     pusherClient.connection.bind('disconnected', () => {
@@ -27,11 +31,11 @@ if (typeof window !== 'undefined') {
     });
 
     pusherClient.connection.bind('failed', () => {
-        console.error('❌ Pusher connection failed');
+        console.error('❌ Pusher connection failed. Check your network or valid keys.');
     });
 
     pusherClient.connection.bind('unavailable', () => {
-        console.error('❌ Pusher unavailable');
+        console.error('❌ Pusher unavailable. Check your network.');
     });
 
     pusherClient.connection.bind('error', (err: any) => {

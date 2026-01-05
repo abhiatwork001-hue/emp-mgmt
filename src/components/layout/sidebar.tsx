@@ -25,7 +25,9 @@ import {
     MessageSquare,
     ChevronLeft,
     ChevronRight,
-    ShieldAlert
+    ShieldAlert,
+    AlertTriangle,
+    Lock
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -35,14 +37,17 @@ import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { SidebarMessageBadge } from "./sidebar-message-badge";
+
 // Role-based access logic has been moved to src/lib/rbac.ts
 
 
 const routeGroups = [
-    { title: "Overview", routes: ["Home", "Notices", "Messages", "Tasks", "Notes"] },
-    { title: "Operations", routes: ["Stores", "Departments", "Recipes", "Schedule", "Tips"] },
-    { title: "Team Management", routes: ["Employees", "Positions", "Vacations", "Absences"] },
-    { title: "Account", routes: ["Profile", "Approvals", "Activities", "Settings"] },
+    { title: "Operations", routes: ["Home", "Schedule", "Approvals"] },
+    { title: "People", routes: ["Employees", "Positions", "Vacations", "Absences", "Tips"] },
+    { title: "Structure", routes: ["Stores", "Departments", "Recipes", "Credentials"] },
+    { title: "Communication", routes: ["Messages", "Notices", "Tasks", "Notes", "Problems"] },
+    { title: "Account", routes: ["Profile", "Activities", "Settings"] },
 ];
 
 const routes = [
@@ -52,6 +57,7 @@ const routes = [
     { label: "Messages", icon: MessageSquare, href: "/dashboard/messages", color: "text-blue-500" },
     { label: "Tasks", icon: ListTodo, href: "/dashboard/tasks", color: "text-purple-500" },
     { label: "Notes", icon: StickyNote, href: "/dashboard/notes", color: "text-yellow-400" },
+    { label: "Problems", icon: AlertTriangle, href: "/dashboard/problems", color: "text-red-600" },
     { label: "Stores", icon: Store, href: "/dashboard/stores", color: "text-violet-500" },
     { label: "Departments", icon: Building2, href: "/dashboard/departments", color: "text-pink-700" },
     { label: "Recipes", icon: ChefHat, href: "/dashboard/recipes", color: "text-orange-700" },
@@ -63,17 +69,18 @@ const routes = [
     { label: "Tips", icon: Coins, href: "/dashboard/tips", color: "text-yellow-600" },
     { label: "Profile", icon: User, href: "/dashboard/profile", color: "text-indigo-500" },
     { label: "Activities", icon: ShieldAlert, href: "/dashboard/activities", color: "text-red-700" },
+    { label: "Credentials", icon: Lock, href: "/dashboard/credentials", color: "text-slate-500" }, // Global Store Credentials
     { label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
 
 export function Sidebar({
-    userRole = "employee",
+    userRoles = ["employee"],
     departmentName = "",
     storeSlug = "",
     isMobile: propsIsMobile = false,
     onNavItemClick
 }: {
-    userRole?: string,
+    userRoles?: string[],
     departmentName?: string,
     storeSlug?: string,
     isMobile?: boolean,
@@ -91,7 +98,7 @@ export function Sidebar({
     };
 
     const testRole = searchParams.get("testRole");
-    const effectiveRole = (userRole === "owner" && testRole) ? testRole : userRole;
+    const effectiveRoles = (userRoles.includes("owner") && testRole) ? [testRole] : userRoles;
 
     const permissions = (session?.user as any)?.permissions || [];
 
@@ -100,62 +107,30 @@ export function Sidebar({
             const route = routes.find(r => r.label === label);
             if (!route) return null;
 
-            if (route.label === "Activities") {
-                // Only SuperUser, Tech, Owner, HR, Admin
-                if (["super_user", "tech", "owner", "hr", "admin"].includes(effectiveRole)) return route;
+            if (route.label === "Stores") {
+                // Special handling for Stores:
+                // 1. Check if user has full access (Admin, Owner, etc.)
+                // User Request: Store Manager & Store Dept Head should ONLY see context link.
+                const isContextOnlyRole = effectiveRoles.some(r => ["store_manager", "store_department_head"].includes(r));
+
+                if (!isContextOnlyRole && hasAccess(effectiveRoles, "/dashboard/stores", departmentName, permissions)) {
+                    return route;
+                }
+
+                // 2. If no full access (or restricted role), check if they have a specific store context
+                if (storeSlug) {
+                    return { ...route, label: "Store", href: `/dashboard/stores/${storeSlug}` };
+                }
                 return null;
             }
 
-            if (route.label === "Stores") {
-                if (["owner", "admin", "super_user", "hr", "tech"].includes(effectiveRole)) return route;
-                // Functional check for store management
-                if (permissions.includes("manage_store")) return route;
-                if (storeSlug) return { ...route, label: "Store", href: `/dashboard/stores/${storeSlug}` };
-                return null;
-            }
-            if (route.label === "Tips") return effectiveRole === "store_manager" ? route : null;
-            return hasAccess(effectiveRole, route.href, departmentName, permissions) ? route : null;
+            // Rely on central RBAC for everything else (Activities, Tips, Departments, etc.)
+            return hasAccess(effectiveRoles, route.href, departmentName, permissions) ? route : null;
         }).filter(Boolean);
         return { ...group, routes: filtered as any[] };
     }).filter(group => group.routes.length > 0);
 
 
-    // Wait, the previous tool call replaced lines 71-73.
-    // It replaced:
-    // departmentName?: string,
-    // storeId?: string
-    // }) {
-    // WITH
-    // departmentName?: string,
-    // storeId?: string,
-    // isMobile?: boolean
-    // }) {
-
-    // But the destructuring at the top of function `Sidebar({ ... })` also needs to be updated? 
-    // Line 65: `export function Sidebar({`
-    // Line 66: `    userRole = "employee",`
-    // ...
-    // Line 69: `}: {`
-
-    // I DID NOT update the destructuring part yet, only the type definition part?
-    // Let's check the file content again or just assume I need to fix it.
-    // lines 65-73:
-    /*
-    export function Sidebar({
-        userRole = "employee",
-        departmentName = "",
-        storeId = ""
-    }: {
-        userRole?: string,
-        departmentName?: string,
-        storeId?: string
-    }) {
-    */
-
-    // My previous replace targeted the Type definition part (lines 70-73).
-    // I missed the destructuring part (lines 66-68).
-
-    // I should probably fix the destructuring first.
     return (
         <div className={cn(
             "space-y-4 py-6 flex flex-col h-full glass-sidebar transition-all duration-300 relative shrink-0",
@@ -183,7 +158,7 @@ export function Sidebar({
                     </div>
                     {!isCollapsed && (
                         <div className="ml-4 flex flex-col justify-center">
-                            <h1 className="text-xl font-black text-foreground leading-tight tracking-[-0.05em]">CHICK<span className="text-primary italic">.</span></h1>
+                            <h1 className="text-xl font-black text-foreground leading-tight tracking-[-0.05em]">CHICKINHO<span className="text-primary italic">.</span></h1>
                             <p className="text-[9px] font-bold text-muted-foreground/50 tracking-[0.2em] -mt-0.5">ECOSYSTEM</p>
                         </div>
                     )}
@@ -237,6 +212,9 @@ export function Sidebar({
                                                         <route.icon className={cn("h-5 w-5 shrink-0 transition-all group-hover:scale-110", pathname === route.href ? route.color : "text-muted-foreground/70")} />
                                                     )}
                                                     {!isCollapsed && <span className="ml-3 truncate">{route.label === "Store" ? "Store" : t(route.label.toLowerCase())}</span>}
+                                                    {route.label === "Messages" && (
+                                                        <SidebarMessageBadge userId={(session?.user as any)?.id} collapsed={isCollapsed} />
+                                                    )}
                                                 </div>
                                                 {pathname === route.href && !isCollapsed && <motion.div layoutId="active-pill" className="absolute left-0 w-1 h-6 bg-primary rounded-r-full" />}
                                             </Link>
@@ -252,7 +230,15 @@ export function Sidebar({
     );
 }
 
-export function MobileSidebar() {
+export function MobileSidebar({
+    userRoles = ["employee"],
+    departmentName = "",
+    storeSlug = ""
+}: {
+    userRoles?: string[],
+    departmentName?: string,
+    storeSlug?: string
+}) {
     const [open, setOpen] = useState(false);
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -261,7 +247,7 @@ export function MobileSidebar() {
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0 bg-sidebar border-r border-sidebar-border">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <Sidebar isMobile={true} onNavItemClick={() => setOpen(false)} />
+                <Sidebar userRoles={userRoles} departmentName={departmentName} storeSlug={storeSlug} isMobile={true} onNavItemClick={() => setOpen(false)} />
             </SheetContent>
         </Sheet>
     );

@@ -43,6 +43,35 @@ export async function getConversations(userId: string) {
     }
 }
 
+export async function getUnreadMessageCount(userId: string) {
+    try {
+        if (!userId) return 0;
+        await connectToDB();
+
+        // 1. Find all conversations where user is a participant and NOT deleted
+        const conversations = await Conversation.find({
+            participants: userId,
+            deletedBy: { $ne: userId }
+        }).select('_id');
+
+        const conservationIds = conversations.map((c: any) => c._id);
+
+        if (conservationIds.length === 0) return 0;
+
+        // 2. Count messages in these conversations that are NOT read by user
+        const unreadCount = await Message.countDocuments({
+            conversationId: { $in: conservationIds },
+            readBy: { $ne: userId },
+            sender: { $ne: userId } // Don't count own messages (though they should be read automatically)
+        });
+
+        return unreadCount;
+    } catch (error) {
+        console.error("Error counting unread messages:", error);
+        return 0;
+    }
+}
+
 export async function getConversation(conversationId: string) {
     try {
         await connectToDB();
@@ -326,7 +355,26 @@ export async function deleteMessageForEveryone(messageId: string, userId: string
         message.reactions = [];
         await message.save();
 
-        revalidatePath(`/dashboard/messages`);
+        // Check if this was the last message displayed in the conversation list
+        const latestMessage = await Message.findOne({ conversationId: message.conversationId })
+            .sort({ createdAt: -1 });
+
+        // If the deleted message is the latest one (or if it's the one currently shown in conversation)
+        // We force update the conversation's lastMessage cache
+        // Note: latestMessage will be the message we just saved (modified), so IDs will match
+        if (latestMessage && latestMessage._id.toString() === messageId) {
+            await Conversation.findByIdAndUpdate(message.conversationId, {
+                lastMessage: {
+                    content: "This message was deleted",
+                    sender: userId,
+                    createdAt: message.createdAt
+                }
+            });
+        }
+
+        revalidatePath('/dashboard/messages');
+        revalidatePath(`/dashboard/messages/${message.conversationId}`); // Revalidate specific chat too
+        revalidatePath('/dashboard'); // Revalidate dashboard if sidebar is present there
 
         await logAction({
             action: 'DELETE_MESSAGE_FOR_EVERYONE',

@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Calculator, DollarSign, TrendingDown, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ProfitSimulatorProps {
     baseCost: number;       // Total Food Cost
@@ -41,17 +42,10 @@ export function ProfitSimulator({ baseCost, pvp, taxRatePercent }: ProfitSimulat
     // 4. Fixed Fees
     const totalDeductions = commissionAmount + fixedFee;
 
-    // 5. Real Revenue (Net Sales - Operational Deductions)
-    // * Debatable if commission should be deducted here for "Food Cost %" but usually Owners want to see "Pocket Money vs Cost".
-    const realRevenue = netSales - (totalDeductions / (1 + taxRate)); // Assuming fee is also gross? simplifying: treat fee as direct expense
-    // Let's stick to: Profit = Net Sales - Food Cost - Commission(ex tax?).
-    // Simplest view:
-    // Money resulting from sale (ex tax)
-
-    const effectiveRevenue = netSales - (commissionAmount / (1 + taxRate)) - fixedFee;
+    // 5. Effective Revenue (Net Sales - Operational Deductions converted to Net)
+    const effectiveRevenue = netSales - (totalDeductions / (1 + taxRate));
 
     const profit = effectiveRevenue - baseCost;
-    const newMarginPercent = effectiveRevenue > 0 ? (profit / effectiveRevenue) * 100 : -100;
     const newFoodCostPercent = effectiveRevenue > 0 ? (baseCost / effectiveRevenue) * 100 : 1000;
 
     // Break-even check
@@ -60,97 +54,102 @@ export function ProfitSimulator({ baseCost, pvp, taxRatePercent }: ProfitSimulat
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2 w-full md:w-auto text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100">
+                <Button variant="outline" className="gap-2 w-full md:w-auto font-black italic tracking-tight border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-all active:scale-95 shadow-sm">
                     <Calculator className="w-4 h-4" />
-                    Profit Simulator
+                    Open Simulator
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[425px] border-border/40 bg-card/95 backdrop-blur-xl shadow-2xl">
                 <DialogHeader>
-                    <DialogTitle>Profitability Simulator</DialogTitle>
-                    <DialogDescription>
-                        Simulate discounts and delivery commissions to see real margins.
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                            <Calculator className="h-4 w-4" />
+                        </div>
+                        <DialogTitle className="text-xl font-black italic tracking-tight">Scenario Simulator</DialogTitle>
+                    </div>
+                    <DialogDescription className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                        Calculate margins for promotions & delivery
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid gap-4 py-4">
+                <div className="grid gap-6 py-4">
                     {/* Inputs */}
                     <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
-                            <Label className="text-xs">Discount %</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Discount %</Label>
                             <div className="relative">
                                 <Input
                                     type="number"
                                     value={discountPercent}
                                     onChange={e => setDiscountPercent(parseFloat(e.target.value) || 0)}
-                                    className="bg-red-50 text-red-600 font-bold"
+                                    className="h-10 font-bold bg-muted/30 border-border/50 focus:bg-background transition-all"
                                 />
-                                <span className="absolute right-2 top-2.5 text-xs text-red-400">%</span>
+                                <span className="absolute right-2 top-2.5 text-[10px] font-black text-muted-foreground/50">%</span>
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs">Platform %</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Platform %</Label>
                             <div className="relative">
                                 <Input
                                     type="number"
                                     value={commissionPercent}
                                     onChange={e => setCommissionPercent(parseFloat(e.target.value) || 0)}
-                                    className="bg-orange-50 text-orange-600 font-bold"
+                                    className="h-10 font-bold bg-muted/30 border-border/50 focus:bg-background transition-all"
                                 />
-                                <span className="absolute right-2 top-2.5 text-xs text-orange-400">%</span>
+                                <span className="absolute right-2 top-2.5 text-[10px] font-black text-muted-foreground/50">%</span>
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label className="text-xs">Fixed Fee €</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">Fixed Fee €</Label>
                             <Input
                                 type="number"
                                 value={fixedFee}
                                 onChange={e => setFixedFee(parseFloat(e.target.value) || 0)}
+                                className="h-10 font-bold bg-muted/30 border-border/50 focus:bg-background transition-all"
                             />
                         </div>
                     </div>
 
-                    <Separator />
-
-                    {/* Results */}
-                    <div className="space-y-4">
+                    <div className="p-4 rounded-xl border bg-muted/20 space-y-3">
                         <div className="flex justify-between items-center">
-                            <span className="text-sm text-muted-foreground">Original PVP</span>
-                            <span className="font-medium text-muted-foreground line-through">{pvp.toFixed(2)}€</span>
+                            <span className="text-xs font-bold text-muted-foreground uppercase">Target Price</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground line-through decoration-red-500/50">{pvp.toFixed(2)}€</span>
+                                <span className="text-sm font-black italic text-foreground">{discountedPvp.toFixed(2)}€</span>
+                            </div>
                         </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-sm font-bold">New PVP (Customer Pays)</span>
-                            <span className="font-bold">{discountedPvp.toFixed(2)}€</span>
+                        <Separator className="bg-border/40" />
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[11px] font-bold">
+                                <span className="text-muted-foreground">Tax ({taxRatePercent}%)</span>
+                                <span className="text-red-500/80">-{((discountedPvp - netSales)).toFixed(2)}€</span>
+                            </div>
+                            <div className="flex justify-between text-[11px] font-bold">
+                                <span className="text-muted-foreground">Commissions & Fees</span>
+                                <span className="text-orange-500/80">-{totalDeductions.toFixed(2)}€</span>
+                            </div>
+                            <div className="flex justify-between text-[11px] font-bold">
+                                <span className="text-muted-foreground">Base Food Cost</span>
+                                <span className="text-blue-500/80">-{baseCost.toFixed(2)}€</span>
+                            </div>
                         </div>
+                    </div>
 
-                        <div className="bg-muted/30 p-3 rounded-md space-y-2 text-sm">
-                            <div className="flex justify-between text-red-500">
-                                <span>- Tax ({taxRatePercent}%)</span>
-                                <span>{((discountedPvp - netSales)).toFixed(2)}€</span>
-                            </div>
-                            <div className="flex justify-between text-orange-500">
-                                <span>- Commission & Fees</span>
-                                <span>{(commissionAmount + fixedFee).toFixed(2)}€</span>
-                            </div>
-                            <Separator className="bg-muted" />
-                            <div className="flex justify-between font-bold text-base">
-                                <span>Effective Revenue</span>
-                                <span>{effectiveRevenue.toFixed(2)}€</span>
-                            </div>
-                            <div className="flex justify-between text-blue-600">
-                                <span>- Food Cost</span>
-                                <span>{baseCost.toFixed(2)}€</span>
-                            </div>
+                    <div className={cn(
+                        "p-6 rounded-2xl border-2 flex flex-col items-center justify-center gap-1 transition-all duration-500",
+                        isLoss
+                            ? "bg-red-500/5 border-red-500/20 text-red-600 shadow-[0_0_20px_rgba(239,68,68,0.1)]"
+                            : "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
+                    )}>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Net Profit Per Unit</p>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-4xl font-black italic tracking-tighter">{profit.toFixed(2)}</span>
+                            <span className="text-xl font-black italic">€</span>
                         </div>
-
-                        <div className={`p-4 rounded-md flex items-center justify-between border ${isLoss ? "bg-red-50 border-red-200 text-red-700" : "bg-emerald-50 border-emerald-200 text-emerald-700"}`}>
-                            <div>
-                                <p className="text-xs uppercase font-bold opacity-70">Net Profit</p>
-                                <p className="text-2xl font-black">{profit.toFixed(2)}€</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-xs uppercase font-bold opacity-70">Real Cost %</p>
-                                <p className="text-xl font-bold">{newFoodCostPercent.toFixed(1)}%</p>
+                        <div className="mt-2 flex items-center gap-4 text-[11px] font-black italic uppercase tracking-tight opacity-80">
+                            <div className="flex items-center gap-1">
+                                <TrendingUp className={cn("h-3 w-3", isLoss && "rotate-180")} />
+                                Food Cost: {newFoodCostPercent.toFixed(1)}%
                             </div>
                         </div>
                     </div>

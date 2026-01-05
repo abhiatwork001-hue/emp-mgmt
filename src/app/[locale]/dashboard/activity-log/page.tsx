@@ -11,10 +11,12 @@ export const metadata: Metadata = {
 export default async function ActivityLogPage() {
     const session = await getServerSession(authOptions);
     const user = session?.user as any;
+    const roles = user?.roles ? [...user.roles] : [];
+    if (user?.role) roles.push(user.role);
 
     // Only HR, Owner, Admin, Tech can see the full log. 
     // Others might only see their own (the component handles filter logic)
-    const canSeeAll = user?.roles?.some((r: string) =>
+    const canSeeAll = roles.some((r: string) =>
         ['hr', 'owner', 'admin', 'tech', 'super_user'].includes(r.toLowerCase())
     );
 
@@ -29,7 +31,7 @@ export default async function ActivityLogPage() {
 
             <ActivityLog
                 userId={!canSeeAll ? user?.id : undefined}
-                userRoles={user?.roles}
+                userRoles={roles}
             />
         </div>
     );

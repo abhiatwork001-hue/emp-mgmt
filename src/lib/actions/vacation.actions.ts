@@ -195,6 +195,11 @@ export async function getAllVacationRequests(filters: any = {}) {
 
     if (filters.status) query.status = filters.status;
     if (filters.employeeId) query.employeeId = filters.employeeId;
+    if (filters.year) {
+        const startOfYear = new Date(filters.year, 0, 1);
+        const endOfYear = new Date(filters.year, 11, 31, 23, 59, 59);
+        query.requestedFrom = { $gte: startOfYear, $lte: endOfYear };
+    }
 
     // Filter by Store ID (for Managers)
     if (filters.storeId) {
@@ -222,9 +227,9 @@ export async function getAllVacationRequests(filters: any = {}) {
 async function checkApprovalPermission(userId: string) {
     const user = await Employee.findById(userId).select("roles");
     const roles = (user?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-    const allowed = roles.some((r: string) => ['hr', 'owner', 'super_user', 'admin'].includes(r));
+    const allowed = roles.some((r: string) => ['hr', 'owner', 'super_user', 'admin', 'tech'].includes(r));
     if (!allowed) {
-        throw new Error("Permission Denied: Only HR or Owners can approve/reject vacations.");
+        throw new Error("Permission Denied: Only HR, Owners, or Tech can approve/reject vacations.");
     }
 }
 
@@ -352,4 +357,119 @@ export async function getPendingVacationRequests() {
         .sort({ createdAt: 1 })
         .lean();
     return JSON.parse(JSON.stringify(requests));
+}
+// --- Analytics & Risks ---
+
+export async function getVacationAnalytics(year: number = new Date().getFullYear()) {
+    try {
+        await dbConnect();
+
+        // Fetch all active employees
+        const employees = await Employee.find({ active: true }).select('vacationTracker');
+
+        let totalOwed = 0;
+        let totalTaken = 0;
+
+        employees.forEach(emp => {
+            const tracker = emp.vacationTracker || { defaultDays: 22, rolloverDays: 0, usedDays: 0 };
+            totalOwed += (tracker.defaultDays || 0) + (tracker.rolloverDays || 0);
+            totalTaken += (tracker.usedDays || 0);
+        });
+
+        const totalRemaining = totalOwed - totalTaken;
+
+        // Previous year stats (from records)
+        const lastYear = year - 1;
+        const lastYearRecords = await VacationRecord.find({ year: lastYear });
+        const lastYearTaken = lastYearRecords.reduce((sum, rec) => sum + rec.totalDays, 0);
+
+        return {
+            current: {
+                year,
+                owed: totalOwed,
+                taken: totalTaken,
+                remaining: totalRemaining
+            },
+            previous: {
+                year: lastYear,
+                taken: lastYearTaken
+            }
+        };
+    } catch (error) {
+        console.error("Error fetching vacation stats:", error);
+        return null;
+    }
+}
+
+export async function checkUpcomingVacationRisks() {
+    try {
+        await dbConnect();
+        const { StoreDepartment, Schedule } = require("@/lib/models");
+
+        const depts = await StoreDepartment.find({ active: true, minEmployees: { $gt: 0 } }).populate('storeId', 'name');
+        const risks: any[] = [];
+
+        const next30Days: Date[] = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (let i = 0; i < 30; i++) {
+            const d = new Date(today);
+            d.setDate(today.getDate() + i);
+            next30Days.push(d);
+        }
+
+        // Fetch all approved vacations in the next 30 days
+        const vacations = await VacationRecord.find({
+            to: { $gte: today },
+            from: { $lte: next30Days[29] }
+        }).populate('employeeId', 'storeDepartmentId');
+
+        for (const dept of depts) {
+            const deptEmployees = await Employee.find({ storeDepartmentId: dept._id, active: true }).select('_id');
+            const totalDeptStaff = deptEmployees.length;
+
+            for (const date of next30Days) {
+                const dateStr = date.toISOString().split('T')[0];
+
+                const outCount = vacations.filter(v => {
+                    const empDeptId = (v.employeeId as any)?.storeDepartmentId?.toString();
+                    if (empDeptId !== dept._id.toString()) return false;
+
+                    const fromStr = v.from.toISOString().split('T')[0];
+                    const toStr = v.to.toISOString().split('T')[0];
+                    return dateStr >= fromStr && dateStr <= toStr;
+                }).length;
+
+                const activeCount = totalDeptStaff - outCount;
+
+                if (activeCount < dept.minEmployees) {
+                    // Find active schedule
+                    const activeSchedule = await Schedule.findOne({
+                        storeDepartmentId: dept._id,
+                        status: { $in: ['published', 'draft', 'in_progress'] },
+                        "dateRange.startDate": { $lte: date },
+                        "dateRange.endDate": { $gte: date }
+                    }).select('slug').lean();
+
+                    risks.push({
+                        deptId: dept._id.toString(),
+                        deptName: dept.name,
+                        storeName: dept.storeId?.name || "Unknown Store",
+                        date: date,
+                        activeCount,
+                        minRequired: dept.minEmployees,
+                        missing: dept.minEmployees - activeCount,
+                        scheduleSlug: activeSchedule?.slug
+                    });
+                    break; // Just one alert per dept
+                }
+            }
+        }
+
+        return JSON.parse(JSON.stringify(risks));
+    } catch (error) {
+        console.error("Error checking vacation risks:", error);
+        return [];
+    }
 }

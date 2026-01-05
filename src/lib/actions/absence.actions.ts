@@ -82,6 +82,11 @@ export async function getAllAbsenceRequests(filters: any = {}) {
 
     if (filters.status) query.status = filters.status;
     if (filters.employeeId) query.employeeId = filters.employeeId;
+    if (filters.year) {
+        const startOfYear = new Date(filters.year, 0, 1);
+        const endOfYear = new Date(filters.year, 11, 31, 23, 59, 59);
+        query.date = { $gte: startOfYear, $lte: endOfYear };
+    }
 
     if (filters.storeId) {
         const employeesInStore = await Employee.find({ storeId: filters.storeId }).select("_id");

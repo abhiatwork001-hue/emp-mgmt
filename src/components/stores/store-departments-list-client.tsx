@@ -11,9 +11,10 @@ import { EditStoreDepartmentDialog } from "@/components/stores/edit-store-depart
 interface StoreDepartmentsListClientProps {
     storeDepartments: any[];
     storeSlug: string;
+    storeId: string;
 }
 
-export function StoreDepartmentsListClient({ storeDepartments, storeSlug }: StoreDepartmentsListClientProps) {
+export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeId }: StoreDepartmentsListClientProps) {
     const [isEditing, setIsEditing] = useState(false);
 
     return (
@@ -24,8 +25,8 @@ export function StoreDepartmentsListClient({ storeDepartments, storeSlug }: Stor
                     <p className="text-sm text-zinc-400">Departments operating in this store</p>
                 </div>
                 <div className="flex gap-2">
-                    {/* AddDepartmentDialog still needs ID for backend, but we might want to pass it separately */}
-                    <AddDepartmentDialog storeId={storeDepartments[0]?.storeId || ""} />
+                    {/* AddDepartmentDialog needs ID for backend */}
+                    <AddDepartmentDialog storeId={storeId} />
                     <Button
                         variant={isEditing ? "secondary" : "outline"}
                         size="sm"

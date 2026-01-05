@@ -33,17 +33,69 @@ export async function getAuditLogs({ userId, page = 1, limit = 20, filters = {} 
         } else if (isOwner || isHR || isAdmin) {
             // Restricted View:
             // 1. Operational Events Only
-            query.action = {
-                $in: [
-                    'VACATION_REQUEST', 'VACATION_APPROVED', 'VACATION_REJECTED',
-                    'ABSENCE_REQUEST', 'ABSENCE_APPROVED', 'ABSENCE_REJECTED',
-                    'SHIFT_SWAP_REQUEST', 'SHIFT_SWAP_APPROVED', 'SHIFT_SWAP_REJECTED',
-                    'REPORT_PROBLEM',
-                    'NOTICE_CREATED', 'NOTICE_UPDATED'
-                ]
-            };
-            // 2. EXPLICITLY EXCLUDE MESSAGES (Redundant with action list above, but good for safety)
-            query.targetModel = { $ne: 'Message' };
+            const managementActions = [
+                // Employee Management
+                'CREATE_EMPLOYEE', 'UPDATE_EMPLOYEE', 'ARCHIVE_EMPLOYEE', 'ASSIGN_EMPLOYEES_TO_STORE',
+                'ASSIGN_MANAGER', 'ASSIGN_SUB_MANAGER', 'REMOVE_STORE_MANAGER',
+
+                // Store & Department Management
+                'CREATE_STORE', 'UPDATE_STORE', 'ARCHIVE_STORE',
+                'CREATE_GLOBAL_DEPT', 'UPDATE_GLOBAL_DEPT', 'ARCHIVE_GLOBAL_DEPT',
+                'ASSIGN_GLOBAL_DEPT_HEAD', 'ASSIGN_GLOBAL_DEPT_SUBHEAD', 'REMOVE_GLOBAL_DEPT_HEAD', 'REMOVE_GLOBAL_DEPT_SUBHEAD',
+                'CREATE_STORE_DEPARTMENT', 'DELETE_STORE_DEPARTMENT', 'ASSIGN_EMPLOYEES_TO_DEPT', 'REMOVE_DEPT_EMPLOYEE',
+                'ASSIGN_DEPT_HEAD', 'REMOVE_DEPT_HEAD', 'ASSIGN_DEPT_SUBHEAD', 'REMOVE_DEPT_SUBHEAD',
+
+                // Recipe & Position Management
+                'CREATE_RECIPE', 'UPDATE_RECIPE', 'ARCHIVE_RECIPE', 'DELETE_RECIPE', 'RESTORE_RECIPE',
+                'CREATE_POSITION', 'UPDATE_POSITION', 'REMOVE_FROM_POSITION'
+            ];
+
+            const operationalActions = [
+                // Requests & Approvals
+                'VACATION_REQUEST', 'VACATION_APPROVED', 'VACATION_REJECTED',
+                'ABSENCE_REQUEST', 'ABSENCE_APPROVED', 'ABSENCE_REJECTED',
+                'SHIFT_SWAP_REQUEST', 'SHIFT_SWAP_APPROVED', 'SHIFT_SWAP_REJECTED',
+
+                // Schedule Management
+                'CREATE_SCHEDULE', 'UPDATE_SCHEDULE', 'SEND_FOR_APPROVAL', 'REJECT_SCHEDULE', 'APPROVE_SCHEDULE', 'PUBLISH_SCHEDULE',
+
+                // Communication & Feedback
+                'NOTICE_CREATED', 'NOTICE_UPDATED', 'NOTICE_COMMENT',
+                'REPORT_PROBLEM', 'PROBLEM_COMMENT', 'SOLVE_PROBLEM',
+                'COMMENT_TASK',
+
+                ...managementActions
+            ];
+
+            const curStoreId = employee.storeId?._id?.toString() || employee.storeId?.toString();
+
+            const orConditions: any[] = [
+                {
+                    action: { $in: operationalActions }
+                },
+                {
+                    action: { $in: ['NOTICE_CREATED', 'NOTICE_UPDATED'] },
+                    $or: [
+                        { 'details.targetScope': 'global' },
+                        { 'details.visibleToAdmin': true },
+                        { 'details.targetId': curStoreId }
+                    ]
+                },
+                {
+                    action: { $in: ['CREATE_TASK', 'UPDATE_TASK', 'COMPLETE_TASK', 'SUBMIT_TASK_FILE'] },
+                    $or: [
+                        { 'details.isGlobal': true },
+                        { performedBy: userId }, // Show if they did it
+                        { 'details.storeId': curStoreId },
+                        { storeId: { $exists: true, $ne: null } } // If log has a storeId (high level usually)
+                    ]
+                }
+            ];
+
+            query.$and = [
+                { $or: orConditions },
+                { targetModel: { $ne: 'Message' } }
+            ];
 
         } else {
             // Regular employees see nothing (or maybe their own?)

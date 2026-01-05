@@ -25,6 +25,7 @@ import { getAuditLogs } from "@/lib/actions/audit.actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 interface Log {
     _id: string;
@@ -103,9 +104,14 @@ export default function ActivityLogsPage() {
 
     const getActionBadge = (action: string) => {
         let color = "bg-primary/10 text-primary hover:bg-primary/20";
-        if (action.includes("REJECTED") || action.includes("DELETE") || action.includes("PROBLEM")) color = "bg-destructive/10 text-destructive hover:bg-destructive/20";
-        else if (action.includes("APPROVED") || action.includes("CREATE")) color = "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20";
-        else if (action.includes("UPDATE") || action.includes("EDIT")) color = "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20";
+        if (action.includes("REJECTED") || action.includes("DELETE") || action.includes("PROBLEM") || action.includes("ARCHIVE"))
+            color = "bg-destructive/10 text-destructive hover:bg-destructive/20";
+        else if (action.includes("APPROVED") || action.includes("CREATE") || action.includes("PUBLISH") || action.includes("ASSIGN"))
+            color = "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20";
+        else if (action.includes("UPDATE") || action.includes("EDIT") || action.includes("CHANGE"))
+            color = "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20";
+        else if (action.includes("REQUEST"))
+            color = "bg-indigo-500/10 text-indigo-500 hover:bg-indigo-500/20";
 
         // Friendly Name Formatter
         const friendlyName = action.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
@@ -118,16 +124,7 @@ export default function ActivityLogsPage() {
     }
 
     if (error === "Access Denied") {
-        return (
-            <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
-                <ShieldAlert className="h-16 w-16 text-muted-foreground/50" />
-                <h2 className="text-xl font-semibold">Access Restricted</h2>
-                <p className="text-muted-foreground max-w-sm">
-                    You do not have permission to view activity logs. This area is restricted to Administrators, HR, and Owners.
-                </p>
-                <Button onClick={() => router.back()} variant="outline">Go Back</Button>
-            </div>
-        );
+        return <AccessDenied />;
     }
 
     return (
@@ -189,14 +186,20 @@ export default function ActivityLogsPage() {
                                         <TableCell>
                                             {getActionBadge(log.action)}
                                         </TableCell>
-                                        <TableCell className="max-w-[300px]">
-                                            <div className="text-sm truncate" title={JSON.stringify(log.details)}>
+                                        <TableCell className="max-w-[400px]">
+                                            <div className="text-xs text-muted-foreground">
                                                 {log.details ? (
-                                                    <>
-                                                        {log.details.reason && <span>Reason: {log.details.reason} </span>}
-                                                        {log.details.status && <Badge variant="outline" className="text-[10px] h-4 px-1 ml-1">{log.details.status}</Badge>}
-                                                        {log.details.approvedBy && <span className="text-xs text-muted-foreground ml-1">(Appr. by {log.details.approvedBy})</span>}
-                                                    </>
+                                                    <div className="grid grid-cols-1 gap-1">
+                                                        {Object.entries(log.details).filter(([k]) => k !== 'systemActor' && k !== 'password').map(([k, v]) => (
+                                                            <div key={k} className="flex gap-2">
+                                                                <span className="font-bold uppercase text-[9px] text-primary/70 w-20 shrink-0">{k}:</span>
+                                                                <span className="truncate">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+                                                            </div>
+                                                        ))}
+                                                        {log.details.systemActor && (
+                                                            <div className="text-[10px] italic text-primary/80">Actor: {log.details.systemActor}</div>
+                                                        )}
+                                                    </div>
                                                 ) : <span className="text-muted-foreground">-</span>}
                                             </div>
                                         </TableCell>

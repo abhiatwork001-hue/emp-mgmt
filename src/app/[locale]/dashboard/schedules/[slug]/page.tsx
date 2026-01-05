@@ -23,7 +23,7 @@ export default async function SchedulePage({ params }: { params: Promise<{ slug:
     const normalizedRoles = roles.map((r: string) => r.toLowerCase().replace(/ /g, "_"));
 
     // Check for edit permission
-    const EDIT_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr"];
+    const EDIT_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr", "tech"];
     const canEdit = normalizedRoles.some((r: string) => EDIT_ROLES.includes(r));
 
     return (
@@ -42,7 +42,14 @@ export default async function SchedulePage({ params }: { params: Promise<{ slug:
                 </p>
             </div>
 
-            <ScheduleEditor initialSchedule={schedule} userId={(session.user as any).id} canEdit={canEdit} />
+            <ScheduleEditor
+                initialSchedule={schedule}
+                userId={(session.user as any).id}
+                canEdit={canEdit}
+                userRoles={normalizedRoles}
+                userStoreId={employee?.storeId?._id ? employee.storeId._id.toString() : employee?.storeId?.toString()}
+                userDepartmentId={employee?.storeDepartmentId?._id ? employee.storeDepartmentId._id.toString() : employee?.storeDepartmentId?.toString()}
+            />
         </div>
     );
 }

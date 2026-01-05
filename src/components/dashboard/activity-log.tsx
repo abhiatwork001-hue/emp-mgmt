@@ -3,8 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import { getActionLogs } from "@/lib/actions/log.actions";
 import { getAllStores } from "@/lib/actions/store.actions";
-import { format } from "date-fns";
+import { format, endOfDay } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DateRange } from "react-day-picker";
 import {
     Table,
     TableBody,
@@ -37,12 +38,15 @@ const ACTION_TYPES = [
     "SEND_MESSAGE", "CREATE_GROUP_CHAT"
 ];
 
+import { Link } from "@/i18n/routing";
+
 interface ActivityLogProps {
     userId?: string;
     userRoles?: string[];
+    variant?: "default" | "widget";
 }
 
-export function ActivityLog({ userId, userRoles }: ActivityLogProps) {
+export function ActivityLog({ userId, userRoles, variant = "default" }: ActivityLogProps) {
     const [logs, setLogs] = useState<any[]>([]);
     const [stores, setStores] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -50,23 +54,24 @@ export function ActivityLog({ userId, userRoles }: ActivityLogProps) {
     // Filters
     const [action, setAction] = useState<string>("all");
     const [storeId, setStoreId] = useState<string>("all");
-    const [date, setDate] = useState<Date | undefined>(undefined);
+    const [date, setDate] = useState<DateRange | undefined>(undefined);
     const [searchTerm, setSearchTerm] = useState("");
 
     const fetchLogs = useCallback(async () => {
         setLoading(true);
         const options: any = {
-            limit: 50,
+            limit: variant === "widget" ? 10 : 50,
             userId,
             userRoles,
             action: action !== "all" ? action : undefined,
             storeId: storeId !== "all" ? storeId : undefined,
-            startDate: date ? date.toISOString() : undefined,
+            startDate: date?.from ? date.from.toISOString() : undefined,
+            endDate: date?.to ? endOfDay(date.to).toISOString() : (date?.from ? endOfDay(date.from).toISOString() : undefined),
         };
         const data = await getActionLogs(options);
         setLogs(data);
         setLoading(false);
-    }, [userId, userRoles, action, storeId, date]);
+    }, [userId, userRoles, action, storeId, date, variant]);
 
     useEffect(() => {
         fetchLogs();
@@ -88,11 +93,18 @@ export function ActivityLog({ userId, userRoles }: ActivityLogProps) {
     };
 
     const getActionBadge = (action: string) => {
-        if (action.includes("CREATE")) return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Create</Badge>;
-        if (action.includes("UPDATE")) return <Badge variant="secondary" className="bg-blue-500 text-white hover:bg-blue-600">Update</Badge>;
-        if (action.includes("DELETE") || action.includes("ARCHIVE") || action.includes("REJECT")) return <Badge variant="destructive">Delete/Reject</Badge>;
-        if (action.includes("APPROVE") || action.includes("PUBLISH")) return <Badge variant="outline" className="border-green-500 text-green-500">Approve</Badge>;
-        return <Badge variant="outline">{action.toLowerCase().replace(/_/g, " ")}</Badge>;
+        if (action.includes("CREATE")) return <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-[10px] h-5 px-1.5">Create</Badge>;
+        if (action.includes("UPDATE")) return <Badge variant="secondary" className="bg-blue-500 text-white hover:bg-blue-600 text-[10px] h-5 px-1.5">Update</Badge>;
+        if (action.includes("DELETE") || action.includes("ARCHIVE") || action.includes("REJECT")) return <Badge variant="destructive" className="text-[10px] h-5 px-1.5">Delete</Badge>;
+        if (action.includes("APPROVE") || action.includes("PUBLISH")) return <Badge variant="outline" className="border-green-500 text-green-500 text-[10px] h-5 px-1.5">Approve</Badge>;
+        return <Badge variant="outline" className="text-[10px] h-5 px-1.5">{action.toLowerCase().replace(/_/g, " ")}</Badge>;
+    };
+
+    const formatActionText = (log: any) => {
+        const actionName = log.action.split('_').slice(1).join(' ').toLowerCase();
+        // e.g. "schedule" from "UPDATE_SCHEDULE", or "vacation" from "APPROVE_VACATION"
+        // A simple heuristic for nicer text:
+        return actionName;
     };
 
     const filteredLogs = logs.filter(log => {
@@ -105,11 +117,67 @@ export function ActivityLog({ userId, userRoles }: ActivityLogProps) {
         );
     });
 
+    if (variant === "widget") {
+        return (
+            <div className="h-full flex flex-col bg-card rounded-xl border shadow-sm overflow-hidden">
+                <div className="p-3 border-b bg-muted/5 font-semibold text-sm flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                        <RotateCcw className="h-3 w-3 text-muted-foreground" /> Activity Log
+                    </span>
+                    <Link href="/dashboard/activity-log" className="text-[10px] text-primary hover:underline">
+                        View All
+                    </Link>
+                </div>
+                <div className="flex-1 overflow-y-auto p-0">
+                    {loading ? (
+                        <div className="p-4 space-y-3">
+                            {[1, 2, 3].map(i => <div key={i} className="h-8 bg-muted animate-pulse rounded-md" />)}
+                        </div>
+                    ) : logs.length === 0 ? (
+                        <div className="p-8 text-center text-xs text-muted-foreground italic">No recent activity.</div>
+                    ) : (
+                        <div className="flex flex-col">
+                            {logs.map((log) => (
+                                <div key={log._id} className="flex items-start gap-3 p-3 border-b last:border-0 hover:bg-muted/20 transition-colors text-xs">
+                                    <Avatar className="h-6 w-6 mt-0.5 border">
+                                        <AvatarImage src={log.performedBy?.image} />
+                                        <AvatarFallback className="text-[9px]">
+                                            {log.performedBy ? log.performedBy.firstName[0] : "S"}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
+                                            <span className="font-semibold text-foreground">
+                                                {log.storeId?.name || "Global"}
+                                            </span>
+                                            <span className="text-muted-foreground text-[10px]">•</span>
+                                            <span className="text-muted-foreground">
+                                                {log.performedBy ? `${log.performedBy.firstName}` : "System"}
+                                            </span>
+                                            {getActionBadge(log.action)}
+                                        </div>
+                                        <div className="text-muted-foreground mt-0.5 truncate">
+                                            {log.details?.systemActor ? `System: ${log.details.systemActor}` : formatActionText(log)}
+                                        </div>
+                                    </div>
+                                    <div className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                        {format(new Date(log.createdAt), "MMM d")}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             {/* Filter Bar */}
             {!userId && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 border rounded-xl bg-card shadow-sm">
+                    {/* ... Existing Filters ... */}
                     <div className="relative">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -149,11 +217,29 @@ export function ActivityLog({ userId, userRoles }: ActivityLogProps) {
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}>
                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                    {date?.from ? (
+                                        date.to ? (
+                                            <>
+                                                {format(date.from, "LLL dd, y")} -{" "}
+                                                {format(date.to, "LLL dd, y")}
+                                            </>
+                                        ) : (
+                                            format(date.from, "LLL dd, y")
+                                        )
+                                    ) : (
+                                        <span>Pick a date range</span>
+                                    )}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={date?.from}
+                                    selected={date}
+                                    onSelect={setDate}
+                                    numberOfMonths={2}
+                                />
                             </PopoverContent>
                         </Popover>
                         <Button variant="ghost" size="icon" onClick={resetFilters}>
@@ -234,7 +320,7 @@ export function ActivityLog({ userId, userRoles }: ActivityLogProps) {
                                                     {Object.entries(log.details).filter(([k]) => k !== 'systemActor').map(([k, v]) => (
                                                         <div key={k} className="flex gap-1">
                                                             <span className="font-semibold uppercase text-[9px] text-primary/70">{k}:</span>
-                                                            <span className="truncate">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+                                                            <span className="truncate max-w-[200px]">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
                                                         </div>
                                                     ))}
                                                     {log.details.systemActor && (

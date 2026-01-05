@@ -16,8 +16,8 @@ export function StatsCards({ stats }: { stats: DashboardStats }) {
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <Card className="border-none bg-slate-800 text-white">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium text-slate-400">Total Employees</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between pb-2 overflow-hidden">
+                    <CardTitle className="text-sm font-medium text-slate-400 truncate" title="Total Employees">Total Employees</CardTitle>
                     <Users className="h-4 w-4 text-blue-400" />
                 </CardHeader>
                 <CardContent>

@@ -1,6 +1,7 @@
 // Header component for the dashboard
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTranslations } from "next-intl";
 import { CreateNoticeDialog } from "@/components/notices/create-notice-dialog";
@@ -19,7 +20,14 @@ export function DashboardHeader({
     localStoreDepartments,
     canSwitchRoles
 }: any) {
-    const t = useTranslations("Common");
+    const [greeting, setGreeting] = useState("");
+
+    useEffect(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) setGreeting("Good Morning");
+        else if (hour < 18) setGreeting("Good Afternoon");
+        else setGreeting("Good Evening");
+    }, []);
 
     return (
         <motion.div
@@ -27,12 +35,13 @@ export function DashboardHeader({
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
         >
-            <div className="space-y-1">
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent italic">
-                    {t("dashboard")}
+            <div className="space-y-0.5">
+                <h1 className="text-3xl font-black tracking-tight text-foreground italic flex items-center gap-2">
+                    {greeting}, <span className="bg-gradient-to-r from-primary via-violet-500 to-primary bg-clip-text text-transparent animate-gradient-x">{session?.user?.name?.split(' ')[0] || "User"}</span>
                 </h1>
-                <p className="text-muted-foreground text-sm font-medium">
-                    Welcome back, {session?.user?.name?.split(' ')[0] || "User"}
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-2">
+                    <span className="w-1 h-1 rounded-full bg-primary/40" />
+                    Welcome back to your workspace
                 </p>
             </div>
             <div className="flex items-center gap-3">

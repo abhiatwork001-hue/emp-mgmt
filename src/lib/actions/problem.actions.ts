@@ -4,6 +4,7 @@ import dbConnect from "@/lib/db";
 import { Problem, Employee, Store, StoreDepartment, GlobalDepartment, IEmployee } from "@/lib/models";
 import { triggerNotification } from "./notification.actions";
 import { revalidatePath } from "next/cache";
+import { logAction } from "./log.actions";
 
 interface ReportProblemData {
     reporterId: string;
@@ -21,7 +22,7 @@ export async function reportProblem(data: ReportProblemData) {
 
         // 1. Create the Problem Record
         const newProblem = await Problem.create({
-            reporter: data.reporterId,
+            reportedBy: data.reporterId,
             recipientRole: data.recipientRole,
             priority: data.priority,
             type: data.type,
@@ -41,8 +42,6 @@ export async function reportProblem(data: ReportProblemData) {
 
         // Helper to find employees by role
         const findByRole = async (role: string) => {
-            // Find users who have this role in their roles array
-            // Case insensitive search
             const regex = new RegExp(`^${role}$`, 'i');
             const employees = await Employee.find({ roles: { $in: [regex] }, active: true }).select('_id');
             return employees.map(e => e._id.toString());
@@ -50,13 +49,10 @@ export async function reportProblem(data: ReportProblemData) {
 
         if (data.recipientRole === 'owner') {
             recipientIds = await findByRole('owner');
-            // Also include Admins as failsafe or if requested
             const admins = await findByRole('admin');
             recipientIds = [...new Set([...recipientIds, ...admins])];
-
         } else if (data.recipientRole === 'hr') {
             recipientIds = await findByRole('hr');
-
         } else if (data.recipientRole === 'store_manager') {
             if (storeId) {
                 const store = await Store.findById(storeId).select('managers subManagers');
@@ -67,8 +63,6 @@ export async function reportProblem(data: ReportProblemData) {
                     ];
                 }
             }
-            // If no store context, maybe notify all store managers? No, that's too spammy. Stick to specific store.
-
         } else if (data.recipientRole === 'store_department_head') {
             if (deptId) {
                 const dept = await StoreDepartment.findById(deptId).select('headOfDepartment subHead');
@@ -79,10 +73,7 @@ export async function reportProblem(data: ReportProblemData) {
                     ];
                 }
             }
-
-        } else if (data.recipientRole === 'head_of_department') { // Global Head
-            // We need to know WHICH global department.
-            // If storeDepartmentId is present, find its parent GlobalDepartment
+        } else if (data.recipientRole === 'head_of_department') {
             if (deptId) {
                 const storeDept = await StoreDepartment.findById(deptId).select('globalDepartmentId');
                 if (storeDept && storeDept.globalDepartmentId) {
@@ -95,11 +86,8 @@ export async function reportProblem(data: ReportProblemData) {
                     }
                 }
             }
-
         } else if (data.recipientRole === 'chef') {
-            // Find "Chef" role
             recipientIds = await findByRole('chef');
-            // Also finding Head Chefs?
             const headChefs = await findByRole('head_chef');
             recipientIds = [...new Set([...recipientIds, ...headChefs])];
         } else if (data.recipientRole === 'admin') {
@@ -115,10 +103,23 @@ export async function reportProblem(data: ReportProblemData) {
                 category: 'system',
                 recipients: recipientIds,
                 senderId: data.reporterId,
-                link: '/dashboard', // Eventually link to a problem view
+                link: `/dashboard/problems/${newProblem._id}`,
                 relatedStoreId: storeId?.toString(),
             });
         }
+
+        // Log Action
+        await logAction({
+            action: 'REPORT_PROBLEM',
+            performedBy: data.reporterId,
+            targetId: newProblem._id,
+            targetModel: 'Problem',
+            details: {
+                priority: data.priority,
+                type: data.type,
+                storeId: storeId?.toString()
+            }
+        });
 
         revalidatePath('/dashboard');
         return { success: true, problem: JSON.parse(JSON.stringify(newProblem)) };
@@ -126,5 +127,160 @@ export async function reportProblem(data: ReportProblemData) {
     } catch (error) {
         console.error("Error reporting problem:", error);
         return { success: false, error: "Failed to report problem" };
+    }
+}
+
+export async function getProblemById(id: string) {
+    try {
+        await dbConnect();
+        const problem = await Problem.findById(id)
+            .populate('reportedBy', 'firstName lastName image email')
+            .populate('storeId', 'name')
+            .populate('resolvedBy', 'firstName lastName image')
+            .lean();
+        return JSON.parse(JSON.stringify(problem));
+    } catch (error) {
+        return null;
+    }
+}
+
+export async function addComment(problemId: string, userId: string, text: string, images?: string[]) {
+    try {
+        await dbConnect();
+        const user = await Employee.findById(userId).select('firstName lastName image');
+        if (!user) throw new Error("User not found");
+
+        const comment = {
+            userId,
+            userName: `${user.firstName} ${user.lastName}`,
+            userImage: user.image,
+            text,
+            files: images || [],
+            createdAt: new Date()
+        };
+
+        const problem = await Problem.findByIdAndUpdate(
+            problemId,
+            { $push: { comments: comment } },
+            { new: true }
+        );
+
+        // Log Action
+        await logAction({
+            action: 'PROBLEM_COMMENT',
+            performedBy: userId,
+            targetId: problemId,
+            targetModel: 'Problem',
+            details: { text: text.substring(0, 100) }
+        });
+
+        revalidatePath(`/dashboard/problems/${problemId}`);
+        return { success: true, comment };
+    } catch (error) {
+        console.error("Failed to add comment:", error);
+        return { success: false, error: "Failed to add comment" };
+    }
+}
+
+export async function resolveProblem(problemId: string, userId: string, notes?: string) {
+    try {
+        await dbConnect();
+
+        // 1. Fetch first to verify permission
+        const existingProblem = await Problem.findById(problemId);
+        if (!existingProblem) return { success: false, error: "Problem not found" };
+
+        if (existingProblem.reportedBy.toString() !== userId) {
+            return { success: false, error: "Only the original reporter can resolve this problem." };
+        }
+
+        const problem = await Problem.findByIdAndUpdate(
+            problemId,
+            {
+                status: "resolved",
+                resolvedBy: userId,
+                resolvedAt: new Date(),
+                resolutionNotes: notes
+            },
+            { new: true }
+        );
+
+        // Log Action
+        await logAction({
+            action: 'SOLVE_PROBLEM',
+            performedBy: userId,
+            targetId: problemId,
+            targetModel: 'Problem',
+            details: { notes: notes?.substring(0, 100) }
+        });
+
+        revalidatePath(`/dashboard/problems/${problemId}`);
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: "Failed to resolve" };
+    }
+}
+
+interface GetProblemsOptions {
+    userId: string;
+    role: string; // 'admin', 'store_manager', 'employee', etc.
+    storeId?: string; // For store managers
+    departmentId?: string; // For department heads
+    status?: 'open' | 'resolved' | 'all';
+}
+
+export async function getProblems(options: GetProblemsOptions) {
+    try {
+        await dbConnect();
+        const { userId, storeId, departmentId, status } = options;
+
+        // Fetch full employee to get all roles
+        const employee = await Employee.findById(userId).select('roles role storeId storeDepartmentId');
+        const roles = employee?.roles?.map((r: string) => r.toLowerCase().replace(/ /g, '_')) || [];
+        if (employee?.role) roles.push(employee.role.toLowerCase().replace(/ /g, '_'));
+        const uniqueRoles = [...new Set(roles)];
+
+        const query: any = {};
+
+        // 1. Status Filter
+        if (status && status !== 'all') {
+            query.status = status;
+        }
+
+        // 2. Role-Based Access Control
+        const isGlobalStaff = uniqueRoles.some(r => ['owner', 'admin', 'hr', 'tech', 'super_user'].includes(r));
+        const isStoreManager = uniqueRoles.includes('store_manager');
+        const isDeptHead = uniqueRoles.some(r => ['store_department_head', 'department_head'].includes(r));
+
+        if (isGlobalStaff) {
+            // See ALL problems
+        } else if (isStoreManager && storeId) {
+            // See problems related to their store
+            query.$or = [
+                { relatedStoreId: storeId },
+                { reportedBy: userId } // And their own reports
+            ];
+        } else if (isDeptHead && departmentId) {
+            // See problems related to their department
+            query.$or = [
+                { relatedDepartmentId: departmentId },
+                { reportedBy: userId }
+            ];
+        } else {
+            // Regular employees only see their reports
+            query.reportedBy = userId;
+        }
+
+        const problems = await Problem.find(query)
+            .sort({ createdAt: -1 })
+            .populate('reportedBy', 'firstName lastName image')
+            //.populate('relatedStoreId', 'name') // Assuming we want store name
+            .limit(50) // Reasonable limit
+            .lean();
+
+        return JSON.parse(JSON.stringify(problems));
+    } catch (error) {
+        console.error("Failed to fetch problems:", error);
+        return [];
     }
 }

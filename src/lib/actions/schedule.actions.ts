@@ -9,10 +9,10 @@ import { authOptions } from "@/lib/auth";
 import { triggerNotification } from "@/lib/actions/notification.actions";
 import { getEmployeeById } from "@/lib/actions/employee.actions"; // Import employee fetcher
 import { logAction } from "./log.actions";
-import { slugify } from "@/lib/utils";
+import { slugify, getISOWeekNumber } from "@/lib/utils";
 import * as crypto from "crypto";
 
-const MANAGE_SCHEDULE_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr"];
+const MANAGE_SCHEDULE_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr", "tech"];
 
 async function checkSchedulePermission(userId: string) {
     const employee = await getEmployeeById(userId);
@@ -196,10 +196,10 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         const actor = await getEmployeeById(userId);
         const roles = (actor?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
         // Allowing Admin/Super User as well for system stability, alongside requested HR/Owner
-        const hasAuthority = roles.some((r: string) => ['hr', 'owner', 'super_user', 'admin'].includes(r));
+        const hasAuthority = roles.some((r: string) => ['hr', 'owner', 'super_user', 'admin', 'tech'].includes(r));
 
         if (!hasAuthority) {
-            throw new Error(`Permission Denied: Only HR or Owners can ${status} schedules.`);
+            throw new Error(`Permission Denied: Only HR, Owners, or Tech can ${status} schedules.`);
         }
     }
 
@@ -434,15 +434,7 @@ export async function getOrCreateSchedule(storeId: string, storeDepartmentId: st
     return JSON.parse(JSON.stringify(newSchedule));
 }
 
-// Helper to get ISO week number
-function getISOWeekNumber(d: Date) {
-    const date = new Date(d.valueOf());
-    const day = date.getUTCDay() || 7;
-    date.setUTCDate(date.getUTCDate() + 4 - day);
-    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
-    const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    return { week: weekNo, year: date.getUTCFullYear() };
-}
+
 
 export async function copyPreviousSchedule(currentScheduleId: string, userId: string) {
     await dbConnect();
@@ -891,4 +883,53 @@ export async function getEmployeeWorkHistory(employeeId: string, rangeHelper?: {
         rangeTotal: Number(rangeTotal.toFixed(2)),
         history
     };
+}
+
+export async function findConflictingShifts(
+    employeeIds: string[],
+    dateRange: { start: string, end: string },
+    excludeScheduleId: string
+) {
+    await dbConnect();
+    
+    // Find all schedules that overlap with this date range, excluding the current one
+    const schedules = await Schedule.find({
+        _id: { $ne: excludeScheduleId },
+        $or: [
+            { "dateRange.startDate": { $lte: dateRange.end }, "dateRange.endDate": { $gte: dateRange.start } }
+        ],
+        "days.shifts.employees": { $in: employeeIds }
+    })
+    .select('days storeId status storeDepartmentId slug')
+    .populate('storeId', 'name')
+    .populate('storeDepartmentId', 'name')
+    .lean();
+
+    const conflicts: any[] = [];
+
+    // Parse schedules to find exact shift conflicts
+    schedules.forEach((sched: any) => {
+        sched.days.forEach((day: any) => {
+            day.shifts.forEach((shift: any) => {
+                const affectedEmployees = shift.employees
+                    // @ts-ignore
+                    .filter((empId: any) => employeeIds.includes(empId.toString()));
+                
+                if (affectedEmployees.length > 0) {
+                     conflicts.push({
+                         date: day.date,
+                         startTime: shift.startTime,
+                         endTime: shift.endTime,
+                         storeName: sched.storeId?.name || "Unknown Store",
+                         departmentName: sched.storeDepartmentId?.name,
+                         status: sched.status,
+                         employeeIds: affectedEmployees,
+                         slug: sched.slug
+                     });
+                }
+            });
+        });
+    });
+
+    return JSON.parse(JSON.stringify(conflicts));
 }

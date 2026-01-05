@@ -4,6 +4,7 @@ import connectToDB from "@/lib/db";
 import { Notice, Employee, StoreDepartment } from "@/lib/models";
 import { revalidatePath } from "next/cache";
 import { triggerNotification } from "@/lib/actions/notification.actions";
+import { logAction } from "./log.actions";
 import { slugify } from "@/lib/utils";
 import * as crypto from "crypto";
 
@@ -141,6 +142,21 @@ export async function createNotice(data: {
         } catch (notifError) {
             console.error("Failed to send notice notifications:", notifError);
         }
+
+        // Log Action
+        await logAction({
+            action: 'NOTICE_CREATED',
+            performedBy: data.userId,
+            storeId: data.targetScope === 'store' ? data.targetId : undefined,
+            targetId: newNotice._id,
+            targetModel: 'Notice',
+            details: {
+                title: data.title,
+                targetScope: data.targetScope,
+                targetId: data.targetId,
+                visibleToAdmin: data.visibleToAdmin
+            }
+        });
 
         revalidatePath("/dashboard");
         return { success: true };
@@ -350,6 +366,15 @@ export async function addComment(noticeId: string, userId: string, content: stri
             console.error("Notice Comment Notification Error:", e);
         }
 
+        // Log Action
+        await logAction({
+            action: 'NOTICE_COMMENT',
+            performedBy: userId,
+            targetId: noticeId,
+            targetModel: 'Notice',
+            details: { content: content.substring(0, 100) }
+        });
+
         revalidatePath("/dashboard");
         return { success: true };
     } catch (error) {
@@ -396,6 +421,16 @@ export async function updateNotice(noticeId: string, userId: string, data: Parti
         }
 
         await notice.save();
+
+        // Log Action
+        await logAction({
+            action: 'NOTICE_UPDATED',
+            performedBy: userId,
+            targetId: noticeId,
+            targetModel: 'Notice',
+            details: { title: notice.title }
+        });
+
         revalidatePath('/dashboard/notices');
         revalidatePath(`/dashboard/notices/${notice.slug}`);
         revalidatePath('/dashboard');

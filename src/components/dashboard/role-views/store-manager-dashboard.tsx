@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Calendar, ClipboardList, Users, Package, TrendingUp, AlertCircle, ShoppingCart, MessageSquare, Sun, CheckCircle2, Palmtree } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "@/i18n/routing";
@@ -13,9 +14,24 @@ import { CredentialManager } from "@/components/credentials/credential-list";
 import { BirthdayWidget } from "@/components/dashboard/widgets/birthday-widget";
 import { HolidayWidget } from "@/components/dashboard/widgets/holiday-widget";
 import { HolidayGreetingWidget } from "@/components/dashboard/widgets/holiday-greeting-widget";
+import { ProblemStatsWidget } from "@/components/dashboard/widgets/problem-stats-widget";
 import { EmployeeScheduleTab } from "@/components/employees/employee-schedule-tab";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// Import OperationsRadar
+import { OperationsRadar, DashboardAlert } from "@/components/dashboard/operations-radar";
+import DashboardLayout from "@/components/dashboard/dashboard-layout";
+import { ActivityLog } from "@/components/dashboard/activity-log";
+import { PersonalTodoWidget } from "@/components/dashboard/personal-todo-widget";
+import { ReminderWidget } from "@/components/reminders/reminder-widget";
+import { SwapRequestsWidget } from "@/components/dashboard/swap-requests-widget";
+import { NoticeBoard } from "@/components/notices/notice-board";
+import { TaskBoard } from "@/components/tasks/task-board";
+import { StatsCards } from "@/components/dashboard/stats-cards";
+import InsightsPanel from "@/components/dashboard/insights-panel";
+import { VacationAnalytics } from "@/components/dashboard/hr/vacation-analytics";
+import { StaffingAlerts } from "@/components/dashboard/hr/staffing-alerts";
 
 interface StoreManagerDashboardProps {
     employee: any;
@@ -35,210 +51,305 @@ interface StoreManagerDashboardProps {
     currentScheduleId?: string | null;
     currentScheduleSlug?: string | null;
     currentUserRole?: string;
+    operationsData?: {
+        score: number;
+        status: "optimal" | "warning" | "critical";
+        alerts: DashboardAlert[];
+        staffing: any;
+        scheduleHealth: any;
+    };
+    // New Props for full layout integration
+    tasks?: any[];
+    personalTodos?: any[];
+    swapRequests?: any;
+    stores?: any[];
+    departments?: any[];
+    managers?: any[];
 }
 
-import { motion } from "framer-motion";
+export function StoreManagerDashboard({
+    employee,
+    pendingRequests,
+    requests,
+    storeStats,
+    todaysCoworkers = [],
+    currentScheduleId,
+    currentScheduleSlug,
+    currentUserRole = "store_manager",
+    operationsData,
+    tasks = [],
+    personalTodos = [],
+    swapRequests = { incoming: [], outgoing: [] },
+    stores = [],
+    departments = [],
+    managers = []
+}: StoreManagerDashboardProps) {
+    // Helper: Compute Extended Stats for StatsCards
+    const extendedStats = {
+        totalEmployees: storeStats.totalEmployees,
+        onVacation: storeStats.onVacation,
+        activeEmployees: Math.max(0, storeStats.totalEmployees - storeStats.onVacation),
+        absentToday: 0,
+        pendingApprovals: pendingRequests.length,
+        totalHours: 0
+    };
 
-export function StoreManagerDashboard({ employee, pendingRequests, requests, storeStats, todaysCoworkers = [], currentScheduleId, currentScheduleSlug, currentUserRole = "store_manager" }: StoreManagerDashboardProps) {
-    const [greeting, setGreeting] = useState("");
-    const t = useTranslations("Common");
+    const isHighLevel = ["owner", "admin", "hr", "super_user", "tech"].includes(currentUserRole);
+    const isDeptLevel = ["department_head", "store_department_head"].includes(currentUserRole);
 
-    // Helpers to hide sections for high-level roles (Admin/HR/Owner) who view this dashboard
-    const isHighLevel = ["owner", "admin", "hr", "super_user"].includes(currentUserRole);
+    const hasSchedule = currentScheduleId && currentScheduleId !== "null";
+    const hasCoworkers = Array.isArray(todaysCoworkers) && todaysCoworkers.length > 0;
 
-    useEffect(() => {
-        const hour = new Date().getHours();
-        if (hour < 12) setGreeting("Good Morning");
-        else if (hour < 18) setGreeting("Good Afternoon");
-        else setGreeting("Good Evening");
-    }, []);
+    // Wrapper for Coworkers to be a widget
+    const CoworkersWidget = () => (
+        <Card className="h-full border-l-4 border-l-emerald-500 shadow-sm relative overflow-hidden flex flex-col min-h-[400px]">
+            <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                <Users className="h-24 w-24" />
+            </div>
+            <CardHeader className="py-3 px-4 bg-muted/5 min-h-[60px] flex justify-center">
+                <CardTitle className="text-md font-semibold flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-emerald-600" />
+                        Working Today
+                    </span>
+                    {(currentScheduleSlug || currentScheduleId) && (
+                        <Link href={`/dashboard/schedules/${currentScheduleSlug || currentScheduleId}`} className="text-[10px] font-bold text-primary hover:underline">
+                            View Schedule
+                        </Link>
+                    )}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 p-4 overflow-y-auto">
+                {todaysCoworkers.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {todaysCoworkers.map((cw: any, i: number) => (
+                            <div key={i} className="flex items-center gap-2 p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors border border-border/40">
+                                <Avatar className="h-10 w-10 border shadow-sm">
+                                    <AvatarImage src={cw.image} />
+                                    <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold">{cw.firstName[0]}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col min-w-0">
+                                    <span className="text-xs font-bold text-foreground truncate">{cw.firstName} {cw.lastName}</span>
+                                    <span className="text-[10px] text-muted-foreground uppercase tracking-tight truncate">{cw.position}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full py-12 text-center space-y-3">
+                        <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center">
+                            <Users className="h-6 w-6 text-muted-foreground/40" />
+                        </div>
+                        <div className="text-xs font-medium text-muted-foreground italic max-w-[200px]">
+                            No team members found on shift today. Check the schedule to see upcoming shifts.
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+
+    // Prepare Widgets Map
+    const widgets = {
+        "operations-radar": operationsData ? (
+            <OperationsRadar
+                overallScore={operationsData.score}
+                status={operationsData.status}
+                alerts={operationsData.alerts}
+                staffing={operationsData.staffing}
+                scheduleHealth={operationsData.scheduleHealth}
+                role={currentUserRole}
+            />
+        ) : <div className="p-4 text-center text-muted-foreground">Operations Data Unavailable</div>,
+
+        "stats-cards": (
+            <StatsCards stats={extendedStats} />
+        ),
+
+        "pending-approvals-card": (
+            <PendingApprovalsWidget
+                overtime={requests?.overtime || []}
+                vacations={requests?.vacations || []}
+                absences={requests?.absences || []}
+                schedules={requests?.schedules || []}
+                compact={false}
+            />
+        ),
+
+        "management-suite": (
+            <Card className="border-l-4 border-l-primary shadow-sm flex flex-col">
+                <CardHeader className="py-3 px-4 bg-muted/5 min-h-[50px] flex justify-center shrink-0">
+                    <CardTitle className="text-md font-semibold flex items-center gap-2">
+                        <Package className="h-4 w-4 text-primary" />
+                        Management Actions
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto">
+                    <Link href="/dashboard/schedules" className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-muted/50 hover:border-primary/50 transition-all group shadow-sm shrink-0">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0">
+                            <Calendar className="h-5 w-5" />
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-sm font-black italic text-foreground truncate">Manage Schedules</span>
+                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">System rotas</span>
+                        </div>
+                    </Link>
+
+                    <Link href="/dashboard/employees" className="flex items-center gap-3 p-3 rounded-xl border bg-card hover:bg-muted/50 hover:border-primary/50 transition-all group shadow-sm shrink-0">
+                        <div className="h-10 w-10 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform shrink-0">
+                            <Users className="h-5 w-5" />
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-sm font-black italic text-foreground truncate">Manage Team</span>
+                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">Staff directory</span>
+                        </div>
+                    </Link>
+
+                    {/* Add more vertical actions if needed or spacers */}
+                </CardContent>
+            </Card>
+        ),
+
+        "task-board": (
+            <TaskBoard
+                tasks={tasks}
+                currentUserId={employee._id}
+                currentUser={employee}
+                stores={stores}
+                storeDepartments={departments}
+                managers={managers}
+            />
+        ),
+
+        "insights-panel": <InsightsPanel />,
+
+        "problem-stats": <ProblemStatsWidget userId={employee._id} role={currentUserRole} storeId={stores[0]?._id || employee.storeId} />,
+
+        "notice-board": <NoticeBoard userId={employee._id} />,
+
+        "birthday-widget": <BirthdayWidget storeId={stores[0]?._id || employee.storeId || ""} currentUserId={employee._id} />,
+
+        "my-schedule": <EmployeeScheduleTab employeeId={employee._id} />,
+
+        "coworkers-widget": <CoworkersWidget />,
+
+        "holiday-greeting": <HolidayGreetingWidget />,
+
+        "holiday-widget": <HolidayWidget storeId={stores[0]?._id || employee.storeId || ""} />
+    };
+
+    const sidebarContent = {
+        activity: <ActivityLog userId={undefined} userRoles={employee.roles || []} variant="widget" />,
+        todo: <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />,
+        notifications: <ReminderWidget userId={employee._id} role={currentUserRole} />
+    };
 
     return (
-        <div className="space-y-8">
-            {/* Header / Greeting */}
-            <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex flex-col md:flex-row md:items-center justify-between gap-4"
-            >
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                        {greeting}, <span className="bg-gradient-to-r from-primary to-violet-500 bg-clip-text text-transparent">{employee.firstName}</span>
-                    </h2>
-                    <p className="text-muted-foreground text-sm font-medium mt-1 uppercase tracking-wider">Store Management Overview</p>
+        <DashboardLayout sidebar={sidebarContent}>
+            <div className="flex flex-col gap-8 animate-in fade-in duration-700">
+                {/* Visual Role Indicator */}
+                <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="px-3 py-1 bg-primary/5 text-primary border-primary/20 font-bold uppercase tracking-wider text-[10px]">
+                        {isHighLevel ? "Network Dashboard" : isDeptLevel ? "Department View" : "Store Dashboard"}
+                    </Badge>
+                    <div className="h-[1px] flex-1 bg-gradient-to-r from-border/50 via-border to-transparent" />
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 text-emerald-600 rounded-full border border-emerald-500/20">
-                    <CheckCircle2 className="h-4 w-4" />
-                    <span className="text-xs font-bold tracking-wide">Store Operations: Optimal</span>
-                </div>
-            </motion.div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[
-                    { title: "Team Size", value: storeStats.totalEmployees, label: "active", icon: Users, color: "text-primary" },
-                    { title: "Today's Shifts", value: storeStats.todayShifts, label: "scheduled", icon: Calendar, color: "text-orange-500" },
-                    { title: "On Vacation", value: storeStats.onVacation, label: "employees", icon: Palmtree, color: "text-emerald-500" },
-                    { title: "Pending Approvals", value: pendingRequests.length, label: "requests", icon: ClipboardList, color: "text-destructive", highlight: true },
-                ].map((stat, i) => (
-                    <motion.div
-                        key={stat.title}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 * i, duration: 0.4 }}
-                    >
-                        <Card glass premium className={cn("relative group overflow-hidden border-border/40", stat.highlight && "border-destructive/20 shadow-destructive/5")}>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-[10px] font-bold tracking-[0.2em] text-muted-foreground uppercase">{stat.title}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex items-baseline gap-2">
-                                    <span className={cn("text-4xl font-bold tracking-tighter", stat.highlight && "text-destructive")}>{stat.value}</span>
-                                    <span className="text-xs font-semibold text-muted-foreground/60 uppercase">{stat.label}</span>
-                                </div>
-                            </CardContent>
-                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-20 group-hover:scale-110 transition-all duration-500">
-                                <stat.icon className={cn("h-12 w-12", stat.color)} />
+                {/* Staffing Alerts (Predictive) */}
+                {isHighLevel && (
+                    <div className="w-full">
+                        <StaffingAlerts />
+                    </div>
+                )}
+
+                {/* 1. Key Statistics */}
+                <div className="w-full">
+                    {widgets["stats-cards"]}
+                </div>
+
+                {/* 2. Top Level Operations Radar */}
+                <div className="w-full">
+                    {widgets["operations-radar"]}
+                </div>
+
+                {/* HR Insights & Analytics */}
+                {isHighLevel && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                            <Badge variant="outline" className="px-3 py-1 bg-emerald-500/5 text-emerald-600 border-emerald-500/20 font-bold uppercase tracking-wider text-[10px]">
+                                <Palmtree className="h-3 w-3 mr-1 inline" />
+                                Vacation Analytics
+                            </Badge>
+                            <div className="h-[1px] flex-1 bg-gradient-to-r from-border/50 via-border to-transparent" />
+                        </div>
+                        <VacationAnalytics />
+                    </div>
+                )}
+
+                {/* 3. Reported Issues (Full Width) */}
+                <div className="w-full">
+                    {widgets["problem-stats"]}
+                </div>
+
+                {/* 4. Management & Tasks (Stack) | Approvals (Side) */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+                    <div className="flex flex-col gap-8 h-full">
+                        <div>
+                            {widgets["management-suite"]}
+                        </div>
+                        <div className="flex-1">
+                            {widgets["task-board"]}
+                        </div>
+                    </div>
+                    <div className="h-full">
+                        {widgets["pending-approvals-card"]}
+                    </div>
+                </div>
+
+
+                {/* 5. Scheduling & Team Presence */}
+                {(hasSchedule || hasCoworkers) && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                        {hasSchedule ? (
+                            <div className={cn("h-full", !hasCoworkers && "lg:col-span-2")}>
+                                {widgets["my-schedule"]}
                             </div>
-                        </Card>
-                    </motion.div>
-                ))}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Main Content */}
-                <div className="lg:col-span-2 space-y-8">
-                    {/* Pending Approvals Widget */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.4, duration: 0.5 }}
-                    >
-                        <PendingApprovalsWidget
-                            overtime={requests?.overtime || []}
-                            vacations={requests?.vacations || []}
-                            absences={requests?.absences || []}
-                            schedules={requests?.schedules || []}
-                        />
-                    </motion.div>
-
-                    {/* Today's Team Coworkers - HIDDEN FOR HIGH LEVEL */}
-                    {!isHighLevel && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.5 }}
-                        >
-                            <Card glass className="border-border/40 overflow-hidden">
-                                <CardHeader className="bg-muted/30 border-b border-border/20 py-4">
-                                    <CardTitle className="flex justify-between items-center text-sm font-bold uppercase tracking-wider">
-                                        <span className="flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                            Working Today
-                                        </span>
-                                        {(currentScheduleSlug || currentScheduleId) && (
-                                            <Link href={`/dashboard/schedules/${currentScheduleSlug || currentScheduleId}`} className="text-[10px] font-bold text-primary hover:underline transition-all group/link">
-                                                VIEW FULL SCHEDULE <span className="inline-block group-hover:translate-x-1 transition-transform">&rarr;</span>
-                                            </Link>
-                                        )}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-6">
-                                    {todaysCoworkers.length > 0 ? (
-                                        <div className="flex -space-x-3 overflow-hidden p-2">
-                                            {todaysCoworkers.map((cw: any, i: number) => (
-                                                <motion.div
-                                                    key={i}
-                                                    whileHover={{ y: -5, scale: 1.1, zIndex: 10 }}
-                                                    className="relative shrink-0"
-                                                    title={`${cw.firstName} ${cw.lastName}`}
-                                                >
-                                                    <Avatar className="h-12 w-12 border-4 border-background shadow-xl">
-                                                        <AvatarImage src={cw.image} alt={cw.firstName} />
-                                                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                                                            {cw.firstName[0]}{cw.lastName[0]}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                </motion.div>
-                                            ))}
-                                            {todaysCoworkers.length > 8 && (
-                                                <div className="h-12 w-12 rounded-full border-4 border-background bg-secondary flex items-center justify-center text-[10px] font-bold text-muted-foreground z-0">
-                                                    +{todaysCoworkers.length - 8}
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-6 bg-accent/5 rounded-2xl border border-dashed border-border/60">
-                                            <p className="text-sm text-muted-foreground font-medium">No coworkers found for today.</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    )}
-
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
-                    >
-                        <Card glass className="border-border/40 overflow-hidden">
-                            <CardHeader className="bg-muted/30 border-b border-border/20 py-4">
-                                <CardTitle className="text-sm font-bold uppercase tracking-wider">My Schedule</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-6">
-                                <EmployeeScheduleTab employeeId={employee._id.toString()} />
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                </div>
-
-                {/* Sidebar: Management Actions */}
-                <div className="space-y-8">
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5, duration: 0.5 }}
-                    >
-                        <Card glass premium className="border-primary/10 overflow-hidden">
-                            <CardHeader className="bg-primary/5 border-b border-primary/10 py-4">
-                                <CardTitle className="text-xs font-bold uppercase tracking-widest text-primary">Management Suite</CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-4 space-y-3">
-                                {[
-                                    { href: "/dashboard/schedules", icon: Calendar, label: "Manage Schedules", color: "hover:bg-primary/10 hover:text-primary" },
-                                    { href: "/dashboard/employees", icon: Users, label: "Manage Employees", color: "hover:bg-primary/10 hover:text-primary" },
-                                    { href: "/dashboard/tips", icon: TrendingUp, label: "Tips Analytics", hide: isHighLevel, color: "hover:bg-emerald-500/10 hover:text-emerald-600" },
-                                ].filter(item => !item.hide).map((item, idx) => (
-                                    <div key={idx}>
-                                        <Link href={item.href} className="block group">
-                                            <Button variant="ghost" className={cn("w-full justify-start h-12 rounded-xl transition-all border border-transparent group-hover:border-current", item.color)}>
-                                                <item.icon className="mr-3 h-5 w-5 opacity-70" />
-                                                <span className="font-semibold">{item.label}</span>
-                                            </Button>
-                                        </Link>
+                        ) : (
+                            <div className="lg:col-span-2 h-full">
+                                <Card className="h-full border-dashed border-2 flex flex-col items-center justify-center p-12 text-center bg-muted/5">
+                                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 rotate-12">
+                                        <Calendar className="h-8 w-8" />
                                     </div>
-                                ))}
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+                                    <h3 className="text-xl font-black italic text-foreground mb-2">No Schedule Available</h3>
+                                    <Button asChild className="mt-6 font-black italic tracking-tight" variant="secondary">
+                                        <Link href="/dashboard/schedules">Manage Schedules</Link>
+                                    </Button>
+                                </Card>
+                            </div>
+                        )}
+                        {hasCoworkers && (
+                            <div className={cn("h-full", !hasSchedule && "lg:col-span-2")}>
+                                {widgets["coworkers-widget"]}
+                            </div>
+                        )}
+                    </div>
+                )}
 
-                    {/* Holiday Greeting */}
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}>
-                        <HolidayGreetingWidget />
-                    </motion.div>
+                {/* 6. Notice Board (Full Width) */}
+                <div className="w-full">
+                    {widgets["notice-board"]}
+                </div>
 
-                    {/* Birthday Widget */}
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
-                        <BirthdayWidget storeId={employee.storeId?._id || employee.storeId} currentUserId={employee._id} />
-                    </motion.div>
-
-                    {/* Holiday Widget */}
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}>
-                        <HolidayWidget storeId={employee.storeId?._id || employee.storeId} />
-                    </motion.div>
+                {/* 7. Birthdays & Public Holidays */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+                    <div className="h-full">
+                        {widgets["birthday-widget"]}
+                    </div>
+                    <div className="h-full">
+                        {widgets["holiday-widget"]}
+                    </div>
                 </div>
             </div>
-        </div >
+        </DashboardLayout>
     );
 }
