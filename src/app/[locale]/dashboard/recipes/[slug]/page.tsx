@@ -148,7 +148,7 @@ export default async function RecipeDetailPage({ params }: { params: Promise<{ s
                                     <span className="font-black text-emerald-900">{Number(food.pvp || 0).toFixed(2)}€</span>
                                 </div>
                                 <ProfitSimulator
-                                    baseCost={food.costTotal || 0}
+                                    baseCost={unitCost || 0}
                                     pvp={food.pvp || 0}
                                     taxRatePercent={food.ivaPercent || 23}
                                 />

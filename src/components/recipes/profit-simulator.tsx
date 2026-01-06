@@ -46,7 +46,8 @@ export function ProfitSimulator({ baseCost, pvp, taxRatePercent }: ProfitSimulat
     const effectiveRevenue = netSales - (totalDeductions / (1 + taxRate));
 
     const profit = effectiveRevenue - baseCost;
-    const newFoodCostPercent = effectiveRevenue > 0 ? (baseCost / effectiveRevenue) * 100 : 1000;
+    // Food Cost % is typically (Cost / Net Sales)
+    const newFoodCostPercent = netSales > 0 ? (baseCost / netSales) * 100 : 0;
 
     // Break-even check
     const isLoss = profit < 0;

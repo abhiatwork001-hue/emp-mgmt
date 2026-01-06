@@ -7,6 +7,8 @@ import { SetupPasswordView } from "@/components/auth/setup-password-view";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ContentWrapper } from "@/components/layout/content-wrapper";
 import { redirect } from "next/navigation";
+import { hasPendingCoverageActions } from "@/lib/actions/coverage.actions";
+import { hasRecipesForUser } from "@/lib/actions/recipe.actions";
 
 export default async function DashboardLayout({
     children,
@@ -61,13 +63,30 @@ export default async function DashboardLayout({
     else if (normalizedRoles.includes("department_head")) primaryRole = "department_head";
     else if (normalizedRoles.includes("store_department_head")) primaryRole = "store_department_head";
 
+    // --- Visibility Checks for Sidebar ---
+    const isPrivileged = ["admin", "hr", "owner", "super_user", "tech"].includes(primaryRole);
+
+    // 1. Coverage Visibility
+    const hasCoverageActions = await hasPendingCoverageActions(userId, isPrivileged);
+
+    // 2. Recipe Visibility
+    const hasRecipes = await hasRecipesForUser();
+
+    // 3. Approvals Visibility (for Managers)
+    const hasApprovals = isPrivileged;
+
     return (
         <div className="flex h-screen overflow-hidden bg-background text-foreground">
             {isPasswordChanged ? (
                 <>
-                    {/* Sidebar Wrapper */}
                     <div className="hidden md:flex h-full z-[80] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0 overflow-visible print-hidden">
-                        <Sidebar userRoles={normalizedRoles} departmentName={deptName} storeSlug={storeSlug} />
+                        <Sidebar
+                            userRoles={normalizedRoles}
+                            departmentName={deptName}
+                            storeSlug={storeSlug}
+                            hasRecipes={hasRecipes}
+                            hasCoverage={hasCoverageActions}
+                        />
                     </div>
 
                     {/* Main Content Area */}

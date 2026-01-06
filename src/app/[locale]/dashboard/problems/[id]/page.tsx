@@ -122,7 +122,20 @@ export default async function ProblemDetailsPage(props: { params: Promise<{ id: 
                                                 {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
                                             </span>
                                         </div>
-                                        <p className="text-sm pl-8">{comment.text}</p>
+                                        <p className="text-sm pl-8 whitespace-pre-wrap">{comment.text}</p>
+                                        {comment.files && comment.files.length > 0 && (
+                                            <div className="pl-8 mt-2 flex flex-wrap gap-2">
+                                                {comment.files.map((file: string, fIdx: number) => (
+                                                    <Link key={fIdx} href={file} target="_blank" rel="noopener noreferrer">
+                                                        <img
+                                                            src={file}
+                                                            alt="Attachment"
+                                                            className="h-24 w-24 object-cover rounded-md border border-border hover:opacity-90 transition-opacity"
+                                                        />
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        )}
                                     </CardContent>
                                 </Card>
                             ))}
@@ -173,12 +186,15 @@ export default async function ProblemDetailsPage(props: { params: Promise<{ id: 
                     </Card>
 
                     {/* Resolution Action */}
-                    <ResolveProblemButton
-                        problemId={problem._id}
-                        currentStatus={problem.status}
-                        userId={currentUserId}
-                        isResolved={problem.status === 'resolved'}
-                    />
+                    {/* Resolution Action - Only Reporter can resolve */}
+                    {isReporter && (
+                        <ResolveProblemButton
+                            problemId={problem._id}
+                            currentStatus={problem.status}
+                            userId={currentUserId}
+                            isResolved={problem.status === 'resolved'}
+                        />
+                    )}
 
                     {problem.resolvedBy && (
                         <Card className="bg-green-500/5 border-green-500/20">

@@ -71,18 +71,10 @@ export async function triggerNotification(data: NotificationTriggerData) {
                 } catch (error) {
                     lastError = error;
                     retries--;
-                    console.error(`Pusher trigger failed for user ${userId}, retries left: ${retries}`, error);
-
                     if (retries > 0) {
-                        // Wait before retry (exponential backoff)
                         await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
                     }
                 }
-            }
-
-            // If all retries failed, log but don't throw (notification is still in DB)
-            if (lastError) {
-                console.error(`Failed to send real-time notification to user ${userId} after 3 retries:`, lastError);
             }
         });
 
@@ -90,7 +82,6 @@ export async function triggerNotification(data: NotificationTriggerData) {
 
         return { success: true, notification: plainNotification };
     } catch (error) {
-        console.error("Notification Trigger Error:", error);
         return { success: false, error: "Failed to trigger notification" };
     }
 }
@@ -115,7 +106,6 @@ export async function getUserNotifications(userId: string) {
 
     return JSON.parse(JSON.stringify(transformed));
 }
-
 export async function markNotificationAsRead(notificationId: string, userId: string) {
     await dbConnect();
 
@@ -126,6 +116,25 @@ export async function markNotificationAsRead(notificationId: string, userId: str
                 "recipients.$.read": true,
                 "recipients.$.readAt": new Date()
             }
+        }
+    );
+
+    return { success: true };
+}
+
+export async function markAllNotificationsAsRead(userId: string) {
+    await dbConnect();
+
+    await Notification.updateMany(
+        { "recipients.userId": userId },
+        {
+            $set: {
+                "recipients.$[elem].read": true,
+                "recipients.$[elem].readAt": new Date()
+            }
+        },
+        {
+            arrayFilters: [{ "elem.userId": userId, "elem.read": false }]
         }
     );
 

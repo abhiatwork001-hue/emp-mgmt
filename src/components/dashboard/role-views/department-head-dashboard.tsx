@@ -10,6 +10,7 @@ import { PendingApprovalsCard } from "@/components/dashboard/pending-approvals-c
 import { EmployeeScheduleTab } from "@/components/employees/employee-schedule-tab";
 import { HolidayWidget } from "@/components/dashboard/widgets/holiday-widget";
 import { ProblemStatsWidget } from "@/components/dashboard/widgets/problem-stats-widget";
+import { ActiveActionsWidget } from "@/components/dashboard/active-actions-widget";
 
 interface DepartmentHeadDashboardProps {
     employee: any;
@@ -19,9 +20,15 @@ interface DepartmentHeadDashboardProps {
         onVacation: number;
         todayShifts: number;
     };
+    activeActions?: {
+        vacations: any[];
+        absences: any[];
+        coverageRequests: any[];
+        coverageOffers: any[];
+    };
 }
 
-export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats }: DepartmentHeadDashboardProps) {
+export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats, activeActions }: DepartmentHeadDashboardProps) {
     return (
         <div className="space-y-8">
             <motion.div
@@ -101,6 +108,15 @@ export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats }
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     {/* Pending Approvals Area */}
                     <div className="space-y-6">
+                        {activeActions && (activeActions.vacations.length > 0 || activeActions.absences.length > 0 || activeActions.coverageRequests.length > 0 || activeActions.coverageOffers.length > 0) && (
+                            <ActiveActionsWidget
+                                vacations={activeActions.vacations}
+                                absences={activeActions.absences}
+                                coverageRequests={activeActions.coverageRequests}
+                                coverageOffers={activeActions.coverageOffers}
+                                userId={employee._id}
+                            />
+                        )}
                         {pendingRequests.length > 0 ? (
                             <PendingApprovalsCard pendingRequests={pendingRequests} />
                         ) : (

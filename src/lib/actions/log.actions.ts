@@ -45,7 +45,6 @@ export async function logAction(data: LogData) {
         // Uncomment if you have a log view page to revalidate
         // revalidatePath('/dashboard/admin/logs'); 
     } catch (error) {
-        console.error("Failed to log action:", error);
         // Don't throw, we don't want to break the main flow if logging fails
     }
 }
@@ -131,7 +130,6 @@ export async function getActionLogs(options: LogFilterOptions = {}) {
 
         return JSON.parse(JSON.stringify(logs));
     } catch (error) {
-        console.error("Failed to fetch logs:", error);
         return [];
     }
 }

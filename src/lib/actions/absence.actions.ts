@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import { logAction } from "./log.actions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { pusherServer } from "../pusher";
 
 const dbConnect = connectToDB;
 
@@ -56,7 +57,7 @@ export async function createAbsenceRequest(data: AbsenceRequestData) {
                 metadata: { requestId: newRequest._id }
             });
         }
-    } catch (notifErr) { console.error("Absence Notification Error:", notifErr); }
+    } catch (notifErr) { }
 
     const emp = await Employee.findById(data.employeeId).select("slug");
     revalidatePath("/dashboard/absences");
@@ -153,7 +154,7 @@ export async function approveAbsenceRequest(requestId: string, approverId: strin
             link: "/dashboard/profile?tab=work",
             metadata: { requestId: request._id }
         });
-    } catch (e) { console.error("Absence Approve Notification Error:", e); }
+    } catch (e) { }
 
     const emp = await Employee.findById(request.employeeId).select("slug");
     revalidatePath("/dashboard/absences");
@@ -215,7 +216,7 @@ export async function rejectAbsenceRequest(requestId: string, reviewerId: string
             link: "/dashboard/profile?tab=work",
             metadata: { requestId: request._id }
         });
-    } catch (e) { console.error("Absence Reject Notification Error:", e); }
+    } catch (e) { }
 
     const emp = await Employee.findById(request.employeeId).select("slug");
     revalidatePath("/dashboard/absences");
@@ -265,7 +266,6 @@ export async function cancelAbsenceRecord(recordId: string, actorId: string) {
             { status: 'cancelled' }
         );
     } catch (e) {
-        console.error("Could not find matching absence request to cancel:", e);
     }
 
     // 3. Log Action
@@ -279,6 +279,11 @@ export async function cancelAbsenceRecord(recordId: string, actorId: string) {
 
     // 4. Delete Record
     await AbsenceRecord.findByIdAndDelete(recordId);
+
+    await pusherServer.trigger(`admin-updates`, "absence:cancelled", {
+        recordId,
+        employeeId
+    });
 
     revalidatePath("/dashboard/absences");
     const emp = await Employee.findById(employeeId).select("slug");

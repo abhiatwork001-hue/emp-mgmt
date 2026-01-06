@@ -1,6 +1,7 @@
 "use server";
 
 import { triggerNotification } from "@/lib/actions/notification.actions";
+import { pusherServer } from "@/lib/pusher";
 import {
     VacationRequest,
     VacationRecord,
@@ -47,6 +48,19 @@ export async function updateVacationTracker(
     if (data.usedDays !== undefined) employee.vacationTracker.usedDays = data.usedDays;
 
     await employee.save();
+
+    await logAction({
+        action: 'CORRECT_VACATION_BALANCE',
+        performedBy: user.id,
+        targetId: employeeId,
+        targetModel: 'Employee',
+        details: {
+            previous: employee.vacationTracker,
+            updated: data,
+            role: user.roles?.[0] || 'unknown'
+        }
+    });
+
     revalidatePath("/dashboard/profile");
     revalidatePath(`/dashboard/employees/${employee.slug}`);
     return JSON.parse(JSON.stringify(employee.vacationTracker));
@@ -269,6 +283,13 @@ export async function approveVacationRequest(requestId: string, approverId: stri
     request.reviewedAt = new Date();
     await request.save();
 
+    // Trigger Real-time Update for Approvers/Admin Dashboard
+    await pusherServer.trigger(`admin-updates`, "vacation:updated", {
+        requestId: request._id,
+        status: 'approved',
+        employeeId: request.employeeId
+    });
+
     await logAction({
         action: 'APPROVE_VACATION',
         performedBy: approverId,
@@ -310,11 +331,14 @@ export async function rejectVacationRequest(requestId: string, reviewerId: strin
         });
     }
 
-    request.status = 'rejected';
-    request.reviewedBy = reviewerId as any;
-    if (reason) request.comments = reason;
-    request.reviewedAt = new Date();
     await request.save();
+
+    // Trigger Real-time Update
+    await pusherServer.trigger(`admin-updates`, "vacation:updated", {
+        requestId: request._id,
+        status: 'rejected',
+        employeeId: request.employeeId
+    });
 
     await logAction({
         action: 'REJECT_VACATION',

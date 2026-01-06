@@ -22,6 +22,7 @@ import { PersonalTodoWidget } from "@/components/dashboard/personal-todo-widget"
 import { ReminderWidget } from "@/components/reminders/reminder-widget";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { NoticeBoard } from "@/components/notices/notice-board";
+import { ActiveActionsWidget } from "@/components/dashboard/active-actions-widget";
 
 export function EmployeeDashboard({
     employee,
@@ -30,6 +31,7 @@ export function EmployeeDashboard({
     currentScheduleSlug,
     daysUntilNextDayOff = 0,
     personalTodos = [],
+    activeActions = { vacations: [], absences: [], coverageRequests: [], coverageOffers: [] }
 }: any) {
     const router = useRouter();
 
@@ -41,7 +43,18 @@ export function EmployeeDashboard({
 
     const sidebarContent = {
         todo: <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />,
-        notifications: <ReminderWidget userId={employee._id} role="employee" />
+        notifications: (
+            <div className="space-y-6">
+                <ActiveActionsWidget
+                    vacations={activeActions.vacations}
+                    absences={activeActions.absences}
+                    coverageRequests={activeActions.coverageRequests}
+                    coverageOffers={activeActions.coverageOffers}
+                    userId={employee._id}
+                />
+                <ReminderWidget userId={employee._id} role="employee" />
+            </div>
+        )
     };
 
     return (

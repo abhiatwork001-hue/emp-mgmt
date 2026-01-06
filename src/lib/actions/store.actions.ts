@@ -4,6 +4,7 @@ import dbConnect from "@/lib/db";
 import { Store, IStore, Company } from "@/lib/models";
 import { revalidatePath } from "next/cache";
 import { logAction } from "./log.actions";
+import { pusherServer } from "../pusher";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
@@ -144,8 +145,16 @@ export async function getStoreById(storeId: string) {
 export async function getStoreBySlug(slug: string) {
     await dbConnect();
     const { Employee } = require("@/lib/models");
+    const mongoose = require("mongoose");
 
-    const store = await Store.findOne({ slug })
+    let query: any = { slug };
+
+    // If it looks like an ObjectId, allow finding by ID as fallback/alternative
+    if (mongoose.Types.ObjectId.isValid(slug)) {
+        query = { $or: [{ slug }, { _id: slug }] };
+    }
+
+    const store = await Store.findOne(query)
         .populate({
             path: "managers",
             select: "firstName lastName email image positionId",
@@ -210,6 +219,11 @@ export async function createStore(data: StoreData) {
         });
     }
 
+    await pusherServer.trigger("global", "store:updated", {
+        storeId: newStore._id,
+        status: 'created'
+    });
+
     return JSON.parse(JSON.stringify(newStore));
 }
 
@@ -238,6 +252,11 @@ export async function updateStore(storeId: string, data: StoreData) {
             });
         }
     }
+
+    await pusherServer.trigger("global", "store:updated", {
+        storeId: storeId,
+        status: 'updated'
+    });
 
     return JSON.parse(JSON.stringify(updatedStore));
 }
@@ -272,6 +291,11 @@ export async function archiveStore(storeId: string) {
             targetModel: 'Store'
         });
     }
+
+    await pusherServer.trigger("global", "store:updated", {
+        storeId: storeId,
+        status: 'archived'
+    });
 
     return JSON.parse(JSON.stringify(archivedStore));
 }

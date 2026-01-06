@@ -41,7 +41,6 @@ export async function sendPushNotification(userId: string, payload: { title: str
         );
         return { success: true };
     } catch (error: any) {
-        console.error("Push Error:", error);
         if (error.statusCode === 410 || error.statusCode === 404) {
             // Subscription expired or no longer valid
             await Employee.findByIdAndUpdate(userId, { $unset: { pushSubscription: 1 } });

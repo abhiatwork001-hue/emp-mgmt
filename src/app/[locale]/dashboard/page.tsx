@@ -25,8 +25,11 @@ import { ReminderWidget } from "@/components/reminders/reminder-widget";
 import { CreateReminderDialog } from "@/components/reminders/create-reminder-dialog";
 import { NoticeBoard } from "@/components/notices/notice-board";
 import { CreateNoticeDialog } from "@/components/notices/create-notice-dialog";
-import { getSwapRequests } from "@/lib/actions/shift-swap.actions";
+import { getSwapRequests } from "../../../lib/actions/shift-swap.actions";
 import { SwapRequestsWidget } from "@/components/dashboard/swap-requests-widget";
+import { getPendingCoverageOffer, getCoverageRequestsByUser, getActiveOngoingActions } from "@/lib/actions/coverage.actions";
+import { getAllVacationRequests as getVacationRequests } from "@/lib/actions/vacation.actions";
+import { getAllAbsenceRequests as getAbsenceRequests } from "@/lib/actions/absence.actions";
 import { getTranslations } from "next-intl/server";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { RecentActivityWidget } from "@/components/dashboard/recent-activity-widget";
@@ -101,6 +104,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
     const tasks = await getTasksForUser((session.user as any).id);
     const personalTodos = await getNotes((session.user as any).id);
     const swapRequests = await getSwapRequests((session.user as any).id);
+    const activeActions = await getActiveOngoingActions(employee._id);
+
 
     const stores = await getAllStores();
     const depts = await getAllGlobalDepartments();
@@ -117,6 +122,12 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
     // Render Helper
     async function renderDashboard() {
+        let currentScheduleId: string | null = null;
+        let currentScheduleSlug: string | null = null;
+        let todaysCoworkers: any[] = [];
+        let todayShiftsCount = 0;
+        let totalScheduledHours = 0;
+
         if (["owner", "admin", "hr", "super_user", "store_manager", "tech"].includes(viewRole)) {
             // FORCE Global View for high-level roles unless they explicitly switched to "store_manager"
             // If viewRole is "store_manager", we respect their storeId.
@@ -137,11 +148,6 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 : await getAllEmployees({});
 
             // Fetch current schedule to count shifts
-            let todayShiftsCount = 0;
-            let totalScheduledHours = 0;
-            let currentScheduleId = null;
-            let currentScheduleSlug = null;
-            let todaysCoworkers: any[] = [];
 
             if (storeId) {
                 const { getSchedules } = require("@/lib/actions/schedule.actions");
@@ -180,9 +186,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
                     if (todayNode) {
                         // Populate coworkers for manager
-
-                        // Populate coworkers for manager
-                        if (viewRole === "store_manager") {
+                        if (viewRole === "store_manager" && currentScheduleId) {
                             const fullSchedule = await getScheduleById(currentScheduleId);
                             if (fullSchedule) {
                                 const fullTodayNode = fullSchedule.days?.find((d: any) => new Date(d.date).toISOString().split('T')[0] === todayStr);
@@ -208,12 +212,12 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 }
             } else {
                 // Global View - Aggregate today's shifts across all stores
-                const { getSchedules } = require("@/lib/actions/schedule.actions");
+                const { getSchedules: getSchedulesAction } = require("@/lib/actions/schedule.actions");
                 const today = new Date();
                 const todayStr = today.toISOString().split('T')[0];
 
                 // Fetch schedules for all stores in parallel for speed
-                const allSchedulesArrays = await Promise.all(stores.map((s: any) => getSchedules(s._id.toString())));
+                const allSchedulesArrays = await Promise.all(stores.map((s: any) => getSchedulesAction(s._id.toString())));
 
                 allSchedulesArrays.forEach(storeSchedules => {
                     const currentSchedule = storeSchedules.find((s: any) => {
@@ -302,8 +306,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
             const nextWeekISO = getISOWeekNumber(nextWeekDate);
 
             // Let's grab store schedules here to be safe and comprehensive
-            const { getSchedules } = require("@/lib/actions/schedule.actions");
-            const allStoreSchedules = storeId ? await getSchedules(storeId) : [];
+            const { getSchedules: getSchedulesLib } = require("@/lib/actions/schedule.actions");
+            const allStoreSchedules = storeId ? await getSchedulesLib(storeId) : [];
 
             // Advanced Alert Logic: Identify SPECIFIC missing entities
             let missingEntityNames: string[] = [];
@@ -312,7 +316,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
             if (storeId) {
                 // Store Manager View: Check Departments
                 const storeDepts = await getStoreDepartments(storeId.toString());
-                const nextWeekSchedules = await getSchedules(storeId, undefined, nextWeekISO.year, nextWeekISO.week);
+                const nextWeekSchedules = await getSchedulesLib(storeId, undefined, nextWeekISO.year, nextWeekISO.week);
 
                 // Map of Dept ID -> Schedule Status
                 const deptStatusMap = new Map();
@@ -425,6 +429,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 currentUserRole={viewRole}
                 operationsData={operationsData || defaultOperationsData}
                 tasks={JSON.parse(JSON.stringify(tasks))}
+                activeActions={activeActions}
                 personalTodos={personalTodos}
                 swapRequests={swapRequests}
                 stores={JSON.parse(JSON.stringify(stores))}
@@ -445,7 +450,12 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 todayShifts: 0 // Deep calculation needed for global head, defaulting to 0 for now
             };
 
-            return <DepartmentHeadDashboard employee={employee} pendingRequests={pendingRequests} deptStats={deptStats} />;
+            return <DepartmentHeadDashboard
+                employee={employee}
+                pendingRequests={pendingRequests}
+                deptStats={deptStats}
+                activeActions={activeActions}
+            />;
         }
 
         if (viewRole === "store_department_head") {
@@ -466,15 +476,19 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 todayShifts: 0 // Calculate if needed
             };
 
-            return <StoreDepartmentHeadDashboard employee={employee} pendingRequests={pendingRequests} deptStats={deptStats} />;
+            return <StoreDepartmentHeadDashboard
+                employee={employee}
+                pendingRequests={pendingRequests}
+                deptStats={deptStats}
+                activeActions={activeActions}
+            />;
         }
 
         // Fetch Schedule & Coworkers for Employee View
         const today = new Date();
         const scheduleData = await getEmployeeScheduleView(employee._id, today);
-        let todaysCoworkers: any[] = [];
-        let currentScheduleId = null;
-        let currentScheduleSlug = null;
+        // Reuse variables declared at the start of renderDashboard
+        // todaysCoworkers, currentScheduleId, currentScheduleSlug are ready to be used
 
         if (scheduleData && scheduleData.days) {
             // Find today's shifts
@@ -487,8 +501,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
         }
 
         // Alternative: Fetch store schedule for this week
-        const { getSchedules } = require("@/lib/actions/schedule.actions");
-        const storeSchedules = await getSchedules(employee.storeId?._id || employee.storeId);
+        const { getSchedules: getSchedulesLibForEmployee } = require("@/lib/actions/schedule.actions");
+        const storeSchedules = await getSchedulesLibForEmployee(employee.storeId?._id || employee.storeId);
 
         // Find schedule that covers today
         const todayForSchedule = new Date();
@@ -509,10 +523,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
             const todayNode = currentSchedule.days?.find((d: any) => new Date(d.date).toISOString().split('T')[0] === todayStr);
 
             if (todayNode) {
-                const allShiftEmployees = new Set();
-                todayNode.shifts.forEach((s: any) => {
-                    s.employees?.forEach((e: any) => allShiftEmployees.add(e._id || e));
-                });
+                // todayNode is found, but we'll fetch full schedule below for more details
             }
         }
 
@@ -521,7 +532,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
         // The user said "working with you today working from database". So I SHOULD fetch it.
         // I will use `getScheduleById` if a schedule is found.
         if (currentScheduleId) {
-            const fullSchedule = await import("@/lib/actions/schedule.actions").then(m => m.getScheduleById(currentScheduleId));
+            const fullSchedule = await getScheduleById(currentScheduleId);
             if (fullSchedule) {
                 const todayDate = new Date();
                 const todayStr = todayDate.toISOString().split('T')[0];
@@ -572,11 +583,13 @@ export default async function DashboardPage(props: DashboardPageProps) {
         return <EmployeeDashboard
             employee={employee}
             todaysCoworkers={todaysCoworkers}
-            currentScheduleId={currentScheduleId}
-            currentScheduleSlug={currentScheduleSlug}
+            currentScheduleId={currentScheduleId as any}
+            currentScheduleSlug={currentScheduleSlug as any}
             daysUntilNextDayOff={daysUntilNextDayOff}
             personalTodos={personalTodos}
+            activeActions={activeActions}
         />;
+
     }
 
     const t = await getTranslations("Common");

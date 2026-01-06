@@ -2,6 +2,7 @@
 
 import connectToDB from "@/lib/db";
 import { Notice, Employee, StoreDepartment } from "@/lib/models";
+import { pusherServer } from "../pusher";
 import { revalidatePath } from "next/cache";
 import { triggerNotification } from "@/lib/actions/notification.actions";
 import { logAction } from "./log.actions";
@@ -159,6 +160,12 @@ export async function createNotice(data: {
         });
 
         revalidatePath("/dashboard");
+
+        await pusherServer.trigger("global", "notice:updated", {
+            noticeId: newNotice._id,
+            status: 'created'
+        });
+
         return { success: true };
     } catch (error) {
         console.error("Create Notice Error:", error);

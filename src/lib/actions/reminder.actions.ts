@@ -2,6 +2,7 @@
 
 import connectToDB from "@/lib/db";
 import { Reminder, Employee } from "@/lib/models";
+import { pusherServer } from "../pusher";
 import { revalidatePath } from "next/cache";
 
 export async function createReminder(data: {
@@ -23,6 +24,12 @@ export async function createReminder(data: {
         });
 
         revalidatePath("/dashboard");
+
+        await pusherServer.trigger("global", "reminder:updated", {
+            reminderId: reminder._id,
+            status: 'created'
+        });
+
         return { success: true, reminder: JSON.parse(JSON.stringify(reminder)) };
     } catch (error) {
         console.error("Error creating reminder:", error);

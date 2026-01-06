@@ -35,7 +35,6 @@ export async function createCategory(name: string) {
 
         return JSON.parse(JSON.stringify(newCat));
     } catch (e) {
-        console.error("Failed to create category", e);
         throw e;
     }
 }
@@ -74,10 +73,18 @@ export async function getFoods({ search, categoryId, userGlobalDepartmentId, isA
     // Use passed flag as baseline, but verify "Tech" status for deletion visibility
     if (userId) {
         try {
-            const user = await Employee.findById(userId).select("roles");
+            const user = await Employee.findById(userId)
+                .select("roles storeDepartmentId")
+                .populate("storeDepartmentId", "globalDepartmentId");
+
             const roles = user?.roles || [];
             const r = roles.map((x: string) => x.toLowerCase());
-            isTech = r.includes("admin") || r.includes("super_user") || r.includes("tech");
+            isTech = r.includes("admin") || r.includes("super_user") || r.includes("tech") || r.includes("owner") || r.includes("hr");
+
+            // Auto-detect Department if not passed
+            if (!userGlobalDepartmentId && user?.storeDepartmentId?.globalDepartmentId) {
+                userGlobalDepartmentId = user.storeDepartmentId.globalDepartmentId.toString();
+            }
 
             if (!isTech) {
                 const kitchenDept = await GlobalDepartment.findOne({ name: { $regex: /kitchen/i } }).select("departmentHead");
@@ -86,7 +93,6 @@ export async function getFoods({ search, categoryId, userGlobalDepartmentId, isA
                 }
             }
         } catch (e) {
-            console.error("Error checking roles in getFoods", e);
         }
     }
 
@@ -203,24 +209,23 @@ export async function createFood(data: Partial<IFood>) {
                     }
                 }
             }
-        } catch (notifErr) {
-            console.error("Recipe Notification Error:", notifErr);
-        }
 
-        const session = await getServerSession(authOptions);
-        if (session?.user) {
-            await logAction({
-                action: 'CREATE_RECIPE',
-                performedBy: (session.user as any).id,
-                targetId: newFood._id.toString(),
-                targetModel: 'Food',
-                details: { name: newFood.name }
-            });
-        }
+            const session = await getServerSession(authOptions);
+            if (session?.user) {
+                await logAction({
+                    action: 'CREATE_RECIPE',
+                    performedBy: (session.user as any).id,
+                    targetId: newFood._id.toString(),
+                    targetModel: 'Food',
+                    details: { name: newFood.name }
+                });
+            }
 
-        return JSON.parse(JSON.stringify(newFood));
+            return JSON.parse(JSON.stringify(newFood));
+        } catch (e) {
+            throw e;
+        }
     } catch (e) {
-        console.error("Failed to create food", e);
         throw e;
     }
 }
@@ -283,24 +288,23 @@ export async function updateFood(id: string, data: Partial<IFood>) {
                     }
                 }
             }
-        } catch (notifErr) {
-            console.error("Recipe Update Notification Error:", notifErr);
-        }
 
-        const session = await getServerSession(authOptions);
-        if (session?.user) {
-            await logAction({
-                action: 'UPDATE_RECIPE',
-                performedBy: (session.user as any).id,
-                targetId: id,
-                targetModel: 'Food',
-                details: { name: updated?.name }
-            });
-        }
+            const session = await getServerSession(authOptions);
+            if (session?.user) {
+                await logAction({
+                    action: 'UPDATE_RECIPE',
+                    performedBy: (session.user as any).id,
+                    targetId: id,
+                    targetModel: 'Food',
+                    details: { name: updated?.name }
+                });
+            }
 
-        return JSON.parse(JSON.stringify(updated));
+            return JSON.parse(JSON.stringify(updated));
+        } catch (e) {
+            throw e;
+        }
     } catch (e) {
-        console.error("Update food failed", e);
         throw e;
     }
 }
@@ -326,7 +330,6 @@ export async function archiveFood(id: string) {
 
         return JSON.parse(JSON.stringify(updated));
     } catch (e) {
-        console.error("Archive food failed", e);
         throw e;
     }
 }
@@ -353,7 +356,6 @@ export async function deleteFood(id: string) {
 
         return JSON.parse(JSON.stringify(updated));
     } catch (e) {
-        console.error("Delete food failed", e);
         throw e;
     }
 }
@@ -378,7 +380,6 @@ export async function restoreFood(id: string) {
 
         return JSON.parse(JSON.stringify(updated));
     } catch (e) {
-        console.error("Restore food failed", e);
         throw e;
     }
 }
@@ -408,4 +409,10 @@ export async function checkFinancialAccess(userId: string) {
     }
 
     return false;
+}
+
+export async function hasRecipesForUser() {
+    await dbConnect();
+    const foods = await getFoods(); // Existing getFoods already handles access
+    return foods.length > 0;
 }

@@ -18,7 +18,6 @@ export async function getSystemSettings() {
             settings: JSON.parse(JSON.stringify(company.settings || {}))
         };
     } catch (error) {
-        console.error("Error fetching settings:", error);
         return { success: false, error: "Failed to fetch settings" };
     }
 }
@@ -38,7 +37,6 @@ export async function updateScheduleRules(rules: { deadlineDay: number; deadline
         revalidatePath("/dashboard/settings");
         return { success: true };
     } catch (error) {
-        console.error("Error updating schedule rules:", error);
         return { success: false, error: "Failed to update rules" };
     }
 }
@@ -62,7 +60,6 @@ export async function updateCompanyProfile(data: { name: string; address?: strin
         revalidatePath("/dashboard/settings");
         return { success: true };
     } catch (error) {
-        console.error("Error updating profile:", error);
         return { success: false, error: "Failed to update profile" };
     }
 }
@@ -102,7 +99,6 @@ export async function getAllDepartmentsForConfig() {
 
         return { success: true, departments: JSON.parse(JSON.stringify(depts)) };
     } catch (error) {
-        console.error(error);
         return { success: false, error: "Failed to fetch departments" };
     }
 }

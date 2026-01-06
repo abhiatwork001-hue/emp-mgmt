@@ -36,7 +36,6 @@ export async function createCredential(data: {
         revalidatePath("/dashboard/store");
         return { success: true };
     } catch (error) {
-        console.error("Error creating credential:", error);
         return { success: false, error: "Failed to create" };
     }
 }
@@ -96,7 +95,6 @@ export async function revealPassword(credentialId: string, userId: string) {
         const decrypted = decrypt(cred.encryptedPassword, cred.iv);
         return { success: true, password: decrypted };
     } catch (error) {
-        console.error(error);
         return { success: false, error: "Failed to decrypt" };
     }
 }

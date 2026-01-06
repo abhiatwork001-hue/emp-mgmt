@@ -40,14 +40,20 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
     const isGlobalAdmin = userRoles.some((r: string) => ["admin", "owner", "super_user", "hr"].includes(r));
     const isStoreManager = userRoles.includes("store_manager");
 
-    // "employee and storeDepartmentHead should not see the edit store Button" -> Implies StoreManager CAN
-    const canEditStore = isGlobalAdmin || isStoreManager;
+    // "employee and storeDepartmentHead should not see the edit store Button"
+    // "storeManager... cannot edit employee... or add employee... and manage team"
+    const canEditStore = isGlobalAdmin; // Store Managers restricted to View Only
 
     // "storeManager... cannot assign manager to the store"
     const canManageManagers = isGlobalAdmin;
 
     // "employee, storeManager and storeDepartmentHead cannot edit employee... or add employee... and manage team"
     const canManageEmployees = isGlobalAdmin;
+
+    // Credentials: "none can add storeCredentials for the store, just the manager... hr, tech, admin, owner"
+    // Clarification: Request said "just the manager" BUT later "storeManager... cannot add".
+    // "but storeManager, storeDepartmentHead can see... hr, tech, admin and owner can edit and see"
+    const canEditCredentials = isGlobalAdmin; // Tech/Admin/Owner/HR
 
     const employees = await getStoreEmployeesWithTodayStatus(storeId);
     const storeDepartments = await getStoreDepartments(storeId);
@@ -178,7 +184,7 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
                     </Card>
 
                     {/* Credentials Section */}
-                    <CredentialManager storeId={store._id.toString()} userId={(session.user as any).id} />
+                    <CredentialManager storeId={store._id.toString()} userId={(session.user as any).id} canEdit={canEditCredentials} />
                 </div>
 
                 {/* Right Column - Quick Stats & Quick Actions */}

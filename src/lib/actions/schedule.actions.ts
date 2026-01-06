@@ -2,6 +2,7 @@
 
 import dbConnect from "@/lib/db";
 import { Schedule, StoreDepartment, Employee, Store, AbsenceRecord, ExtraHourRequest } from "@/lib/models";
+import { pusherServer } from "@/lib/pusher";
 import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
@@ -62,6 +63,39 @@ export async function getScheduleById(id: string) {
         // Optionally filter by employeeIds present in the schedule if performance is an issue
     }).lean();
 
+    // Ensure Mon-Sun structure (UTC)
+    const daysMap = new Map();
+    schedule.days.forEach((day: any) => {
+        const dateStr = new Date(day.date).toISOString().split('T')[0];
+        daysMap.set(dateStr, day);
+    });
+
+    const currentD = new Date(schedule.dateRange.startDate);
+    const dayDow = currentD.getUTCDay() || 7;
+    currentD.setUTCDate(currentD.getUTCDate() - dayDow + 1); // Set to Monday
+    currentD.setUTCHours(0, 0, 0, 0);
+    const monday = new Date(currentD);
+
+    const fullDays = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setUTCDate(monday.getUTCDate() + i);
+        const dStr = d.toISOString().split('T')[0];
+
+        if (daysMap.has(dStr)) {
+            fullDays.push(daysMap.get(dStr));
+        } else {
+            fullDays.push({
+                date: d,
+                isHoliday: false,
+                holidayName: "",
+                shifts: [],
+                events: []
+            });
+        }
+    }
+    schedule.days = fullDays;
+
     return JSON.parse(JSON.stringify({ ...schedule, absences }));
 }
 
@@ -85,6 +119,39 @@ export async function getScheduleBySlug(slug: string) {
         date: { $gte: schedule.dateRange.startDate, $lte: schedule.dateRange.endDate },
     }).lean();
 
+    // Ensure Mon-Sun structure (UTC)
+    const daysMap = new Map();
+    schedule.days.forEach((day: any) => {
+        const dateStr = new Date(day.date).toISOString().split('T')[0];
+        daysMap.set(dateStr, day);
+    });
+
+    const currentD = new Date(schedule.dateRange.startDate);
+    const dayDow = currentD.getUTCDay() || 7;
+    currentD.setUTCDate(currentD.getUTCDate() - dayDow + 1);
+    currentD.setUTCHours(0, 0, 0, 0);
+    const monday = new Date(currentD);
+
+    const fullDays = [];
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(monday);
+        d.setUTCDate(monday.getUTCDate() + i);
+        const dStr = d.toISOString().split('T')[0];
+
+        if (daysMap.has(dStr)) {
+            fullDays.push(daysMap.get(dStr));
+        } else {
+            fullDays.push({
+                date: d,
+                isHoliday: false,
+                holidayName: "",
+                shifts: [],
+                events: []
+            });
+        }
+    }
+    schedule.days = fullDays;
+
     return JSON.parse(JSON.stringify({ ...schedule, absences }));
 }
 
@@ -107,7 +174,6 @@ export async function createSchedule(data: any) {
 
     const newSchedule = await new Schedule(scheduleData).save();
 
-    // Log Action
     await logAction({
         action: 'CREATE_SCHEDULE',
         performedBy: (session.user as any).id,
@@ -115,6 +181,11 @@ export async function createSchedule(data: any) {
         targetId: newSchedule._id,
         targetModel: 'Schedule',
         details: { weekNumber: newSchedule.weekNumber, year: newSchedule.year }
+    });
+
+    await pusherServer.trigger(`store-${newSchedule.storeId}`, "schedule:updated", {
+        scheduleId: newSchedule._id,
+        status: 'created'
     });
 
     revalidatePath(`/dashboard/schedules/${newSchedule.slug}`);
@@ -184,7 +255,6 @@ export async function updateSchedule(id: string, data: any) {
 
     if (changes.length === 0 && data.days) changes.push("Minor adjustments");
 
-    // Log Action
     await logAction({
         action: 'UPDATE_SCHEDULE',
         performedBy: (session.user as any).id,
@@ -192,6 +262,11 @@ export async function updateSchedule(id: string, data: any) {
         targetId: id,
         targetModel: 'Schedule',
         details: { status: updated.status, changes: changes.slice(0, 10) } // Limit log size
+    });
+
+    await pusherServer.trigger(`store-${updated.storeId?._id || updated.storeId}`, "schedule:updated", {
+        scheduleId: id,
+        status: 'updated'
     });
 
     revalidatePath(`/dashboard/schedules/${updated.slug}`);
@@ -296,6 +371,11 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         details: { status, comment, reversion: status === 'published' && comment?.includes('Reverted') }
     });
 
+    await pusherServer.trigger(`store-${updated.storeId?._id || updated.storeId}`, "schedule:updated", {
+        scheduleId: id,
+        status: status
+    });
+
     revalidatePath(`/dashboard/schedules/${updated.slug}`);
 
     // Notification Logic
@@ -336,19 +416,28 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
                 }
 
             } else if (status === 'published' || status === 'approved') {
-                title = "Schedule Approved & Published";
-                message = `The schedule for ${deptName} at ${storeName} has been approved and published.`;
+                const isPublished = status === 'published';
+                title = isPublished ? "Schedule Published" : "Schedule Approved";
+                message = isPublished
+                    ? `The schedule for ${deptName} at ${storeName} is now live.`
+                    : `The schedule for ${deptName} at ${storeName} has been approved.`;
 
                 const employeeIds = new Set<string>();
 
-                updated.days.forEach((day: any) => {
-                    day.shifts.forEach((shift: any) => {
-                        shift.employees.forEach((emp: any) => {
-                            const empId = emp._id ? emp._id.toString() : emp.toString();
-                            employeeIds.add(empId);
-                        });
+                if (updated.days && Array.isArray(updated.days)) {
+                    updated.days.forEach((day: any) => {
+                        if (day.shifts && Array.isArray(day.shifts)) {
+                            day.shifts.forEach((shift: any) => {
+                                if (shift.employees && Array.isArray(shift.employees)) {
+                                    shift.employees.forEach((emp: any) => {
+                                        const empId = emp._id ? emp._id.toString() : emp.toString();
+                                        employeeIds.add(empId);
+                                    });
+                                }
+                            });
+                        }
                     });
-                });
+                }
 
                 if (updated.createdBy) {
                     const creatorId = updated.createdBy._id ? updated.createdBy._id.toString() : updated.createdBy.toString();
@@ -356,6 +445,8 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
                 }
 
                 const recipients = Array.from(employeeIds).filter(r => r !== userId);
+
+                console.log(`[ScheduleNotification] Status: ${status}, Recipients found: ${recipients.length}`);
 
                 if (recipients.length > 0) {
                     await triggerNotification({
@@ -618,6 +709,27 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
     // 3. Merge Shifts
     const daysMap = new Map();
 
+    // Initialize with all 7 days of the week ensuring Mon-Sun
+    const currentD = new Date(date);
+    const dayOfWeek = currentD.getDay(); // 0=Sun, 1=Mon
+    // Set to Monday of this week
+    // If Sunday (0), subtract 6 days. If Mon (1), subtract 0. If Tue (2), subtract 1.
+    const diff = currentD.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    const monday = new Date(currentD.setDate(diff));
+
+    for (let i = 0; i < 7; i++) {
+        const loopDate = new Date(monday);
+        loopDate.setDate(monday.getDate() + i);
+        const dateStr = loopDate.toISOString().split('T')[0];
+
+        daysMap.set(dateStr, {
+            date: loopDate,
+            isHoliday: false,
+            holidayName: "",
+            shifts: []
+        });
+    }
+
     schedules.forEach((sch: any) => {
         const storeName = sch.storeId?.name || "Unknown Store";
         const deptName = sch.storeDepartmentId?.name || "Unknown Dept";
@@ -626,6 +738,7 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
             const dateStr = new Date(day.date).toISOString().split('T')[0];
 
             if (!daysMap.has(dateStr)) {
+                // Should exist from init, but fallback
                 daysMap.set(dateStr, {
                     date: day.date,
                     isHoliday: false,
@@ -648,7 +761,10 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
                 dayObj.shifts.push({
                     ...s,
                     storeName,
-                    deptName
+                    deptName,
+                    scheduleId: sch._id,
+                    storeId: sch.storeId?._id || sch.storeId,
+                    storeDepartmentId: sch.storeDepartmentId?._id || sch.storeDepartmentId
                 });
             });
         });
@@ -661,8 +777,8 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
     return JSON.parse(JSON.stringify({
         weekNumber,
         year,
-        dateRange: schedules[0].dateRange,
-        days: sortedDays
+        days: sortedDays,
+        primaryScheduleSlug: schedules[0]?.slug // Return slug of the first/main schedule found
     }));
 }
 

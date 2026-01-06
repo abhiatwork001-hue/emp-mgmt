@@ -32,6 +32,7 @@ import { StatsCards } from "@/components/dashboard/stats-cards";
 import InsightsPanel from "@/components/dashboard/insights-panel";
 import { VacationAnalytics } from "@/components/dashboard/hr/vacation-analytics";
 import { StaffingAlerts } from "@/components/dashboard/hr/staffing-alerts";
+import { ActiveActionsWidget } from "@/components/dashboard/active-actions-widget";
 
 interface StoreManagerDashboardProps {
     employee: any;
@@ -60,12 +61,18 @@ interface StoreManagerDashboardProps {
         scheduleHealth: any;
     };
     // New Props for full layout integration
-    tasks?: any[];
-    personalTodos?: any[];
-    swapRequests?: any;
+    tasks: any[];
+    personalTodos: any[];
+    swapRequests: any[];
     stores?: any[];
     departments?: any[];
     managers?: any[];
+    activeActions?: {
+        vacations: any[];
+        absences: any[];
+        coverageRequests: any[];
+        coverageOffers: any[];
+    };
 }
 
 export function StoreManagerDashboard({
@@ -78,12 +85,13 @@ export function StoreManagerDashboard({
     currentScheduleSlug,
     currentUserRole = "store_manager",
     operationsData,
-    tasks = [],
-    personalTodos = [],
-    swapRequests = { incoming: [], outgoing: [] },
+    tasks,
+    personalTodos,
+    swapRequests,
     stores = [],
     departments = [],
-    managers = []
+    managers = [],
+    activeActions = { vacations: [], absences: [], coverageRequests: [], coverageOffers: [] }
 }: StoreManagerDashboardProps) {
     // Helper: Compute Extended Stats for StatsCards
     const extendedStats = {
@@ -182,7 +190,7 @@ export function StoreManagerDashboard({
         ),
 
         "credential-manager": (
-            <CredentialManager storeId={effectiveStoreId || ""} userId={employee._id} />
+            <CredentialManager storeId={effectiveStoreId || ""} userId={employee._id} canEdit={["admin", "hr", "owner", "super_user", "tech"].includes(currentUserRole)} />
         ),
 
         "management-suite": (
@@ -261,7 +269,18 @@ export function StoreManagerDashboard({
 
     const sidebarContent: any = {
         todo: <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />,
-        notifications: <ReminderWidget userId={employee._id} role={currentUserRole} />
+        notifications: (
+            <div className="space-y-6">
+                <ActiveActionsWidget
+                    vacations={activeActions.vacations}
+                    absences={activeActions.absences}
+                    coverageRequests={activeActions.coverageRequests}
+                    coverageOffers={activeActions.coverageOffers}
+                    userId={employee._id}
+                />
+                <ReminderWidget userId={employee._id} role={currentUserRole} />
+            </div>
+        )
     };
 
     if (["tech", "super_user", "owner", "admin", "hr"].includes(currentUserRole)) {

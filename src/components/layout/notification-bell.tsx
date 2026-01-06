@@ -12,7 +12,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { pusherClient } from "@/lib/pusher";
-import { getUserNotifications, markNotificationAsRead } from "@/lib/actions/notification.actions";
+import { getUserNotifications, markNotificationAsRead, markAllNotificationsAsRead } from "@/lib/actions/notification.actions";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 
@@ -42,7 +42,6 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     useEffect(() => {
         if (!userId) return;
 
-        console.log(`📡 Subscribing to Pusher channel: user-${userId}`);
         const channel = pusherClient.subscribe(`user-${userId}`);
 
         // Monitor connection state
@@ -60,26 +59,12 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         const connectionCheck = setInterval(checkConnection, 5000);
         checkConnection(); // Initial check
 
-        channel.bind("pusher:subscription_succeeded", () => {
-            console.log(`✅ Successfully subscribed to user-${userId}`);
-            setUseFallback(false);
-        });
 
         channel.bind("pusher:subscription_error", (err: any) => {
             console.error(`❌ Subscription error for user-${userId}:`, err);
             setUseFallback(true);
         });
 
-        channel.bind("notification:new", (newNotif: any) => {
-            console.log("🔔 New Notification Received:", newNotif);
-            setNotifications((prev) => [newNotif, ...prev]);
-            setUnreadCount((prev) => prev + 1);
-
-            // Browser Notification API
-            if (typeof window !== 'undefined' && Notification.permission === "granted") {
-                new Notification("LaGasy", { body: newNotif.message }); // Use correct App Name if possible
-            }
-        });
 
         return () => {
             clearInterval(connectionCheck);
@@ -90,12 +75,10 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
     // 3. Fallback Polling (activates when Pusher fails)
     useEffect(() => {
-        if (!userId || !useFallback) return;
-
-        console.log('🔄 Using fallback polling for notifications');
 
         const pollNotifications = async () => {
             try {
+                if (!userId) return;
                 const data = await getUserNotifications(userId);
                 setNotifications(data);
                 setUnreadCount(data.filter((n: any) => !n.read).length);
@@ -141,10 +124,27 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                     )}
                 </div>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-80" align="end" forceMount>
+            <DropdownMenuContent className="w-80" align="end" onCloseAutoFocus={() => setUnreadCount(0)}>
                 <DropdownMenuLabel className="flex justify-between items-center">
                     Notifications
-                    {unreadCount > 0 && <Badge variant="secondary">{unreadCount} new</Badge>}
+                    <div className="flex items-center gap-2">
+                        {unreadCount > 0 && <Badge variant="secondary">{unreadCount} new</Badge>}
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-[10px] px-2 hover:text-primary"
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                if (userId) {
+                                    await markAllNotificationsAsRead(userId);
+                                    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                                    setUnreadCount(0);
+                                }
+                            }}
+                        >
+                            Mark all read
+                        </Button>
+                    </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <div className="max-h-[300px] overflow-y-auto">

@@ -9,6 +9,7 @@ import { authOptions } from "@/lib/auth";
 
 // --- Create Task ---
 import { triggerNotification } from "@/lib/actions/notification.actions";
+import { pusherServer } from "../pusher";
 
 // ... (existing imports, but inserted triggerNotification above)
 import { slugify } from "@/lib/utils";
@@ -131,6 +132,12 @@ export async function createTask(data: {
         });
 
         revalidatePath("/dashboard");
+
+        await pusherServer.trigger("global", "task:updated", {
+            taskId: newTask._id,
+            status: 'created'
+        });
+
         return { success: true, count: 1 };
     } catch (error) {
         console.error("Error creating task:", error);
@@ -270,6 +277,11 @@ export async function updateTaskStatus(taskId: string, status: string, userId: s
             }
         });
 
+        await pusherServer.trigger(`user-${userId}`, "task:updated", {
+            taskId: taskId,
+            status: status
+        });
+
         return { success: true };
     } catch (error: any) {
         return { success: false, error: error.message };
@@ -292,6 +304,11 @@ export async function toggleTodo(taskId: string, todoId: string, completed: bool
         );
 
         revalidatePath("/dashboard");
+        await pusherServer.trigger(`user-${userId}`, "task:updated", {
+            taskId: taskId,
+            status: 'updated'
+        });
+
         return { success: true };
     } catch (error) {
         return { success: false, error: "Failed to update todo" };
@@ -361,6 +378,11 @@ export async function addTaskComment(taskId: string, userId: string, text: strin
             details: { text: text.substring(0, 100) }
         });
 
+        await pusherServer.trigger(`user-${userId}`, "task:updated", {
+            taskId: taskId,
+            status: 'commented'
+        });
+
         return { success: true };
     } catch (error) {
         return { success: false, error: "Failed to add comment" };
@@ -418,6 +440,13 @@ export async function updateTask(taskId: string, data: {
         }
 
         revalidatePath("/dashboard");
+        if (session?.user) {
+            await pusherServer.trigger(`user-${(session.user as any).id}`, "task:updated", {
+                taskId: taskId,
+                status: 'updated'
+            });
+        }
+
         return { success: true };
     } catch (error) {
         console.error("Error updating task:", error);
@@ -480,6 +509,11 @@ export async function submitTaskFile(taskId: string, userId: string, fileUrl: st
         });
 
         revalidatePath("/dashboard");
+        await pusherServer.trigger(`user-${userId}`, "task:updated", {
+            taskId: taskId,
+            status: 'submitted'
+        });
+
         return { success: true };
     } catch (error) {
         console.error("Submission error:", error);

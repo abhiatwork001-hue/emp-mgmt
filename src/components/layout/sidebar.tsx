@@ -27,7 +27,8 @@ import {
     ChevronRight,
     ShieldAlert,
     AlertTriangle,
-    Lock
+    Lock,
+    LifeBuoy
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -43,7 +44,7 @@ import { SidebarMessageBadge } from "./sidebar-message-badge";
 
 
 const routeGroups = [
-    { title: "Operations", routes: ["Home", "Schedule", "Approvals"] },
+    { title: "Operations", routes: ["Home", "Schedule", "Approvals", "Coverage"] },
     { title: "People", routes: ["Employees", "Positions", "Vacations", "Absences", "Tips"] },
     { title: "Structure", routes: ["Stores", "Departments", "Recipes", "Credentials"] },
     { title: "Communication", routes: ["Messages", "Notices", "Tasks", "Notes", "Problems"] },
@@ -70,6 +71,7 @@ const routes = [
     { label: "Profile", icon: User, href: "/dashboard/profile", color: "text-indigo-500" },
     { label: "Activities", icon: ShieldAlert, href: "/dashboard/activity-log", color: "text-red-700" },
     { label: "Credentials", icon: Lock, href: "/dashboard/credentials", color: "text-slate-500" }, // Global Store Credentials
+    { label: "Coverage", icon: LifeBuoy, href: "/dashboard/coverage", color: "text-indigo-600" },
     { label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];
 
@@ -78,13 +80,17 @@ export function Sidebar({
     departmentName = "",
     storeSlug = "",
     isMobile: propsIsMobile = false,
-    onNavItemClick
+    onNavItemClick,
+    hasRecipes = true,
+    hasCoverage = false
 }: {
     userRoles?: string[],
     departmentName?: string,
     storeSlug?: string,
     isMobile?: boolean,
-    onNavItemClick?: () => void
+    onNavItemClick?: () => void,
+    hasRecipes?: boolean,
+    hasCoverage?: boolean
 }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -125,7 +131,14 @@ export function Sidebar({
             }
 
             // Rely on central RBAC for everything else (Activities, Tips, Departments, etc.)
-            return hasAccess(effectiveRoles, route.href, departmentName, permissions) ? route : null;
+            const isAccessible = hasAccess(effectiveRoles, route.href, departmentName, permissions);
+            if (!isAccessible) return null;
+
+            // Conditional visibility based on data existence
+            if (route.label === "Recipes" && !hasRecipes) return null;
+            if (route.label === "Coverage" && !hasCoverage) return null;
+
+            return route;
         }).filter(Boolean);
         return { ...group, routes: filtered as any[] };
     }).filter(group => group.routes.length > 0);
@@ -233,11 +246,15 @@ export function Sidebar({
 export function MobileSidebar({
     userRoles = ["employee"],
     departmentName = "",
-    storeSlug = ""
+    storeSlug = "",
+    hasRecipes = true,
+    hasCoverage = false
 }: {
     userRoles?: string[],
     departmentName?: string,
-    storeSlug?: string
+    storeSlug?: string,
+    hasRecipes?: boolean,
+    hasCoverage?: boolean
 }) {
     const [open, setOpen] = useState(false);
     return (
@@ -247,7 +264,15 @@ export function MobileSidebar({
             </SheetTrigger>
             <SheetContent side="left" className="w-72 p-0 bg-sidebar border-r border-sidebar-border">
                 <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
-                <Sidebar userRoles={userRoles} departmentName={departmentName} storeSlug={storeSlug} isMobile={true} onNavItemClick={() => setOpen(false)} />
+                <Sidebar
+                    userRoles={userRoles}
+                    departmentName={departmentName}
+                    storeSlug={storeSlug}
+                    isMobile={true}
+                    onNavItemClick={() => setOpen(false)}
+                    hasRecipes={hasRecipes}
+                    hasCoverage={hasCoverage}
+                />
             </SheetContent>
         </Sheet>
     );

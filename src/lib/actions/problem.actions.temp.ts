@@ -46,7 +46,6 @@ export async function getProblems(options: GetProblemsOptions) {
 
         return JSON.parse(JSON.stringify(problems));
     } catch (error) {
-        console.error("Failed to fetch problems:", error);
         return [];
     }
 }

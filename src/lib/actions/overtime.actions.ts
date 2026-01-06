@@ -67,7 +67,6 @@ export async function createOvertimeRequest(data: {
         revalidatePath("/dashboard");
         return { success: true, request: JSON.parse(JSON.stringify(request)) };
     } catch (error) {
-        console.error("Error creating overtime request:", error);
         return { success: false, error: "Failed to create request" };
     }
 }
@@ -90,7 +89,6 @@ export async function getOvertimeRequests(filter: { employeeId?: string; storeId
 
         return JSON.parse(JSON.stringify(requests));
     } catch (error) {
-        console.error("Error fetching overtime requests:", error);
         return [];
     }
 }
@@ -147,7 +145,6 @@ export async function respondToOvertimeRequest(requestId: string, reviewerId: st
         revalidatePath("/dashboard");
         return { success: true };
     } catch (error) {
-        console.error("Error responding to overtime request:", error);
         return { success: false, error: "Failed to process request" };
     }
 }
@@ -176,7 +173,6 @@ export async function getPendingOvertimeRequests(filters: any = {}) {
 
         return JSON.parse(JSON.stringify(requests));
     } catch (e) {
-        console.error("Error fetching pending overtime:", e);
         return [];
     }
 }

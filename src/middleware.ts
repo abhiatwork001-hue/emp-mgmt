@@ -15,16 +15,11 @@ export default async function middleware(req: NextRequest) {
 
     // Check if route is protected (Dashboard)
     if (/\/dashboard(\/|$)/.test(pathname)) {
-        console.log(`[Middleware] Checking dashboard access: ${pathname}`);
-        console.log(`[Middleware] Environment detection: NODE_ENV=${process.env.NODE_ENV}, URL=${req.url}`);
-
         const cookies = req.cookies.getAll();
-        console.log(`[Middleware] Cookies received (${cookies.length}):`, cookies.map(c => c.name).join(', '));
 
         const secret = process.env.NEXTAUTH_SECRET;
 
         if (!secret) {
-            console.error("[Middleware] CRITICAL: NEXTAUTH_SECRET is not defined in environment variables!");
         }
 
         const token = await getToken({
@@ -34,7 +29,6 @@ export default async function middleware(req: NextRequest) {
         });
 
         if (!token) {
-            console.log("[Middleware] No token found. Redirecting to login.");
             // Extract locale from path if present
             const segments = pathname.split('/');
             const locale = segments[1];
@@ -44,7 +38,7 @@ export default async function middleware(req: NextRequest) {
             const url = new URL(`/${targetLocale}/login`, req.url);
             return NextResponse.redirect(url);
         }
-        console.log(`[Middleware] Token verified for user: ${token.sub}`);
+        /*         console.log(`[Middleware] Token verified for user: ${token.sub}`); */
     }
 
     return intlMiddleware(req);

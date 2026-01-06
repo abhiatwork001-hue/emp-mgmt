@@ -168,7 +168,6 @@ export async function assignStoreEmployeesToDepartment(departmentId: string, emp
         await GlobalDepartment.findByIdAndUpdate(dept.globalDepartmentId, {
             $addToSet: { employees: { $each: employeeIds } }
         });
-        console.log("[assignStoreEmployeesToDepartment] Added employees to global department");
     }
 
     if (dept && dept.storeId) {

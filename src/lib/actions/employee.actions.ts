@@ -9,6 +9,7 @@ import { logAction } from "./log.actions";
 import * as crypto from 'crypto';
 import { slugify } from "@/lib/utils";
 import { getAugmentedRolesAndPermissions } from "../auth-utils";
+import { pusherServer } from "../pusher";
 
 type EmployeeData = Partial<IEmployee>;
 
@@ -252,6 +253,12 @@ export async function createEmployee(data: EmployeeData) {
     }
 
     revalidatePath("/dashboard/employees");
+
+    await pusherServer.trigger(`store-${newEmployee.storeId}`, "employee:updated", {
+        employeeId: newEmployee._id,
+        status: 'created'
+    });
+
     return JSON.parse(JSON.stringify(newEmployee));
 }
 
@@ -404,6 +411,12 @@ export async function updateEmployee(id: string, data: EmployeeData) {
     });
 
     revalidatePath("/dashboard/employees");
+
+    await pusherServer.trigger(`store-${updatedEmployee.storeId}`, "employee:updated", {
+        employeeId: id,
+        status: 'updated'
+    });
+
     return JSON.parse(JSON.stringify(updatedEmployee));
 }
 
@@ -472,9 +485,14 @@ export async function archiveEmployee(id: string) {
 
     await logAction({
         action: 'ARCHIVE_EMPLOYEE',
-        performedBy: 'SYSTEM', // Archive usually from admin UI, but actor not passed here
+        performedBy: 'SYSTEM',
         targetId: id,
         targetModel: 'Employee'
+    });
+
+    await pusherServer.trigger(`store-${archived.storeId}`, "employee:updated", {
+        employeeId: id,
+        status: 'archived'
     });
 
     return JSON.parse(JSON.stringify(archived));

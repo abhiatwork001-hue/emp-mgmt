@@ -128,7 +128,6 @@ export async function getAuditLogs({ userId, page = 1, limit = 20, filters = {} 
         };
 
     } catch (error) {
-        console.error("Error fetching audit logs:", error);
         return { success: false, error: "Failed to fetch logs" };
     }
 }

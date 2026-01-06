@@ -25,13 +25,13 @@ export function SwapRequestsWidget({ incomingRequests, userId }: SwapRequestsWid
     const handleAction = async (requestId: string, action: 'approved' | 'rejected') => {
         setLoadingId(requestId);
         try {
-            const result = await respondToSwapRequest(requestId, action);
+            const result = await respondToSwapRequest(requestId, action, userId);
             if (result.success) {
                 toast.success(`Swap request ${action}`);
                 setRequests(prev => prev.filter(r => r._id !== requestId));
                 router.refresh();
             } else {
-                toast.error(result.error || "Failed to process request");
+                toast.error((result as any).error || "Failed to process request");
             }
         } catch (error) {
             toast.error("An error occurred");

@@ -14,40 +14,31 @@ export const authOptions: NextAuthOptions = {
                 password: { label: "Password", type: "password" },
             },
             async authorize(credentials) {
-                console.log("[Auth] Authorize called with:", { email: credentials?.email });
 
                 if (!credentials?.email || !credentials?.password) {
-                    console.log("[Auth] Missing credentials");
                     return null;
                 }
 
                 try {
-                    console.log("[Auth] Connecting to DB...");
                     await dbConnect();
 
-                    console.log("[Auth] Finding employee:", credentials.email);
                     const employee = await Employee.findOne({ email: credentials.email })
                         .select("firstName lastName email password roles positionId isPasswordChanged")
                         .lean();
 
                     if (!employee) {
-                        console.log("[Auth] Employee not found");
                         return null;
                     }
-                    console.log("[Auth] Employee found:", employee._id);
 
                     // Verify password
-                    console.log("[Auth] Verifying password...");
                     const isPasswordValid = await bcrypt.compare(
                         credentials.password,
                         employee.password || ""
                     );
 
                     if (!isPasswordValid) {
-                        console.log("[Auth] Password invalid");
                         return null;
                     }
-                    console.log("[Auth] Password valid");
 
                     // Determine roles/permissions using unified helper (using .lean() for position)
                     const position = employee.positionId
@@ -70,16 +61,15 @@ export const authOptions: NextAuthOptions = {
                         // Only keeping the absolute essentials for session detection
                         roles: sanitizedRoles,
                         permissions: sanitizedPermissions,
+                        name: `${employee.firstName} ${employee.lastName}`,
+                        email: employee.email,
                         isPasswordChanged: employee.isPasswordChanged !== false
                     };
 
-                    console.log("[Auth] Successfully authorized. Payload keys:", Object.keys(authData));
-                    console.log("[Auth] Roles count:", uniqueRoles.length, "Permissions count:", permissions.length);
                     const payloadSize = JSON.stringify(authData).length;
-                    console.log("[Auth] Estimated payload size:", payloadSize, "bytes");
 
                     if (payloadSize > 2000) {
-                        console.warn("[Auth] WARNING: payload size is unusually large!");
+                        // console.warn("[Auth] WARNING: payload size is unusually large!"); // Removed log
                     }
 
                     return authData;
@@ -96,6 +86,8 @@ export const authOptions: NextAuthOptions = {
                 session.user = {
                     ...session.user,
                     id: token.sub,
+                    name: token.name,
+                    email: token.email,
                     roles: token.roles as string[],
                     permissions: token.permissions as string[],
                     isPasswordChanged: token.isPasswordChanged as boolean
@@ -108,6 +100,8 @@ export const authOptions: NextAuthOptions = {
                 token.sub = user.id;
                 token.roles = (user as any).roles;
                 token.permissions = (user as any).permissions;
+                token.name = (user as any).name;
+                token.email = (user as any).email;
                 token.isPasswordChanged = (user as any).isPasswordChanged;
             }
             return token;

@@ -15,9 +15,10 @@ import { format } from "date-fns";
 interface CredentialManagerProps {
     storeId: string;
     userId: string;
+    canEdit: boolean;
 }
 
-export function CredentialManager({ storeId, userId }: CredentialManagerProps) {
+export function CredentialManager({ storeId, userId, canEdit }: CredentialManagerProps) {
     const [creds, setCreds] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -42,7 +43,7 @@ export function CredentialManager({ storeId, userId }: CredentialManagerProps) {
                     </CardTitle>
                     <CardDescription>Securely manage shared logins for this store.</CardDescription>
                 </div>
-                <AddCredentialDialog storeId={storeId} userId={userId} onSuccess={fetchCreds} />
+                {canEdit && <AddCredentialDialog storeId={storeId} userId={userId} onSuccess={fetchCreds} />}
             </CardHeader>
             <CardContent>
                 <Table>
@@ -52,12 +53,12 @@ export function CredentialManager({ storeId, userId }: CredentialManagerProps) {
                             <TableHead>Username</TableHead>
                             <TableHead>Password</TableHead>
                             <TableHead>Last Updated</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            {canEdit && <TableHead className="text-right">Actions</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {creds.map(c => (
-                            <CredentialRow key={c._id} credential={c} userId={userId} onUpdate={fetchCreds} />
+                            <CredentialRow key={c._id} credential={c} userId={userId} onUpdate={fetchCreds} canEdit={canEdit} />
                         ))}
                         {creds.length === 0 && !loading && (
                             <TableRow>
@@ -73,7 +74,7 @@ export function CredentialManager({ storeId, userId }: CredentialManagerProps) {
     );
 }
 
-function CredentialRow({ credential, userId, onUpdate }: { credential: any, userId: string, onUpdate: () => void }) {
+function CredentialRow({ credential, userId, onUpdate, canEdit }: { credential: any, userId: string, onUpdate: () => void, canEdit: boolean }) {
     const [revealed, setRevealed] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -122,9 +123,11 @@ function CredentialRow({ credential, userId, onUpdate }: { credential: any, user
             <TableCell className="text-xs text-muted-foreground">
                 {format(new Date(credential.updatedAt), "yyyy-MM-dd")}
             </TableCell>
-            <TableCell className="text-right">
-                <UpdateCredentialDialog credential={credential} userId={userId} onSuccess={onUpdate} />
-            </TableCell>
+            {canEdit && (
+                <TableCell className="text-right">
+                    <UpdateCredentialDialog credential={credential} userId={userId} onSuccess={onUpdate} />
+                </TableCell>
+            )}
         </TableRow>
     );
 }

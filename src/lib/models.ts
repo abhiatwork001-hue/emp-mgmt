@@ -769,6 +769,69 @@ const NotificationSchema = new Schema<INotification>({
 
 }, { timestamps: true });
 
+// --- Shift Coverage Models ---
+
+export interface IShiftCoverageRequest extends Document {
+    originalShift: {
+        scheduleId: ObjectId;
+        dayDate: Date;
+        shiftName: string;
+        startTime: string;
+        endTime: string;
+        storeId: ObjectId;
+        storeDepartmentId: ObjectId;
+    };
+    originalEmployeeId: ObjectId;
+    reason: string;
+    attachments: string[]; // URLs
+
+    status: 'pending_hr' | 'seeking_coverage' | 'covered' | 'cancelled';
+
+    // Coverage Workflow
+    candidates: ObjectId[]; // Employees invited by HR
+    offerSentAt?: Date;
+
+    acceptedBy?: ObjectId; // The winner
+    acceptedAt?: Date;
+
+    compensationType?: 'extra_hour' | 'vacation_day'; // HR Preference for the cover
+
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const ShiftCoverageRequestSchema = new Schema<IShiftCoverageRequest>({
+    originalShift: {
+        scheduleId: { type: Schema.Types.ObjectId, ref: 'Schedule', required: true },
+        dayDate: { type: Date, required: true },
+        shiftName: { type: String },
+        startTime: { type: String, required: true },
+        endTime: { type: String, required: true },
+        storeId: { type: Schema.Types.ObjectId, ref: 'Store' },
+        storeDepartmentId: { type: Schema.Types.ObjectId, ref: 'StoreDepartment' }
+    },
+    originalEmployeeId: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
+    reason: { type: String },
+    attachments: [{ type: String }],
+
+    status: {
+        type: String,
+        enum: ['pending_hr', 'seeking_coverage', 'covered', 'cancelled'],
+        default: 'pending_hr'
+    },
+
+    candidates: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
+    offerSentAt: { type: Date },
+
+    acceptedBy: { type: Schema.Types.ObjectId, ref: 'Employee' },
+    acceptedAt: { type: Date },
+
+    compensationType: { type: String, enum: ['extra_hour', 'vacation_day'] }
+
+}, { timestamps: true });
+
+export const ShiftCoverageRequest = mongoose.models.ShiftCoverageRequest || mongoose.model<IShiftCoverageRequest>('ShiftCoverageRequest', ShiftCoverageRequestSchema);
+
 export interface ITask extends Document {
     title: string;
     slug: string; // Added slug

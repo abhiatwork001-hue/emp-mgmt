@@ -25,7 +25,6 @@ class Realtime {
                 const callbacks = this.listeners.get(data.type) ?? [];
                 callbacks.forEach((cb) => cb(data.payload));
             } catch (e) {
-                console.error('Realtime: failed to parse message', e);
             }
         };
         this.socket.onclose = () => {
