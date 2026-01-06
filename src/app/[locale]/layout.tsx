@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Outfit, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
@@ -27,15 +27,36 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Chickinho",
   description: "Employee Management System for Chickinho Restaurant Group",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Chickinho",
+  },
   icons: {
-    icon: "/logo_chickinho.png",
+    icon: [
+      { url: "/logo_chickinho.png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
     shortcut: "/logo_chickinho.png",
-    apple: "/logo_chickinho.png",
+    apple: [
+      { url: "/logo_chickinho.png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
   },
   openGraph: {
     title: "Chickinho",
     description: "Employee Management System",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#10b981",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default async function LocaleLayout({

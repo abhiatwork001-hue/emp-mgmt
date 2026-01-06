@@ -60,6 +60,19 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         checkConnection(); // Initial check
 
 
+        channel.bind("notification:new", (newNotif: any) => {
+            // Add new notification to state
+            setNotifications(prev => [newNotif, ...prev].slice(0, 20));
+
+            // Increment unread count
+            setUnreadCount(prev => prev + 1);
+
+            // Optional: browser notification or sound
+            if (Notification.permission === 'granted') {
+                new Notification(newNotif.title, { body: newNotif.message });
+            }
+        });
+
         channel.bind("pusher:subscription_error", (err: any) => {
             console.error(`❌ Subscription error for user-${userId}:`, err);
             setUseFallback(true);

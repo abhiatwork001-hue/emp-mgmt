@@ -156,6 +156,13 @@ export async function respondToOvertimeRequest(requestId: string, reviewerId: st
             status: action
         });
 
+        // Trigger Real-time Update for Approvers/Admin Dashboard
+        await pusherServer.trigger(`admin-updates`, "overtime:updated", {
+            requestId: requestId,
+            status: action,
+            employeeId: request.employeeId
+        });
+
         return { success: true };
     } catch (error) {
         return { success: false, error: "Failed to process request" };

@@ -7,10 +7,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Clock, Palmtree, AlertCircle, ArrowRight, CheckCircle2, CalendarDays, Check, X, Eye, Square, CheckSquare } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { format } from "date-fns";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { pusherClient } from "@/lib/pusher";
 import { respondToOvertimeRequest } from "@/lib/actions/overtime.actions";
 import { approveVacationRequest, rejectVacationRequest } from "@/lib/actions/vacation.actions";
 import { approveAbsenceRequest, rejectAbsenceRequest } from "@/lib/actions/absence.actions";
@@ -50,6 +51,36 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
+    // RBAC Check for Actions
+    // Use prop role if provided (for view simulation), otherwise session roles
+    const sessionRoles = (session?.user as any)?.roles || [];
+    const effectiveRoles = role ? [role] : sessionRoles;
+    const normalizedRoles = effectiveRoles.map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+
+    // Explicitly check for high-level roles only. Store Manager is NOT included.
+    const canApprove = normalizedRoles.some((r: string) => ["admin", "hr", "owner", "super_user", "tech"].includes(r));
+
+    // Real-time synchronization
+    useEffect(() => {
+        if (!canApprove) return;
+
+        const channel = pusherClient.subscribe('admin-updates');
+
+        const handleRefresh = () => {
+            router.refresh();
+        };
+
+        channel.bind('vacation:updated', handleRefresh);
+        channel.bind('absence:updated', handleRefresh);
+        channel.bind('overtime:updated', handleRefresh);
+        channel.bind('schedule:updated', handleRefresh);
+
+        return () => {
+            channel.unbind_all();
+            pusherClient.unsubscribe('admin-updates');
+        };
+    }, [canApprove, router]);
 
     const allItems = [
         ...overtime.map(i => ({
@@ -106,15 +137,6 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
     const limit = compact ? 5 : 10;
     const items = allItems.slice(0, limit);
     const hasMore = allItems.length > limit;
-
-    // RBAC Check for Actions
-    // Use prop role if provided (for view simulation), otherwise session roles
-    const sessionRoles = (session?.user as any)?.roles || [];
-    const effectiveRoles = role ? [role] : sessionRoles;
-    const normalizedRoles = effectiveRoles.map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-
-    // Explicitly check for high-level roles only. Store Manager is NOT included.
-    const canApprove = normalizedRoles.some((r: string) => ["admin", "hr", "owner", "super_user", "tech"].includes(r));
 
     const handleAction = async (item: PendingItem, action: 'approve' | 'reject') => {
         if (!canApprove) {

@@ -83,13 +83,14 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         async session({ session, token }) {
             if (session?.user) {
+                // Ensure we don't overwrite with undefined if token is somehow missing data
                 session.user = {
                     ...session.user,
-                    id: token.sub,
-                    name: token.name,
-                    email: token.email,
-                    roles: token.roles as string[],
-                    permissions: token.permissions as string[],
+                    id: token.sub || (session.user as any).id,
+                    name: token.name || session.user.name,
+                    email: token.email || session.user.email,
+                    roles: (token.roles as string[]) || (session.user as any).roles,
+                    permissions: (token.permissions as string[]) || (session.user as any).permissions,
                     isPasswordChanged: token.isPasswordChanged as boolean
                 } as any;
             }
@@ -100,7 +101,7 @@ export const authOptions: NextAuthOptions = {
                 token.sub = user.id;
                 token.roles = (user as any).roles;
                 token.permissions = (user as any).permissions;
-                token.name = (user as any).name;
+                token.name = (user as any).name || (user as any).firstName + " " + (user as any).lastName;
                 token.email = (user as any).email;
                 token.isPasswordChanged = (user as any).isPasswordChanged;
             }

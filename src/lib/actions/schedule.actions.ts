@@ -376,6 +376,12 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         status: status
     });
 
+    // Trigger Real-time Update for Approvers/Admin Dashboard
+    await pusherServer.trigger(`admin-updates`, "schedule:updated", {
+        scheduleId: id,
+        status: status
+    });
+
     revalidatePath(`/dashboard/schedules/${updated.slug}`);
 
     // Notification Logic

@@ -333,7 +333,7 @@ export async function rejectVacationRequest(requestId: string, reviewerId: strin
 
     await request.save();
 
-    // Trigger Real-time Update
+    // Trigger Real-time Update for Approvers/Admin Dashboard
     await pusherServer.trigger(`admin-updates`, "vacation:updated", {
         requestId: request._id,
         status: 'rejected',

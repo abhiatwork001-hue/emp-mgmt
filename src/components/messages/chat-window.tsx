@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { sendMessage, markMessagesAsRead, toggleReaction, deleteConversation, toggleMuteConversation } from "@/lib/actions/message.actions";
+import { pusherClient } from "@/lib/pusher";
 import { cn } from "@/lib/utils";
 import { UploadButton, useUploadThing } from "@/lib/uploadthing";
 import { Dialog, DialogContent, DialogTrigger, DialogTitle } from "@/components/ui/dialog";
@@ -203,7 +204,78 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
         }
     }, [messages]);
 
-    // Update messages when initialMessages changes (server refresh)
+    // 3. Real-time Subscription with Pusher
+    useEffect(() => {
+        if (!conversation?._id) return;
+
+        const channel = pusherClient.subscribe(`chat-${conversation._id}`);
+
+        channel.bind("message:new", (newMessage: any) => {
+            setMessages((prev) => {
+                // Avoid duplicates for the sender (who already has the message optimistically)
+                const exists = prev.some(m => m._id === newMessage._id);
+                if (exists) return prev;
+
+                // Also check for optimistic messages that might match
+                const tempIndex = prev.findIndex(m => m._id.toString().startsWith('temp-') && m.content === newMessage.content);
+                if (tempIndex !== -1) {
+                    const cloned = [...prev];
+                    cloned[tempIndex] = newMessage;
+                    return cloned;
+                }
+
+                return [...prev, newMessage];
+            });
+
+            // Mark as read if we are looking at this conversation
+            if ((newMessage.sender?._id || newMessage.sender) !== currentUserId) {
+                markMessagesAsRead(conversation._id, currentUserId);
+            }
+        });
+
+        channel.bind("message:reaction", ({ messageId, userId, emoji, isRemoved }: any) => {
+            setMessages(prev => prev.map(m => {
+                if (m._id === messageId) {
+                    const reactions = m.reactions || [];
+                    if (isRemoved) {
+                        return {
+                            ...m,
+                            reactions: reactions.filter((r: any) =>
+                                (r.user?._id || r.user || r) !== userId || r.emoji !== emoji
+                            )
+                        };
+                    } else {
+                        // Avoid duplicate reactions from same user
+                        if (reactions.some((r: any) => (r.user?._id || r.user || r) === userId && r.emoji === emoji)) return m;
+                        return { ...m, reactions: [...reactions, { user: userId, emoji }] };
+                    }
+                }
+                return m;
+            }));
+        });
+
+        channel.bind("message:delete", ({ messageId }: any) => {
+            setMessages(prev => prev.map(m =>
+                m._id === messageId ? { ...m, isDeleted: true, content: "This message was deleted", attachments: [], reactions: [] } : m
+            ));
+        });
+
+        channel.bind("messages:read", ({ userId }: any) => {
+            setMessages(prev => prev.map(m => {
+                if (m.readBy && !m.readBy.includes(userId)) {
+                    return { ...m, readBy: [...m.readBy, userId] };
+                }
+                return m;
+            }));
+        });
+
+        return () => {
+            channel.unbind_all();
+            pusherClient.unsubscribe(`chat-${conversation._id}`);
+        };
+    }, [conversation._id, currentUserId]);
+
+    // 4. Update messages when initialMessages changes (server refresh)
     useEffect(() => {
         setMessages(initialMessages);
 

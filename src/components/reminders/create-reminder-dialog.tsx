@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, BellPlus } from "lucide-react";
+import { Loader2, BellPlus, Calendar as CalendarIcon, Clock } from "lucide-react";
 import { createReminder } from "@/lib/actions/reminder.actions";
 import { toast } from "sonner";
+import { DatePicker } from "@/components/ui/date-picker";
+import { format } from "date-fns";
 
 interface CreateReminderDialogProps {
     userId: string;
@@ -24,21 +26,29 @@ export function CreateReminderDialog({ userId, onSuccess }: CreateReminderDialog
     const [description, setDescription] = useState("");
     const [type, setType] = useState("general");
     const [priority, setPriority] = useState("medium");
-    const [dueDate, setDueDate] = useState("");
+    const [date, setDate] = useState<Date | undefined>(new Date());
+    const [time, setTime] = useState("12:00");
     const [targetRole, setTargetRole] = useState("all");
 
     const handleSubmit = async () => {
-        if (!title || !dueDate) return;
+        if (!title || !date) return;
         setLoading(true);
 
         try {
+            // Combine date and time
+            const combinedDate = new Date(date);
+            if (time) {
+                const [hours, minutes] = time.split(':').map(Number);
+                combinedDate.setHours(hours, minutes);
+            }
+
             const res = await createReminder({
                 title,
                 description,
                 type,
                 priority,
-                dueDate,
-                targetRoles: targetRole === 'all' ? [] : [targetRole], // Simplified single selection
+                dueDate: combinedDate.toISOString(),
+                targetRoles: targetRole === 'all' ? [] : [targetRole],
                 createdBy: userId
             });
 
@@ -112,8 +122,24 @@ export function CreateReminderDialog({ userId, onSuccess }: CreateReminderDialog
                         </div>
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="date">Due Date</Label>
-                        <Input id="date" type="datetime-local" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                        <Label>Due Date & Time</Label>
+                        <div className="flex gap-2">
+                            <DatePicker
+                                date={date}
+                                setDate={setDate}
+                                className="flex-1"
+                                placeholder="Pick a date"
+                            />
+                            <div className="relative group">
+                                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <Input
+                                    type="time"
+                                    value={time}
+                                    onChange={(e) => setTime(e.target.value)}
+                                    className="w-[130px] pl-10 h-10 bg-background border-input hover:border-primary/50 transition-all font-medium"
+                                />
+                            </div>
+                        </div>
                     </div>
                     <div className="grid gap-2">
                         <Label>Target Audience</Label>
@@ -131,7 +157,7 @@ export function CreateReminderDialog({ userId, onSuccess }: CreateReminderDialog
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleSubmit} disabled={loading || !title || !dueDate}>
+                    <Button onClick={handleSubmit} disabled={loading || !title || !date}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Create
                     </Button>

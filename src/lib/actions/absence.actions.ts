@@ -143,6 +143,13 @@ export async function approveAbsenceRequest(requestId: string, approverId: strin
     request.justification = justification as any;
     await request.save();
 
+    // Trigger Real-time Update for Approvers/Admin Dashboard
+    await pusherServer.trigger(`admin-updates`, "absence:updated", {
+        requestId: request._id,
+        status: 'approved',
+        employeeId: request.employeeId
+    });
+
     // Notification: Notify Employee
     try {
         await triggerNotification({
@@ -204,6 +211,13 @@ export async function rejectAbsenceRequest(requestId: string, reviewerId: string
     // AbsenceRequest schema: reason: string.
     // For now, simple status update.
     await request.save();
+
+    // Trigger Real-time Update for Approvers/Admin Dashboard
+    await pusherServer.trigger(`admin-updates`, "absence:updated", {
+        requestId: request._id,
+        status: 'rejected',
+        employeeId: request.employeeId
+    });
 
     // Notification: Notify Employee
     try {

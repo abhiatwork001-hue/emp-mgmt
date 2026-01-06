@@ -2,6 +2,7 @@
     "name": "Chickinho Global",
     "short_name": "Chickinho",
     "description": "Chickinho Intelligent Operations Center",
+    "id": "/",
     "start_url": "/dashboard",
     "display": "standalone",
     "orientation": "portrait-primary",

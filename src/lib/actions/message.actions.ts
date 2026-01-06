@@ -3,6 +3,7 @@
 import connectToDB from "@/lib/db";
 import { Conversation, Message, Employee } from "@/lib/models";
 import { revalidatePath } from "next/cache";
+import { pusherServer } from "@/lib/pusher";
 import { sendPushNotification } from "@/lib/actions/push.actions";
 import { logAction } from "./log.actions";
 
@@ -163,6 +164,7 @@ export async function sendMessage(conversationId: string, senderId: string, cont
             ));
         }
 
+
         revalidatePath(`/dashboard/messages`);
 
         // Log Action
@@ -181,7 +183,23 @@ export async function sendMessage(conversationId: string, senderId: string, cont
                 path: 'parentMessageId',
                 populate: { path: 'sender', select: 'firstName lastName' }
             });
-        return { success: true, message: JSON.parse(JSON.stringify(populatedMessage)) };
+
+        const plainMessage = JSON.parse(JSON.stringify(populatedMessage));
+
+        // Send Real-time Update (Pusher)
+        await pusherServer.trigger(`chat-${conversationId}`, "message:new", plainMessage);
+
+        // Trigger for each participant to update their conversation list
+        if (conversation && conversation.participants) {
+            await Promise.all(conversation.participants.map(async (p: any) => {
+                await pusherServer.trigger(`user-${p._id}`, "message:new", {
+                    conversationId: conversationId,
+                    message: plainMessage
+                });
+            }));
+        }
+
+        return { success: true, message: plainMessage };
     } catch (error) {
         console.error("Error sending message:", error);
         return { success: false, error: "Failed to send message" };
@@ -290,6 +308,10 @@ export async function markMessagesAsRead(conversationId: string, userId: string)
             { $addToSet: { readBy: userId } }
         );
         revalidatePath(`/dashboard/messages`);
+
+        // Trigger real-time update for read status
+        await pusherServer.trigger(`chat-${conversationId}`, "messages:read", { userId });
+
         return { success: true };
     } catch (error) {
         console.error("Error marking messages as read:", error);
@@ -321,6 +343,15 @@ export async function toggleReaction(messageId: string, userId: string, emoji: s
         }
 
         await message.save();
+
+        // Trigger real-time reaction update
+        await pusherServer.trigger(`chat-${message.conversationId}`, "message:reaction", {
+            messageId,
+            userId,
+            emoji,
+            isRemoved: existingReactionIndex > -1
+        });
+
         revalidatePath(`/dashboard/messages`);
 
         // Log Action
@@ -375,6 +406,9 @@ export async function deleteMessageForEveryone(messageId: string, userId: string
         revalidatePath('/dashboard/messages');
         revalidatePath(`/dashboard/messages/${message.conversationId}`); // Revalidate specific chat too
         revalidatePath('/dashboard'); // Revalidate dashboard if sidebar is present there
+
+        // Trigger real-time deletion
+        await pusherServer.trigger(`chat-${message.conversationId}`, "message:delete", { messageId });
 
         await logAction({
             action: 'DELETE_MESSAGE_FOR_EVERYONE',

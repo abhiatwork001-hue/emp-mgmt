@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { format } from "date-fns";
 import { Search, Plus, MessageSquare } from "lucide-react";
@@ -10,6 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { NewChatDialog } from "./NewChatDialog";
+import { pusherClient } from "@/lib/pusher";
+import { getConversations } from "@/lib/actions/message.actions";
 
 interface ConversationListProps {
     conversations: any[];
@@ -22,8 +24,40 @@ export function ConversationList({ conversations, currentUserId, onSelect }: Con
     const pathname = usePathname();
     const [search, setSearch] = useState("");
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [localConversations, setLocalConversations] = useState(conversations);
 
-    const filtered = conversations.filter(c => {
+    // Synchronize local state with props (initial server load)
+    useEffect(() => {
+        setLocalConversations(conversations);
+    }, [conversations]);
+
+    // Refresh when path changes (to clear unread count if we just opened a chat)
+    useEffect(() => {
+        if (currentUserId) {
+            getConversations(currentUserId).then(setLocalConversations);
+        }
+    }, [pathname, currentUserId]);
+
+    // Subscribe to real-time updates
+    useEffect(() => {
+        if (!currentUserId) return;
+
+        const channel = pusherClient.subscribe(`user-${currentUserId}`);
+
+        const handleUpdate = async () => {
+            const updated = await getConversations(currentUserId);
+            setLocalConversations(updated);
+        };
+
+        channel.bind("message:new", handleUpdate);
+
+        return () => {
+            channel.unbind("message:new", handleUpdate);
+            pusherClient.unsubscribe(`user-${currentUserId}`);
+        };
+    }, [currentUserId]);
+
+    const filtered = localConversations.filter(c => {
         const otherParticipants = c.participants.filter((p: any) => p._id !== currentUserId);
         const names = c.name || otherParticipants.map((p: any) => `${p.firstName} ${p.lastName}`).join(", ");
         return names.toLowerCase().includes(search.toLowerCase());
