@@ -38,7 +38,7 @@ export function DashboardHeader({
         >
             <div className="space-y-0.5">
                 <h1 className="text-3xl font-black tracking-tight text-foreground italic flex items-center gap-2">
-                    {greeting}, <span className="bg-gradient-to-r from-primary via-violet-500 to-primary bg-clip-text text-transparent animate-gradient-x">{session?.user?.name?.split(' ')[0] || "User"}</span>
+                    {greeting}, <span className="bg-gradient-to-r from-primary via-violet-500 to-primary bg-clip-text text-transparent animate-gradient-x">{session?.user?.name?.split(' ')[0] || employee?.firstName || "User"}</span>
                 </h1>
                 <div className="flex flex-col gap-0.5">
                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-2">

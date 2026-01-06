@@ -179,7 +179,7 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <StoreEmployeesList storeId={store._id} employees={employees} canManage={canManageEmployees} departments={storeDepartments} />
+                            <StoreEmployeesList storeId={store._id} employees={employees} canManage={canManageEmployees} departments={storeDepartments} currentUserRoles={userRoles} />
                         </CardContent>
                     </Card>
 

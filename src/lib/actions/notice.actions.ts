@@ -441,6 +441,12 @@ export async function updateNotice(noticeId: string, userId: string, data: Parti
         revalidatePath('/dashboard/notices');
         revalidatePath(`/dashboard/notices/${notice.slug}`);
         revalidatePath('/dashboard');
+
+        await pusherServer.trigger("global", "notice:updated", {
+            noticeId: noticeId,
+            status: 'updated'
+        });
+
         return { success: true };
     } catch (error) {
         console.error("Update Notice Error:", error);

@@ -18,11 +18,14 @@ import { updateScheduleStatus } from "@/lib/actions/schedule.actions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { EmployeeLink } from "../common/employee-link";
 
 interface PendingItem {
     id: string;
     type: 'overtime' | 'vacation' | 'absence' | 'schedule';
     employeeName: string;
+    employeeId?: string;
+    employeeSlug?: string;
     storeName: string;
     date: Date;
     details: string;
@@ -36,10 +39,11 @@ interface PendingApprovalsWidgetProps {
     absences: any[];
     schedules: any[];
     compact?: boolean;
-    role?: string; // Add role prop
+    role?: string;
+    currentUserRoles?: string[];
 }
 
-export function PendingApprovalsWidget({ overtime, vacations, absences, schedules = [], compact = false, role }: PendingApprovalsWidgetProps) {
+export function PendingApprovalsWidget({ overtime, vacations, absences, schedules = [], compact = false, role, currentUserRoles = [] }: PendingApprovalsWidgetProps) {
     const totalCount = overtime.length + vacations.length + absences.length + schedules.length;
     const { data: session } = useSession();
     const router = useRouter();
@@ -52,6 +56,8 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             id: i._id,
             type: 'overtime' as const,
             employeeName: `${i.employeeId?.firstName} ${i.employeeId?.lastName}`,
+            employeeId: i.employeeId?._id,
+            employeeSlug: i.employeeId?.slug,
             storeName: i.employeeId?.storeId?.name || "Unknown",
             date: new Date(i.dayDate),
             details: `${i.hoursRequested}h Overtime`,
@@ -62,6 +68,8 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             id: i._id,
             type: 'vacation' as const,
             employeeName: `${i.employeeId?.firstName} ${i.employeeId?.lastName}`,
+            employeeId: i.employeeId?._id,
+            employeeSlug: i.employeeId?.slug,
             storeName: i.employeeId?.storeId?.name || "Unknown",
             date: new Date(i.requestedFrom),
             details: `${i.totalDays} Day Vacation`,
@@ -72,6 +80,8 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             id: i._id,
             type: 'absence' as const,
             employeeName: `${i.employeeId?.firstName} ${i.employeeId?.lastName}`,
+            employeeId: i.employeeId?._id,
+            employeeSlug: i.employeeId?.slug,
             storeName: i.employeeId?.storeId?.name || "Unknown",
             date: new Date(i.date),
             details: i.type || "Absence",
@@ -82,6 +92,8 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             id: i._id,
             type: 'schedule' as const,
             employeeName: `${i.createdBy?.firstName || "System"} ${i.createdBy?.lastName || ""}`,
+            employeeId: i.createdBy?._id,
+            employeeSlug: i.createdBy?.slug,
             storeName: i.storeId?.name || "Unknown",
             date: new Date(i.updatedAt || i.createdAt),
             details: `Schedule Week ${i.weekNumber}`,
@@ -311,7 +323,13 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
 
                                             <div className="flex-1 min-w-0 space-y-0.5">
                                                 <div className="flex items-baseline gap-2">
-                                                    <p className="text-sm font-black text-foreground/90 truncate group-hover:text-primary transition-colors">{item.employeeName}</p>
+                                                    <EmployeeLink
+                                                        employeeId={item.employeeId || ""}
+                                                        slug={item.employeeSlug || ""}
+                                                        name={item.employeeName}
+                                                        currentUserRoles={currentUserRoles}
+                                                        className="text-sm font-black text-foreground/90 truncate group-hover:text-primary transition-colors"
+                                                    />
                                                     <span className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground/50 truncate">{item.storeName}</span>
                                                 </div>
                                                 <div className="flex items-center gap-1.5">

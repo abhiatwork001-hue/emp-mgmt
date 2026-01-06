@@ -18,6 +18,7 @@ import { ProblemStatsWidget } from "@/components/dashboard/widgets/problem-stats
 import { EmployeeScheduleTab } from "@/components/employees/employee-schedule-tab";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { EmployeeLink } from "../../common/employee-link";
 
 // Import OperationsRadar
 import { OperationsRadar, DashboardAlert } from "@/components/dashboard/operations-radar";
@@ -73,6 +74,7 @@ interface StoreManagerDashboardProps {
         coverageRequests: any[];
         coverageOffers: any[];
     };
+    currentUserRoles?: string[];
 }
 
 export function StoreManagerDashboard({
@@ -88,6 +90,7 @@ export function StoreManagerDashboard({
     tasks,
     personalTodos,
     swapRequests,
+    currentUserRoles = [],
     stores = [],
     departments = [],
     managers = [],
@@ -141,7 +144,13 @@ export function StoreManagerDashboard({
                                     <AvatarFallback className="bg-emerald-100 text-emerald-700 font-bold">{cw.firstName[0]}</AvatarFallback>
                                 </Avatar>
                                 <div className="flex flex-col min-w-0">
-                                    <span className="text-xs font-bold text-foreground truncate">{cw.firstName} {cw.lastName}</span>
+                                    <EmployeeLink
+                                        employeeId={cw._id}
+                                        slug={cw.slug}
+                                        name={`${cw.firstName} ${cw.lastName}`}
+                                        currentUserRoles={currentUserRoles}
+                                        className="text-xs font-bold text-foreground truncate"
+                                    />
                                     <span className="text-[10px] text-muted-foreground uppercase tracking-tight truncate">{cw.position}</span>
                                 </div>
                             </div>
@@ -186,6 +195,7 @@ export function StoreManagerDashboard({
                 schedules={requests?.schedules || []}
                 compact={false}
                 role={currentUserRole}
+                currentUserRoles={currentUserRoles}
             />
         ),
 
@@ -277,6 +287,11 @@ export function StoreManagerDashboard({
                     coverageRequests={activeActions.coverageRequests}
                     coverageOffers={activeActions.coverageOffers}
                     userId={employee._id}
+                />
+                <SwapRequestsWidget
+                    incomingRequests={swapRequests}
+                    userId={employee._id}
+                    currentUserRoles={currentUserRoles}
                 />
                 <ReminderWidget userId={employee._id} role={currentUserRole} />
             </div>

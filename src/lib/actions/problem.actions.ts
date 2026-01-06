@@ -3,6 +3,7 @@
 import dbConnect from "@/lib/db";
 import { Problem, Employee, Store, StoreDepartment, GlobalDepartment, IEmployee } from "@/lib/models";
 import { triggerNotification } from "./notification.actions";
+import { pusherServer } from "../pusher";
 import { revalidatePath } from "next/cache";
 import { logAction } from "./log.actions";
 
@@ -124,6 +125,12 @@ export async function reportProblem(data: ReportProblemData) {
         });
 
         revalidatePath('/dashboard');
+
+        await pusherServer.trigger("global", "problem:updated", {
+            problemId: newProblem._id,
+            status: 'created'
+        });
+
         return { success: true, problem: JSON.parse(JSON.stringify(newProblem)) };
 
     } catch (error) {
@@ -177,6 +184,12 @@ export async function addComment(problemId: string, userId: string, text: string
         });
 
         revalidatePath(`/dashboard/problems/${problemId}`);
+
+        await pusherServer.trigger("global", "problem:updated", {
+            problemId,
+            status: 'commented'
+        });
+
         return { success: true, comment };
     } catch (error) {
         console.error("Failed to add comment:", error);
@@ -217,6 +230,12 @@ export async function resolveProblem(problemId: string, userId: string, notes?: 
         });
 
         revalidatePath(`/dashboard/problems/${problemId}`);
+
+        await pusherServer.trigger("global", "problem:updated", {
+            problemId,
+            status: 'resolved'
+        });
+
         return { success: true };
     } catch (error) {
         return { success: false, error: "Failed to resolve" };

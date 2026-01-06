@@ -154,6 +154,7 @@ export function TaskBoard({
                                         key={task._id}
                                         task={task}
                                         currentUserId={currentUserId}
+                                        currentUserRoles={currentUser?.roles || []}
                                         onClick={() => router.push(`/dashboard/tasks/${task.slug || task._id}`)}
                                     />
                                 ))

@@ -9,18 +9,18 @@ import { respondToSwapRequest } from "@/lib/actions/shift-swap.actions";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { EmployeeLink } from "../common/employee-link";
 
 interface SwapRequestsWidgetProps {
     incomingRequests: any[];
     userId: string;
+    currentUserRoles: string[];
 }
 
-export function SwapRequestsWidget({ incomingRequests, userId }: SwapRequestsWidgetProps) {
+export function SwapRequestsWidget({ incomingRequests, userId, currentUserRoles }: SwapRequestsWidgetProps) {
     const [requests, setRequests] = useState(incomingRequests);
     const [loadingId, setLoadingId] = useState<string | null>(null);
     const router = useRouter();
-
-    if (!requests || requests.length === 0) return null;
 
     const handleAction = async (requestId: string, action: 'approved' | 'rejected') => {
         setLoadingId(requestId);
@@ -39,6 +39,9 @@ export function SwapRequestsWidget({ incomingRequests, userId }: SwapRequestsWid
             setLoadingId(null);
         }
     };
+
+    // Return null AFTER all hooks have been called
+    if (!requests || requests.length === 0) return null;
 
     return (
         <Card className="h-full border-l-4 border-l-blue-500 bg-blue-50/10 flex flex-col overflow-hidden">
@@ -60,9 +63,13 @@ export function SwapRequestsWidget({ incomingRequests, userId }: SwapRequestsWid
                                 <AvatarFallback>{request.requestorId.firstName[0]}</AvatarFallback>
                             </Avatar>
                             <div>
-                                <p className="font-medium">
-                                    {request.requestorId.firstName} {request.requestorId.lastName}
-                                </p>
+                                <EmployeeLink
+                                    employeeId={request.requestorId._id}
+                                    slug={request.requestorId.slug}
+                                    name={`${request.requestorId.firstName} ${request.requestorId.lastName}`}
+                                    currentUserRoles={currentUserRoles}
+                                    className="font-medium"
+                                />
                                 <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                                     <Badge variant="outline" className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">
                                         Offers: {new Date(request.requestorShift.dayDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} <span className="font-mono ml-1">{request.requestorShift.startTime}-{request.requestorShift.endTime}</span>
@@ -75,23 +82,24 @@ export function SwapRequestsWidget({ incomingRequests, userId }: SwapRequestsWid
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                        <div className="flex gap-2 shrink-0">
                             <Button
                                 size="sm"
                                 variant="outline"
-                                className="border-red-200 hover:bg-red-50 text-red-600 flex-1 sm:flex-none"
+                                className="text-red-600 hover:bg-red-50 hover:text-red-700 border-red-200"
                                 onClick={() => handleAction(request._id, 'rejected')}
                                 disabled={loadingId === request._id}
                             >
-                                <X className="h-4 w-4 mr-1" /> Reject
+                                <X className="h-4 w-4 mr-1" />
+                                Decline
                             </Button>
                             <Button
                                 size="sm"
-                                className="bg-blue-600 hover:bg-blue-700 text-white flex-1 sm:flex-none"
+                                className="bg-green-600 hover:bg-green-700 text-white"
                                 onClick={() => handleAction(request._id, 'approved')}
                                 disabled={loadingId === request._id}
                             >
-                                {loadingId === request._id ? <Clock className="h-4 w-4 animate-spin mr-1" /> : <Check className="h-4 w-4 mr-1" />}
+                                <Check className="h-4 w-4 mr-1" />
                                 Accept
                             </Button>
                         </div>

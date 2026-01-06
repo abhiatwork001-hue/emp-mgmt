@@ -8,15 +8,17 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RemoveStoreEmployeeButton } from "./remove-store-employee-button";
 import { AssignEmployeeDialog } from "./assign-employee-dialog";
+import { EmployeeLink } from "../common/employee-link";
 
 interface StoreEmployeesListProps {
     storeId: string;
     employees: any[];
     canManage?: boolean;
     departments?: any[];
+    currentUserRoles?: string[];
 }
 
-export function StoreEmployeesList({ storeId, employees, canManage = false, departments = [] }: StoreEmployeesListProps) {
+export function StoreEmployeesList({ storeId, employees, canManage = false, departments = [], currentUserRoles = [] }: StoreEmployeesListProps) {
     const [editMode, setEditMode] = useState(false);
     const [statusFilter, setStatusFilter] = useState("all");
     const [deptFilter, setDeptFilter] = useState("all");
@@ -98,7 +100,13 @@ export function StoreEmployeesList({ storeId, employees, canManage = false, depa
                                     {emp.firstName?.[0]}{emp.lastName?.[0]}
                                 </div>
                                 <div>
-                                    <p className="font-medium text-foreground">{emp.firstName} {emp.lastName}</p>
+                                    <EmployeeLink
+                                        employeeId={emp._id}
+                                        slug={emp.slug}
+                                        name={`${emp.firstName} ${emp.lastName}`}
+                                        currentUserRoles={currentUserRoles}
+                                        className="font-medium text-foreground"
+                                    />
                                     <p className="text-xs text-muted-foreground">{emp.positionId?.name || "No Position"}</p>
                                     <p className="text-xs text-muted-foreground mt-0.5">{emp.email}</p>
 

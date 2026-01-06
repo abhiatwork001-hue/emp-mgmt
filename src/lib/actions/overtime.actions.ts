@@ -2,6 +2,7 @@
 
 import connectToDB from "@/lib/db";
 import { OvertimeRequest, Employee, Notification, Schedule } from "@/lib/models";
+import { pusherServer } from "../pusher";
 import { revalidatePath } from "next/cache";
 
 function addHoursToTime(time: string, hoursToAdd: number): string {
@@ -65,6 +66,12 @@ export async function createOvertimeRequest(data: {
         // For now, no notification to specific manager logic implement, just skipping notification for now or creating generic one
 
         revalidatePath("/dashboard");
+
+        await pusherServer.trigger("global", "overtime:updated", {
+            requestId: request._id,
+            status: 'created'
+        });
+
         return { success: true, request: JSON.parse(JSON.stringify(request)) };
     } catch (error) {
         return { success: false, error: "Failed to create request" };
@@ -143,6 +150,12 @@ export async function respondToOvertimeRequest(requestId: string, reviewerId: st
         });
 
         revalidatePath("/dashboard");
+
+        await pusherServer.trigger(`user-${request.employeeId}`, "overtime:updated", {
+            requestId,
+            status: action
+        });
+
         return { success: true };
     } catch (error) {
         return { success: false, error: "Failed to process request" };

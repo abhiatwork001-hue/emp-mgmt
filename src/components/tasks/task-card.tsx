@@ -14,10 +14,13 @@ import { cn } from "@/lib/utils";
 interface TaskCardProps {
     task: any;
     currentUserId: string;
+    currentUserRoles: string[];
     onClick?: () => void;
 }
 
-export function TaskCard({ task, currentUserId, onClick }: TaskCardProps) {
+import { EmployeeLink } from "../common/employee-link";
+
+export function TaskCard({ task, currentUserId, currentUserRoles, onClick }: TaskCardProps) {
     // Map priorities to border colors for the accent bar
     const priorityColors: Record<string, string> = {
         low: "bg-slate-400",
@@ -123,12 +126,18 @@ export function TaskCard({ task, currentUserId, onClick }: TaskCardProps) {
                             </div>
                         )}
 
-                        {!totalCount && task.comments && task.comments.length > 0 && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <MessageSquare className="h-3.5 w-3.5" />
-                                <span>{task.comments.length}</span>
-                            </div>
-                        )}
+                        <div className="flex items-center gap-1">
+                            {task.assignedTo?.slice(0, 3).map((a: any) => (
+                                <EmployeeLink
+                                    key={a.id?._id || a.id}
+                                    employeeId={a.id?._id || a.id}
+                                    slug={a.id?.slug || a.slug}
+                                    name={`${a.firstName || a.id?.firstName} ${a.lastName || a.id?.lastName}`}
+                                    currentUserRoles={currentUserRoles}
+                                    className="text-[10px]"
+                                />
+                            ))}
+                        </div>
                     </div>
                 </div>
             </CardContent>

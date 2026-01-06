@@ -432,6 +432,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 activeActions={activeActions}
                 personalTodos={personalTodos}
                 swapRequests={swapRequests}
+                currentUserRoles={allRoles}
                 stores={JSON.parse(JSON.stringify(stores))}
                 departments={JSON.parse(JSON.stringify(depts))}
                 managers={JSON.parse(JSON.stringify(managers))}

@@ -72,6 +72,12 @@ export async function markReminderRead(reminderId: string, userId: string) {
             $addToSet: { isReadBy: { userId: userId, readAt: new Date() } }
         });
         revalidatePath("/dashboard");
+
+        await pusherServer.trigger(`user-${userId}`, "reminder:updated", {
+            reminderId: reminderId,
+            status: 'read'
+        });
+
         return { success: true };
     } catch (error) {
         return { success: false };

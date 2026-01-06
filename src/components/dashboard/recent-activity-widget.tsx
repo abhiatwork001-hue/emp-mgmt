@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Activity, ArrowRight, UserPlus, FileText, Calendar, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
+import { EmployeeLink } from "../common/employee-link";
 
 export function RecentActivityWidget({ userId, userRoles }: { userId?: string, userRoles?: string[] }) {
     const [logs, setLogs] = useState<any[]>([]);
@@ -80,9 +81,13 @@ export function RecentActivityWidget({ userId, userRoles }: { userId?: string, u
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium leading-normal mb-0.5 group-hover:text-primary transition-colors">
-                                        <span className="font-bold text-foreground">
-                                            {log.performedBy ? `${log.performedBy.firstName} ${log.performedBy.lastName}` : "System"}
-                                        </span>
+                                        <EmployeeLink
+                                            employeeId={log.performedBy?._id}
+                                            slug={log.performedBy?.slug}
+                                            name={log.performedBy ? `${log.performedBy.firstName} ${log.performedBy.lastName}` : "System"}
+                                            currentUserRoles={userRoles || []}
+                                            className="font-bold text-foreground"
+                                        />
                                         {" "}
                                         <span className="text-muted-foreground font-normal lowercase">
                                             {log.action.replace(/_/g, " ")}
