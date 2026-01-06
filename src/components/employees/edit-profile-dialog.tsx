@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { updateEmployee } from "@/lib/actions/employee.actions";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { UploadButton } from "@/lib/uploadthing";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ImagePlus, X, Loader2 } from "lucide-react";
 
 interface EditProfileDialogProps {
     employee: any;
@@ -72,9 +75,54 @@ export function EditProfileDialog({ employee, open, onOpenChange }: EditProfileD
                                 <Label htmlFor="address">{t("address")}</Label>
                                 <Input id="address" name="address" value={formData.address} onChange={handleChange} placeholder="123 Main St" />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="image">{t("profilePicture")}</Label>
-                                <Input id="image" name="image" value={formData.image} onChange={handleChange} placeholder="https://..." />
+                            <div className="space-y-3">
+                                <Label>{t("profilePicture")}</Label>
+                                <div className="flex items-center gap-6 p-4 bg-muted/30 rounded-2xl border border-dashed border-border group">
+                                    <div className="relative">
+                                        <Avatar className="h-20 w-20 border-2 border-primary/20 shadow-md">
+                                            <AvatarImage src={formData.image} />
+                                            <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+                                                {employee.firstName?.[0]}{employee.lastName?.[0]}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        {formData.image && (
+                                            <button
+                                                onClick={() => setFormData(prev => ({ ...prev, image: "" }))}
+                                                className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-1 shadow-lg hover:scale-110 transition-transform"
+                                                title="Remove Image"
+                                            >
+                                                <X className="h-3 w-3" />
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="flex-1 space-y-2">
+                                        <UploadButton
+                                            endpoint="profileImage"
+                                            onClientUploadComplete={(res) => {
+                                                if (res?.[0]) {
+                                                    setFormData(prev => ({ ...prev, image: res[0].url }));
+                                                }
+                                            }}
+                                            onUploadError={(error: Error) => {
+                                                console.error(error);
+                                            }}
+                                            appearance={{
+                                                button: "bg-primary text-primary-foreground hover:bg-primary/90 h-9 px-4 rounded-xl text-xs font-bold transition-all",
+                                                allowedContent: "text-[10px] text-muted-foreground font-medium uppercase tracking-tighter"
+                                            }}
+                                            content={{
+                                                button({ ready }) {
+                                                    if (ready) return <div className="flex items-center gap-2"><ImagePlus className="w-3 h-3" /> {formData.image ? "Change Photo" : "Upload Photo"}</div>;
+                                                    return <Loader2 className="w-3 h-3 animate-spin" />;
+                                                }
+                                            }}
+                                        />
+                                        <p className="text-[10px] text-muted-foreground leading-relaxed">
+                                            Recommended: Square image, max 2MB.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

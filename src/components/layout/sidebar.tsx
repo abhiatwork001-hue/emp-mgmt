@@ -44,8 +44,8 @@ import { SidebarMessageBadge } from "./sidebar-message-badge";
 
 
 const routeGroups = [
-    { title: "Operations", routes: ["Home", "Schedule", "Approvals", "Coverage"] },
-    { title: "People", routes: ["Employees", "Positions", "Vacations", "Absences", "Tips"] },
+    { title: "Operations", routes: ["Home", "Schedule", "PendingActions", "Coverage"] },
+    { title: "People", routes: ["Employees", "Positions", "StaffViewer", "Vacations", "Absences", "Tips"] },
     { title: "Structure", routes: ["Stores", "Departments", "Recipes", "Credentials"] },
     { title: "Communication", routes: ["Messages", "Notices", "Tasks", "Notes", "Problems"] },
     { title: "Account", routes: ["Profile", "Activities", "Settings"] },
@@ -54,7 +54,7 @@ const routeGroups = [
 const routes = [
     { label: "Home", icon: LayoutDashboard, href: "/dashboard", color: "text-sky-500" },
     { label: "Notices", icon: Megaphone, href: "/dashboard/notices", color: "text-orange-500" },
-    { label: "Approvals", icon: Inbox, href: "/dashboard/approvals", color: "text-red-500" },
+    { label: "PendingActions", icon: Inbox, href: "/dashboard/pending-actions", color: "text-red-500" },
     { label: "Messages", icon: MessageSquare, href: "/dashboard/messages", color: "text-blue-500" },
     { label: "Tasks", icon: ListTodo, href: "/dashboard/tasks", color: "text-purple-500" },
     { label: "Notes", icon: StickyNote, href: "/dashboard/notes", color: "text-yellow-400" },
@@ -66,6 +66,7 @@ const routes = [
     { label: "Vacations", icon: Palmtree, href: "/dashboard/vacations", color: "text-emerald-500" },
     { label: "Absences", icon: AlertCircle, href: "/dashboard/absences", color: "text-red-500" },
     { label: "Employees", icon: Users, href: "/dashboard/employees", color: "text-green-700" },
+    { label: "StaffViewer", icon: Users, href: "/dashboard/employee-viewer", color: "text-emerald-600" },
     { label: "Positions", icon: Briefcase, href: "/dashboard/positions", color: "text-blue-700" },
     { label: "Tips", icon: Coins, href: "/dashboard/tips", color: "text-yellow-600" },
     { label: "Profile", icon: User, href: "/dashboard/profile", color: "text-indigo-500" },

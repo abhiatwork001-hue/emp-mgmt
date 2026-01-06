@@ -200,7 +200,14 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
     // Auto-scroll to bottom on load and new message
     useEffect(() => {
         if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+            const scrollContainer = scrollRef.current;
+            // Use a small timeout to ensure content has rendered
+            setTimeout(() => {
+                scrollContainer.scrollTo({
+                    top: scrollContainer.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }, 100);
         }
     }, [messages]);
 
@@ -220,27 +227,47 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
             console.error(`❌ Pusher: Subscription error for chat-${conversationId}`, err);
         });
 
-        channel.bind("message:new", (newMessage: any) => {
-            console.log("📨 Pusher: New message received", newMessage._id);
+        const handleNewMessage = (receivedMsg: any) => {
+            console.log("📨 Pusher: Message processing", receivedMsg._id);
             setMessages((prev) => {
-                // Avoid duplicates for the sender (who already has the message optimistically)
-                const exists = prev.some(m => m._id === newMessage._id);
+                // Avoid duplicates
+                const exists = prev.some(m => m._id === receivedMsg._id);
                 if (exists) return prev;
 
-                // Also check for optimistic messages that might match
-                const tempIndex = prev.findIndex(m => m._id.toString().startsWith('temp-') && m.content === newMessage.content);
+                // Also check for optimistic messages
+                const tempIndex = prev.findIndex(m =>
+                    m._id.toString().startsWith('temp-') &&
+                    m.content === receivedMsg.content &&
+                    (m.sender?._id || m.sender) === (receivedMsg.sender?._id || receivedMsg.sender)
+                );
+
                 if (tempIndex !== -1) {
                     const cloned = [...prev];
-                    cloned[tempIndex] = newMessage;
+                    cloned[tempIndex] = receivedMsg;
                     return cloned;
                 }
 
-                return [...prev, newMessage];
+                return [...prev, receivedMsg];
             });
 
             // Mark as read if we are looking at this conversation
-            if ((newMessage.sender?._id || newMessage.sender) !== currentUserId) {
+            if ((receivedMsg.sender?._id || receivedMsg.sender) !== currentUserId) {
                 markMessagesAsRead(conversationId, currentUserId);
+            }
+        };
+
+        channel.bind("message:new", (newMessage: any) => {
+            console.log("📨 Pusher: New message from chat channel");
+            handleNewMessage(newMessage);
+        });
+
+        // 3.5 Secondary Listener (User Channel) - More stable for mobile
+        const userChannel = pusherClient.subscribe(`user-${currentUserId}`);
+        userChannel.bind("message:new", (data: any) => {
+            const { conversationId: msgConvId, message: msg } = data;
+            if (msgConvId === conversationId) {
+                console.log("📨 Pusher: New message from user channel (fallback)");
+                handleNewMessage(msg);
             }
         });
 
@@ -284,6 +311,12 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
             console.log(`🔌 Pusher: Unsubscribing from chat-${conversationId}`);
             channel.unbind_all();
             pusherClient.unsubscribe(`chat-${conversationId}`);
+            // Note: We don't unsubscribe from userChannel here as it's shared globally 
+            // but we SHOULD unbind our specific listener if we used one manually.
+            // unbind_all() on the channel would affect other components.
+            // Instead, we just rely on unbind_all on the chat channel and 
+            // maybe individual unbind for the user channel.
+            userChannel.unbind("message:new");
         };
     }, [conversation?._id, currentUserId]);
 

@@ -3,6 +3,7 @@
         "dashboard": "Dashboard",
         "home": "Home",
         "approvals": "Approvals",
+        "pendingactions": "Pending Actions",
         "stores": "Stores",
         "departments": "Departments",
         "recipes": "Recipes",
@@ -11,6 +12,7 @@
         "vacations": "Vacations",
         "absences": "Absences",
         "employees": "Employees",
+        "staffviewer": "Staff Viewer",
         "positions": "Positions",
         "profile": "Profile",
         "notes": "Notes",
@@ -198,7 +200,7 @@
         "editDetails": "Edit Details",
         "editProfile": "Edit Profile Details",
         "bankTaxDetails": "Bank & Tax Details",
-        "profilePicture": "Profile Picture URL",
+        "profilePicture": "Profile Picture",
         "currentRole": "Current Role",
         "noHistory": "No position history available",
         "noHistoryDescription": "Career changes will appear here.",
@@ -207,5 +209,32 @@
     "Recipes": {
         "title": "Recipes",
         "subtitle": "Manage and view kitchen and bar protocols"
+    },
+    "EmployeeViewer": {
+        "title": "Staff Schedule Viewer",
+        "description": "Examine historical and planned schedules for your team members."
+    },
+    "PendingActions": {
+        "title": "Pending Actions",
+        "description": "Manage your requests and review items requiring your approval.",
+        "myRequests": "My Pending Requests",
+        "toApprove": "Awaiting My Approval",
+        "noPersonal": "You have no pending requests.",
+        "noApprovals": "No items require your approval right now.",
+        "tabs": {
+            "all": "All",
+            "vacations": "Vacations",
+            "absences": "Absences",
+            "overtime": "Overtime",
+            "schedules": "Schedules"
+        },
+        "item": {
+            "requestedBy": "Requested by {name}",
+            "review": "Review",
+            "edit": "Edit",
+            "cancel": "Cancel Request",
+            "approve": "Approve",
+            "reject": "Reject"
+        }
     }
 }

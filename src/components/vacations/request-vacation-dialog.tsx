@@ -32,6 +32,7 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
 
     // Unified Range State
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
+    const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [comments, setComments] = useState("");
     const [absentDates, setAbsentDates] = useState<Date[]>([]);
 
@@ -195,7 +196,7 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2 flex flex-col">
                         <Label>Select Period</Label>
-                        <Popover>
+                        <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                             <PopoverTrigger asChild>
                                 <Button
                                     id="date"
@@ -225,7 +226,12 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
                                     mode="range"
                                     defaultMonth={dateRange?.from || minSelectableDate}
                                     selected={dateRange}
-                                    onSelect={setDateRange}
+                                    onSelect={(range) => {
+                                        setDateRange(range);
+                                        if (range?.from && range?.to) {
+                                            setIsCalendarOpen(false);
+                                        }
+                                    }}
                                     numberOfMonths={1}
                                     disabled={isDateDisabled}
                                     className="text-foreground"

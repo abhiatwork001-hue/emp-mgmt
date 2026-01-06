@@ -1141,23 +1141,66 @@ export async function findConflictingShifts(
 
 export async function deleteSchedule(id: string, userId: string) {
     await dbConnect();
-    await checkSchedulePermission(userId);
-
-    const schedule = await Schedule.findById(id);
+    const schedule = await Schedule.findByIdAndDelete(id);
     if (!schedule) throw new Error("Schedule not found");
 
-    // Log Action
     await logAction({
-        action: 'DELETE_SCHEDULE',
+        action: "DELETE_SCHEDULE",
         performedBy: userId,
-        storeId: schedule.storeId.toString(),
         targetId: id,
-        targetModel: 'Schedule',
-        details: { weekNumber: schedule.weekNumber, year: schedule.year, status: schedule.status }
+        targetModel: "Schedule",
+        details: { weekNumber: schedule.weekNumber, year: schedule.year, storeId: schedule.storeId, departmentId: schedule.storeDepartmentId }
     });
-
-    await Schedule.findByIdAndDelete(id);
 
     revalidatePath("/dashboard/schedules");
     return { success: true };
+}
+
+export async function getEmployeeSchedulesInRange(employeeId: string, startDate: Date, endDate: Date) {
+    await dbConnect();
+
+    // Query for schedules that overlap with the range
+    // Schedule range: dateRange.startDate to dateRange.endDate
+    const schedules = await Schedule.find({
+        "days.shifts.employees": employeeId,
+        "dateRange.startDate": { $lte: endDate },
+        "dateRange.endDate": { $gte: startDate },
+        status: "published" // Only show published schedules to non-managers or for general viewing
+    })
+        .populate("storeId", "name")
+        .populate("storeDepartmentId", "name")
+        .lean();
+
+    const shifts: any[] = [];
+
+    schedules.forEach((sched: any) => {
+        sched.days.forEach((day: any) => {
+            const dayDate = new Date(day.date);
+            if (dayDate >= startDate && dayDate <= endDate) {
+                day.shifts.forEach((shift: any) => {
+                    if (shift.employees.some((id: any) => id.toString() === employeeId)) {
+                        shifts.push({
+                            date: day.date,
+                            start: shift.startTime,
+                            end: shift.endTime,
+                            breakMins: shift.breakMinutes,
+                            position: shift.positionName,
+                            store: sched.storeId?.name,
+                            department: sched.storeDepartmentId?.name,
+                            _id: shift._id
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    // Sort by date and then start time
+    shifts.sort((a, b) => {
+        const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
+        if (dateDiff !== 0) return dateDiff;
+        return a.start.localeCompare(b.start);
+    });
+
+    return shifts;
 }

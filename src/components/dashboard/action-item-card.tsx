@@ -1,0 +1,227 @@
+"use client";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+    Palmtree,
+    AlertCircle,
+    Clock,
+    CalendarDays,
+    ChevronRight,
+    ArrowRight,
+    User,
+    Store,
+    MapPin,
+    Calendar,
+    X,
+    Check,
+    Edit3,
+    Eye
+} from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
+import { motion } from "framer-motion";
+
+interface ActionItemCardProps {
+    item: any;
+    type: 'vacation' | 'absence' | 'overtime' | 'schedule';
+    isApproval?: boolean;
+    onAction: (id: string, action: string) => void;
+    loading?: boolean;
+}
+
+export function ActionItemCard({ item, type, isApproval, onAction, loading }: ActionItemCardProps) {
+    const t = useTranslations("PendingActions");
+    const tc = useTranslations("Common");
+
+    const getIcon = () => {
+        switch (type) {
+            case 'vacation': return <Palmtree className="w-5 h-5 text-emerald-500" />;
+            case 'absence': return <AlertCircle className="w-5 h-5 text-red-500" />;
+            case 'overtime': return <Clock className="w-5 h-5 text-orange-500" />;
+            case 'schedule': return <CalendarDays className="w-5 h-5 text-blue-500" />;
+        }
+    };
+
+    const getTitle = () => {
+        switch (type) {
+            case 'vacation': return "Vacation Request";
+            case 'absence': return "Absence Report";
+            case 'overtime': return "Overtime Request";
+            case 'schedule': return "Draft Schedule";
+        }
+    };
+
+    const getDateInfo = () => {
+        if (type === 'vacation') {
+            return (
+                <div className="flex items-center gap-2 text-sm font-bold">
+                    <span>{format(new Date(item.requestedFrom), "MMM dd")}</span>
+                    <ArrowRight className="w-3 h-3 opacity-30" />
+                    <span>{format(new Date(item.requestedTo), "MMM dd")}</span>
+                    <Badge variant="secondary" className="ml-2 font-black tracking-tighter text-[10px]">
+                        {item.totalDays} Days
+                    </Badge>
+                </div>
+            );
+        }
+        if (type === 'absence') {
+            return (
+                <div className="flex items-center gap-2 text-sm font-bold">
+                    <span>{format(new Date(item.date), "EEEE, MMM dd")}</span>
+                </div>
+            );
+        }
+        if (type === 'overtime') {
+            return (
+                <div className="flex items-center gap-2 text-sm font-bold">
+                    <span>{format(new Date(item.dayDate), "MMM dd")}</span>
+                    <Badge variant="secondary" className="ml-2 font-black tracking-tighter text-[10px]">
+                        {item.hoursRequested} Hours
+                    </Badge>
+                </div>
+            );
+        }
+        if (type === 'schedule') {
+            return (
+                <div className="flex items-center gap-2 text-sm font-bold">
+                    <span>{format(new Date(item.dateRange.startDate), "MMM dd")}</span>
+                    <ArrowRight className="w-3 h-3 opacity-30" />
+                    <span>{format(new Date(item.dateRange.endDate), "MMM dd")}</span>
+                </div>
+            );
+        }
+    };
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ scale: 1.01 }}
+            className="group"
+        >
+            <Card className="border-border/40 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
+                <CardContent className="p-0">
+                    <div className="flex items-stretch min-h-[120px]">
+                        {/* Status/Type Sidebar */}
+                        <div className={cn(
+                            "w-1.5 shrink-0 transition-colors duration-500",
+                            type === 'vacation' && "bg-emerald-500",
+                            type === 'absence' && "bg-red-500",
+                            type === 'overtime' && "bg-orange-500",
+                            type === 'schedule' && "bg-blue-500",
+                        )} />
+
+                        {/* Main Content */}
+                        <div className="flex-1 p-5 flex flex-col md:flex-row items-center gap-6">
+                            <div className="flex-1 space-y-3 w-full">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-2xl bg-muted/20 flex items-center justify-center group-hover:bg-muted/30 transition-colors">
+                                            {getIcon()}
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-black uppercase tracking-widest text-muted-foreground/60 leading-none mb-1">
+                                                {getTitle()}
+                                            </h4>
+                                            {getDateInfo()}
+                                        </div>
+                                    </div>
+                                    <Badge variant="outline" className="md:hidden rounded-lg bg-primary/5 font-bold uppercase tracking-tighter text-[9px] border-primary/10">
+                                        {format(new Date(item.createdAt), "MMM dd")}
+                                    </Badge>
+                                </div>
+
+                                {isApproval ? (
+                                    <div className="flex flex-wrap items-center gap-4 pt-1">
+                                        <div className="flex items-center gap-2">
+                                            <User className="w-3.5 h-3.5 text-primary" />
+                                            <span className="text-xs font-bold">{item.employeeId?.firstName} {item.employeeId?.lastName}</span>
+                                        </div>
+                                        {item.employeeId?.storeId && (
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Store className="w-3.5 h-3.5" />
+                                                <span className="text-xs">{item.employeeId.storeId.name}</span>
+                                            </div>
+                                        )}
+                                        {type === 'schedule' && (
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <MapPin className="w-3.5 h-3.5" />
+                                                <span className="text-xs font-medium">{item.storeDepartmentId?.name || item.storeId?.name}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1 italic">
+                                        {item.comments || item.reason || "No comments provided."}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Actions Container */}
+                            <div className="flex items-center gap-2 shrink-0 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-border/20 md:pl-6">
+                                {isApproval ? (
+                                    <>
+                                        {type === 'schedule' ? (
+                                            <Button
+                                                size="sm"
+                                                onClick={() => onAction(item._id, 'review')}
+                                                className="rounded-full bg-primary hover:bg-primary/90 font-bold px-6 h-9 transition-all shadow-lg shadow-primary/20"
+                                            >
+                                                <Eye className="w-3.5 h-3.5 mr-2" />
+                                                {t("item.review")}
+                                            </Button>
+                                        ) : (
+                                            <div className="flex gap-2 w-full md:w-auto">
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => onAction(item._id, 'reject')}
+                                                    className="flex-1 md:flex-none rounded-full border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white font-bold h-9 px-5 transition-all"
+                                                >
+                                                    <X className="w-3.5 h-3.5 mr-2" />
+                                                    {t("item.reject")}
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => onAction(item._id, 'approve')}
+                                                    className="flex-1 md:flex-none rounded-full bg-emerald-500 hover:bg-emerald-600 font-bold h-9 px-5 transition-all shadow-lg shadow-emerald-500/10"
+                                                >
+                                                    <Check className="w-3.5 h-3.5 mr-2" />
+                                                    {t("item.approve")}
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="flex gap-2 w-full md:w-auto">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            onClick={() => onAction(item._id, 'edit')}
+                                            className="flex-1 md:flex-none rounded-full border-border/60 hover:border-primary/40 hover:bg-primary/5 font-bold h-9 px-5 transition-all"
+                                        >
+                                            <Edit3 className="w-3.5 h-3.5 mr-2 text-primary" />
+                                            {t("item.edit")}
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => onAction(item._id, 'cancel')}
+                                            className="flex-1 md:flex-none rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/5 font-bold h-9 px-5 transition-all"
+                                        >
+                                            <X className="w-3.5 h-3.5 mr-2" />
+                                            {t("item.cancel")}
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+        </motion.div>
+    );
+}

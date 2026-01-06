@@ -9,6 +9,7 @@
         "vacations": "Férias",
         "absences": "Ausências",
         "employees": "Funcionários",
+        "staffviewer": "Visualizador de Staff",
         "positions": "Cargos",
         "profile": "Perfil",
         "problems": "Problemas",
@@ -45,6 +46,8 @@
         "notes": "Notas",
         "notices": "Avisos",
         "tips": "Gorjetas",
+        "approvals": "Aprovações",
+        "pendingactions": "Ações Pendentes",
         "date": "Data",
         "type": "Tipo",
         "store": "Loja",
@@ -180,7 +183,7 @@
         "editDetails": "Editar Detalhes",
         "editProfile": "Editar Detalhes do Perfil",
         "bankTaxDetails": "Dados Bancários e Fiscais",
-        "profilePicture": "URL da Foto de Perfil",
+        "profilePicture": "Foto de Perfil",
         "currentRole": "Função Atual",
         "noHistory": "Nenhum histórico de cargos disponível",
         "noHistoryDescription": "Alterações na carreira aparecerão aqui.",
@@ -189,5 +192,32 @@
     "Recipes": {
         "title": "Receitas",
         "subtitle": "Gerir e visualizar protocolos de cozinha e bar"
+    },
+    "EmployeeViewer": {
+        "title": "Visualizador de Horários de Staff",
+        "description": "Examine horários históricos e planeados para os membros da sua equipa."
+    },
+    "PendingActions": {
+        "title": "Ações Pendentes",
+        "description": "Gira os seus pedidos e reveja itens que aguardam a sua aprovação.",
+        "myRequests": "Meus Pedidos Pendentes",
+        "toApprove": "Aguardando Minha Aprovação",
+        "noPersonal": "Não tem pedidos pendentes.",
+        "noApprovals": "Nenhum item requer a sua aprovação no momento.",
+        "tabs": {
+            "all": "Todos",
+            "vacations": "Férias",
+            "absences": "Ausências",
+            "overtime": "Horas Extra",
+            "schedules": "Horários"
+        },
+        "item": {
+            "requestedBy": "Pedido por {name}",
+            "review": "Rever",
+            "edit": "Editar",
+            "cancel": "Cancelar Pedido",
+            "approve": "Aprovar",
+            "reject": "Rejeitar"
+        }
     }
 }

@@ -8,6 +8,8 @@ import { sendWelcomeEmail, sendPasswordResetEmail } from "@/lib/email";
 import { logAction } from "./log.actions";
 import * as crypto from 'crypto';
 import { slugify } from "@/lib/utils";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { getAugmentedRolesAndPermissions } from "../auth-utils";
 import { pusherServer } from "../pusher";
 
@@ -666,4 +668,120 @@ export async function getStoreEmployeesWithTodayStatus(storeId: string) {
     });
 
     return JSON.parse(JSON.stringify(employeesWithStatus));
+}
+export async function getViewerData() {
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+
+    await dbConnect();
+
+    const userId = session.user.id;
+    const user = await Employee.findById(userId).populate("positionId");
+    if (!user) throw new Error("User not found");
+
+    const { roles } = getAugmentedRolesAndPermissions(user, user.positionId);
+
+    // Roles categories
+    const isGlobalManager = roles.some(r => ["tech", "hr", "owner", "admin", "super_user"].includes(r));
+    const isStoreManager = roles.includes("store_manager");
+    const isDeptHeadGlobal = roles.includes("department_head");
+
+    // We'll also return metadata for filtering
+    const { Store, GlobalDepartment, StoreDepartment } = require("@/lib/models");
+
+    let employees: any[] = [];
+    let stores: any[] = [];
+    let departments: any[] = [];
+
+    if (isGlobalManager) {
+        employees = await Employee.find({ active: true })
+            .populate("storeId", "name")
+            .populate("storeDepartmentId", "name")
+            .populate("positionId", "name")
+            .select("-password")
+            .sort({ firstName: 1 })
+            .lean();
+
+        stores = await Store.find().select("name").lean();
+        departments = await GlobalDepartment.find().select("name").lean();
+
+    } else if (isStoreManager) {
+        if (!user.storeId) return { employees: [], role: "store_manager", stores: [], departments: [] };
+
+        employees = await Employee.find({ storeId: user.storeId, active: true })
+            .populate("storeId", "name")
+            .populate("storeDepartmentId", "name")
+            .populate("positionId", "name")
+            .select("-password")
+            .sort({ firstName: 1 })
+            .lean();
+
+        stores = await Store.find({ _id: user.storeId }).select("name").lean();
+        // Only departments in that store
+        departments = await StoreDepartment.find({ storeId: user.storeId })
+            .populate("globalDepartmentId", "name")
+            .lean();
+        // Extract unique global departments for easier filter mapping
+        departments = Array.from(new Set(departments.map(d => JSON.stringify({ _id: d.globalDepartmentId?._id, name: d.globalDepartmentId?.name }))))
+            .map(s => JSON.parse(s))
+            .filter(d => d._id);
+
+    } else if (isDeptHeadGlobal) {
+        // This role sees all employees in their department across all stores
+        if (!user.storeDepartmentId) return { employees: [], role: "department_head", stores: [], departments: [] };
+
+        const myStoreDept = await StoreDepartment.findById(user.storeDepartmentId);
+        if (!myStoreDept?.globalDepartmentId) return { employees: [], role: "department_head", stores: [], departments: [] };
+
+        // Find all store departments matching this global ID
+        const matchingStoreDepts = await StoreDepartment.find({ globalDepartmentId: myStoreDept.globalDepartmentId }).select("_id");
+        const storeDeptIds = matchingStoreDepts.map(sd => sd._id);
+
+        employees = await Employee.find({ storeDepartmentId: { $in: storeDeptIds }, active: true })
+            .populate("storeId", "name")
+            .populate("storeDepartmentId", "name")
+            .populate("positionId", "name")
+            .select("-password")
+            .sort({ firstName: 1 })
+            .lean();
+
+        const globalDept = await GlobalDepartment.findById(myStoreDept.globalDepartmentId).select("name").lean();
+        departments = [globalDept];
+        stores = await Store.find({ _id: { $in: employees.map(e => e.storeId?._id) } }).select("name").lean();
+    }
+    // Note: User mention "storeDepartmentHead" - usually implied by store_manager or a specific sub-role
+    // If they have a more granular check, we'd add it here.
+    // Let's check for "Head of Department" logic in StoreDepartment
+
+    // Check if user is a Head of a specific StoreDepartment
+    const headOfDepts = await StoreDepartment.find({ headOfDepartment: userId }).select("_id globalDepartmentId storeId");
+    if (headOfDepts.length > 0) {
+        const myDeptIds = headOfDepts.map(d => d._id);
+        const deptEmployees = await Employee.find({ storeDepartmentId: { $in: myDeptIds }, active: true })
+            .populate("storeId", "name")
+            .populate("storeDepartmentId", "name")
+            .populate("positionId", "name")
+            .select("-password")
+            .sort({ firstName: 1 })
+            .lean();
+
+        // Merge with existing if any (unlikely to have both global and specific without overlap)
+        const existingIds = new Set(employees.map(e => e._id.toString()));
+        deptEmployees.forEach(e => {
+            if (!existingIds.has(e._id.toString())) employees.push(e);
+        });
+
+        // Add corresponding metadata
+        const myStores = await Store.find({ _id: { $in: headOfDepts.map(d => d.storeId) } }).select("name").lean();
+        myStores.forEach(s => {
+            if (!stores.find(st => st._id.toString() === s._id.toString())) stores.push(s);
+        });
+    }
+
+    return {
+        employees: JSON.parse(JSON.stringify(employees)),
+        stores: JSON.parse(JSON.stringify(stores)),
+        departments: JSON.parse(JSON.stringify(departments)),
+        role: roles.join(',')
+    };
 }

@@ -92,7 +92,11 @@ export default async function DashboardLayout({
                     {/* Main Content Area */}
                     <main className="flex-1 flex flex-col h-full min-w-0 overflow-hidden relative print:overflow-visible print:h-auto print:block">
                         <div className="print-hidden">
-                            <Header userRoles={normalizedRoles} departmentName={deptName} />
+                            <Header
+                                userRoles={normalizedRoles}
+                                departmentName={deptName}
+                                employee={employee ? JSON.parse(JSON.stringify(employee)) : null}
+                            />
                         </div>
                         <ContentWrapper>
                             {children}

@@ -9,6 +9,7 @@
         "vacations": "Urlaub",
         "absences": "Abwesenheiten",
         "employees": "Mitarbeiter",
+        "staffviewer": "Personal-Viewer",
         "positions": "Positionen",
         "profile": "Profil",
         "problems": "Probleme",
@@ -22,6 +23,8 @@
         "edit": "Bearbeiten",
         "delete": "Löschen",
         "add": "Hinzufügen",
+        "approvals": "Genehmigungen",
+        "pendingactions": "Ausstehende Aktionen",
         "loading": "Laden...",
         "approved": "Genehmigt",
         "rejected": "Abgelehnt",
@@ -177,10 +180,41 @@
         "editDetails": "Details bearbeiten",
         "editProfile": "Profildetails bearbeiten",
         "bankTaxDetails": "Bank- & Steuerdetails",
-        "profilePicture": "Profilbild-URL",
+        "profilePicture": "Profilbild",
         "currentRole": "Aktuelle Rolle",
         "noHistory": "Keine Positionshistorie verfügbar",
         "noHistoryDescription": "Karriereänderungen werden hier angezeigt.",
         "present": "Heute"
+    },
+    "Recipes": {
+        "title": "Rezepte",
+        "subtitle": "Küchen- und Barprotokolle verwalten"
+    },
+    "EmployeeViewer": {
+        "title": "Mitarbeiter-Zeitplan-Viewer",
+        "description": "Untersuchen Sie historische und geplante Zeitpläne für Ihre Teammitglieder."
+    },
+    "PendingActions": {
+        "title": "Ausstehende Aktionen",
+        "description": "Verwalten Sie Ihre Anfragen und überprüfen Sie Artikel, die Ihre Zustimmung erfordern.",
+        "myRequests": "Meine ausstehenden Anfragen",
+        "toApprove": "Warten auf meine Zustimmung",
+        "noPersonal": "Sie haben keine ausstehenden Anfragen.",
+        "noApprovals": "Derzeit benötigen keine Artikel Ihre Zustimmung.",
+        "tabs": {
+            "all": "Alle",
+            "vacations": "Urlaub",
+            "absences": "Abwesenheiten",
+            "overtime": "Überstunden",
+            "schedules": "Zeitpläne"
+        },
+        "item": {
+            "requestedBy": "Angefordert von {name}",
+            "review": "Überprüfen",
+            "edit": "Bearbeiten",
+            "cancel": "Anfrage stornieren",
+            "approve": "Genehmigen",
+            "reject": "Ablehnen"
+        }
     }
 }

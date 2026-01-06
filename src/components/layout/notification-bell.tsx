@@ -84,8 +84,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
             // - Don't show toast if we are already in the chat box for this conversation
             if (senderId === userId) return;
 
-            const activeConvId = pathname.split('/').pop();
-            const isInThisChat = pathname.includes('/messages/') && activeConvId === conversationId;
+            const match = pathname.match(/\/messages\/([a-f\d]{24})\/?$/i);
+            const activeConvId = match ? match[1] : null;
+            const isInThisChat = activeConvId === conversationId.toString();
 
             if (isInThisChat) return;
 

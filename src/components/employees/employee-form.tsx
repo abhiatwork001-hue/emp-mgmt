@@ -42,6 +42,8 @@ const DAYS = [
 export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfService = false }: EmployeeFormProps) {
     const isEdit = mode === "edit" || !!employee;
     const [isLoading, setIsLoading] = useState(false);
+    const [isDobOpen, setIsDobOpen] = useState(false);
+    const [openDocPopovers, setOpenDocPopovers] = useState<Record<number, boolean>>({});
     const router = useRouter();
     const { data: session } = useSession();
 
@@ -271,7 +273,7 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Date of Birth</Label>
-                                        <Popover>
+                                        <Popover open={isDobOpen} onOpenChange={setIsDobOpen}>
                                             <PopoverTrigger asChild>
                                                 <Button
                                                     variant={"outline"}
@@ -288,7 +290,10 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                                 <Calendar
                                                     mode="single"
                                                     selected={formData.dob}
-                                                    onSelect={(date) => setFormData(prev => ({ ...prev, dob: date }))}
+                                                    onSelect={(date) => {
+                                                        setFormData(prev => ({ ...prev, dob: date }));
+                                                        setIsDobOpen(false);
+                                                    }}
                                                     initialFocus
                                                     captionLayout="dropdown"
                                                     startMonth={new Date(1950, 0)}
@@ -340,14 +345,23 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                         </div>
                                         <div className="col-span-10 md:col-span-3 space-y-2">
                                             <Label className="text-[10px] uppercase text-muted-foreground tracking-widest font-bold">Expiry Date</Label>
-                                            <Popover>
+                                            <Popover open={!!openDocPopovers[index]} onOpenChange={(open) => setOpenDocPopovers(prev => ({ ...prev, [index]: open }))}>
                                                 <PopoverTrigger asChild>
                                                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal bg-background/50", !doc.validity && "text-muted-foreground")}>
                                                         <CalendarIcon className="mr-2 h-4 w-4" />
                                                         {doc.validity ? format(new Date(doc.validity), "dd/MM/yy") : "Expiry"}
                                                     </Button>
                                                 </PopoverTrigger>
-                                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={doc.validity ? new Date(doc.validity) : undefined} onSelect={(date) => handleDocumentChange(index, "validity", date)} /></PopoverContent>
+                                                <PopoverContent className="w-auto p-0">
+                                                    <Calendar
+                                                        mode="single"
+                                                        selected={doc.validity ? new Date(doc.validity) : undefined}
+                                                        onSelect={(date) => {
+                                                            handleDocumentChange(index, "validity", date);
+                                                            setOpenDocPopovers(prev => ({ ...prev, [index]: false }));
+                                                        }}
+                                                    />
+                                                </PopoverContent>
                                             </Popover>
                                         </div>
                                         <div className="col-span-2 md:col-span-1 flex justify-center">

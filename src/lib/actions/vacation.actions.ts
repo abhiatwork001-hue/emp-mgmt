@@ -437,6 +437,48 @@ export async function getPendingVacationRequests() {
         .lean();
     return JSON.parse(JSON.stringify(requests));
 }
+
+export async function updateVacationRequest(requestId: string, employeeId: string, data: Partial<VacationRequestData>) {
+    await dbConnect();
+    const request = await VacationRequest.findById(requestId);
+    if (!request) throw new Error("Request not found");
+    if (request.employeeId.toString() !== employeeId) throw new Error("Unauthorized");
+    if (request.status !== 'pending') throw new Error("Only pending requests can be updated");
+
+    const start = data.requestedFrom ? new Date(data.requestedFrom) : new Date(request.requestedFrom);
+    const end = data.requestedTo ? new Date(data.requestedTo) : new Date(request.requestedTo);
+
+    // Normalize
+    start.setHours(0, 0, 0, 0);
+    end.setHours(0, 0, 0, 0);
+
+    const totalDays = calculateWorkingDays(start, end);
+
+    const updated = await VacationRequest.findByIdAndUpdate(requestId, {
+        ...data,
+        requestedFrom: start,
+        requestedTo: end,
+        totalDays: data.totalDays || totalDays
+    }, { new: true });
+
+    revalidatePath("/dashboard/vacations");
+    revalidatePath("/dashboard/pending-actions");
+    return JSON.parse(JSON.stringify(updated));
+}
+
+export async function cancelVacationRequest(requestId: string, employeeId: string) {
+    await dbConnect();
+    const request = await VacationRequest.findById(requestId);
+    if (!request) throw new Error("Request not found");
+    if (request.employeeId.toString() !== employeeId) throw new Error("Unauthorized");
+    if (request.status !== 'pending') throw new Error("Only pending requests can be cancelled");
+
+    await VacationRequest.findByIdAndDelete(requestId);
+
+    revalidatePath("/dashboard/vacations");
+    revalidatePath("/dashboard/pending-actions");
+    return { success: true };
+}
 // --- Analytics & Risks ---
 
 export async function getVacationAnalytics(year: number = new Date().getFullYear()) {
