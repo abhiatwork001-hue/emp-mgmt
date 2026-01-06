@@ -96,7 +96,7 @@ export const authOptions: NextAuthOptions = {
             }
             return session;
         },
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.sub = user.id;
                 token.roles = (user as any).roles;
@@ -105,6 +105,20 @@ export const authOptions: NextAuthOptions = {
                 token.email = (user as any).email;
                 token.isPasswordChanged = (user as any).isPasswordChanged;
             }
+
+            // Handle session update (e.g. after password change)
+            if (trigger === "update" && session) {
+                if (session.user) {
+                    if (session.user.name) token.name = session.user.name;
+                    if (session.user.email) token.email = session.user.email;
+                    if (session.user.roles) token.roles = session.user.roles;
+                    if (session.user.permissions) token.permissions = session.user.permissions;
+                    if (session.user.isPasswordChanged !== undefined) {
+                        token.isPasswordChanged = session.user.isPasswordChanged;
+                    }
+                }
+            }
+
             return token;
         },
     },

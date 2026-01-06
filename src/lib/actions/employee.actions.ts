@@ -334,6 +334,9 @@ export async function changePassword(employeeId: string, newPassword: string) {
         isPasswordChanged: true
     });
 
+    revalidatePath("/dashboard", "layout");
+    revalidatePath("/", "layout");
+
     return { success: true };
 }
 

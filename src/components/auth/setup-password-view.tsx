@@ -49,9 +49,12 @@ export function SetupPasswordView({ userId: initialUserId }: { userId?: string }
             });
 
             toast.success("Password secured successfully!");
-            // Force hard redirect to ensure Layout re-evaluates server-side session/cookies
-            // and clears any stale Router cache.
-            window.location.href = DASHBOARD_URL;
+
+            // Give a tiny bit of time for the session update to propagate 
+            // before forcing the hard redirect.
+            setTimeout(() => {
+                window.location.href = "/dashboard";
+            }, 500);
         } catch (error) {
             console.error(error);
             toast.error("Failed to update password.");
