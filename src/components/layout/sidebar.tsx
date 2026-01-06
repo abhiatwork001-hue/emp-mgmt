@@ -68,7 +68,7 @@ const routes = [
     { label: "Positions", icon: Briefcase, href: "/dashboard/positions", color: "text-blue-700" },
     { label: "Tips", icon: Coins, href: "/dashboard/tips", color: "text-yellow-600" },
     { label: "Profile", icon: User, href: "/dashboard/profile", color: "text-indigo-500" },
-    { label: "Activities", icon: ShieldAlert, href: "/dashboard/activities", color: "text-red-700" },
+    { label: "Activities", icon: ShieldAlert, href: "/dashboard/activity-log", color: "text-red-700" },
     { label: "Credentials", icon: Lock, href: "/dashboard/credentials", color: "text-slate-500" }, // Global Store Credentials
     { label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];

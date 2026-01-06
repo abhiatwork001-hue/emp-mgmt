@@ -96,9 +96,9 @@ export const authOptions: NextAuthOptions = {
                 session.user = {
                     ...session.user,
                     id: token.sub,
-                    roles: token.r as string[],
-                    permissions: token.p as string[],
-                    isPasswordChanged: token.ipc as boolean
+                    roles: token.roles as string[],
+                    permissions: token.permissions as string[],
+                    isPasswordChanged: token.isPasswordChanged as boolean
                 } as any;
             }
             return session;
@@ -106,9 +106,9 @@ export const authOptions: NextAuthOptions = {
         async jwt({ token, user }) {
             if (user) {
                 token.sub = user.id;
-                token.r = (user as any).roles;
-                token.p = (user as any).permissions;
-                token.ipc = (user as any).isPasswordChanged;
+                token.roles = (user as any).roles;
+                token.permissions = (user as any).permissions;
+                token.isPasswordChanged = (user as any).isPasswordChanged;
             }
             return token;
         },
@@ -119,17 +119,6 @@ export const authOptions: NextAuthOptions = {
     secret: process.env.NEXTAUTH_SECRET,
     // @ts-ignore
     trustHost: true, // Required for Vercel/proxied environments
-    cookies: {
-        sessionToken: {
-            name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
-            options: {
-                httpOnly: true,
-                sameSite: 'lax',
-                path: '/',
-                secure: process.env.NODE_ENV === 'production'
-            }
-        }
-    },
     pages: {
         signIn: "/login",
     },

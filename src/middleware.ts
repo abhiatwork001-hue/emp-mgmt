@@ -16,6 +16,11 @@ export default async function middleware(req: NextRequest) {
     // Check if route is protected (Dashboard)
     if (/\/dashboard(\/|$)/.test(pathname)) {
         console.log(`[Middleware] Checking dashboard access: ${pathname}`);
+        console.log(`[Middleware] Environment detection: NODE_ENV=${process.env.NODE_ENV}, URL=${req.url}`);
+
+        const cookies = req.cookies.getAll();
+        console.log(`[Middleware] Cookies received (${cookies.length}):`, cookies.map(c => c.name).join(', '));
+
         const secret = process.env.NEXTAUTH_SECRET;
 
         if (!secret) {
