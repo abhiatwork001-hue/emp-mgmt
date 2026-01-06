@@ -53,7 +53,6 @@ export function ConversationList({ conversations, currentUserId, onSelect }: Con
 
         return () => {
             channel.unbind("message:new", handleUpdate);
-            pusherClient.unsubscribe(`user-${currentUserId}`);
         };
     }, [currentUserId]);
 

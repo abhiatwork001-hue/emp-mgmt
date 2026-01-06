@@ -77,8 +77,10 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
         channel.bind('schedule:updated', handleRefresh);
 
         return () => {
-            channel.unbind_all();
-            pusherClient.unsubscribe('admin-updates');
+            channel.unbind('vacation:updated', handleRefresh);
+            channel.unbind('absence:updated', handleRefresh);
+            channel.unbind('overtime:updated', handleRefresh);
+            channel.unbind('schedule:updated', handleRefresh);
         };
     }, [canApprove, router]);
 

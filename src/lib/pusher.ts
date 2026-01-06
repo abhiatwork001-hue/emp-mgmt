@@ -9,28 +9,32 @@ export const pusherServer = new PusherServer({
     useTLS: true,
 });
 
-// Enhanced Pusher Client with error handling
+// Enhanced Pusher Client
 export const pusherClient = new PusherClient(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
     cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-    enabledTransports: ['ws', 'wss'], // WebSocket only for better reliability
     forceTLS: true,
 });
 
 // Connection state monitoring
 if (typeof window !== 'undefined') {
     pusherClient.connection.bind('connected', () => {
+        console.log('✅ Pusher: Connected');
     });
 
     pusherClient.connection.bind('disconnected', () => {
+        console.log('❌ Pusher: Disconnected');
     });
 
     pusherClient.connection.bind('failed', () => {
+        console.log('❌ Pusher: Connection Failed');
     });
 
     pusherClient.connection.bind('unavailable', () => {
+        console.log('⚠️ Pusher: Connection Unavailable');
     });
 
     pusherClient.connection.bind('error', (err: any) => {
+        console.error('❌ Pusher: Connection Error', err);
     });
 }
 

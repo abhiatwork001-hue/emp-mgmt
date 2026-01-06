@@ -206,11 +206,22 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
 
     // 3. Real-time Subscription with Pusher
     useEffect(() => {
-        if (!conversation?._id) return;
+        const conversationId = conversation?._id?.toString();
+        if (!conversationId) return;
 
-        const channel = pusherClient.subscribe(`chat-${conversation._id}`);
+        console.log(`🔌 Pusher: Subscribing to chat-${conversationId}`);
+        const channel = pusherClient.subscribe(`chat-${conversationId}`);
+
+        channel.bind("pusher:subscription_succeeded", () => {
+            console.log(`✅ Pusher: Subscribed to chat-${conversationId}`);
+        });
+
+        channel.bind("pusher:subscription_error", (err: any) => {
+            console.error(`❌ Pusher: Subscription error for chat-${conversationId}`, err);
+        });
 
         channel.bind("message:new", (newMessage: any) => {
+            console.log("📨 Pusher: New message received", newMessage._id);
             setMessages((prev) => {
                 // Avoid duplicates for the sender (who already has the message optimistically)
                 const exists = prev.some(m => m._id === newMessage._id);
@@ -229,7 +240,7 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
 
             // Mark as read if we are looking at this conversation
             if ((newMessage.sender?._id || newMessage.sender) !== currentUserId) {
-                markMessagesAsRead(conversation._id, currentUserId);
+                markMessagesAsRead(conversationId, currentUserId);
             }
         });
 
@@ -270,10 +281,11 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
         });
 
         return () => {
+            console.log(`🔌 Pusher: Unsubscribing from chat-${conversationId}`);
             channel.unbind_all();
-            pusherClient.unsubscribe(`chat-${conversation._id}`);
+            pusherClient.unsubscribe(`chat-${conversationId}`);
         };
-    }, [conversation._id, currentUserId]);
+    }, [conversation?._id, currentUserId]);
 
     // 4. Update messages when initialMessages changes (server refresh)
     useEffect(() => {

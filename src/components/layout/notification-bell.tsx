@@ -81,8 +81,8 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
         return () => {
             clearInterval(connectionCheck);
-            channel.unbind_all();
-            pusherClient.unsubscribe(`user-${userId}`);
+            channel.unbind("notification:new");
+            channel.unbind("pusher:subscription_error");
         };
     }, [userId]);
 
