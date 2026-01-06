@@ -735,7 +735,7 @@ export async function getViewerData() {
 
         // Find all store departments matching this global ID
         const matchingStoreDepts = await StoreDepartment.find({ globalDepartmentId: myStoreDept.globalDepartmentId }).select("_id");
-        const storeDeptIds = matchingStoreDepts.map(sd => sd._id);
+        const storeDeptIds = matchingStoreDepts.map((sd: { _id: any; }) => sd._id);
 
         employees = await Employee.find({ storeDepartmentId: { $in: storeDeptIds }, active: true })
             .populate("storeId", "name")
@@ -756,7 +756,7 @@ export async function getViewerData() {
     // Check if user is a Head of a specific StoreDepartment
     const headOfDepts = await StoreDepartment.find({ headOfDepartment: userId }).select("_id globalDepartmentId storeId");
     if (headOfDepts.length > 0) {
-        const myDeptIds = headOfDepts.map(d => d._id);
+        const myDeptIds = headOfDepts.map((d: { _id: any; }) => d._id);
         const deptEmployees = await Employee.find({ storeDepartmentId: { $in: myDeptIds }, active: true })
             .populate("storeId", "name")
             .populate("storeDepartmentId", "name")
@@ -772,8 +772,8 @@ export async function getViewerData() {
         });
 
         // Add corresponding metadata
-        const myStores = await Store.find({ _id: { $in: headOfDepts.map(d => d.storeId) } }).select("name").lean();
-        myStores.forEach(s => {
+        const myStores = await Store.find({ _id: { $in: headOfDepts.map((d: { storeId: any; }) => d.storeId) } }).select("name").lean();
+        myStores.forEach((s: { _id: { toString: () => any; }; }) => {
             if (!stores.find(st => st._id.toString() === s._id.toString())) stores.push(s);
         });
     }
