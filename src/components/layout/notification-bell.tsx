@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { pusherClient } from "@/lib/pusher";
 import { getUserNotifications, markNotificationAsRead, markAllNotificationsAsRead } from "@/lib/actions/notification.actions";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface NotificationBellProps {
     userId?: string;
@@ -25,6 +26,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     const [unreadCount, setUnreadCount] = useState(0);
     const [useFallback, setUseFallback] = useState(false);
     const router = useRouter();
+    const pathname = usePathname();
 
     // 1. Fetch initial history
     useEffect(() => {
@@ -73,6 +75,26 @@ export function NotificationBell({ userId }: NotificationBellProps) {
             }
         });
 
+        channel.bind("message:new", (data: any) => {
+            const { conversationId, message } = data;
+
+            // 1. Suppression Logic: If we are in the chat box for this conversation, don't show toast
+            const activeConvId = pathname.split('/').pop();
+            const isInThisChat = pathname.includes('/messages/') && activeConvId === conversationId;
+
+            if (isInThisChat) return;
+
+            // 2. Show In-App Toast
+            const senderName = message.sender?.firstName || "Someone";
+            toast(senderName, {
+                description: message.content || "Sent an attachment",
+                action: {
+                    label: "Reply",
+                    onClick: () => router.push(`/dashboard/messages/${conversationId}`)
+                }
+            });
+        });
+
         channel.bind("pusher:subscription_error", (err: any) => {
             console.error(`❌ Subscription error for user-${userId}:`, err);
             setUseFallback(true);
@@ -82,6 +104,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         return () => {
             clearInterval(connectionCheck);
             channel.unbind("notification:new");
+            channel.unbind("message:new");
             channel.unbind("pusher:subscription_error");
         };
     }, [userId]);
