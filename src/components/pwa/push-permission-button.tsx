@@ -91,7 +91,7 @@ export function PushPermissionButton() {
             size="icon"
             onClick={isSubscribed ? unsubscribe : subscribe}
             disabled={loading}
-            className="rounded-xl bg-background/50 border border-border/40 backdrop-blur-md"
+            className="rounded-full shrink-0"
             title={isSubscribed ? "Disable Notifications" : "Enable Notifications"}
         >
             {loading ? (

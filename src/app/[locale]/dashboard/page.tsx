@@ -153,11 +153,15 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 const { getSchedules } = require("@/lib/actions/schedule.actions");
                 const storeSchedules = await getSchedules(storeId);
                 const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
                 const currentSchedule = storeSchedules.find((s: any) => {
                     const start = new Date(s.dateRange.startDate);
                     const end = new Date(s.dateRange.endDate);
+                    start.setHours(0, 0, 0, 0);
+                    end.setHours(23, 59, 59, 999);
                     return today >= start && today <= end;
-                });
+                }) || storeSchedules.find((s: any) => new Date(s.dateRange.startDate) <= today); // Most recent past/present
 
                 if (currentSchedule) {
                     currentScheduleId = currentSchedule._id;
@@ -507,13 +511,15 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
         // Find schedule that covers today
         const todayForSchedule = new Date();
+        todayForSchedule.setHours(0, 0, 0, 0);
+
         const currentSchedule = storeSchedules.find((s: any) => {
             const start = new Date(s.dateRange.startDate);
             const end = new Date(s.dateRange.endDate);
-            // Ensure end date includes the full day (set to 23:59:59 if needed, or rely on date comparison if dates are stored as start of day)
-            // Usually best to check if today is between start and end.
+            start.setHours(0, 0, 0, 0);
+            end.setHours(23, 59, 59, 999);
             return todayForSchedule >= start && todayForSchedule <= end;
-        }) || (storeSchedules.length > 0 ? storeSchedules[0] : null);
+        }) || storeSchedules.find((s: any) => new Date(s.dateRange.startDate) <= todayForSchedule) || (storeSchedules.length > 0 ? storeSchedules[0] : null);
 
         if (currentSchedule) {
             currentScheduleId = currentSchedule._id;

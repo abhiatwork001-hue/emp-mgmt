@@ -28,10 +28,14 @@ export const metadata: Metadata = {
   title: "Chickinho",
   description: "Employee Management System for Chickinho Restaurant Group",
   manifest: "/manifest.json",
+  applicationName: "Chickinho",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Chickinho",
+  },
+  formatDetection: {
+    telephone: false,
   },
   icons: {
     icon: [
@@ -40,7 +44,8 @@ export const metadata: Metadata = {
     ],
     shortcut: "/logo_chickinho.png",
     apple: [
-      { url: "/logo_chickinho.png" },
+      { url: "/logo_chickinho.png" }, // Fallback
+      { url: "/logo_chickinho.png", sizes: "180x180", type: "image/png" }, // iPhone standard
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
@@ -48,6 +53,10 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Chickinho",
     description: "Employee Management System",
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-capable": "yes",
   },
 };
 

@@ -313,11 +313,40 @@ export function StoreManagerDashboard({
                     <div className="h-[1px] flex-1 bg-gradient-to-r from-border/50 via-border to-transparent" />
                 </div>
 
-                {/* Staffing Alerts (Predictive) */}
-                {isHighLevel && (
-                    <div className="w-full">
-                        <StaffingAlerts />
-                    </div>
+                {/* High Priority Compliance Alert for Admins/HR */}
+                {isHighLevel && operationsData?.scheduleHealth?.overdue && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="w-full"
+                    >
+                        <Card className="border-2 border-red-500/50 bg-red-500/5 overflow-hidden">
+                            <CardContent className="p-6 flex items-center gap-6">
+                                <div className="h-16 w-16 rounded-2xl bg-red-500/10 flex items-center justify-center shrink-0 animate-pulse">
+                                    <AlertCircle className="h-8 w-8 text-red-600" />
+                                </div>
+                                <div className="flex-1 space-y-2">
+                                    <div className="flex items-center gap-3">
+                                        <h2 className="text-xl font-black text-red-700 tracking-tight uppercase italic">Compliance Warning: Missing Schedules</h2>
+                                        <Badge variant="destructive" className="font-bold uppercase tracking-widest text-[10px]">Overdue</Badge>
+                                    </div>
+                                    <p className="text-sm text-red-600/80 font-medium leading-relaxed max-w-2xl">
+                                        The deadline for next week's schedule submission has passed. The following
+                                        {currentUserRole === 'store_manager' ? ' departments ' : ' stores '}
+                                        have not yet published their rotas:
+                                        <span className="block mt-2 font-bold text-red-700">
+                                            {operationsData.scheduleHealth.missingEntities?.join(", ") || "All entities"}
+                                        </span>
+                                    </p>
+                                </div>
+                                <div className="hidden md:flex flex-col gap-2">
+                                    <Button asChild variant="destructive" className="font-bold italic uppercase tracking-tight">
+                                        <Link href="/dashboard/schedules">View Master Schedule</Link>
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
                 )}
 
                 {/* 1. Key Statistics */}

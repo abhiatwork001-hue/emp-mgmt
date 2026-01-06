@@ -8,7 +8,6 @@ import { CreateNoticeDialog } from "@/components/notices/create-notice-dialog";
 import { CreateReminderDialog } from "@/components/reminders/create-reminder-dialog";
 import { RoleSwitcher } from "@/components/dashboard/role-switcher";
 import { Badge } from "@/components/ui/badge";
-import { PushPermissionButton } from "@/components/pwa/push-permission-button";
 import { TestNotificationButton } from "@/components/pwa/test-notification-button";
 import { Store } from "lucide-react";
 
@@ -64,10 +63,6 @@ export function DashboardHeader({
                 </div>
             </div>
             <div className="flex items-center gap-3">
-                {/* Push Notifications (All Users) */}
-                <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-2xl border border-border/40 backdrop-blur-sm">
-                    <PushPermissionButton />
-                </div>
 
                 {["admin", "hr", "owner", "super_user", "store_manager", "department_head", "store_department_head"].includes(viewRole) && (
                     <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-2xl border border-border/40 backdrop-blur-sm">

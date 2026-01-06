@@ -1,18 +1,31 @@
 self.addEventListener('push', function (event) {
     if (event.data) {
         const data = event.data.json();
-        const options = {
-            body: data.body,
-            icon: '/icons/icon-192.png',
-            badge: '/icons/icon-192.png',
-            vibrate: [100, 50, 100],
-            data: {
-                url: data.url || '/dashboard'
-            }
-        };
+        const targetUrl = data.url || '/dashboard';
 
         event.waitUntil(
-            self.registration.showNotification(data.title, options)
+            clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+                // If any window is focused AND at the target URL, skip the notification
+                const isFocusedOnTarget = clientList.some(client =>
+                    client.focused && client.url.includes(targetUrl)
+                );
+
+                if (isFocusedOnTarget) {
+                    return;
+                }
+
+                const options = {
+                    body: data.body,
+                    icon: '/icons/icon-192.png',
+                    badge: '/icons/icon-192.png',
+                    vibrate: [100, 50, 100],
+                    data: {
+                        url: targetUrl
+                    }
+                };
+
+                return self.registration.showNotification(data.title, options);
+            })
         );
     }
 });

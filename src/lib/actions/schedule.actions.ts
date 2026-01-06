@@ -780,11 +780,23 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
         new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
+    // Find the most relevant schedule for the "Full Schedule" link
+    const targetDate = new Date(date);
+    targetDate.setHours(0, 0, 0, 0);
+
+    const primarySchedule = schedules.find((s: any) => {
+        const start = new Date(s.dateRange.startDate);
+        const end = new Date(s.dateRange.endDate);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        return targetDate >= start && targetDate <= end;
+    }) || schedules[0];
+
     return JSON.parse(JSON.stringify({
         weekNumber,
         year,
         days: sortedDays,
-        primaryScheduleSlug: schedules[0]?.slug // Return slug of the first/main schedule found
+        primaryScheduleSlug: primarySchedule?.slug
     }));
 }
 

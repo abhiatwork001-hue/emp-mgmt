@@ -2,9 +2,13 @@
     "name": "Chickinho Global",
     "short_name": "Chickinho",
     "description": "Chickinho Intelligent Operations Center",
-    "id": "/",
-    "start_url": "/dashboard",
+    "id": "/?source=pwa",
+    "start_url": "/?source=pwa",
     "display": "standalone",
+    "display_override": [
+        "standalone",
+        "minimal-ui"
+    ],
     "orientation": "portrait-primary",
     "background_color": "#09090b",
     "theme_color": "#10b981",

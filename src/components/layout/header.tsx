@@ -21,6 +21,7 @@ import { GlobalSearch } from "@/components/global-search";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Breadcrumbs } from "./breadcrumbs";
 import { ReportProblemDialog } from "@/components/dashboard/report-problem-dialog";
+import { PushPermissionButton } from "@/components/pwa/push-permission-button";
 
 export function Header({
     userRoles = ["employee"],
@@ -54,6 +55,9 @@ export function Header({
 
                 {/* Report Problem */}
                 <ReportProblemDialog reporterId={(session?.user as any)?.id} />
+
+                {/* Push Notifications (All Users) */}
+                <PushPermissionButton />
 
                 {/* Notifications */}
                 <NotificationBell userId={(session?.user as any)?.id} />

@@ -77,14 +77,22 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
         channel.bind("message:new", (data: any) => {
             const { conversationId, message } = data;
+            const senderId = message.sender?._id || message.sender;
 
-            // 1. Suppression Logic: If we are in the chat box for this conversation, don't show toast
+            // 1. Suppression Logic: 
+            // - Don't show toast to the sender themselves
+            // - Don't show toast if we are already in the chat box for this conversation
+            if (senderId === userId) return;
+
             const activeConvId = pathname.split('/').pop();
             const isInThisChat = pathname.includes('/messages/') && activeConvId === conversationId;
 
             if (isInThisChat) return;
 
-            // 2. Show In-App Toast
+            // 2. Increment Bell count ONLY if not in this chat
+            setUnreadCount(prev => prev + 1);
+
+            // 3. Show In-App Toast
             const senderName = message.sender?.firstName || "Someone";
             toast(senderName, {
                 description: message.content || "Sent an attachment",
