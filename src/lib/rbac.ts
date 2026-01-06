@@ -2,9 +2,9 @@
 export const roleAccess: Record<string, string[]> = {
     "super_user": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips", "/dashboard/activities", "/dashboard/settings", "/dashboard/credentials"],
     "tech": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips", "/dashboard/activities", "/dashboard/settings", "/dashboard/problems", "/dashboard/credentials"],
-    "owner": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/activities", "/dashboard/settings", "/dashboard/problems", "/dashboard/credentials"],
-    "admin": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/activities", "/dashboard/problems", "/dashboard/settings", "/dashboard/credentials"],
-    "hr": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/settings", "/dashboard/problems", "/dashboard/activities", "/dashboard/credentials"],
+    "owner": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/settings", "/dashboard/problems", "/dashboard/credentials", "/dashboard/activity-log"],
+    "admin": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/problems", "/dashboard/settings", "/dashboard/credentials", "/dashboard/activity-log"],
+    "hr": ["/dashboard", "/dashboard/approvals", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/employees", "/dashboard/positions", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/settings", "/dashboard/problems", "/dashboard/credentials", "/dashboard/activity-log"],
 
     // Store Manager - NO Employees/Positions/Approvals (Check context rules), NO Global Depts, NO Settings. HAS Tips.
     // User Update: Employees/Positions removed. Approvals removed (view context only in widgets).
@@ -60,7 +60,12 @@ export const hasAccess = (roles: string | string[], path: string, deptName: stri
             return ["admin", "hr", "department_head", "tech", "super_user"].includes(normalizedRole);
         }
 
-        // 5. Standard Role Lookup
+        // 5. Special Logic: Activity Log (Tech, Super User, Owner, Admin, HR)
+        if (path === "/dashboard/activity-log" || path === "/dashboard/activities") {
+            return ["tech", "super_user", "owner", "admin", "hr"].includes(normalizedRole);
+        }
+
+        // 6. Standard Role Lookup
         const allowed = roleAccess[normalizedRole] || roleAccess["employee"] || [];
 
         // Exact match check

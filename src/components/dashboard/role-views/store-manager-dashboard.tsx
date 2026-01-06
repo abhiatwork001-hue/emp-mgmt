@@ -259,11 +259,14 @@ export function StoreManagerDashboard({
         "holiday-widget": <HolidayWidget storeId={effectiveStoreId || ""} />
     };
 
-    const sidebarContent = {
-        activity: <ActivityLog userId={undefined} userRoles={employee.roles || []} variant="widget" />,
+    const sidebarContent: any = {
         todo: <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />,
         notifications: <ReminderWidget userId={employee._id} role={currentUserRole} />
     };
+
+    if (["tech", "super_user", "owner", "admin", "hr"].includes(currentUserRole)) {
+        sidebarContent.activity = <ActivityLog userId={undefined} userRoles={employee.roles || []} variant="widget" />;
+    }
 
     return (
         <DashboardLayout sidebar={sidebarContent}>

@@ -40,7 +40,6 @@ export function EmployeeDashboard({
     const hasSchedule = currentScheduleId && currentScheduleId !== "null";
 
     const sidebarContent = {
-        activity: <ActivityLog userId={employee._id} userRoles={(employee.roles || []).map((r: any) => r.name || r)} variant="widget" />,
         todo: <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />,
         notifications: <ReminderWidget userId={employee._id} role="employee" />
     };

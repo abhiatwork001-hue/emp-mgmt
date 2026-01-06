@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
     children?: ReactNode;
@@ -24,15 +25,20 @@ export default function DashboardLayout({ children, sidebar }: DashboardLayoutPr
 
             {/* Side panel */}
             <aside className="side-panel flex flex-col h-[calc(100vh-100px)] sticky top-6 bg-card rounded-xl border shadow-sm overflow-hidden print:hidden">
-                <Tabs defaultValue="activity" className="flex flex-col h-full">
-                    <TabsList className="grid w-full grid-cols-3 bg-muted/50 p-1 m-1 mb-0 rounded-lg">
-                        <TabsTrigger value="activity" className="text-xs">Activity</TabsTrigger>
+                <Tabs defaultValue={sidebar?.activity ? "activity" : "todo"} className="flex flex-col h-full">
+                    <TabsList className={cn(
+                        "grid w-full bg-muted/50 p-1 m-1 mb-0 rounded-lg",
+                        sidebar?.activity ? "grid-cols-3" : "grid-cols-2"
+                    )}>
+                        {sidebar?.activity && <TabsTrigger value="activity" className="text-xs">Activity</TabsTrigger>}
                         <TabsTrigger value="todo" className="text-xs">Todo</TabsTrigger>
                         <TabsTrigger value="notifications" className="text-xs">Alerts</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="activity" className="flex-1 overflow-y-auto p-0 scrollbar-hide">
-                        {sidebar?.activity || <div className="p-4 text-xs text-muted-foreground">Activity Log Unavailable</div>}
-                    </TabsContent>
+                    {sidebar?.activity && (
+                        <TabsContent value="activity" className="flex-1 overflow-y-auto p-0 scrollbar-hide">
+                            {sidebar.activity}
+                        </TabsContent>
+                    )}
                     <TabsContent value="todo" className="flex-1 overflow-y-auto p-0 scrollbar-hide">
                         {sidebar?.todo || <div className="p-4 text-xs text-muted-foreground">Todo List Unavailable</div>}
                     </TabsContent>

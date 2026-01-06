@@ -14,11 +14,14 @@ export default async function ActivityLogPage() {
     const roles = user?.roles ? [...user.roles] : [];
     if (user?.role) roles.push(user.role);
 
-    // Only HR, Owner, Admin, Tech can see the full log. 
-    // Others might only see their own (the component handles filter logic)
-    const canSeeAll = roles.some((r: string) =>
-        ['hr', 'owner', 'admin', 'tech', 'super_user'].includes(r.toLowerCase())
+    const isAuthorized = roles.some((r: string) =>
+        ['tech', 'super_user', 'owner', 'admin', 'hr'].includes(r.toLowerCase())
     );
+
+    if (!isAuthorized) {
+        const { AccessDenied } = require("@/components/auth/access-denied");
+        return <AccessDenied />;
+    }
 
     return (
         <div className="p-6 max-w-6xl mx-auto">
@@ -30,7 +33,7 @@ export default async function ActivityLogPage() {
             </div>
 
             <ActivityLog
-                userId={!canSeeAll ? user?.id : undefined}
+                userId={undefined}
                 userRoles={roles}
             />
         </div>
