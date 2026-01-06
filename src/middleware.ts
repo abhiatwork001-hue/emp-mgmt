@@ -14,28 +14,28 @@ export default async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
     // Check if route is protected (Dashboard)
-    // Matches: /en/dashboard, /pt/dashboard, /dashboard, etc.
     if (/\/dashboard(\/|$)/.test(pathname)) {
-        const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+        console.log(`[Middleware] Checking dashboard access: ${pathname}`);
+        const secret = process.env.NEXTAUTH_SECRET;
+
+        if (!secret) {
+            console.error("[Middleware] CRITICAL: NEXTAUTH_SECRET is not defined in environment variables!");
+        }
+
+        const token = await getToken({ req, secret });
 
         if (!token) {
+            console.log("[Middleware] No token found. Redirecting to login.");
             // Extract locale from path if present
             const segments = pathname.split('/');
             const locale = segments[1];
-
-            // Check if existing segment is a valid locale
-            // routing.locales is likely ['en', 'pt', ...]
             const isLocale = routing.locales.includes(locale as any);
-
-            // Use found locale, or default to 'en'
             const targetLocale = isLocale ? locale : 'en';
 
             const url = new URL(`/${targetLocale}/login`, req.url);
-            // Optionally preserve the return URL? 
-            // url.searchParams.set("callbackUrl", pathname); 
-
             return NextResponse.redirect(url);
         }
+        console.log(`[Middleware] Token verified for user: ${token.sub}`);
     }
 
     return intlMiddleware(req);

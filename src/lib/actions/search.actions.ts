@@ -81,6 +81,8 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
     }
 
     // --- SCOPE RESTRICTIONS ---
+    let skipEmployees = false;
+    let skipStores = false;
 
     // 1. Employee & Store Scope
     if (!hasFullAccess) {
@@ -89,8 +91,8 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             storeFilter._id = currentUser.storeId;
         } else {
             // Unassigned employee -> No results for stores/employees
-            employeeFilter._id = "impossible_id";
-            storeFilter._id = "impossible_id";
+            skipEmployees = true;
+            skipStores = true;
         }
     }
 
@@ -127,13 +129,13 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
     }
 
     const [employees, stores, foods] = await Promise.all([
-        Employee.find(employeeFilter)
+        skipEmployees ? Promise.resolve([]) : Employee.find(employeeFilter)
             .select("firstName lastName email image positionId slug")
             .populate("positionId", "name translations")
             .limit(5)
             .lean(),
 
-        Store.find(storeFilter)
+        skipStores ? Promise.resolve([]) : Store.find(storeFilter)
             .select("name address translations slug")
             .limit(5)
             .lean(),

@@ -67,8 +67,7 @@ export const authOptions: NextAuthOptions = {
 
                     const authData = {
                         id: String(employee._id),
-                        email: String(employee.email),
-                        name: `${employee.firstName} ${employee.lastName}`,
+                        // Only keeping the absolute essentials for session detection
                         roles: sanitizedRoles,
                         permissions: sanitizedPermissions,
                         isPasswordChanged: employee.isPasswordChanged !== false
@@ -94,13 +93,12 @@ export const authOptions: NextAuthOptions = {
     callbacks: {
         async session({ session, token }) {
             if (session?.user) {
-                // Surgically rebuild the user object to avoid leaking any extra data
                 session.user = {
                     ...session.user,
                     id: token.sub,
-                    roles: token.roles as string[],
-                    permissions: token.permissions as string[],
-                    isPasswordChanged: token.isPasswordChanged as boolean
+                    roles: token.r as string[],
+                    permissions: token.p as string[],
+                    isPasswordChanged: token.ipc as boolean
                 } as any;
             }
             return session;
@@ -108,9 +106,9 @@ export const authOptions: NextAuthOptions = {
         async jwt({ token, user }) {
             if (user) {
                 token.sub = user.id;
-                token.roles = (user as any).roles;
-                token.permissions = (user as any).permissions;
-                token.isPasswordChanged = (user as any).isPasswordChanged;
+                token.r = (user as any).roles;
+                token.p = (user as any).permissions;
+                token.ipc = (user as any).isPasswordChanged;
             }
             return token;
         },
