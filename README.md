@@ -54,8 +54,8 @@
 
 1.  **Clone the repository**
     ```bash
-    git clone https://github.com/yourusername/chick.git
-    cd chick
+    git clone https://github.com/abhiatwork001-hue/emp-mgmt.git
+    cd emp-mgmt
     ```
 
 2.  **Install dependencies**
