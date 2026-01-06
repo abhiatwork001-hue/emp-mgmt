@@ -27,7 +27,11 @@ export default async function middleware(req: NextRequest) {
             console.error("[Middleware] CRITICAL: NEXTAUTH_SECRET is not defined in environment variables!");
         }
 
-        const token = await getToken({ req, secret });
+        const token = await getToken({
+            req,
+            secret,
+            secureCookie: process.env.NODE_ENV === "production"
+        });
 
         if (!token) {
             console.log("[Middleware] No token found. Redirecting to login.");

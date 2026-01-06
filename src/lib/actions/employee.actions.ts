@@ -102,7 +102,7 @@ export async function getEmployeeById(id: string) {
     const { Position, StoreDepartment, VacationRecord, AbsenceRecord } = require("@/lib/models");
 
     const employee = await Employee.findById(id)
-        .populate("storeId", "name")
+        .populate("storeId", "name slug")
         .populate({
             path: "positionId",
             select: "name level roles",
@@ -148,7 +148,7 @@ export async function getEmployeeBySlug(slug: string) {
     const { Position, StoreDepartment, VacationRecord, AbsenceRecord } = require("@/lib/models");
 
     const employee = await Employee.findOne({ slug })
-        .populate("storeId", "name")
+        .populate("storeId", "name slug")
         .populate({
             path: "positionId",
             select: "name level roles",

@@ -111,7 +111,7 @@ export function Sidebar({
                 // Special handling for Stores:
                 // 1. Check if user has full access (Admin, Owner, etc.)
                 // User Request: Store Manager & Store Dept Head should ONLY see context link.
-                const isContextOnlyRole = effectiveRoles.some(r => ["store_manager", "store_department_head"].includes(r));
+                const isContextOnlyRole = effectiveRoles.some(r => ["store_manager", "store_department_head", "employee"].includes(r));
 
                 if (!isContextOnlyRole && hasAccess(effectiveRoles, "/dashboard/stores", departmentName, permissions)) {
                     return route;
