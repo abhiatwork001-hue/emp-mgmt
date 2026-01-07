@@ -79,9 +79,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
             const { conversationId, message } = data;
             const senderId = message.sender?._id || message.sender;
 
-            // 1. Suppression Logic: 
-            // - Don't show toast to the sender themselves
-            // - Don't show toast if we are already in the chat box for this conversation
+            // Don't increment count or show toast to the sender
             if (senderId === userId) return;
 
             const match = pathname.match(/\/messages\/([a-f\d]{24})\/?$/i);
@@ -90,18 +88,10 @@ export function NotificationBell({ userId }: NotificationBellProps) {
 
             if (isInThisChat) return;
 
-            // 2. Increment Bell count ONLY if not in this chat
+            // Increment Bell count ONLY if not in this chat
             setUnreadCount(prev => prev + 1);
 
-            // 3. Show In-App Toast
-            const senderName = message.sender?.firstName || "Someone";
-            toast(senderName, {
-                description: message.content || "Sent an attachment",
-                action: {
-                    label: "Reply",
-                    onClick: () => router.push(`/dashboard/messages/${conversationId}`)
-                }
-            });
+            // Note: Toast is now handled globally by RealtimeToaster
         });
 
         channel.bind("pusher:subscription_error", (err: any) => {

@@ -338,6 +338,7 @@ export async function changePassword(employeeId: string, newPassword: string) {
 
     revalidatePath("/dashboard", "layout");
     revalidatePath("/", "layout");
+    revalidatePath("/[locale]/dashboard", "layout");
 
     return { success: true };
 }

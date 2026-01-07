@@ -1,14 +1,21 @@
 import { getRequestConfig } from 'next-intl/server';
-import { cookies } from 'next/headers';
+import { routing } from './routing';
 
-export default getRequestConfig(async () => {
-    // Read from cookies or fallback to 'en'
-    const cookieStore = await cookies();
-    const locale = cookieStore.get('NEXT_LOCALE')?.value || 'en';
+export default getRequestConfig(async (params) => {
+    const locale = params.locale || routing.defaultLocale;
+
+    // Validate that the incoming `locale` parameter is valid
+    if (!routing.locales.includes(locale as any)) {
+        return {
+            locale: routing.defaultLocale,
+            messages: (await import(`../messages/${routing.defaultLocale}.json`)).default
+        };
+    }
 
     return {
         locale,
         messages: (await import(`../messages/${locale}.json`)).default,
+        timeZone: 'Europe/Lisbon',
         getMessageFallback({ namespace, key, error }) {
             return key;
         }

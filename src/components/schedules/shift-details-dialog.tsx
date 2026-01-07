@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
 import { Clock, MapPin, User, Calendar } from "lucide-react";
 import { useTranslations } from "next-intl";
 
@@ -11,6 +12,8 @@ interface ShiftDetailsDialogProps {
     date: Date;
     employeeName: string;
     storeName?: string;
+    canSwap?: boolean;
+    onSwapRequest?: () => void;
 }
 
 export function ShiftDetailsDialog({
@@ -19,7 +22,9 @@ export function ShiftDetailsDialog({
     shift,
     date,
     employeeName,
-    storeName
+    storeName,
+    canSwap,
+    onSwapRequest
 }: ShiftDetailsDialogProps) {
     const t = useTranslations("Schedule");
 
@@ -72,10 +77,20 @@ export function ShiftDetailsDialog({
                         )}
                     </div>
 
-                    <div className="mt-4 bg-amber-500/10 text-amber-600 p-3 rounded-md text-xs">
-                        <p className="font-semibold mb-1">Shift Actions Unavailable</p>
-                        <p>You cannot swap or modify this shift because it has either already started, passed, or belongs to another location.</p>
-                    </div>
+                    {canSwap && (
+                        <div className="mt-6">
+                            <Button className="w-full" onClick={onSwapRequest}>
+                                Request Shift Swap
+                            </Button>
+                        </div>
+                    )}
+
+                    {!canSwap && (
+                        <div className="mt-4 bg-muted/50 text-muted-foreground p-3 rounded-md text-[10px] leading-relaxed">
+                            <p className="font-semibold mb-1 opacity-70 uppercase tracking-wider">Shift Actions Unavailable</p>
+                            <p>You cannot swap or modify this shift because it has either already started, passed, or belongs to another location.</p>
+                        </div>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

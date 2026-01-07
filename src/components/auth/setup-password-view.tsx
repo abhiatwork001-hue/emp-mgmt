@@ -3,7 +3,7 @@
 import { DASHBOARD_URL } from "@/lib/utils";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { changePassword } from "@/lib/actions/employee.actions";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ export function SetupPasswordView({ userId: initialUserId }: { userId?: string }
     const [confirmPassword, setConfirmPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const params = useParams();
+    const locale = (params?.locale as string) || "en";
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,11 +52,14 @@ export function SetupPasswordView({ userId: initialUserId }: { userId?: string }
 
             toast.success("Password secured successfully!");
 
+            // Construct explicit localized path for maximum reliability
+            const targetPath = `/${locale}/dashboard`;
+
             // Give a tiny bit of time for the session update to propagate 
             // before forcing the hard redirect.
             setTimeout(() => {
-                window.location.href = "/dashboard";
-            }, 500);
+                window.location.href = targetPath;
+            }, 800);
         } catch (error) {
             console.error(error);
             toast.error("Failed to update password.");

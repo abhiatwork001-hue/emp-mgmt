@@ -223,7 +223,10 @@ export function ViewerClient({ initialEmployees, stores, departments, role }: Vi
                                         selected={dateRange}
                                         onSelect={(range) => {
                                             setDateRange(range);
-                                            if (range?.from && range?.to) setIsCalendarOpen(false);
+                                            // Only close if we have a complete range (from AND to)
+                                            if (range?.from && range?.to) {
+                                                setIsCalendarOpen(false);
+                                            }
                                         }}
                                         numberOfMonths={2}
                                     />

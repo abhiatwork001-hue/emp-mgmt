@@ -18,7 +18,11 @@ export function FinalizeCoverageForm({ request }: { request: any }) {
     const handleFinalize = async () => {
         setSubmitting(true);
         try {
-            await finalizeCoverage(request._id, compensation);
+            await finalizeCoverage(
+                request._id,
+                { type: compensation },
+                { type: 'absence', justification: 'Covered Shift', justificationStatus: 'Justified' }
+            );
             toast.success("Coverage finalized and schedule updated.");
         } catch (error) {
             toast.error("Failed to finalize coverage");

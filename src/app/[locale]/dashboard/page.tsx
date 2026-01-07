@@ -27,7 +27,7 @@ import { NoticeBoard } from "@/components/notices/notice-board";
 import { CreateNoticeDialog } from "@/components/notices/create-notice-dialog";
 import { getSwapRequests } from "../../../lib/actions/shift-swap.actions";
 import { SwapRequestsWidget } from "@/components/dashboard/swap-requests-widget";
-import { getPendingCoverageOffer, getCoverageRequestsByUser, getActiveOngoingActions } from "@/lib/actions/coverage.actions";
+import { getPendingCoverageOffer, getCoverageRequestsByUser, getActiveOngoingActions, getPendingCoverageApprovals } from "@/lib/actions/coverage.actions";
 import { getAllVacationRequests as getVacationRequests } from "@/lib/actions/vacation.actions";
 import { getAllAbsenceRequests as getAbsenceRequests } from "@/lib/actions/absence.actions";
 import { getTranslations } from "next-intl/server";
@@ -35,12 +35,22 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { RecentActivityWidget } from "@/components/dashboard/recent-activity-widget";
 
 // Helper to merge requests sort by date
-function mergeRequests(vacations: any[], absences: any[], overtime: any[], schedules: any[]) {
+// Helper to merge requests sort by date
+function mergeRequests(vacations: any[], absences: any[], overtime: any[], schedules: any[], coverage: any[] = []) {
     const all = [
         ...vacations.map(v => ({ ...v, type: 'vacation' })),
         ...absences.map(a => ({ ...a, type: 'absence' })),
         ...overtime.map(o => ({ ...o, type: 'overtime' })),
-        ...schedules.map(s => ({ ...s, type: 'schedule' }))
+        ...schedules.map(s => ({ ...s, type: 'schedule' })),
+        ...coverage.map(c => ({
+            id: c._id,
+            type: 'coverage',
+            acceptedBy: c.acceptedBy,
+            originalEmployeeId: c.originalEmployeeId,
+            originalShift: c.originalShift,
+            createdAt: c.createdAt
+            // We map minimal properties here for the merge sort, but retain object structure
+        }))
     ];
     return all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
@@ -142,6 +152,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
             let pendingAbsences = await getAllAbsenceRequests({ status: 'pending', storeId: sid });
             let pendingOvertime = await getPendingOvertimeRequests({ storeId: sid });
             let pendingSchedules = await getPendingSchedules(sid);
+            let pendingCoverage = await getPendingCoverageApprovals(sid);
 
             const storeEmployees = storeId
                 ? await getEmployeesByStore(storeId)
@@ -387,7 +398,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
             }
 
             // 3. Approval Queue
-            const pendingRequests = mergeRequests(pendingVacations, pendingAbsences, pendingOvertime, pendingSchedules);
+            const pendingRequests = mergeRequests(pendingVacations, pendingAbsences, pendingOvertime, pendingSchedules, pendingCoverage);
             const totalPendingCount = pendingRequests.length;
             if (totalPendingCount > 5) {
                 operationsScore -= 10;
@@ -424,7 +435,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
                     vacations: pendingVacations,
                     absences: pendingAbsences,
                     overtime: pendingOvertime,
-                    schedules: pendingSchedules
+                    schedules: pendingSchedules,
+                    coverage: pendingCoverage
                 }}
                 storeStats={storeStats}
                 todaysCoworkers={todaysCoworkers}

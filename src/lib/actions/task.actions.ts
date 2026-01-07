@@ -378,12 +378,18 @@ export async function addTaskComment(taskId: string, userId: string, text: strin
             details: { text: text.substring(0, 100) }
         });
 
-        await pusherServer.trigger(`user-${userId}`, "task:updated", {
+        await pusherServer.trigger("global", "task:updated", {
             taskId: taskId,
             status: 'commented'
         });
 
-        return { success: true };
+        // Specific channel update for the page
+        const comment = task.comments[task.comments.length - 1];
+        await pusherServer.trigger(`task-${taskId}`, "comment:new", {
+            comment: JSON.parse(JSON.stringify(comment))
+        });
+
+        return { success: true, comment: JSON.parse(JSON.stringify(comment)) };
     } catch (error) {
         return { success: false, error: "Failed to add comment" };
     }

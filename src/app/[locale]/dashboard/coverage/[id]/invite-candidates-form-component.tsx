@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { getEligibleEmployeesForCoverage, inviteCandidatesForCoverage } from "@/lib/actions/coverage.actions";
-import { Loader2, UserPlus, Check, Search, ChevronRight, Crown, Users, AlertCircle } from "lucide-react";
+import { Loader2, UserPlus, Check, Search, ChevronRight, Crown, Users, AlertCircle, Globe, Building2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
@@ -53,12 +53,14 @@ export function InviteCandidatesForm({ request }: { request: any }) {
     };
 
     const filtered = eligible.filter(emp =>
-        `${emp.firstName} ${emp.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
+        (emp.displayName || `${emp.firstName} ${emp.lastName}`).toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const heads = filtered.filter(e => e.priority === 1);
-    const dept = filtered.filter(e => e.priority === 2);
-    const global = filtered.filter(e => e.priority === 3);
+    // 4-Tier Grouping
+    const priority1 = filtered.filter(e => e.priority === 1); // Same Store & Dept
+    const priority2 = filtered.filter(e => e.priority === 2); // Global Same Dept
+    const priority3 = filtered.filter(e => e.priority === 3); // Global Heads
+    const priority4 = filtered.filter(e => e.priority === 4); // Rest of Global
 
     const renderEmp = (emp: any) => (
         <div key={emp._id} className={`flex items-center justify-between p-3 rounded-lg border transition-all cursor-pointer ${selected.includes(emp._id) ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:bg-muted/50'}`} onClick={() => toggleSelect(emp._id)}>
@@ -77,7 +79,7 @@ export function InviteCandidatesForm({ request }: { request: any }) {
                         {emp.isGlobalHead && <Badge variant="secondary" className="bg-amber-100 text-amber-700 text-[9px] h-4 font-black">HEAD</Badge>}
                     </div>
                     <p className="text-[10px] text-muted-foreground uppercase font-black tracking-tighter">
-                        {emp.isSameDept ? "Same Dept" : "Global Staff"} | {emp.contract?.weeklyHours || 40}h
+                        {emp.storeId?.name || "Global Store"} | {emp.contract?.weeklyHours || 40}h
                     </p>
                 </div>
             </div>
@@ -86,59 +88,84 @@ export function InviteCandidatesForm({ request }: { request: any }) {
     );
 
     return (
-        <Card className="border-primary/20 bg-primary/5">
-            <CardHeader>
+        <Card className="border-primary/20 bg-primary/5 max-h-[85vh] h-[600px] flex flex-col">
+            <CardHeader className="flex-none">
                 <CardTitle className="flex items-center gap-2">
                     <UserPlus className="h-5 w-5 text-primary" />
                     Target Selection
                 </CardTitle>
                 <CardDescription>Select eligible candidates to invite for this shift coverage.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="flex-1 overflow-hidden flex flex-col pt-0">
                 {!searched && (
-                    <Button onClick={handleSearch} disabled={loading} className="w-full bg-primary hover:bg-primary/90 font-black italic">
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
-                        Find Available Employees
-                    </Button>
+                    <div className="flex items-center justify-center h-full">
+                        <Button onClick={handleSearch} disabled={loading} className="w-full bg-primary hover:bg-primary/90 font-black italic">
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Search className="h-4 w-4 mr-2" />}
+                            Find Available Employees
+                        </Button>
+                    </div>
                 )}
 
                 {searched && (
-                    <div className="space-y-4">
-                        <div className="relative">
+                    <div className="flex flex-col h-full gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                        {/* Message Input - Moved to Top */}
+                        <div className="space-y-2 pb-4 border-b">
+                            <Label className="text-xs font-black uppercase text-muted-foreground ml-1">Personal Invitation Message (Optional)</Label>
+                            <Textarea
+                                placeholder="Add a custom note to the recipients..."
+                                value={customMessage}
+                                onChange={(e) => setCustomMessage(e.target.value)}
+                                className="resize-none h-16 bg-background"
+                            />
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="relative flex-none">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                                 placeholder="Search employees by name..."
-                                className="pl-9 h-11"
+                                className="pl-9 h-11 bg-background"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
 
-                        <div className="grid gap-6 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin">
-                            {heads.length > 0 && (
+                        {/* Scrollable List */}
+                        <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin space-y-6">
+
+                            {priority1.length > 0 && (
                                 <div className="space-y-2">
-                                    <h3 className="text-[10px] font-black uppercase text-amber-600 flex items-center gap-1 ml-1 tracking-widest">
+                                    <h3 className="text-[10px] font-black uppercase text-emerald-600 flex items-center gap-1 ml-1 tracking-widest sticky top-0 bg-primary/5 py-1 z-10 backdrop-blur-sm">
+                                        <Building2 className="h-3 w-3" /> Same Store & Department
+                                    </h3>
+                                    <div className="grid gap-2">{priority1.map(renderEmp)}</div>
+                                </div>
+                            )}
+
+                            {priority2.length > 0 && (
+                                <div className="space-y-2">
+                                    <h3 className="text-[10px] font-black uppercase text-blue-600 flex items-center gap-1 ml-1 tracking-widest sticky top-0 bg-primary/5 py-1 z-10 backdrop-blur-sm">
+                                        <Globe className="h-3 w-3" /> Same Department (Global)
+                                    </h3>
+                                    <div className="grid gap-2">{priority2.map(renderEmp)}</div>
+                                </div>
+                            )}
+
+                            {priority3.length > 0 && (
+                                <div className="space-y-2">
+                                    <h3 className="text-[10px] font-black uppercase text-amber-600 flex items-center gap-1 ml-1 tracking-widest sticky top-0 bg-primary/5 py-1 z-10 backdrop-blur-sm">
                                         <Crown className="h-3 w-3" /> Global Department Heads
                                     </h3>
-                                    <div className="grid gap-2">{heads.map(renderEmp)}</div>
+                                    <div className="grid gap-2">{priority3.map(renderEmp)}</div>
                                 </div>
                             )}
 
-                            {dept.length > 0 && (
+                            {priority4.length > 0 && (
                                 <div className="space-y-2">
-                                    <h3 className="text-[10px] font-black uppercase text-blue-600 flex items-center gap-1 ml-1 tracking-widest">
-                                        <Users className="h-3 w-3" /> Same Department
+                                    <h3 className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1 ml-1 tracking-widest sticky top-0 bg-primary/5 py-1 z-10 backdrop-blur-sm">
+                                        <ChevronRight className="h-3 w-3" /> Other Global Staff
                                     </h3>
-                                    <div className="grid gap-2">{dept.map(renderEmp)}</div>
-                                </div>
-                            )}
-
-                            {global.length > 0 && (
-                                <div className="space-y-2">
-                                    <h3 className="text-[10px] font-black uppercase text-muted-foreground flex items-center gap-1 ml-1 tracking-widest">
-                                        <ChevronRight className="h-3 w-3" /> Other Available Global Staff
-                                    </h3>
-                                    <div className="grid gap-2">{global.map(renderEmp)}</div>
+                                    <div className="grid gap-2">{priority4.map(renderEmp)}</div>
                                 </div>
                             )}
 
@@ -150,18 +177,9 @@ export function InviteCandidatesForm({ request }: { request: any }) {
                             )}
                         </div>
 
-                        <div className="space-y-2 pt-4 border-t">
-                            <Label className="text-xs font-black uppercase text-muted-foreground ml-1">Personal Invitation Message (Optional)</Label>
-                            <Textarea
-                                placeholder="Add a custom note to the recipients..."
-                                value={customMessage}
-                                onChange={(e) => setCustomMessage(e.target.value)}
-                                className="resize-none"
-                            />
-                        </div>
-
-                        <div className="sticky bottom-0 bg-background/80 backdrop-blur-sm pt-4 border-t flex flex-col gap-3">
-                            <div className="flex items-center justify-between text-[11px] font-black uppercase italic">
+                        {/* Sticky Footer Action */}
+                        <div className="flex-none pt-4 mt-auto border-t bg-background/50 backdrop-blur-sm sticky bottom-0 z-20">
+                            <div className="flex items-center justify-between text-[11px] font-black uppercase italic mb-2">
                                 <span className="text-muted-foreground">Selected Recipients</span>
                                 <span className="text-primary">{selected.length} Targeted</span>
                             </div>

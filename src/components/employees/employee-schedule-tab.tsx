@@ -9,15 +9,19 @@ import { Badge } from "@/components/ui/badge";
 import { getEmployeeScheduleView } from "@/lib/actions/schedule.actions";
 import { Loader2, ChevronLeft, ChevronRight, Calculator, Calendar } from "lucide-react";
 import { ReportShiftAbsenceDialog } from "./report-shift-absence-dialog";
+import { Link } from "@/i18n/routing";
 
 import { ShiftOfferList } from "./shift-offer-list";
+import { Cake, Clock as ClockIcon } from "lucide-react";
+
 
 interface EmployeeScheduleTabProps {
     employeeId: string;
+    currentUser?: any;
 }
 
-export function EmployeeScheduleTab({ employeeId }: EmployeeScheduleTabProps) {
-    const { data: session } = useSession();
+export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeScheduleTabProps) {
+    // const { data: session } = useSession(); // Removed to fix provider issue
     const [currentDate, setCurrentDate] = useState(new Date());
     const [scheduleData, setScheduleData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -77,10 +81,12 @@ export function EmployeeScheduleTab({ employeeId }: EmployeeScheduleTabProps) {
                                 variant="outline"
                                 size="sm"
                                 className="mr-2"
-                                onClick={() => window.open(`/dashboard/schedules/${scheduleData.primaryScheduleSlug}`, '_blank')}
+                                asChild
                             >
-                                <Calendar className="h-4 w-4 mr-2" />
-                                View Full Schedule
+                                <Link href={`/dashboard/schedules/${scheduleData.primaryScheduleSlug}`}>
+                                    <Calendar className="h-4 w-4 mr-2" />
+                                    View Full Schedule
+                                </Link>
                             </Button>
                         )}
                         <div className="flex items-center gap-2 bg-muted p-1 rounded-md border border-border">
@@ -146,7 +152,10 @@ export function EmployeeScheduleTab({ employeeId }: EmployeeScheduleTabProps) {
                                                     <div className="text-lg font-bold">{format(date, 'd')}</div>
                                                 </div>
                                                 <div>
-                                                    <div className="font-semibold">{format(date, 'EEEE')}</div>
+                                                    <div className="flex items-center gap-2 font-semibold">
+                                                        {format(date, 'EEEE')}
+                                                        {day.isBirthday && <span title="Birthday!"><Cake className="h-4 w-4 text-pink-500 animate-pulse" /></span>}
+                                                    </div>
                                                     {isToday && <Badge variant="secondary" className="text-[10px] h-5">Today</Badge>}
                                                 </div>
                                             </div>
@@ -179,7 +188,7 @@ export function EmployeeScheduleTab({ employeeId }: EmployeeScheduleTabProps) {
                                                                 {shift.breakMinutes > 0 && <span className="text-[10px] text-muted-foreground mt-1">Has {shift.breakMinutes}m break</span>}
 
                                                                 {new Date(day.date) >= new Date(new Date().setHours(0, 0, 0, 0)) &&
-                                                                    session?.user && (session.user as any).id === employeeId && (
+                                                                    currentUser && currentUser.id === employeeId && (
                                                                         <ReportShiftAbsenceDialog
                                                                             shift={shift}
                                                                             dayDate={day.date}
@@ -203,26 +212,6 @@ export function EmployeeScheduleTab({ employeeId }: EmployeeScheduleTabProps) {
                     )}
                 </CardContent>
             </Card>
-        </div >
+        </div>
     );
-}
-
-function ClockIcon(props: any) {
-    return (
-        <svg
-            {...props}
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <circle cx="12" cy="12" r="10" />
-            <polyline points="12 6 12 12 16 14" />
-        </svg>
-    )
 }

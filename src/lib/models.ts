@@ -303,6 +303,7 @@ export interface IAbsenceRecord extends Document {
     reason?: string;
     type?: string; // New: "sick", "personal"
     justification?: "Justified" | "Unjustified"; // New
+    attachments?: string[]; // URLs to attachment files
     shiftRef?: { scheduleId: ObjectId; dayDate: Date; shiftName?: string };
     approvedBy?: ObjectId;
     createdAt?: Date;
@@ -544,6 +545,7 @@ const DayShiftSchema = new Schema({
 
     isOvertime: { type: Boolean, default: false },
     notes: { type: String },
+    meta: { type: Schema.Types.Mixed }, // For custom data like coverage details
 }, { _id: true }); // Keep ID to reference specific shift instances if needed
 
 const DaySchema = new Schema({
@@ -611,6 +613,7 @@ const AbsenceRecordSchema = new Schema<IAbsenceRecord>({
     reason: { type: String },
     type: { type: String }, // e.g. "sick", "personal"
     justification: { type: String, enum: ["Justified", "Unjustified"] },
+    attachments: [String],
     shiftRef: {
         scheduleId: { type: Schema.Types.ObjectId, ref: 'Schedule' },
         dayDate: { type: Date },
@@ -795,6 +798,7 @@ export interface IShiftCoverageRequest extends Document {
     acceptedAt?: Date;
 
     compensationType?: 'extra_hour' | 'vacation_day'; // HR Preference for the cover
+    hrMessage?: string; // Custom message from HR to candidates
 
     createdAt: Date;
     updatedAt: Date;
@@ -826,7 +830,8 @@ const ShiftCoverageRequestSchema = new Schema<IShiftCoverageRequest>({
     acceptedBy: { type: Schema.Types.ObjectId, ref: 'Employee' },
     acceptedAt: { type: Date },
 
-    compensationType: { type: String, enum: ['extra_hour', 'vacation_day'] }
+    compensationType: { type: String, enum: ['extra_hour', 'vacation_day'] },
+    hrMessage: { type: String }
 
 }, { timestamps: true });
 

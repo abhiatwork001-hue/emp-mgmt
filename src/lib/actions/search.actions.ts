@@ -25,15 +25,12 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
     const currentUser = await Employee.findById((session.user as any).id);
     if (!currentUser) return [];
 
-    const roles = currentUser.roles || [];
-    const isSuper = roles.some((r: string) => ["Owner", "Admin", "HR", "Super User", "Tech"].includes(r));
-    // Kitchen Head / Department Head logic needed?
-    // If they are a Dept Head, they probably should see recipes related to their dept?
-    // For now, let's treat "Kitchen" people as privileged for recipes IF they are heads? 
-    // Or just rely on the standard "accessibleGlobalDepartments" logic which works for everyone.
+    const roles = (currentUser.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const isSuper = roles.some((r: string) => ["owner", "admin", "hr", "super_user", "tech"].includes(r));
+    const isKitchen = roles.some((r: string) => ["chef", "head_chef", "cook", "kitchen_staff"].includes(r));
+    const isManager = roles.includes("store_manager");
 
-    const isGlobalHead = roles.includes("Department Head");
-    const hasFullAccess = isSuper; // Only Super users default to full access for everything. Dept Heads might be restricted to their domain.
+    const hasFullAccess = isSuper;
 
     if (!query || query.length < 2) return [];
 
@@ -61,45 +58,33 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
         name: { $regex: new RegExp(query, 'i') }
     };
 
-    // Default: Hide deleted and inactive
-    if (!isSuper) {
-        foodFilter.isActive = true;
-        foodFilter.isDeleted = { $ne: true };
-    } else {
-        // Super/Tech:
-        // Show all active/inactive.
-        // Show deleted only if Tech? `isSuper` includes Owner/HR/Admin.
-        // Dashboard requirement: "really delete... visible to tech only".
-        // Search requirement: "make search global for that out as well".
-        // Assuming "that" means the deleted/archived stuff.
-        // So we allow finding them.
-        // However, we probably don't want to show trash to HR/Owner if they're not technical?
-        // But `isSuper` is broad.
-        // Let's refine `isSuper` or just allow it.
-        // Given the prompt "make search global for that out as well", I will remove the artificial `isActive: true` constraint for privileged users.
-        // And I won't filter `isDeleted` for them, meaning they can find deleted stuff.
-    }
-
     // --- SCOPE RESTRICTIONS ---
     let skipEmployees = false;
     let skipStores = false;
 
-    // 1. Employee & Store Scope
+    // 1. Employee Scope
+    if (isSuper) {
+        // Can see all employees
+    } else if (isManager && currentUser.storeId) {
+        // Can see employees in their store
+        employeeFilter.storeId = currentUser.storeId;
+    } else {
+        // Regular employees can only search for THEMSELVES (privacy)
+        employeeFilter._id = currentUser._id;
+    }
+
+    // 2. Store Scope
     if (!hasFullAccess) {
         if (currentUser.storeId) {
-            employeeFilter.storeId = currentUser.storeId;
             storeFilter._id = currentUser.storeId;
         } else {
-            // Unassigned employee -> No results for stores/employees
-            skipEmployees = true;
             skipStores = true;
         }
     }
 
-    // 2. Recipe Scope (Food)
-    // If NOT Super, we restrict by Department Access
-    if (!isSuper) {
-        // We need the user's Global Department to check against food.accessibleGlobalDepartments
+    // 3. Recipe Scope (Food)
+    // If NOT Super or Kitchen, we restrict by Department Access
+    if (!isSuper && !isKitchen) {
         let userGlobalDeptId = null;
 
         if (currentUser.storeDepartmentId) {
@@ -110,17 +95,12 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
         }
 
         if (userGlobalDeptId) {
-            // Visible if:
-            // a) Accessible list is empty (Public/Universal)
-            // b) Accessible list includes user's Global Dept ID
             foodFilter.$or = [
                 { accessibleGlobalDepartments: { $exists: false } },
                 { accessibleGlobalDepartments: { $size: 0 } },
                 { accessibleGlobalDepartments: userGlobalDeptId }
             ];
         } else {
-            // User has no department -> Can only see public recipes?
-            // Or none? Let's allow public.
             foodFilter.$or = [
                 { accessibleGlobalDepartments: { $exists: false } },
                 { accessibleGlobalDepartments: { $size: 0 } }

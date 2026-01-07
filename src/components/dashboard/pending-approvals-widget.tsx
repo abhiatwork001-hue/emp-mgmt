@@ -20,10 +20,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { EmployeeLink } from "../common/employee-link";
+import { cancelCoverageRequest } from "@/lib/actions/coverage.actions";
+import { FinalizeCoverageDialog } from "@/components/coverage/finalize-coverage-dialog";
 
 interface PendingItem {
     id: string;
-    type: 'overtime' | 'vacation' | 'absence' | 'schedule';
+    type: 'overtime' | 'vacation' | 'absence' | 'schedule' | 'coverage';
     employeeName: string;
     employeeId?: string;
     employeeSlug?: string;
@@ -39,18 +41,23 @@ interface PendingApprovalsWidgetProps {
     vacations: any[];
     absences: any[];
     schedules: any[];
+    coverage?: any[];
     compact?: boolean;
     role?: string;
     currentUserRoles?: string[];
 }
 
-export function PendingApprovalsWidget({ overtime, vacations, absences, schedules = [], compact = false, role, currentUserRoles = [] }: PendingApprovalsWidgetProps) {
-    const totalCount = overtime.length + vacations.length + absences.length + schedules.length;
+export function PendingApprovalsWidget({ overtime, vacations, absences, schedules = [], coverage = [], compact = false, role, currentUserRoles = [] }: PendingApprovalsWidgetProps) {
+    const totalCount = overtime.length + vacations.length + absences.length + schedules.length + (coverage?.length || 0);
     const { data: session } = useSession();
     const router = useRouter();
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
+    // Coverage Dialog State
+    const [finalizeDialogOpen, setFinalizeDialogOpen] = useState(false);
+    const [selectedCoverageRequest, setSelectedCoverageRequest] = useState<any>(null);
 
     // RBAC Check for Actions
     // Use prop role if provided (for view simulation), otherwise session roles
@@ -132,6 +139,23 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             details: `Schedule Week ${i.weekNumber}`,
             createdAt: new Date(i.createdAt),
             link: `/dashboard/schedules/${i.slug || i._id}`
+        })),
+        ...(coverage || []).map(i => ({
+            id: i._id,
+            type: 'coverage' as const,
+            employeeName: `${i.originalEmployeeId?.firstName} ${i.originalEmployeeId?.lastName}`, // The prompt implies manager is approving coverage for original employee's shift? No, manager finalizes the *replacement*.
+            // Actually the 'request' is about the original employee needing cover.
+            // Let's show: "Coverage: [Candidate Name]"?
+            // The item in `pendingRequests` for coverage (from getPendingActions) has `acceptedBy`.
+            // If it's ready for finalization, `acceptedBy` is set.
+            // Let's display the Covering Employee Name if available, or Original if not.
+            employeeId: i.acceptedBy?._id || i.originalEmployeeId?._id,
+            employeeSlug: i.acceptedBy?.slug || i.originalEmployeeId?.slug,
+            storeName: i.originalShift?.storeId?.name || "Unknown",
+            date: new Date(i.originalShift?.dayDate),
+            details: `Finalize Coverage: ${i.acceptedBy ? 'Found Replacement' : 'Seeking'}`,
+            createdAt: new Date(i.createdAt),
+            link: `/dashboard/coverage`
         }))
     ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
@@ -160,6 +184,17 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             } else if (item.type === 'schedule') {
                 const newStatus = action === 'approve' ? 'published' : 'rejected';
                 await updateScheduleStatus(item.id, newStatus, userId, action === 'reject' ? "Rejected from Dashboard" : undefined);
+            } else if (item.type === 'coverage') {
+                if (action === 'approve') {
+                    const req = coverage?.find(c => c._id === item.id);
+                    if (req) {
+                        setSelectedCoverageRequest(req);
+                        setFinalizeDialogOpen(true);
+                    }
+                    return; // Stop here to let dialog handle it
+                } else {
+                    await cancelCoverageRequest(item.id);
+                }
             }
             toast.success(`${action === 'approve' ? 'Approved' : 'Rejected'} successfully`);
             router.refresh();
@@ -416,6 +451,13 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                     </>
                 )}
             </CardContent>
+
+            <FinalizeCoverageDialog
+                open={finalizeDialogOpen}
+                onOpenChange={setFinalizeDialogOpen}
+                request={selectedCoverageRequest}
+                onSuccess={() => router.refresh()}
+            />
         </Card>
     );
 }

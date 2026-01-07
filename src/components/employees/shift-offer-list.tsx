@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getPendingCoverageOffer, acceptCoverageOffer } from "@/lib/actions/coverage.actions";
-import { Loader2, Calendar, Clock, CheckCircle2 } from "lucide-react";
+import { Loader2, Calendar, Clock, CheckCircle2, User, MapPin, Briefcase, Users, Info } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -64,6 +64,34 @@ export function ShiftOfferList({ employeeId }: { employeeId: string }) {
                                 <Clock className="h-4 w-4" />
                                 {offer.originalShift.startTime} - {offer.originalShift.endTime}
                             </div>
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1 text-[11px] text-muted-foreground">
+                                <span className="flex items-center gap-1 font-medium text-blue-500/80">
+                                    <User className="h-3 w-3" />
+                                    Covering: {offer.originalEmployeeId.firstName} {offer.originalEmployeeId.lastName}
+                                </span>
+                                {offer.coworkers && offer.coworkers.length > 0 && (
+                                    <span className="flex items-center gap-1">
+                                        <Users className="h-3 w-3" />
+                                        Working with: {offer.coworkers.join(', ')}
+                                    </span>
+                                )}
+                                <span className="flex items-center gap-1">
+                                    <MapPin className="h-3 w-3" />
+                                    {offer.originalShift.storeId?.name || "Store"}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                    <Briefcase className="h-3 w-3" />
+                                    {offer.originalShift.storeDepartmentId?.name || "Dept"}
+                                </span>
+                            </div>
+                            {offer.hrMessage && (
+                                <div className="mt-2 p-2 rounded bg-blue-500/10 border border-blue-500/20 text-[11px] italic">
+                                    <span className="font-bold non-italic not-italic flex items-center gap-1 text-blue-600 mb-0.5">
+                                        <Info className="h-3 w-3" /> Note from HR:
+                                    </span>
+                                    {offer.hrMessage}
+                                </div>
+                            )}
                         </div>
                         <Button
                             size="sm"
@@ -76,6 +104,6 @@ export function ShiftOfferList({ employeeId }: { employeeId: string }) {
                     </div>
                 ))}
             </CardContent>
-        </Card>
+        </Card >
     );
 }

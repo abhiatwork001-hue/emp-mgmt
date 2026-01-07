@@ -172,7 +172,47 @@ export async function addComment(problemId: string, userId: string, text: string
             problemId,
             { $push: { comments: comment } },
             { new: true }
-        );
+        ).populate('reportedBy', '_id');
+
+        if (!problem) throw new Error("Problem not found");
+
+        // --- REAL-TIME & NOTIFICATIONS ---
+
+        // 1. Identify Recipients (Reporter + previous commenters)
+        const commenters = problem.comments.map((c: any) => c.userId?.toString());
+        const reporterId = problem.reportedBy?._id?.toString();
+
+        const recipientIds = new Set<string>();
+        if (reporterId) recipientIds.add(reporterId);
+        commenters.forEach((id: string) => { if (id) recipientIds.add(id); });
+
+        // Remove current commenter from recipients
+        recipientIds.delete(userId);
+
+        if (recipientIds.size > 0) {
+            await triggerNotification({
+                title: "New Comment on Report",
+                message: `${user.firstName} commented on: "${problem.title}"`,
+                type: "info",
+                category: "system",
+                recipients: Array.from(recipientIds),
+                senderId: userId,
+                link: `/dashboard/problems/${problemId}`,
+                relatedStoreId: problem.relatedStoreId?.toString()
+            });
+        }
+
+        // 2. Pusher Trigger
+        // Global update for lists
+        await pusherServer.trigger("global", "problem:updated", {
+            problemId,
+            status: 'commented'
+        });
+
+        // Specific channel update for the page
+        await pusherServer.trigger(`problem-${problemId}`, "comment:new", {
+            comment: JSON.parse(JSON.stringify(comment))
+        });
 
         // Log Action
         await logAction({
@@ -185,12 +225,7 @@ export async function addComment(problemId: string, userId: string, text: string
 
         revalidatePath(`/dashboard/problems/${problemId}`);
 
-        await pusherServer.trigger("global", "problem:updated", {
-            problemId,
-            status: 'commented'
-        });
-
-        return { success: true, comment };
+        return { success: true, comment: JSON.parse(JSON.stringify(comment)) };
     } catch (error) {
         console.error("Failed to add comment:", error);
         return { success: false, error: "Failed to add comment" };

@@ -383,7 +383,19 @@ export async function addComment(noticeId: string, userId: string, content: stri
         });
 
         revalidatePath("/dashboard");
-        return { success: true };
+
+        // Specific channel update for the page
+        const comment = notice.comments[notice.comments.length - 1];
+        await pusherServer.trigger(`notice-${noticeId}`, "comment:new", {
+            comment: JSON.parse(JSON.stringify(comment))
+        });
+
+        await pusherServer.trigger("global", "notice:updated", {
+            noticeId,
+            status: 'commented'
+        });
+
+        return { success: true, comment: JSON.parse(JSON.stringify(comment)) };
     } catch (error) {
         console.error("Add Comment Error:", error);
         return { success: false, error: "Failed to add comment" };

@@ -1,7 +1,7 @@
 "use server";
 
 import dbConnect from "@/lib/db";
-import { Schedule, StoreDepartment, Employee, Store, AbsenceRecord, ExtraHourRequest } from "@/lib/models";
+import { Schedule, StoreDepartment, Employee, Store, AbsenceRecord, ExtraHourRequest, VacationRecord } from "@/lib/models";
 import { pusherServer } from "@/lib/pusher";
 import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
@@ -60,8 +60,29 @@ export async function getScheduleById(id: string) {
     // We can filter by employees in the schedule or just all valid absences during this week
     const absences = await AbsenceRecord.find({
         date: { $gte: schedule.dateRange.startDate, $lte: schedule.dateRange.endDate },
-        // Optionally filter by employeeIds present in the schedule if performance is an issue
+    }).lean() as any[];
+
+    // Include vacations as well
+    const vacations = await VacationRecord.find({
+        $or: [
+            { from: { $lte: schedule.dateRange.endDate }, to: { $gte: schedule.dateRange.startDate } }
+        ]
     }).lean();
+
+    // Transform vacations into discrete "absence-like" objects for each day in the schedule range
+    vacations.forEach((v: any) => {
+        const start = new Date(Math.max(new Date(v.from).getTime(), new Date(schedule.dateRange.startDate).getTime()));
+        const end = new Date(Math.min(new Date(v.to).getTime(), new Date(schedule.dateRange.endDate).getTime()));
+
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            absences.push({
+                employeeId: v.employeeId.toString(),
+                date: new Date(d),
+                type: 'vacation',
+                isVacation: true
+            });
+        }
+    });
 
     // Ensure Mon-Sun structure (UTC)
     const daysMap = new Map();
@@ -117,7 +138,29 @@ export async function getScheduleBySlug(slug: string) {
 
     const absences = await AbsenceRecord.find({
         date: { $gte: schedule.dateRange.startDate, $lte: schedule.dateRange.endDate },
+    }).lean() as any[];
+
+    // Include vacations as well
+    const vacations = await VacationRecord.find({
+        $or: [
+            { from: { $lte: schedule.dateRange.endDate }, to: { $gte: schedule.dateRange.startDate } }
+        ]
     }).lean();
+
+    // Transform vacations into discrete objects for each day
+    vacations.forEach((v: any) => {
+        const start = new Date(Math.max(new Date(v.from).getTime(), new Date(schedule.dateRange.startDate).getTime()));
+        const end = new Date(Math.min(new Date(v.to).getTime(), new Date(schedule.dateRange.endDate).getTime()));
+
+        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+            absences.push({
+                employeeId: v.employeeId.toString(),
+                date: new Date(d),
+                type: 'vacation',
+                isVacation: true
+            });
+        }
+    });
 
     // Ensure Mon-Sun structure (UTC)
     const daysMap = new Map();
@@ -696,12 +739,12 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
     // FALLBACK: If no shifts assigned, find ANY published schedule for their store
     // This allows managers/employees to see the week structure (holidays, etc.) even with 0 shifts
     if (!schedules || schedules.length === 0) {
-        const employee = await Employee.findById(employeeId).select('storeId');
-        if (employee?.storeId) {
+        const employeeData = await Employee.findById(employeeId).select('storeId dob');
+        if (employeeData?.storeId) {
             schedules = await Schedule.find({
                 year,
                 weekNumber,
-                storeId: employee.storeId,
+                storeId: employeeData.storeId,
                 status: 'published'
             })
                 .populate("storeId", "name")
@@ -710,7 +753,10 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
         }
     }
 
-    if (!schedules || schedules.length === 0) return null;
+    const employeeObj = await Employee.findById(employeeId).select('dob');
+    const dob = employeeObj?.dob;
+
+    if (!schedules || schedules.length === 0) return JSON.parse(JSON.stringify({ weekNumber, year, days: [], dob }));
 
     // 3. Merge Shifts
     const daysMap = new Map();
@@ -728,10 +774,15 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
         loopDate.setDate(monday.getDate() + i);
         const dateStr = loopDate.toISOString().split('T')[0];
 
+        const isBirthday = dob &&
+            new Date(loopDate).getUTCDate() === new Date(dob).getUTCDate() &&
+            new Date(loopDate).getUTCMonth() === new Date(dob).getUTCMonth();
+
         daysMap.set(dateStr, {
             date: loopDate,
             isHoliday: false,
             holidayName: "",
+            isBirthday: !!isBirthday,
             shifts: []
         });
     }
@@ -796,7 +847,8 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
         weekNumber,
         year,
         days: sortedDays,
-        primaryScheduleSlug: primarySchedule?.slug
+        primaryScheduleSlug: primarySchedule?.slug,
+        dob
     }));
 }
 
@@ -1171,36 +1223,46 @@ export async function getEmployeeSchedulesInRange(employeeId: string, startDate:
         .populate("storeDepartmentId", "name")
         .lean();
 
-    const shifts: any[] = [];
+    return JSON.parse(JSON.stringify(schedules));
+}
 
-    schedules.forEach((sched: any) => {
-        sched.days.forEach((day: any) => {
+export async function removeEmployeeFromSchedulesInRange(employeeId: string, startDate: Date, endDate: Date) {
+    await dbConnect();
+
+    // Find all schedules that overlap with the range
+    const schedules = await Schedule.find({
+        "dateRange.startDate": { $lte: endDate },
+        "dateRange.endDate": { $gte: startDate },
+        "days.shifts.employees": employeeId
+    });
+
+    for (const schedule of schedules) {
+        let hasChanges = false;
+        schedule.days.forEach((day: any) => {
             const dayDate = new Date(day.date);
+            dayDate.setHours(0, 0, 0, 0);
+
             if (dayDate >= startDate && dayDate <= endDate) {
                 day.shifts.forEach((shift: any) => {
-                    if (shift.employees.some((id: any) => id.toString() === employeeId)) {
-                        shifts.push({
-                            date: day.date,
-                            start: shift.startTime,
-                            end: shift.endTime,
-                            breakMins: shift.breakMinutes,
-                            position: shift.positionName,
-                            store: sched.storeId?.name,
-                            department: sched.storeDepartmentId?.name,
-                            _id: shift._id
-                        });
+                    const originalLength = shift.employees.length;
+                    shift.employees = shift.employees.filter((id: any) => id.toString() !== employeeId);
+                    if (shift.employees.length !== originalLength) {
+                        hasChanges = true;
                     }
                 });
             }
         });
-    });
 
-    // Sort by date and then start time
-    shifts.sort((a, b) => {
-        const dateDiff = new Date(a.date).getTime() - new Date(b.date).getTime();
-        if (dateDiff !== 0) return dateDiff;
-        return a.start.localeCompare(b.start);
-    });
-
-    return shifts;
+        if (hasChanges) {
+            await schedule.save();
+            await logAction({
+                action: 'CLEANUP_VACATION_SHIFTS',
+                performedBy: 'system',
+                storeId: schedule.storeId.toString(),
+                targetId: schedule._id,
+                targetModel: 'Schedule',
+                details: { employeeId, startDate, endDate }
+            });
+        }
+    }
 }

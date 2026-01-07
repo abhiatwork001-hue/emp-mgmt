@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { createVacationRequest } from "@/lib/actions/vacation.actions";
+import { createVacationRequest, getVacationBlockedDates } from "@/lib/actions/vacation.actions";
 import { getEmployeeAbsences } from "@/lib/actions/absence.actions";
 import { toast } from "sonner";
 import { Calendar as CalendarIcon } from "lucide-react";
@@ -34,15 +34,15 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
     const [comments, setComments] = useState("");
-    const [absentDates, setAbsentDates] = useState<Date[]>([]);
+    const [blockedRanges, setBlockedRanges] = useState<{ from: Date; to: Date }[]>([]);
 
     useEffect(() => {
         if (open && employeeId) {
-            getEmployeeAbsences(employeeId).then(data => {
-                const dates: Date[] = [];
-                data.records.forEach((r: any) => dates.push(new Date(r.date)));
-                data.requests.forEach((r: any) => dates.push(new Date(r.date)));
-                setAbsentDates(dates);
+            getVacationBlockedDates(employeeId).then(ranges => {
+                setBlockedRanges(ranges.map((r: any) => ({
+                    from: new Date(r.from),
+                    to: new Date(r.to)
+                })));
             }).catch(console.error);
         }
     }, [open, employeeId]);
@@ -150,13 +150,11 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
         // 1. Min Notice
         if (date < minSelectableDate) return true;
 
-        // 2. Disable absent dates
-        const isAbsent = absentDates.some(absentDate =>
-            absentDate.getDate() === date.getDate() &&
-            absentDate.getMonth() === date.getMonth() &&
-            absentDate.getFullYear() === date.getFullYear()
+        // 2. Disable blocked dates (Capacity/Conflict/Own already booked)
+        const isBlocked = blockedRanges.some(range =>
+            date >= range.from && date <= range.to
         );
-        if (isAbsent) return true;
+        if (isBlocked) return true;
 
         // 3. Smart restriction based on 'from' selection
         if (dateRange?.from) {
@@ -228,8 +226,9 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
                                     selected={dateRange}
                                     onSelect={(range) => {
                                         setDateRange(range);
-                                        if (range?.from && range?.to) {
-                                            setIsCalendarOpen(false);
+                                        // Only close when both from and to are selected and they are different (a full range)
+                                        if (range?.from && range?.to && range.from.getTime() !== range.to.getTime()) {
+                                            setTimeout(() => setIsCalendarOpen(false), 200);
                                         }
                                     }}
                                     numberOfMonths={1}

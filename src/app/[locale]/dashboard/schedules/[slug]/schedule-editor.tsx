@@ -190,7 +190,12 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
         });
         return Array.from(emps.values());
     };
-    const allEmployees = getAllEmployees();
+    const allEmployeesOriginal = getAllEmployees();
+    const allEmployees = [...allEmployeesOriginal].sort((a, b) => {
+        if (a._id === userId) return -1;
+        if (b._id === userId) return 1;
+        return 0;
+    });
 
     const uniqueEmployees = hideUnscheduled
         ? allEmployees.filter(emp => {
@@ -725,7 +730,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
 
                     <div className="hidden md:block">
                         <div className="flex items-center gap-2">
-                            <div className="hidden xl:block text-[10px] text-red-500 bg-red-50 p-1 rounded border border-red-200" title="Debug Info">
+                            {/*                             <div className="hidden xl:block text-[10px] text-red-500 bg-red-50 p-1 rounded border border-red-200" title="Debug Info">
                                 Roles: {userRoles.join(',')} |
                                 U_Store: {userStoreId || 'NA'} |
                                 S_Store: {typeof schedule.storeId === 'object' ? schedule.storeId._id : schedule.storeId} |
@@ -733,7 +738,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                 canEdit: {canEdit ? 'Y' : 'N'} |
                                 Status: {schedule.status} |
                                 PEND: {canEditPending() ? 'Y' : 'N'}
-                            </div>
+                            </div> */}
                             <span className="font-semibold">{schedule.storeDepartmentId?.name}</span>
                             <Badge variant={schedule.status === 'published' ? 'default' : (schedule.status === 'pending' || schedule.status === 'review') ? 'secondary' : 'outline'} className="capitalize">
                                 {tc(schedule.status)}
@@ -1070,8 +1075,10 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
 
                                     const isUnderHours = totalHours < contractHours;
                                     const isUnderDays = totalShifts < contractDays;
+                                    const isSelfRow = emp._id.toString() === userId.toString();
+
                                     return (
-                                        <tr key={emp._id} className="hover:bg-muted/30">
+                                        <tr key={emp._id} className={`hover:bg-muted/30 transition-colors ${isSelfRow ? 'bg-primary/[0.03] border-y border-primary/10' : ''}`}>
                                             <td className="p-4 sticky left-0 bg-background/95 backdrop-blur z-10 border-r border-border">
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className="h-8 w-8">
@@ -1133,9 +1140,58 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                                                                 onDragStart={isEditMode ? (e) => handleDragStart(e, shift) : undefined}
                                                                                 className={`bg-muted/50 text-muted-foreground p-2 rounded text-xs border border-dashed border-border transition-colors group relative flex items-center justify-center ${isEditMode ? 'cursor-grab active:cursor-grabbing hover:bg-muted' : ''}`}
                                                                                 onClick={(e) => {
-                                                                                    if (!isEditMode) return;
                                                                                     e.stopPropagation();
-                                                                                    handleEditClick(shift, day.date, shift.originalIndex);
+                                                                                    if (isEditMode) {
+                                                                                        handleEditClick(shift, day.date, shift.originalIndex);
+                                                                                    } else {
+                                                                                        // For Day Off, we treat it as a shift that can be swapped (e.g. I give my day off, I take your shift)
+                                                                                        // Logic should be similar to regular shift click
+                                                                                        const isMyShift = shift.employees.some((e: any) => e.toString() === userId.toString() || (e._id && e._id.toString() === userId.toString()));
+                                                                                        const isOwnRow = emp._id.toString() === userId.toString();
+
+                                                                                        if (isOwnRow) {
+                                                                                            // If it's my own row and it's a "Day Off", maybe I want to Delete it or Edit it?
+                                                                                            // For now, let's just allow standard Details or nothing.
+                                                                                            // Since Overtime on a "Day Off" doesn't strictly make sense unless deleting it, we might skip Overtime logic here.
+                                                                                            // But user said "sow day off for employee", so allowing swap is key.
+                                                                                            // Let's just do nothing for "Overtime" on Day Off for now, as it's separate.
+                                                                                            // actually, if I want to "Swap" my Day Off, I need to click on OTHER person's shift.
+                                                                                            // So clicking my OWN Day Off might just show details?
+                                                                                            return;
+                                                                                        }
+                                                                                        // If clicking SOMEONE ELSE'S shift (or day off), we fall through to the main logic below?
+                                                                                        // This block is SPECIFIC to rendering the "Day Off" UI element.
+                                                                                        // If *I* have a Day Off, it renders in MY row.
+                                                                                        // If *THEY* have a Day Off, it renders in THEIR row.
+
+                                                                                        // If I click THEIR "Day Off", maybe I want to trade my Shift for their Day Off?
+                                                                                        // Yes. So we should allow showing details.
+
+                                                                                        // But wait, the standard logic is DUPLICATED here or this is a separate return path?
+                                                                                        // Looking at the code structure:
+                                                                                        // if (isDayOff) { return ( ... ) } is an EARLY RETURN.
+                                                                                        // So I MUST implement the click logic HERE for Day Off items.
+
+                                                                                        const scheduleStoreId = schedule.storeId?._id || schedule.storeId;
+                                                                                        const worksAtStore = userStoreId && scheduleStoreId && userStoreId.toString() === scheduleStoreId.toString();
+                                                                                        const dayDate = new Date(day.date);
+                                                                                        dayDate.setHours(0, 0, 0, 0);
+                                                                                        const today = new Date();
+                                                                                        today.setHours(0, 0, 0, 0);
+
+                                                                                        // Check if I have a shift on this day
+                                                                                        const userShiftOnDay = day.shifts.find((s: any) => s.employees.some((e: any) => e.toString() === userId.toString() || (e._id && e._id.toString() === userId.toString())));
+
+                                                                                        setTargetDetailsShift({
+                                                                                            shift,
+                                                                                            date: day.date,
+                                                                                            employeeName: `${emp.firstName} ${emp.lastName}`,
+                                                                                            storeName: schedule.storeId?.name || "This Store",
+                                                                                            canSwap: worksAtStore && !isMyShift && !!userShiftOnDay, // Allow swap if I have a shift/dayoff to give
+                                                                                            targetEmployeeId: emp._id
+                                                                                        });
+                                                                                        setDetailsDialogOpen(true);
+                                                                                    }
                                                                                 }}
                                                                             >
                                                                                 {isEditMode && (
@@ -1169,22 +1225,38 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                                                     totalMinutes += dur;
 
                                                                     // Dynamic Style based on Color
+                                                                    // Dynamic Style based on Color
                                                                     const shiftStyle = shift.color ? {
-                                                                        backgroundColor: `${shift.color}20`, // Slightly higher opacity for background
-                                                                        borderLeft: `4px solid ${shift.color}`, // Stronger accent border
-                                                                        color: 'inherit' // Ensure text remains readable (will use text-foreground)
+                                                                        backgroundColor: `${shift.color}20`,
+                                                                        borderLeft: `4px solid ${shift.color}`,
+                                                                        color: 'inherit'
                                                                     } : {};
 
                                                                     // Absence Check
                                                                     const absence = (schedule.absences || []).find((a: any) => {
                                                                         const absDate = new Date(a.date).toISOString().split('T')[0];
                                                                         const shiftDate = new Date(day.date).toISOString().split('T')[0];
-                                                                        // Check if this absence belongs to ANY of the assigned employees
-                                                                        // OR check if specific emp is absent.
-                                                                        // We are in 'uniqueEmployees.map' loop, so 'emp' is the current row employee.
-                                                                        // We should check if 'emp' is absent on 'day.date'.
                                                                         return absDate === shiftDate && a.employeeId === emp._id;
                                                                     });
+
+                                                                    // Coverage Check
+                                                                    const coverageInfo = shift.meta?.coverages?.find((c: any) => c.coveringEmployeeId === emp._id);
+                                                                    const isCovering = !!coverageInfo;
+
+                                                                    // Combined Classes
+                                                                    let wrapperClasses = `p-2 rounded text-xs border border-border/50 transition-all group relative `;
+
+                                                                    if (absence) {
+                                                                        wrapperClasses += `bg-muted text-muted-foreground border-dashed border-border opacity-60 grayscale `;
+                                                                    } else if (isCovering) {
+                                                                        wrapperClasses += `bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-500/50 shadow-sm `;
+                                                                    } else if (!shift.color) {
+                                                                        wrapperClasses += `bg-primary/10 text-primary border-primary/20 `;
+                                                                    } else {
+                                                                        wrapperClasses += `text-foreground `;
+                                                                    }
+
+                                                                    if (isEditMode) wrapperClasses += `cursor-grab active:cursor-grabbing hover:opacity-90 shadow-sm `;
 
                                                                     // Staffing Check
                                                                     const requiredCount = shift.requiredHeadcount || 0;
@@ -1201,87 +1273,95 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                                                             key={shift.originalIndex}
                                                                             draggable={isEditMode}
                                                                             onDragStart={isEditMode ? (e) => handleDragStart(e, shift) : undefined}
-                                                                            className={`p-2 rounded text-xs border border-border/50 transition-colors group relative ${!shift.color ? 'bg-primary/10 text-primary border-primary/20' : 'text-foreground'} ${isEditMode ? 'cursor-grab active:cursor-grabbing hover:opacity-90 shadow-sm' : ''} ${absence ? 'border-destructive/50 bg-destructive/10' : ''}`}
-                                                                            style={shift.color ? shiftStyle : undefined}
+                                                                            className={wrapperClasses}
+                                                                            style={(!absence && !isCovering && shift.color) ? shiftStyle : undefined}
                                                                             onClick={(e) => {
                                                                                 e.stopPropagation();
-                                                                                if (isEditMode) {
-                                                                                    handleEditClick(shift, day.date, shift.originalIndex);
-                                                                                } else {
-                                                                                    const isMyShift = shift.employees.some((e: any) => e._id === userId || e === userId);
+                                                                                // ... existing click logic ...
+                                                                                const isMyShift = shift.employees.some((e: any) => e.toString() === userId.toString() || (e._id && e._id.toString() === userId.toString()));
+                                                                                const isOwnRow = emp._id.toString() === userId.toString();
 
-                                                                                    const dayDate = new Date(day.date);
-                                                                                    dayDate.setHours(0, 0, 0, 0);
-                                                                                    const today = new Date();
-                                                                                    today.setHours(0, 0, 0, 0);
+                                                                                const dayDate = new Date(day.date);
+                                                                                dayDate.setHours(0, 0, 0, 0);
+                                                                                const today = new Date();
+                                                                                today.setHours(0, 0, 0, 0);
 
-                                                                                    const now = new Date();
-                                                                                    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-                                                                                    const [sH, sM] = shift.startTime.split(':').map(Number);
-                                                                                    const [eH, eM] = shift.endTime.split(':').map(Number);
-                                                                                    const startMinutes = sH * 60 + sM;
-                                                                                    const endMinutes = eH * 60 + eM;
+                                                                                const now = new Date();
+                                                                                const currentMinutes = now.getHours() * 60 + now.getMinutes();
+                                                                                const [sH, sM] = shift.startTime.split(':').map(Number);
+                                                                                const [eH, eM] = shift.endTime.split(':').map(Number);
+                                                                                const startMinutes = sH * 60 + sM;
+                                                                                const endMinutes = eH * 60 + eM;
 
-                                                                                    if (!isMyShift) {
-                                                                                        // Check if shift is in the past or started
-                                                                                        const isPastOrStarted = (dayDate < today) || (dayDate.getTime() === today.getTime() && currentMinutes >= startMinutes);
+                                                                                if (isOwnRow) {
+                                                                                    if (isEditMode) {
+                                                                                        handleEditClick(shift, day.date, shift.originalIndex);
+                                                                                    } else {
+                                                                                        // Overtime Rule: Only if shift ended.
+                                                                                        const shiftEndDateTime = new Date(dayDate);
+                                                                                        shiftEndDateTime.setHours(eH, eM, 0, 0);
 
-                                                                                        // Check if user works at this store
-                                                                                        // schedule.storeId is likely populated, so we check _id
-                                                                                        const scheduleStoreId = schedule.storeId?._id || schedule.storeId;
-                                                                                        const worksAtStore = userStoreId && scheduleStoreId && userStoreId.toString() === scheduleStoreId.toString();
+                                                                                        // Handle overnight shifts (end < start) -> add 1 day to end
+                                                                                        const shiftStartDateTime = new Date(dayDate);
+                                                                                        shiftStartDateTime.setHours(sH, sM, 0, 0);
+                                                                                        if (shiftEndDateTime <= shiftStartDateTime && (eH < sH)) {
+                                                                                            shiftEndDateTime.setDate(shiftEndDateTime.getDate() + 1);
+                                                                                        }
 
-                                                                                        if (isPastOrStarted || !worksAtStore) {
+                                                                                        if (now >= shiftEndDateTime) {
+                                                                                            setTargetOvertimeShift({
+                                                                                                scheduleId: schedule._id,
+                                                                                                dayDate: day.date,
+                                                                                                shiftId: shift._id,
+                                                                                                shiftName: shift.shiftName,
+                                                                                                startTime: shift.startTime,
+                                                                                                endTime: shift.endTime
+                                                                                            });
+                                                                                            setOvertimeDialogOpen(true);
+                                                                                        } else {
+                                                                                            // Show Details
                                                                                             setTargetDetailsShift({
                                                                                                 shift,
                                                                                                 date: day.date,
                                                                                                 employeeName: `${emp.firstName} ${emp.lastName}`,
-                                                                                                storeName: schedule.storeId?.name || "This Store"
+                                                                                                storeName: schedule.storeId?.name || "This Store",
+                                                                                                canSwap: false,
+                                                                                                targetEmployeeId: emp._id
                                                                                             });
                                                                                             setDetailsDialogOpen(true);
-                                                                                            return;
                                                                                         }
-
-                                                                                        setTargetSwapShift({
-                                                                                            scheduleId: schedule._id,
-                                                                                            dayDate: day.date,
-                                                                                            shiftId: shift._id,
-                                                                                            shiftName: shift.shiftName,
-                                                                                            startTime: shift.startTime,
-                                                                                            endTime: shift.endTime,
-                                                                                            employeeId: emp._id,
-                                                                                            employeeName: `${emp.firstName} ${emp.lastName}`
-                                                                                        });
-                                                                                        setSwapDialogOpen(true);
-                                                                                    } else {
-                                                                                        if (dayDate > today) {
-                                                                                            toast.error("Cannot request overtime for future shifts");
-                                                                                            return;
-                                                                                        }
-
-                                                                                        if (dayDate.getTime() === today.getTime() && currentMinutes < endMinutes) {
-                                                                                            toast.error("Can only request overtime after shift ends");
-                                                                                            return;
-                                                                                        }
-
-                                                                                        setTargetOvertimeShift({
-                                                                                            scheduleId: schedule._id,
-                                                                                            dayDate: day.date,
-                                                                                            shiftId: shift._id,
-                                                                                            shiftName: shift.shiftName,
-                                                                                            startTime: shift.startTime,
-                                                                                            endTime: shift.endTime
-                                                                                        });
-                                                                                        setOvertimeDialogOpen(true);
                                                                                     }
+                                                                                } else {
+                                                                                    const scheduleStoreId = schedule.storeId?._id || schedule.storeId;
+                                                                                    const worksAtStore = userStoreId && scheduleStoreId && userStoreId.toString() === scheduleStoreId.toString();
+                                                                                    const isPastOrStarted = (dayDate < today) || (dayDate.getTime() === today.getTime() && currentMinutes >= startMinutes);
+                                                                                    const userShiftOnDay = day.shifts.find((s: any) => s.employees.some((e: any) => e.toString() === userId.toString() || (e._id && e._id.toString() === userId.toString())));
+
+                                                                                    setTargetDetailsShift({
+                                                                                        shift,
+                                                                                        date: day.date,
+                                                                                        employeeName: `${emp.firstName} ${emp.lastName}`,
+                                                                                        storeName: schedule.storeId?.name || "This Store",
+                                                                                        canSwap: !isPastOrStarted && worksAtStore && !isMyShift && !!userShiftOnDay,
+                                                                                        targetEmployeeId: emp._id
+                                                                                    });
+                                                                                    setDetailsDialogOpen(true);
                                                                                 }
                                                                             }}
                                                                         >
+                                                                            {/* Absence Indicator */}
                                                                             {absence && (
-                                                                                <div className="absolute top-1 right-1 text-red-500" title={`Absent: ${absence.type} - ${absence.reason || 'No reason'}`}>
+                                                                                <div className="absolute top-1 right-1 text-red-500/80">
                                                                                     <AlertCircle className="h-3 w-3" />
                                                                                 </div>
                                                                             )}
+                                                                            {/* Cover Indicator */}
+                                                                            {isCovering && (
+                                                                                <div className="absolute top-1 right-1 text-violet-600 bg-violet-100 rounded-full px-1 py-0.5 text-[8px] font-bold uppercase tracking-tighter">
+                                                                                    Cover
+                                                                                </div>
+                                                                            )}
+
                                                                             {isEditMode && (
                                                                                 <div
                                                                                     className="absolute -top-1.5 -right-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground rounded-full p-0.5 cursor-pointer shadow-sm z-20 hover:scale-110"
@@ -1296,8 +1376,25 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                                                             <div className="font-semibold">{shift.startTime} - {shift.endTime}</div>
                                                                             {shift.shiftName && <div className="opacity-75 text-[10px]">{shift.shiftName}</div>}
 
+                                                                            {/* Absence Details */}
+                                                                            {absence && (
+                                                                                <div className="mt-1 border-t border-border/50 pt-1">
+                                                                                    <span className="block text-[9px] font-bold text-red-600 uppercase">Absent</span>
+                                                                                    <span className="block text-[9px] italic leading-tight">{absence.justification || absence.reason}</span>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* Coverage Details */}
+                                                                            {isCovering && (
+                                                                                <div className="mt-1 border-t border-violet-500/20 pt-1">
+                                                                                    <span className="block text-[9px] font-bold text-violet-700 uppercase">
+                                                                                        {coverageInfo.compensationType === 'extra_hour' ? 'Extra Paid' : 'Vacation Bonus'}
+                                                                                    </span>
+                                                                                </div>
+                                                                            )}
+
                                                                             {/* Staffing Indicator */}
-                                                                            {requiredCount > 0 && (
+                                                                            {!absence && requiredCount > 0 && (
                                                                                 <div className={`mt-0.5 text-[10px] flex items-center gap-0.5 ${staffingColor}`}>
                                                                                     <Users className="h-3 w-3" />
                                                                                     <span>{assignedCount}/{requiredCount}</span>
@@ -1411,7 +1508,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                         </table >
                     </div>
                 </Card>
-            </div>
+            </div >
 
 
             <ShiftDialog
@@ -1552,6 +1649,21 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                 date={targetDetailsShift ? new Date(targetDetailsShift.date) : new Date()}
                 employeeName={targetDetailsShift?.employeeName || ""}
                 storeName={targetDetailsShift?.storeName}
+                canSwap={targetDetailsShift?.canSwap}
+                onSwapRequest={() => {
+                    setDetailsDialogOpen(false);
+                    setTargetSwapShift({
+                        scheduleId: schedule._id,
+                        dayDate: targetDetailsShift.date,
+                        shiftId: targetDetailsShift.shift._id,
+                        shiftName: targetDetailsShift.shift.shiftName,
+                        startTime: targetDetailsShift.shift.startTime,
+                        endTime: targetDetailsShift.shift.endTime,
+                        employeeId: targetDetailsShift.targetEmployeeId,
+                        employeeName: targetDetailsShift.employeeName
+                    });
+                    setSwapDialogOpen(true);
+                }}
             />
 
             <Dialog open={showLogs} onOpenChange={setShowLogs}>

@@ -10,11 +10,16 @@ import { redirect } from "next/navigation";
 import { hasPendingCoverageActions } from "@/lib/actions/coverage.actions";
 import { hasRecipesForUser } from "@/lib/actions/recipe.actions";
 
+import { RealtimeToaster } from "@/components/layout/realtime-toaster";
+
 export default async function DashboardLayout({
     children,
+    params
 }: {
     children: React.ReactNode;
+    params: Promise<{ locale: string }>;
 }) {
+    const { locale } = await params;
     const session = await getServerSession(authOptions);
     const user = (session?.user as any) || {};
     const userId = user.id;
@@ -77,6 +82,7 @@ export default async function DashboardLayout({
 
     return (
         <div className="flex h-screen overflow-hidden bg-background text-foreground">
+            {userId && <RealtimeToaster userId={userId} />}
             {isPasswordChanged ? (
                 <>
                     <div className="hidden md:flex h-full z-[80] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0 overflow-visible print-hidden">

@@ -76,7 +76,7 @@ export function SwapRequestDialog({ open, onOpenChange, currentUserId, targetShi
                 toast("Request Sent", { description: "Your swap request has been sent." });
                 onOpenChange(false);
             } else {
-                toast.error("Error", { description: "Failed to send request." });
+                toast.error("Error", { description: res.error || "Failed to send request." });
             }
         } catch (error) {
             toast.error("Error", { description: "Something went wrong." });

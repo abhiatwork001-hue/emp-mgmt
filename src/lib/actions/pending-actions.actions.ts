@@ -6,6 +6,7 @@ import {
     AbsenceRequest,
     OvertimeRequest,
     Schedule,
+    ShiftCoverageRequest,
     Employee
 } from "@/lib/models";
 import { getServerSession } from "next-auth";
@@ -24,6 +25,65 @@ export async function getPendingActions() {
     const myVacations = await VacationRequest.find({ employeeId: userId, status: 'pending' }).lean();
     const myAbsences = await AbsenceRequest.find({ employeeId: userId, status: 'pending' }).lean();
     const myOvertime = await OvertimeRequest.find({ employeeId: userId, status: 'pending' }).lean();
+    const myCoverage = await ShiftCoverageRequest.find({
+        originalEmployeeId: userId,
+        status: { $in: ['pending_hr', 'seeking_coverage'] }
+    })
+        .populate({
+            path: 'originalShift.storeId',
+            select: 'name'
+        })
+        .populate({
+            path: 'originalShift.storeDepartmentId',
+            select: 'name'
+        })
+        .lean();
+
+    // 1b. Coverage Offers (Available to me) - with full details
+    // Exclude requests where I am the original employee (can't accept my own request)
+    const requests = await ShiftCoverageRequest.find({
+        status: 'seeking_coverage',
+        candidates: userId,
+        originalEmployeeId: { $ne: userId } // Exclude my own requests
+    })
+        .populate('originalEmployeeId', 'firstName lastName image')
+        .populate({
+            path: 'originalShift.storeId',
+            select: 'name'
+        })
+        .populate({
+            path: 'originalShift.storeDepartmentId',
+            select: 'name'
+        })
+        .lean();
+
+    // Fetch coworkers for each coverage offer
+    const availableCoverage = await Promise.all(requests.map(async (req: any) => {
+        const schedule = await Schedule.findById(req.originalShift.scheduleId)
+            .populate({
+                path: 'days.shifts.employees',
+                select: 'firstName lastName'
+            })
+            .lean();
+
+        let coworkers: any[] = [];
+        if (schedule) {
+            const dayStart = new Date(req.originalShift.dayDate).setUTCHours(0, 0, 0, 0);
+            const day = schedule.days.find((d: any) => new Date(d.date).getTime() === dayStart);
+            if (day) {
+                const shift = day.shifts.find((s: any) =>
+                    s.startTime === req.originalShift.startTime &&
+                    s.endTime === req.originalShift.endTime
+                );
+                if (shift) {
+                    coworkers = shift.employees
+                        .filter((e: any) => e._id.toString() !== req.originalEmployeeId._id.toString())
+                        .map((e: any) => `${e.firstName} ${e.lastName}`);
+                }
+            }
+        }
+        return { ...req, coworkers };
+    }));
 
     // 2. Approvals (for Managers)
     const isApprover = userRoles.some((r: string) =>
@@ -34,6 +94,7 @@ export async function getPendingActions() {
         vacations: [],
         absences: [],
         overtime: [],
+        coverage: [],
         schedules: []
     };
 
@@ -63,7 +124,18 @@ export async function getPendingActions() {
 
         approvals.vacations = pendingVacations;
         approvals.absences = pendingAbsences;
+        approvals.absences = pendingAbsences;
         approvals.overtime = pendingOvertime;
+
+        // Coverage Approvals (Pending HR/Admin review after acceptance)
+        // Or strictly 'pending_hr' status requests
+        const pendingCoverage = await ShiftCoverageRequest.find({ status: 'pending_hr' }) // adjust query for RBAC if needed
+            .populate('originalEmployeeId', 'firstName lastName')
+            .populate('acceptedBy', 'firstName lastName')
+            .populate('originalShift') // Need shift details
+            .lean();
+
+        approvals.coverage = pendingCoverage;
 
         // Schedules check
         if (isGlobalApprover) {
@@ -86,8 +158,10 @@ export async function getPendingActions() {
         myActions: {
             vacations: JSON.parse(JSON.stringify(myVacations)),
             absences: JSON.parse(JSON.stringify(myAbsences)),
-            overtime: JSON.parse(JSON.stringify(myOvertime))
+            overtime: JSON.parse(JSON.stringify(myOvertime)),
+            coverage: JSON.parse(JSON.stringify(myCoverage))
         },
+        availableCoverage: JSON.parse(JSON.stringify(availableCoverage)),
         approvals: JSON.parse(JSON.stringify(approvals))
     };
 }

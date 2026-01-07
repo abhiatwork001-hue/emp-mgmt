@@ -195,6 +195,21 @@ export function ActiveActionsWidget({
                                                 <span className="text-[9px] text-muted-foreground font-medium uppercase">
                                                     {format(new Date(o.originalShift.dayDate), "MMM dd")} | {o.originalShift.startTime}-{o.originalShift.endTime}
                                                 </span>
+                                                <div className="flex flex-col gap-0.5 mt-0.5">
+                                                    <span className="text-[8px] text-zinc-500 font-medium">
+                                                        {o.originalShift.storeId?.name} • {o.originalShift.storeDepartmentId?.name}
+                                                    </span>
+                                                    {o.coworkers && o.coworkers.length > 0 && (
+                                                        <span className="text-[7px] text-muted-foreground">
+                                                            With: {o.coworkers.join(', ')}
+                                                        </span>
+                                                    )}
+                                                    {o.hrMessage && (
+                                                        <span className="text-[7px] text-blue-500 italic line-clamp-1">
+                                                            HR: {o.hrMessage}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                         <Button

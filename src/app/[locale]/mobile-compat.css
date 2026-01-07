@@ -1,0 +1,82 @@
+/**
+ * CSS fixes for older mobile browsers
+ * Add this to your globals.css
+ */
+
+/* Flexbox fixes for older browsers */
+.flex {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+/* Grid fixes for older browsers */
+.grid {
+  display: -ms-grid;
+  display: grid;
+}
+
+/* Sticky positioning fallback */
+@supports not (position: sticky) {
+  .sticky {
+    position: -webkit-sticky;
+    position: fixed;
+  }
+}
+
+/* CSS variables fallback for older browsers */
+@supports not (--css: variables) {
+  :root {
+    /* Fallback colors if CSS variables don't work */
+  }
+}
+
+/* Touch action for better mobile support */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+/* Prevent zoom on input focus (iOS) */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+textarea,
+select {
+  font-size: 16px !important; /* Prevents zoom on iOS */
+}
+
+/* Smooth scrolling with fallback */
+html {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Safe area insets for notched devices */
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Backdrop filter fallback */
+@supports not (backdrop-filter: blur(10px)) {
+  .backdrop-blur {
+    background-color: rgba(255, 255, 255, 0.9);
+  }
+  .dark .backdrop-blur {
+    background-color: rgba(0, 0, 0, 0.9);
+  }
+}
+
+/* Object-fit fallback for older browsers */
+@supports not (object-fit: cover) {
+  img {
+    width: 100%;
+    height: auto;
+  }
+}

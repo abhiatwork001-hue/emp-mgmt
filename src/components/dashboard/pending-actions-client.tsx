@@ -19,10 +19,16 @@ import {
 import {
     respondToOvertimeRequest
 } from "@/lib/actions/overtime.actions";
+import {
+    cancelCoverageRequest,
+    acceptCoverageOffer
+} from "@/lib/actions/coverage.actions";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Inbox, LayoutGrid, Palmtree, AlertCircle, Clock, CalendarDays, Loader2 } from "lucide-react";
+import { Inbox, LayoutGrid, Palmtree, AlertCircle, Clock, CalendarDays, Loader2, UserCheck, Timer, Check } from "lucide-react";
 import { useRouter } from "@/i18n/routing";
+import { FinalizeCoverageDialog } from "@/components/coverage/finalize-coverage-dialog";
+import { useRealtimeUpdates } from "@/hooks/use-realtime-updates";
 
 interface PendingActionsClientProps {
     initialData: any;
@@ -33,7 +39,12 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
     const t = useTranslations("PendingActions");
     const [data, setData] = useState(initialData);
     const [isLoading, setIsLoading] = useState(false);
+    const [finalizeDialogOpen, setFinalizeDialogOpen] = useState(false);
+    const [selectedRequest, setSelectedRequest] = useState<any>(null);
     const router = useRouter();
+
+    // Enable real-time updates for all actions
+    useRealtimeUpdates(userId);
 
     const refreshData = async () => {
         setIsLoading(true);
@@ -71,6 +82,29 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
                         return;
                     }
                 }
+            } else if (type === 'coverage') {
+                if (action === 'accept') {
+                    res = await acceptCoverageOffer(id, userId);
+                    if (!res.success) throw new Error(res.error);
+                }
+                else if (action === 'decline') {
+                    // Import and call declineCoverageOffer
+                    const { declineCoverageOffer } = await import('@/lib/actions/coverage.actions');
+                    res = await declineCoverageOffer(id, userId);
+                    if (!res.success) throw new Error(res.error);
+                }
+                // Manager actions
+                else if (action === 'finalize') {
+                    // Find the request
+                    const req = data.approvals.coverage.find((r: any) => r._id === id);
+                    if (req) {
+                        setSelectedRequest(req);
+                        setFinalizeDialogOpen(true);
+                        setIsLoading(false); // Stop loading since we just opened dialog
+                        return; // Exit here, dialog handles the rest
+                    }
+                }
+                else if (action === 'cancel') res = await cancelCoverageRequest(id);
             }
 
             toast.success("Action completed successfully");
@@ -82,8 +116,8 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
         }
     };
 
-    const renderSection = (items: any[], type: 'vacation' | 'absence' | 'overtime' | 'schedule', isApproval: boolean) => {
-        if (items.length === 0) return null;
+    const renderSection = (items: any[], type: 'vacation' | 'absence' | 'overtime' | 'schedule' | 'coverage', isApproval: boolean, isCoverageOffer?: boolean) => {
+        if (!items || items.length === 0) return null;
         return items.map((item) => (
             <ActionItemCard
                 key={item._id}
@@ -92,12 +126,14 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
                 isApproval={isApproval}
                 onAction={(id, action) => handleAction(id, action, type)}
                 loading={isLoading}
+                userId={userId}
+                isCoverageOffer={isCoverageOffer}
             />
         ));
     };
 
-    const hasAnyPersonal = data.myActions.vacations.length > 0 || data.myActions.absences.length > 0 || data.myActions.overtime.length > 0;
-    const hasAnyApprovals = data.approvals.vacations.length > 0 || data.approvals.absences.length > 0 || data.approvals.overtime.length > 0 || data.approvals.schedules.length > 0;
+    const hasAnyPersonal = data.myActions.vacations.length > 0 || data.myActions.absences.length > 0 || data.myActions.overtime.length > 0 || data.myActions.coverage?.length > 0 || (data.availableCoverage && data.availableCoverage.length > 0);
+    const hasAnyApprovals = data.approvals.vacations.length > 0 || data.approvals.absences.length > 0 || data.approvals.overtime.length > 0 || data.approvals.schedules.length > 0 || (data.approvals.coverage && data.approvals.coverage.length > 0);
 
     return (
         <div className="space-y-8 max-w-5xl mx-auto">
@@ -124,6 +160,10 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
                             <CalendarDays className="w-4 h-4 mr-2 text-blue-500" />
                             {t("tabs.schedules")}
                         </TabsTrigger>
+                        <TabsTrigger value="coverage" className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                            <UserCheck className="w-4 h-4 mr-2 text-violet-500" />
+                            {t("tabs.coverage")}
+                        </TabsTrigger>
                     </TabsList>
 
                     {isLoading && (
@@ -147,6 +187,8 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
                                 {renderSection(data.myActions.vacations, 'vacation', false)}
                                 {renderSection(data.myActions.absences, 'absence', false)}
                                 {renderSection(data.myActions.overtime, 'overtime', false)}
+                                {renderSection(data.myActions.coverage, 'coverage', false)}
+                                {renderSection(data.availableCoverage, 'coverage', false, true)}
                             </div>
                         </section>
                     )}
@@ -162,7 +204,10 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
                                 {renderSection(data.approvals.schedules, 'schedule', true)}
                                 {renderSection(data.approvals.vacations, 'vacation', true)}
                                 {renderSection(data.approvals.absences, 'absence', true)}
+                                {renderSection(data.approvals.vacations, 'vacation', true)}
+                                {renderSection(data.approvals.absences, 'absence', true)}
                                 {renderSection(data.approvals.overtime, 'overtime', true)}
+                                {renderSection(data.approvals.coverage, 'coverage', true)}
                             </div>
                         </section>
                     )}
@@ -205,7 +250,31 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
                         {renderSection(data.approvals.schedules, 'schedule', true)}
                     </div>
                 </TabsContent>
+
+                <TabsContent value="coverage" className="space-y-8 animate-in fade-in duration-300">
+                    <div className="grid gap-4">
+                        {data.availableCoverage?.length > 0 && (
+                            <div className="space-y-2">
+                                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider ml-1">Opportunities</h3>
+                                {renderSection(data.availableCoverage, 'coverage', false, true)}
+                            </div>
+                        )}
+                        {data.approvals.coverage?.length > 0 && (
+                            <div className="space-y-2">
+                                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider ml-1">To Finalize</h3>
+                                {renderSection(data.approvals.coverage, 'coverage', true)}
+                            </div>
+                        )}
+                    </div>
+                </TabsContent>
             </Tabs>
+
+            <FinalizeCoverageDialog
+                open={finalizeDialogOpen}
+                onOpenChange={setFinalizeDialogOpen}
+                request={selectedRequest}
+                onSuccess={refreshData}
+            />
         </div>
     );
 }

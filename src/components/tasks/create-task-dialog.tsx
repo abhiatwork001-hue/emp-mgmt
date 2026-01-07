@@ -43,15 +43,17 @@ interface CreateTaskDialogProps {
     taskToEdit?: any;
 }
 
+const EMPTY_ARRAY: any[] = [];
+
 export function CreateTaskDialog({
     open,
     onOpenChange,
     currentUserId,
     currentUser,
-    stores = [],
-    managers: allEmployees = [], // Renamed for clarity since it contains all
-    storeDepartments = [],
-    initialAssignments = [],
+    stores = EMPTY_ARRAY,
+    managers: allEmployees = EMPTY_ARRAY, // Renamed for clarity since it contains all
+    storeDepartments = EMPTY_ARRAY,
+    initialAssignments = EMPTY_ARRAY,
     taskToEdit
 }: CreateTaskDialogProps) {
     const [title, setTitle] = useState("");

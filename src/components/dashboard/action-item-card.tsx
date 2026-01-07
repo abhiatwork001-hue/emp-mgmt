@@ -17,7 +17,10 @@ import {
     X,
     Check,
     Edit3,
-    Eye
+    Eye,
+    Paperclip,
+    Users,
+    MessageSquare
 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -26,13 +29,15 @@ import { motion } from "framer-motion";
 
 interface ActionItemCardProps {
     item: any;
-    type: 'vacation' | 'absence' | 'overtime' | 'schedule';
+    type: 'vacation' | 'absence' | 'overtime' | 'schedule' | 'coverage';
     isApproval?: boolean;
     onAction: (id: string, action: string) => void;
     loading?: boolean;
+    userId?: string;
+    isCoverageOffer?: boolean; // True if this is an offer the user can accept (not their own request)
 }
 
-export function ActionItemCard({ item, type, isApproval, onAction, loading }: ActionItemCardProps) {
+export function ActionItemCard({ item, type, isApproval, onAction, loading, userId, isCoverageOffer }: ActionItemCardProps) {
     const t = useTranslations("PendingActions");
     const tc = useTranslations("Common");
 
@@ -42,6 +47,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading }: Ac
             case 'absence': return <AlertCircle className="w-5 h-5 text-red-500" />;
             case 'overtime': return <Clock className="w-5 h-5 text-orange-500" />;
             case 'schedule': return <CalendarDays className="w-5 h-5 text-blue-500" />;
+            case 'coverage': return <Check className="w-5 h-5 text-violet-500" />;
         }
     };
 
@@ -51,6 +57,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading }: Ac
             case 'absence': return "Absence Report";
             case 'overtime': return "Overtime Request";
             case 'schedule': return "Draft Schedule";
+            case 'coverage': return "Coverage Offer";
         }
     };
 
@@ -93,6 +100,16 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading }: Ac
                 </div>
             );
         }
+        if (type === 'coverage') {
+            return (
+                <div className="flex items-center gap-2 text-sm font-bold">
+                    <span>{format(new Date(item.originalShift?.dayDate || new Date()), "MMM dd")}</span>
+                    <Badge variant="secondary" className="ml-2 font-black tracking-tighter text-[10px]">
+                        {item.originalShift?.startTime} - {item.originalShift?.endTime}
+                    </Badge>
+                </div>
+            );
+        }
     };
 
     return (
@@ -112,6 +129,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading }: Ac
                             type === 'absence' && "bg-red-500",
                             type === 'overtime' && "bg-orange-500",
                             type === 'schedule' && "bg-blue-500",
+                            type === 'coverage' && "bg-violet-500",
                         )} />
 
                         {/* Main Content */}
@@ -138,24 +156,85 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading }: Ac
                                     <div className="flex flex-wrap items-center gap-4 pt-1">
                                         <div className="flex items-center gap-2">
                                             <User className="w-3.5 h-3.5 text-primary" />
-                                            <span className="text-xs font-bold">{item.employeeId?.firstName} {item.employeeId?.lastName}</span>
+                                            <span className="text-xs font-bold">{item.employeeId?.firstName || item.originalEmployeeId?.firstName} {item.employeeId?.lastName || item.originalEmployeeId?.lastName}</span>
                                         </div>
-                                        {item.employeeId?.storeId && (
+                                        {/* Store Name */}
+                                        {(item.employeeId?.storeId?.name || item.originalShift?.storeId?.name || item.storeId?.name) && (
                                             <div className="flex items-center gap-2 text-muted-foreground">
                                                 <Store className="w-3.5 h-3.5" />
-                                                <span className="text-xs">{item.employeeId.storeId.name}</span>
+                                                <span className="text-xs">{item.employeeId?.storeId?.name || item.originalShift?.storeId?.name || item.storeId?.name}</span>
                                             </div>
                                         )}
-                                        {type === 'schedule' && (
+                                        {/* Department Name */}
+                                        {(item.employeeId?.storeDepartmentId?.name || item.originalShift?.storeDepartmentId?.name || item.storeDepartmentId?.name) && (
                                             <div className="flex items-center gap-2 text-muted-foreground">
                                                 <MapPin className="w-3.5 h-3.5" />
-                                                <span className="text-xs font-medium">{item.storeDepartmentId?.name || item.storeId?.name}</span>
+                                                <span className="text-xs font-medium">{item.employeeId?.storeDepartmentId?.name || item.originalShift?.storeDepartmentId?.name || item.storeDepartmentId?.name}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                ) : type === 'coverage' ? (
+                                    <div className="space-y-2 pt-1">
+                                        {/* Coverage-specific details for candidates */}
+                                        <div className="flex flex-wrap items-center gap-4">
+                                            {item.originalEmployeeId && (
+                                                <div className="flex items-center gap-2">
+                                                    <User className="w-3.5 h-3.5 text-primary" />
+                                                    <span className="text-xs font-bold">Covering: {item.originalEmployeeId?.firstName} {item.originalEmployeeId?.lastName}</span>
+                                                </div>
+                                            )}
+                                            {item.originalShift?.storeId?.name && (
+                                                <div className="flex items-center gap-2 text-muted-foreground">
+                                                    <Store className="w-3.5 h-3.5" />
+                                                    <span className="text-xs">{item.originalShift.storeId.name}</span>
+                                                </div>
+                                            )}
+                                            {item.originalShift?.storeDepartmentId?.name && (
+                                                <div className="flex items-center gap-2 text-muted-foreground">
+                                                    <MapPin className="w-3.5 h-3.5" />
+                                                    <span className="text-xs font-medium">{item.originalShift.storeDepartmentId.name}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        {item.coworkers && item.coworkers.length > 0 && (
+                                            <div className="flex items-start gap-2 text-muted-foreground">
+                                                <Users className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                                <span className="text-xs">Working with: {item.coworkers.join(', ')}</span>
+                                            </div>
+                                        )}
+                                        {item.reason && (
+                                            <div className="flex items-start gap-2 text-muted-foreground">
+                                                <MessageSquare className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                                <span className="text-xs italic">Employee's reason: {item.reason}</span>
+                                            </div>
+                                        )}
+                                        {item.hrMessage && (
+                                            <div className="flex items-start gap-2 text-blue-600">
+                                                <MessageSquare className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                                                <span className="text-xs font-semibold italic">HR: {item.hrMessage}</span>
                                             </div>
                                         )}
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1 italic">
                                         {item.comments || item.reason || "No comments provided."}
+                                    </div>
+                                )}
+
+                                {item.attachments && item.attachments.length > 0 && (isApproval || (userId && (item.employeeId?._id?.toString() === userId.toString() || item.originalEmployeeId?._id?.toString() === userId.toString() || item.originalEmployeeId?.toString() === userId.toString()))) && (
+                                    <div className="flex flex-wrap gap-2 pt-2">
+                                        {item.attachments.map((url: string, idx: number) => (
+                                            <a
+                                                key={idx}
+                                                href={url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-[10px] text-primary hover:underline hover:bg-muted/80 transition-colors"
+                                            >
+                                                <Paperclip className="w-3 h-3" />
+                                                View Attachment {idx + 1}
+                                            </a>
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -172,6 +251,15 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading }: Ac
                                             >
                                                 <Eye className="w-3.5 h-3.5 mr-2" />
                                                 {t("item.review")}
+                                            </Button>
+                                        ) : type === 'coverage' ? (
+                                            <Button
+                                                size="sm"
+                                                onClick={() => onAction(item._id, 'finalize')}
+                                                className="rounded-full bg-primary hover:bg-primary/90 font-bold px-6 h-9 transition-all shadow-lg shadow-primary/20"
+                                            >
+                                                <Check className="w-3.5 h-3.5 mr-2" />
+                                                Finalize
                                             </Button>
                                         ) : (
                                             <div className="flex gap-2 w-full md:w-auto">
@@ -197,24 +285,54 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading }: Ac
                                     </>
                                 ) : (
                                     <div className="flex gap-2 w-full md:w-auto">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={() => onAction(item._id, 'edit')}
-                                            className="flex-1 md:flex-none rounded-full border-border/60 hover:border-primary/40 hover:bg-primary/5 font-bold h-9 px-5 transition-all"
-                                        >
-                                            <Edit3 className="w-3.5 h-3.5 mr-2 text-primary" />
-                                            {t("item.edit")}
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            variant="ghost"
-                                            onClick={() => onAction(item._id, 'cancel')}
-                                            className="flex-1 md:flex-none rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/5 font-bold h-9 px-5 transition-all"
-                                        >
-                                            <X className="w-3.5 h-3.5 mr-2" />
-                                            {t("item.cancel")}
-                                        </Button>
+                                        {/* Coverage Offer - Can Accept or Decline */}
+                                        {type === 'coverage' && isCoverageOffer && (
+                                            <>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => onAction(item._id, 'accept')}
+                                                    className="flex-1 md:flex-none rounded-full bg-violet-500 hover:bg-violet-600 font-bold h-9 px-5 transition-all shadow-lg shadow-violet-500/10"
+                                                >
+                                                    <Check className="w-3.5 h-3.5 mr-2" />
+                                                    Accept
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => onAction(item._id, 'decline')}
+                                                    className="flex-1 md:flex-none rounded-full border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white font-bold h-9 px-5 transition-all"
+                                                >
+                                                    <X className="w-3.5 h-3.5 mr-2" />
+                                                    Decline
+                                                </Button>
+                                            </>
+                                        )}
+
+                                        {/* Non-coverage items can be edited */}
+                                        {type !== 'coverage' && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                onClick={() => onAction(item._id, 'edit')}
+                                                className="flex-1 md:flex-none rounded-full border-border/60 hover:border-primary/40 hover:bg-primary/5 font-bold h-9 px-5 transition-all"
+                                            >
+                                                <Edit3 className="w-3.5 h-3.5 mr-2 text-primary" />
+                                                {t("item.edit")}
+                                            </Button>
+                                        )}
+
+                                        {/* Cancel button - only for own requests, not for coverage offers */}
+                                        {!(type === 'coverage' && isCoverageOffer) && (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                onClick={() => onAction(item._id, 'cancel')}
+                                                className="flex-1 md:flex-none rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/5 font-bold h-9 px-5 transition-all"
+                                            >
+                                                <X className="w-3.5 h-3.5 mr-2" />
+                                                {t("item.cancel")}
+                                            </Button>
+                                        )}
                                     </div>
                                 )}
                             </div>

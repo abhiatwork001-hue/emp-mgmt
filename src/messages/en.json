@@ -226,7 +226,8 @@
             "vacations": "Vacations",
             "absences": "Absences",
             "overtime": "Overtime",
-            "schedules": "Schedules"
+            "schedules": "Schedules",
+            "coverage": "Coverage"
         },
         "item": {
             "requestedBy": "Requested by {name}",

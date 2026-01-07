@@ -43,6 +43,7 @@ interface StoreManagerDashboardProps {
         absences: any[];
         overtime: any[];
         schedules: any[];
+        coverage?: any[];
     };
     storeStats: {
         totalEmployees: number;
@@ -193,6 +194,7 @@ export function StoreManagerDashboard({
                 vacations={requests?.vacations || []}
                 absences={requests?.absences || []}
                 schedules={requests?.schedules || []}
+                coverage={requests?.coverage || []}
                 compact={false}
                 role={currentUserRole}
                 currentUserRoles={currentUserRoles}
@@ -313,8 +315,8 @@ export function StoreManagerDashboard({
                     <div className="h-[1px] flex-1 bg-gradient-to-r from-border/50 via-border to-transparent" />
                 </div>
 
-                {/* High Priority Compliance Alert for Admins/HR */}
-                {isHighLevel && operationsData?.scheduleHealth?.overdue && (
+                {/* High Priority Compliance Alert for Managers/Admins/HR */}
+                {operationsData?.scheduleHealth?.overdue && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}

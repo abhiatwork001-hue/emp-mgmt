@@ -150,6 +150,11 @@ export async function approveAbsenceRequest(requestId: string, approverId: strin
         employeeId: request.employeeId
     });
 
+    // Trigger Real-time Update for Employee
+    await pusherServer.trigger(`user-${request.employeeId}`, "absence:approved", {
+        requestId: request._id
+    });
+
     // Notification: Notify Employee
     try {
         await triggerNotification({
@@ -217,6 +222,11 @@ export async function rejectAbsenceRequest(requestId: string, reviewerId: string
         requestId: request._id,
         status: 'rejected',
         employeeId: request.employeeId
+    });
+
+    // Trigger Real-time Update for Employee
+    await pusherServer.trigger(`user-${request.employeeId}`, "absence:rejected", {
+        requestId: request._id
     });
 
     // Notification: Notify Employee

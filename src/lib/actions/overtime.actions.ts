@@ -29,30 +29,30 @@ export async function createOvertimeRequest(data: {
     try {
         await connectToDB();
 
-        // Validation: Cannot request for future
         const today = new Date();
-        const requestDate = new Date(data.dayDate); // UTC midnight usually if from date input
-
-        // Normalize strict date comparison (ignoring time for "future day" check)
+        const requestDate = new Date(data.dayDate);
         const todayMid = new Date(today); todayMid.setHours(0, 0, 0, 0);
         const requestMid = new Date(requestDate); requestMid.setHours(0, 0, 0, 0);
 
-        if (requestMid > todayMid) {
-            return { success: false, error: "Cannot request overtime for future dates." };
-        }
-
-        // Validation: If today, shift must be over
+        // Validation: If today, shift must be over (unless it's a future request)
         if (requestMid.getTime() === todayMid.getTime()) {
-            const [endStats, endModifier] = data.shiftDetails.endTime.split(' '); // Handle "5:00 PM" if 12h, or "17:00" if 24h. 
-            // Assuming 24h format based on previous files "startTime": "09:00"
-            // If it is 24h format "09:00"
-            const [h, m] = data.shiftDetails.endTime.split(':').map(Number);
+            try {
+                // Handle potential 12h/24h formats
+                const endTimeStr = data.shiftDetails.endTime.toLowerCase();
+                let [h, m] = endTimeStr.split(':').map(val => parseInt(val));
 
-            const shiftEnd = new Date(today);
-            shiftEnd.setHours(h, m, 0, 0);
+                if (endTimeStr.includes('pm') && h < 12) h += 12;
+                if (endTimeStr.includes('am') && h === 12) h = 0;
 
-            if (today < shiftEnd) {
-                return { success: false, error: "Cannot request overtime until your shift has ended." };
+                const shiftEnd = new Date(today);
+                shiftEnd.setHours(h, m, 0, 0);
+
+                if (today < shiftEnd) {
+                    return { success: false, error: "Cannot request overtime until your shift has ended for today." };
+                }
+            } catch (e) {
+                console.warn("Time parsing error in Overtime Request", e);
+                // Fallback: allow if parsing fails or assume 24h
             }
         }
 

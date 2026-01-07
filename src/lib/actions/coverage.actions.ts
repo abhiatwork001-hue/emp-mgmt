@@ -138,49 +138,92 @@ export async function getEligibleEmployeesForCoverage(requestId: string) {
         _id: { $ne: request.originalEmployeeId }
     })
         .select('firstName lastName image email contract storeId storeDepartmentId roles')
+        .populate('storeId', 'name')
+        .populate({
+            path: 'storeDepartmentId',
+            select: 'name globalDepartmentId',
+        })
         .lean();
 
     // 3. Find who is working ANYWHERE on this day
     const dayStart = new Date(date).setUTCHours(0, 0, 0, 0);
-    const dayEnd = new Date(date).setUTCHours(23, 59, 59, 999);
 
+    // Scan ANY schedule (Draft or Published) to find commitments
     const schedulesOnDay = await Schedule.find({
-        "days.date": { $gte: dayStart, $lte: dayEnd }
+        status: { $ne: 'rejected' },
+        "days.date": dayStart
     }).select("days").lean();
 
     const workingEmployeeIds = new Set<string>();
     schedulesOnDay.forEach((s: any) => {
-        const day = s.days.find((d: any) => new Date(d.date).setUTCHours(0, 0, 0, 0) === dayStart);
+        const day = s.days.find((d: any) => new Date(d.date).getTime() === dayStart);
         if (day) {
             day.shifts.forEach((sh: any) => {
-                sh.employees.forEach((e: any) => workingEmployeeIds.add(e.toString()));
+                const shiftName = sh.shiftName?.toLowerCase() || "";
+                const isDayOff = /day off|do$|^-$/.test(shiftName);
+                if (!isDayOff) {
+                    sh.employees.forEach((e: any) => workingEmployeeIds.add(e.toString()));
+                }
             });
         }
     });
 
-    // 4. Categorize available employees
-    const available = allEmployees.filter(emp => !workingEmployeeIds.has(emp._id.toString()));
+    // 4. Categorize available employees (exclude already invited candidates)
+    const currentCandidateIds = request.candidates.map((c: any) => c.toString());
+    const available = allEmployees.filter(emp =>
+        !workingEmployeeIds.has(emp._id.toString()) &&
+        !currentCandidateIds.includes(emp._id.toString())
+    );
 
-    // Enhance with flags
+    // Enhance with flags and 4-Tier Priority
     const results = available.map((emp: any) => {
         const isGlobalHead = globalDeptHeads.includes(emp._id.toString());
-        const isSameStore = emp.storeId?.toString() === storeId?.toString();
-        const isSameDept = emp.storeDepartmentId?.toString() === storeDepartmentId?.toString();
 
-        let priority = 3; // Default
-        if (isGlobalHead) priority = 1;
-        else if (isSameDept) priority = 2;
+        // Robust ID extraction for Store
+        const empStoreId = emp.storeId?._id ? emp.storeId._id.toString() : emp.storeId?.toString();
+        const reqStoreId = storeId?.toString();
+        const isSameStore = empStoreId && reqStoreId && empStoreId === reqStoreId;
+
+        // Robust ID extraction for Global Dept
+        const empGlobalId = emp.storeDepartmentId?.globalDepartmentId?._id
+            ? emp.storeDepartmentId.globalDepartmentId._id.toString()
+            : emp.storeDepartmentId?.globalDepartmentId?.toString();
+        const targetGlobalId = globalDeptId?.toString();
+        const isSameGlobalDept = empGlobalId && targetGlobalId && empGlobalId === targetGlobalId;
+
+        // Robust ID extraction for Dept
+        const empDeptId = emp.storeDepartmentId?._id
+            ? emp.storeDepartmentId._id.toString()
+            : emp.storeDepartmentId?.toString();
+        const reqDeptId = storeDepartmentId?.toString();
+        const isSameDept = empDeptId && reqDeptId && empDeptId === reqDeptId;
+
+        let priority = 4; // Default: Rest of Global Staff
+
+        if (isSameStore) {
+            if (isSameDept) {
+                priority = 1; // Same Store + Same Dept
+            } else {
+                priority = 4; // Same Store + Different Dept
+            }
+        } else if (isSameGlobalDept) {
+            priority = 2; // Global Same Dept
+        } else if (isGlobalHead) {
+            priority = 3; // Global Dept Head
+        }
 
         return {
             ...emp,
+            displayName: `${emp.firstName} ${emp.lastName}`,
             isGlobalHead,
             isSameStore,
+            isSameGlobalDept,
             isSameDept,
             priority
         };
     });
 
-    // Sort by priority
+    // Sort by priority (1 is highest)
     results.sort((a, b) => a.priority - b.priority);
 
     return JSON.parse(JSON.stringify(results));
@@ -206,7 +249,16 @@ export async function getActiveOngoingActions(employeeId: string) {
     const coverageRequests = await ShiftCoverageRequest.find({
         originalEmployeeId: employeeId,
         status: { $in: ['pending_hr', 'seeking_coverage'] }
-    }).populate('originalShift').lean();
+    })
+        .populate({
+            path: 'originalShift.storeId',
+            select: 'name'
+        })
+        .populate({
+            path: 'originalShift.storeDepartmentId',
+            select: 'name'
+        })
+        .lean();
 
     const employee = await Employee.findById(employeeId).select('roles');
     const PRIVILEGED_ROLES = ["admin", "hr", "owner", "tech", "super_user"];
@@ -223,9 +275,44 @@ export async function getActiveOngoingActions(employeeId: string) {
         coverageOffersQuery.candidates = employeeId;
     }
 
-    const coverageOffers = await ShiftCoverageRequest.find(coverageOffersQuery)
-        .populate('originalShift')
+    const requests = await ShiftCoverageRequest.find(coverageOffersQuery)
+        .populate('originalEmployeeId', 'firstName lastName image')
+        .populate({
+            path: 'originalShift.storeId',
+            select: 'name'
+        })
+        .populate({
+            path: 'originalShift.storeDepartmentId',
+            select: 'name'
+        })
         .lean();
+
+    const coverageOffers = await Promise.all(requests.map(async (req: any) => {
+        const schedule = await Schedule.findById(req.originalShift.scheduleId)
+            .populate({
+                path: 'days.shifts.employees',
+                select: 'firstName lastName'
+            })
+            .lean();
+
+        let coworkers: any[] = [];
+        if (schedule) {
+            const dayStart = new Date(req.originalShift.dayDate).setUTCHours(0, 0, 0, 0);
+            const day = schedule.days.find((d: any) => new Date(d.date).getTime() === dayStart);
+            if (day) {
+                const shift = day.shifts.find((s: any) =>
+                    s.startTime === req.originalShift.startTime &&
+                    s.endTime === req.originalShift.endTime
+                );
+                if (shift) {
+                    coworkers = shift.employees
+                        .filter((e: any) => e._id.toString() !== req.originalEmployeeId._id.toString())
+                        .map((e: any) => `${e.firstName} ${e.lastName}`);
+                }
+            }
+        }
+        return { ...req, coworkers };
+    }));
 
     return {
         vacations: JSON.parse(JSON.stringify(vacations)),
@@ -241,13 +328,15 @@ export async function inviteCandidatesForCoverage(requestId: string, employeeIds
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
 
+    // Use $addToSet to add new candidates without removing existing ones
     const request = await ShiftCoverageRequest.findByIdAndUpdate(requestId, {
-        candidates: employeeIds,
+        $addToSet: { candidates: { $each: employeeIds } },
         status: 'seeking_coverage',
-        offerSentAt: new Date()
+        offerSentAt: new Date(),
+        hrMessage: customMessage
     }, { new: true });
 
-    // Send Notifications
+    // Send Notifications only to the NEW candidates
     const formattedDate = format(new Date(request.originalShift.dayDate), 'PPP');
     const defaultMessage = `A shift is available on ${formattedDate} (${request.originalShift.startTime}-${request.originalShift.endTime}). Click to accept.`;
 
@@ -257,9 +346,7 @@ export async function inviteCandidatesForCoverage(requestId: string, employeeIds
         type: "info",
         category: "schedule",
         recipients: employeeIds,
-        link: `/dashboard/coverage` // They should see it in dashboard widget? Or a dedicated offers page.
-        // Let's direct them to their schedule tab or home where we show alerts.
-        // We'll add a 'link' to a specific accept action or view.
+        link: `/dashboard/pending-actions`
     });
 
     await logAction({
@@ -267,10 +354,18 @@ export async function inviteCandidatesForCoverage(requestId: string, employeeIds
         performedBy: userId,
         targetId: requestId,
         targetModel: 'ShiftCoverageRequest',
-        details: { candidateCount: employeeIds.length }
+        details: { candidateCount: employeeIds.length, totalCandidates: request.candidates.length }
+    });
+
+    // Trigger real-time updates for all invited candidates
+    employeeIds.forEach(async (candidateId) => {
+        await pusherServer.trigger(`user-${candidateId}`, "coverage:invited", {
+            requestId
+        });
     });
 
     revalidatePath(`/dashboard/coverage/${requestId}`);
+    revalidatePath('/dashboard/pending-actions');
 }
 
 // 4. Employee Accepts Offer
@@ -278,8 +373,12 @@ export async function acceptCoverageOffer(requestId: string, employeeId: string)
     await dbConnect();
 
     // Atomic check: ensure status is still seeking
-    const request = await ShiftCoverageRequest.findOne({ _id: requestId, status: 'seeking_coverage' });
-    if (!request) throw new Error("This offer is no longer available.");
+    const request = await ShiftCoverageRequest.findById(requestId);
+    if (!request) return { success: false, error: "Request not found." };
+    if (request.status !== 'seeking_coverage' || request.acceptedBy) {
+        if (request.acceptedBy?.toString() === employeeId) return { success: true };
+        return { success: false, error: "This offer is no longer available or already accepted." };
+    }
 
     // Check if user was invited OR has privileged role
     const accepterEmployee = await Employee.findById(employeeId).select('roles');
@@ -289,7 +388,7 @@ export async function acceptCoverageOffer(requestId: string, employeeId: string)
     );
 
     if (!isAccepterPrivileged && !request.candidates.map((id: any) => id.toString()).includes(employeeId)) {
-        throw new Error("You were not invited to cover this shift.");
+        return { success: false, error: "You were not invited to cover this shift." };
     }
 
     // Set Accepted
@@ -335,6 +434,8 @@ export async function acceptCoverageOffer(requestId: string, employeeId: string)
             requestId: updated._id,
             acceptedBy: employeeId
         });
+        await pusherServer.trigger(`user-${updated.originalEmployeeId}`, "coverage:updated", { requestId: updated._id, status: 'accepted' });
+        await pusherServer.trigger(`user-${employeeId}`, "coverage:updated", { requestId: updated._id, status: 'accepted' });
     }
 
     if (!updated) throw new Error("Offer taken by someone else.");
@@ -363,11 +464,76 @@ export async function acceptCoverageOffer(requestId: string, employeeId: string)
     });
 
     revalidatePath('/dashboard');
-    return JSON.parse(JSON.stringify(updated));
+    return { success: true, request: JSON.parse(JSON.stringify(updated)) };
+}
+
+// 4b. Employee Declines Offer
+export async function declineCoverageOffer(requestId: string, employeeId: string) {
+    await dbConnect();
+
+    const request = await ShiftCoverageRequest.findById(requestId);
+    if (!request) return { success: false, error: "Request not found." };
+    if (request.status !== 'seeking_coverage') {
+        return { success: false, error: "This offer is no longer available." };
+    }
+
+    // Remove employee from candidates list
+    const updated = await ShiftCoverageRequest.findByIdAndUpdate(
+        requestId,
+        {
+            $pull: { candidates: employeeId }
+        },
+        { new: true }
+    );
+
+    if (!updated) return { success: false, error: "Failed to decline offer." };
+
+    // Notify HR that candidate declined
+    const managers = await Employee.find({
+        $or: [
+            { roles: { $in: ['admin', 'hr', 'owner', 'tech', 'super_user'] } },
+            {
+                storeId: request.originalShift.storeId,
+                roles: { $in: ['admin', 'hr', 'owner', 'tech'] }
+            }
+        ],
+        active: true
+    }).select('_id');
+
+    const decliner = await Employee.findById(employeeId).select('firstName lastName');
+
+    await triggerNotification({
+        title: "Coverage Offer Declined",
+        message: `${decliner.firstName} ${decliner.lastName} declined the coverage offer for ${format(new Date(request.originalShift.dayDate), 'PPP')}.`,
+        type: "info",
+        category: "schedule",
+        recipients: managers.map(m => m._id.toString()),
+        link: `/dashboard/coverage/${requestId}`
+    });
+
+    await logAction({
+        action: 'DECLINE_COVERAGE_OFFER',
+        performedBy: employeeId,
+        targetId: requestId,
+        targetModel: 'ShiftCoverageRequest'
+    });
+
+    // Trigger real-time updates for original employee and HR
+    await pusherServer.trigger(`user-${request.originalEmployeeId}`, "coverage:declined", {
+        requestId,
+        declinedBy: employeeId
+    });
+
+    revalidatePath('/dashboard');
+    return { success: true };
 }
 
 // 5. HR Finalizes
-export async function finalizeCoverage(requestId: string, compensationType: 'extra_hour' | 'vacation_day') {
+export async function finalizeCoverage(
+    requestId: string,
+    compensationSettings: { type: 'extra_hour' | 'vacation_day'; amount?: number },
+    absenceSettings: { type: string; justification: string; justificationStatus: 'Justified' | 'Unjustified' }
+) {
     await dbConnect();
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
@@ -376,7 +542,7 @@ export async function finalizeCoverage(requestId: string, compensationType: 'ext
     if (!request || !request.acceptedBy) throw new Error("Invalid request state.");
 
     // 1. Update Request
-    request.compensationType = compensationType;
+    request.compensationType = compensationSettings.type;
     request.status = 'covered';
     await request.save();
 
@@ -385,16 +551,13 @@ export async function finalizeCoverage(requestId: string, compensationType: 'ext
         status: 'covered'
     });
 
-    // Also notify candidates in real-time that it's closed
     await pusherServer.trigger(`coverage-global`, "coverage:closed", {
         requestId: request._id
     });
 
     // 2. Schedule Update
-    // Remove original, Add new
     const schedule = await Schedule.findById(request.originalShift.scheduleId);
     if (schedule) {
-        // Find day and shift
         const dateStr = new Date(request.originalShift.dayDate).toDateString();
         const day = schedule.days.find((d: any) => new Date(d.date).toDateString() === dateStr);
         if (day) {
@@ -404,35 +567,57 @@ export async function finalizeCoverage(requestId: string, compensationType: 'ext
             );
 
             if (shift) {
-                // Fetch original employee name for the comment
-                const originalEmployee = await Employee.findById(request.originalEmployeeId).select('firstName lastName');
-                const absenceNote = `Absent: ${originalEmployee?.firstName || 'Unknown'} ${originalEmployee?.lastName || ''}`;
+                // A. Handle "Mark as Absence" for Original Employee
+                // Instead of just vanishing, we add them to the Schedule's absence list for visual tracking?
+                // The prompt says "have that shift of that employee but mark as absence".
+                // Ideally, we move them to a separate list on the schedule or rely on AbsenceRecord.
+                // Current renderer views 'schedule.absences'. So we must push to `schedule.absences`.
 
-                // Remove Original (filter out)
-                shift.employees = shift.employees.filter((id: any) => id.toString() !== request.originalEmployeeId.toString());
-                // Add New
-                shift.employees.push(request.acceptedBy);
+                // B. Handle Schedule Updates
+                // 1. Keep Original Employee (for history/greyed out view) but ensure they are marked absent via 'schedule.absences'
+                // shift.employees = shift.employees.filter((id: any) => id.toString() !== request.originalEmployeeId.toString());
 
-                // Add comment
-                if (shift.notes) {
-                    if (!shift.notes.includes(absenceNote)) {
-                        shift.notes = `${shift.notes} | ${absenceNote}`;
-                    }
-                } else {
-                    shift.notes = absenceNote;
+                // 2. Add New Employee to active shift
+                if (!shift.employees.includes(request.acceptedBy)) {
+                    shift.employees.push(request.acceptedBy);
                 }
+
+                // 3. Add Meta Data for Styling (Unique Color for Cover)
+                if (!shift.meta) shift.meta = {};
+                if (!shift.meta.coverages) shift.meta.coverages = [];
+                shift.meta.coverages.push({
+                    originalEmployeeId: request.originalEmployeeId,
+                    coveringEmployeeId: request.acceptedBy,
+                    compensationType: compensationSettings.type,
+                    amount: compensationSettings.amount
+                });
+                shift.markModified('meta'); // Ensure mixed type is saved
+
+                // 4. Add Absence Marker to Schedule for Original Employee
+                if (!schedule.absences) schedule.absences = [];
+                schedule.absences.push({
+                    employeeId: request.originalEmployeeId,
+                    date: request.originalShift.dayDate,
+                    type: absenceSettings.type || 'absence',
+                    status: absenceSettings.justificationStatus,
+                    reason: absenceSettings.justification || 'Covered Shift'
+                });
+
+
             }
         }
         await schedule.save();
     }
 
-    // 3. Create Absence Record for Original
+    // 3. Create Absence Record for Original Employee (Official Record)
+    // Transfer documentation and reason from the coverage request
     await AbsenceRecord.create({
         employeeId: request.originalEmployeeId,
         date: request.originalShift.dayDate,
-        type: 'sick', // Defaulting to sick as per prompt ("they are sick")
-        justification: "Justified",
-        reason: request.reason || "Covered by replacement",
+        type: absenceSettings.type,
+        justification: absenceSettings.justificationStatus,
+        reason: absenceSettings.justification || request.reason || "Shift Covered",
+        attachments: request.attachments || [], // Transfer attachments
         shiftRef: {
             scheduleId: request.originalShift.scheduleId,
             dayDate: request.originalShift.dayDate,
@@ -441,9 +626,9 @@ export async function finalizeCoverage(requestId: string, compensationType: 'ext
         approvedBy: userId
     });
 
-    // 4. Handle Compensation (Optional: Create ExtraHourRequest if applicable)
-    if (compensationType === 'extra_hour') {
-        // Calculate hours
+    // 4. Handle Compensation for Covering Employee
+    let compMessage = "";
+    if (compensationSettings.type === 'extra_hour') {
         const start = parseInt(request.originalShift.startTime.split(':')[0]);
         const end = parseInt(request.originalShift.endTime.split(':')[0]);
         let duration = end - start;
@@ -457,52 +642,73 @@ export async function finalizeCoverage(requestId: string, compensationType: 'ext
             status: 'approved',
             approvedBy: userId
         });
-    } else if (compensationType === 'vacation_day') {
-        // Increment employee's extra days by 1
-        await Employee.findByIdAndUpdate(request.acceptedBy, {
-            $inc: { "vacationTracker.defaultDays": 1 }
-        });
+        compMessage = ` (+${duration} Extra Hours added)`;
+    } else if (compensationSettings.type === 'vacation_day') {
+        const daysToAdd = compensationSettings.amount || 1;
+
+        // Find employee and handle tracker initialization if needed
+        const coveringEmp = await Employee.findById(request.acceptedBy);
+        if (coveringEmp) {
+            if (!coveringEmp.vacationTracker) {
+                coveringEmp.vacationTracker = {
+                    defaultDays: 22, // Default fallback
+                    rolloverDays: 0,
+                    usedDays: 0,
+                    pendingRequests: 0,
+                    remainingDays: 22,
+                    year: new Date().getFullYear()
+                };
+            }
+            coveringEmp.vacationTracker.defaultDays += daysToAdd;
+            // Also update remainingDays if it's a simple sum
+            coveringEmp.vacationTracker.remainingDays += daysToAdd;
+            await coveringEmp.save();
+        }
 
         await logAction({
             action: 'ADD_VACATION_DAY_BONUS',
             performedBy: userId,
             targetId: request.acceptedBy,
             targetModel: 'Employee',
-            details: { reason: "Shift Coverage Bonus", requestId: request._id }
+            details: { reason: "Shift Coverage Bonus", days: daysToAdd, requestId: request._id }
         });
+        compMessage = ` (+${daysToAdd} Vacation Days added to balance)`;
     }
+
+    await logAction({
+        action: 'FINALIZE_COVERAGE',
+        performedBy: userId,
+        targetId: requestId,
+        targetModel: 'ShiftCoverageRequest',
+        details: {
+            cover: request.acceptedBy,
+            original: request.originalEmployeeId,
+            compensation: compensationSettings
+        }
+    });
 
     // Notify Employees
     await triggerNotification({
         title: "Coverage Confirmed",
-        message: "You are confirmed for the shift coverage.",
+        message: `You are confirmed for the shift coverage.${compMessage}`,
         type: "success",
         category: "schedule",
         recipients: [request.acceptedBy.toString()],
-        link: `/dashboard/schedules/${schedule.slug}`
+        link: `/dashboard/schedules/${schedule?.slug || ''}`
     });
 
     await triggerNotification({
-        title: "Absence Covered",
-        message: "Your absence is covered and approved.",
+        title: "Absence Processed",
+        message: `Your absence has been processed as ${absenceSettings.type}.`,
         type: "info",
         category: "absence",
         recipients: [request.originalEmployeeId.toString()]
     });
 
-    // Notify Rejected Candidates (Optional - "Fill is gone")
-    const rejects = request.candidates
-        .filter((id: any) => id.toString() !== request.acceptedBy.toString())
-        .map((id: any) => id.toString());
-
-    if (rejects.length > 0) {
-        await triggerNotification({
-            title: "Shift Filled",
-            message: "The shift coverage opportunity has been filled.",
-            type: "info",
-            category: "schedule",
-            recipients: rejects
-        });
+    // Trigger Real-time update for both involved users
+    await pusherServer.trigger(`user-${request.originalEmployeeId}`, "coverage:updated", { requestId: requestId, status: 'finalized' });
+    if (request.acceptedBy) {
+        await pusherServer.trigger(`user-${request.acceptedBy}`, "coverage:updated", { requestId: requestId, status: 'finalized' });
     }
 
     revalidatePath('/dashboard/coverage');
@@ -533,9 +739,46 @@ export async function getPendingCoverageOffer(employeeId: string) {
     const requests = await ShiftCoverageRequest.find({
         status: 'seeking_coverage',
         candidates: employeeId
-    }).lean();
+    })
+        .populate('originalEmployeeId', 'firstName lastName image')
+        .populate({
+            path: 'originalShift.storeId',
+            select: 'name'
+        })
+        .populate({
+            path: 'originalShift.storeDepartmentId',
+            select: 'name'
+        })
+        .lean();
 
-    return JSON.parse(JSON.stringify(requests));
+    const enhancedRequests = await Promise.all(requests.map(async (req: any) => {
+        const schedule = await Schedule.findById(req.originalShift.scheduleId)
+            .populate({
+                path: 'days.shifts.employees',
+                select: 'firstName lastName'
+            })
+            .lean();
+
+        let coworkers: any[] = [];
+        if (schedule) {
+            const dayStart = new Date(req.originalShift.dayDate).setUTCHours(0, 0, 0, 0);
+            const day = schedule.days.find((d: any) => new Date(d.date).getTime() === dayStart);
+            if (day) {
+                const shift = day.shifts.find((s: any) =>
+                    s.startTime === req.originalShift.startTime &&
+                    s.endTime === req.originalShift.endTime
+                );
+                if (shift) {
+                    coworkers = shift.employees
+                        .filter((e: any) => e._id.toString() !== req.originalEmployeeId._id.toString())
+                        .map((e: any) => `${e.firstName} ${e.lastName}`);
+                }
+            }
+        }
+        return { ...req, coworkers };
+    }));
+
+    return JSON.parse(JSON.stringify(enhancedRequests));
 }
 
 // 8. Get Single Request by ID
@@ -546,8 +789,44 @@ export async function getShiftCoverageRequestById(requestId: string) {
         .populate('originalEmployeeId', 'firstName lastName image')
         .populate('candidates', 'firstName lastName image')
         .populate('acceptedBy', 'firstName lastName image')
+        .populate({
+            path: 'originalShift.storeId',
+            select: 'name'
+        })
+        .populate({
+            path: 'originalShift.storeDepartmentId',
+            select: 'name'
+        })
         .lean();
-    return JSON.parse(JSON.stringify(request));
+
+    if (!request) return null;
+
+    // Fetch Coworkers
+    const schedule = await Schedule.findById(request.originalShift.scheduleId)
+        .populate({
+            path: 'days.shifts.employees',
+            select: 'firstName lastName'
+        })
+        .lean();
+
+    let coworkers: any[] = [];
+    if (schedule) {
+        const dayStart = new Date(request.originalShift.dayDate).setUTCHours(0, 0, 0, 0);
+        const day = schedule.days.find((d: any) => new Date(d.date).getTime() === dayStart);
+        if (day) {
+            const shift = day.shifts.find((s: any) =>
+                s.startTime === request.originalShift.startTime &&
+                s.endTime === request.originalShift.endTime
+            );
+            if (shift) {
+                coworkers = shift.employees
+                    .filter((e: any) => e._id.toString() !== request.originalEmployeeId._id.toString())
+                    .map((e: any) => `${e.firstName} ${e.lastName}`);
+            }
+        }
+    }
+
+    return JSON.parse(JSON.stringify({ ...request, coworkers }));
 }
 
 // 9. Cancel Request
@@ -561,12 +840,22 @@ export async function cancelCoverageRequest(requestId: string) {
     if (!request) throw new Error("Request not found");
 
     // Only HR or the original reporter can cancel
-    const user = await Employee.findById(userId).select("roles");
-    const roles = (user?.roles || []).map((r: any) => r.toLowerCase());
+    const userRoleInfo = await Employee.findById(userId).select("roles");
+    const roles = (userRoleInfo?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
     const isPrivileged = roles.some((r: string) => ["admin", "hr", "owner", "tech", "super_user"].includes(r));
-    const isOwner = request.originalEmployeeId.toString() === userId;
+
+    // More robust owner check - handle both ObjectId and string formats
+    const originalEmpId = request.originalEmployeeId?._id || request.originalEmployeeId;
+    const isOwner = originalEmpId?.toString() === userId.toString();
 
     if (!isPrivileged && !isOwner) {
+        console.error('Authorization failed:', {
+            userId,
+            originalEmployeeId: originalEmpId?.toString(),
+            roles,
+            isPrivileged,
+            isOwner
+        });
         throw new Error("Forbidden");
     }
 
@@ -609,11 +898,75 @@ export async function hasPendingCoverageActions(userId: string, isPrivileged: bo
             status: { $in: ['pending_hr', 'seeking_coverage'] }
         });
         return count > 0;
-    } else {
-        const count = await ShiftCoverageRequest.countDocuments({
-            status: 'seeking_coverage',
-            candidates: userId
-        });
-        return count > 0;
     }
+}
+
+// 11. Get Pending Coverage Approvals (for Admin/HR Dashboard)
+export async function getPendingCoverageApprovals(storeId?: string) {
+    await dbConnect();
+    const query: any = {
+        status: { $in: ['pending_hr', 'seeking_coverage'] }
+    };
+
+    if (storeId) {
+        query['originalShift.storeId'] = storeId;
+    }
+
+    const requests = await ShiftCoverageRequest.find(query)
+        .populate('originalEmployeeId', 'firstName lastName image slug')
+        .populate('acceptedBy', 'firstName lastName image slug')
+        .populate({
+            path: 'originalShift.storeId',
+            select: 'name'
+        })
+        .populate({
+            path: 'originalShift.storeDepartmentId',
+            select: 'name'
+        })
+        .sort({ createdAt: -1 })
+        .lean();
+    return JSON.parse(JSON.stringify(requests));
+}
+
+// --- Debug Actions ---
+export async function getStoreDepartmentStaffStatus(storeDeptId: string, date: Date) {
+    await dbConnect();
+    const dayStart = new Date(date).setUTCHours(0, 0, 0, 0);
+
+    const employees = await Employee.find({
+        storeDepartmentId: storeDeptId,
+        active: true
+    }).select('firstName lastName').lean();
+
+    const schedules = await Schedule.find({
+        status: { $ne: 'rejected' },
+        "days.date": dayStart
+    }).select("days").lean();
+
+    const staffStatus = employees.map(emp => {
+        let currentShift = "None (Available)";
+        let isWorking = false;
+
+        schedules.forEach(s => {
+            const day = s.days.find((d: any) => new Date(d.date).getTime() === dayStart);
+            if (day) {
+                day.shifts.forEach((sh: any) => {
+                    if (sh.employees.some((e: any) => e.toString() === emp._id.toString())) {
+                        const isDayOff = /day off|do$|^-$/i.test(sh.shiftName);
+                        if (!isDayOff) isWorking = true;
+                        currentShift = `${sh.shiftName} (${sh.startTime}-${sh.endTime})${isDayOff ? " [Day Off]" : ""}`;
+                    }
+                });
+            }
+        });
+
+        return {
+            id: emp._id.toString(),
+            name: `${emp.firstName} ${emp.lastName}`,
+            status: isWorking ? 'Working' : 'Available',
+            shift: currentShift
+        };
+    });
+
+    return JSON.parse(JSON.stringify(staffStatus));
 }

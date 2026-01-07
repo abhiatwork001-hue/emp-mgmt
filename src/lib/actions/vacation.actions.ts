@@ -6,6 +6,8 @@ import {
     VacationRequest,
     VacationRecord,
     Employee,
+    Store,
+    StoreDepartment,
     IVacationRequest,
     IVacationRecord,
     RequestStatus
@@ -75,6 +77,67 @@ type VacationRequestData = {
     bypassValidation?: boolean;
 }
 
+export async function getVacationBlockedDates(employeeId: string, currentRequestId?: string) {
+    await dbConnect();
+
+    const employee = await Employee.findById(employeeId).select("storeId storeDepartmentId roles");
+    if (!employee) return [];
+
+    const isManager = employee.roles?.some((r: string) => ["store_manager", "manager"].includes(r.toLowerCase()));
+    const isHead = employee.roles?.some((r: string) => ["store_department_head", "department_head"].includes(r.toLowerCase()));
+
+    // Rule 1: Anyone in the same department
+    let blockerEmployeeIds: any[] = [];
+
+    if (employee.storeDepartmentId) {
+        const deptEmployees = await Employee.find({
+            storeDepartmentId: employee.storeDepartmentId,
+            _id: { $ne: employee._id }
+        }).select("_id");
+        blockerEmployeeIds = deptEmployees.map(e => e._id);
+    }
+
+    // Rule 2: Managers (if applicable)
+    if (isManager && employee.storeId) {
+        const store = await Store.findById(employee.storeId).select("managers subManagers");
+        if (store) {
+            const otherManagers = [...(store.managers || []), ...(store.subManagers || [])].filter(id => id.toString() !== employeeId);
+            blockerEmployeeIds = [...new Set([...blockerEmployeeIds, ...otherManagers])];
+        }
+    }
+
+    // Rule 3: Heads (if applicable)
+    if (isHead && employee.storeDepartmentId) {
+        const dept = await StoreDepartment.findById(employee.storeDepartmentId).select("headOfDepartment subHead");
+        if (dept) {
+            const otherHeads = [...(dept.headOfDepartment || []), ...(dept.subHead || [])].filter(id => id.toString() !== employeeId);
+            blockerEmployeeIds = [...new Set([...blockerEmployeeIds, ...otherHeads])];
+        }
+    }
+
+    if (blockerEmployeeIds.length === 0) return [];
+
+    // Fetch all approved/pending vacations for blockers
+    const query: any = {
+        employeeId: { $in: blockerEmployeeIds },
+        status: { $in: ["approved", "pending"] }
+    };
+
+    if (currentRequestId) {
+        query._id = { $ne: currentRequestId };
+    }
+
+    const requests = await VacationRequest.find(query).select("requestedFrom requestedTo").lean();
+
+    // Map to simple date range objects
+    const blockedRanges = requests.map(r => ({
+        from: r.requestedFrom,
+        to: r.requestedTo
+    }));
+
+    return JSON.parse(JSON.stringify(blockedRanges));
+}
+
 export async function createVacationRequest(data: VacationRequestData) {
     await dbConnect();
 
@@ -117,6 +180,36 @@ export async function createVacationRequest(data: VacationRequestData) {
         const remaining = (tracker.defaultDays || 0) + (tracker.rolloverDays || 0) - (tracker.usedDays || 0);
         const effectiveRemaining = remaining - (tracker.pendingRequests || 0);
         if (finalTotalDays > effectiveRemaining) throw new Error(`Insufficient vacation days. Requested: ${finalTotalDays}, Available: ${effectiveRemaining}`);
+
+        // 4. Capacity & Role Conflicts (FIFO)
+        const blockedRanges = await getVacationBlockedDates(data.employeeId);
+        const hasConflict = blockedRanges.some((range: any) => {
+            const rangeFrom = new Date(range.from);
+            const rangeTo = new Date(range.to);
+            // Check if any date in [start, end] overlaps with [rangeFrom, rangeTo]
+            return (start <= rangeTo && end >= rangeFrom);
+        });
+
+        if (hasConflict) {
+            throw new Error("The selected dates are currently unavailable due to department capacity or role conflicts.");
+        }
+    }
+
+    // Proactive Schedule Check (Alert HR if already scheduled)
+    const warnings: string[] = [];
+    try {
+        const { Schedule } = require("@/lib/models");
+        const overlappingSchedules = await Schedule.find({
+            "dateRange.startDate": { $lte: end },
+            "dateRange.endDate": { $gte: start },
+            "days.shifts.employees": data.employeeId
+        }).select("slug dateRange");
+
+        if (overlappingSchedules.length > 0) {
+            warnings.push(`Employee is already assigned to shifts in ${overlappingSchedules.length} schedule(s) during this period.`);
+        }
+    } catch (err) {
+        console.error("Schedule check error:", err);
     }
 
     try {
@@ -126,6 +219,7 @@ export async function createVacationRequest(data: VacationRequestData) {
             status: bypassValidation ? 'approved' : 'pending',
             reviewedBy: bypassValidation ? data.employeeId : undefined,
             reviewedAt: bypassValidation ? new Date() : undefined,
+            storeDepartmentWarnings: warnings,
             createdAt: new Date()
         });
 
@@ -172,10 +266,15 @@ export async function createVacationRequest(data: VacationRequestData) {
                 const requestorName = requestor ? `${requestor.firstName} ${requestor.lastName}` : "Employee";
 
                 if (recipients.length > 0) {
+                    let message = `${requestorName} requested vacation from ${start.toLocaleDateString()} to ${end.toLocaleDateString()} (${finalTotalDays} days).`;
+                    if (warnings.length > 0) {
+                        message += ` ALERT: ${warnings[0]}`;
+                    }
+
                     await triggerNotification({
                         title: "New Vacation Request",
-                        message: `${requestorName} requested vacation from ${start.toLocaleDateString()} to ${end.toLocaleDateString()} (${finalTotalDays} days).`,
-                        type: "info",
+                        message: message,
+                        type: warnings.length > 0 ? "warning" : "info",
                         category: "vacation",
                         recipients: recipients,
                         link: "/dashboard/vacations",
@@ -290,6 +389,11 @@ export async function approveVacationRequest(requestId: string, approverId: stri
         employeeId: request.employeeId
     });
 
+    // Trigger Real-time Update for Employee
+    await pusherServer.trigger(`user-${request.employeeId}`, "vacation:approved", {
+        requestId: request._id
+    });
+
     await logAction({
         action: 'APPROVE_VACATION',
         performedBy: approverId,
@@ -311,9 +415,24 @@ export async function approveVacationRequest(requestId: string, approverId: stri
         });
     } catch (e) { console.error("Vacation Approve Notification Error:", e); }
 
-    const emp = await Employee.findById(request.employeeId).select("slug");
+    // 4. Automatic Schedule Cleanup (Remove from shifts)
+    const { removeEmployeeFromSchedulesInRange } = require("./schedule.actions");
+    await removeEmployeeFromSchedulesInRange(request.employeeId, start, end);
+
+    const emp = await Employee.findById(request.employeeId).select("slug storeId");
+
+    // Trigger Real-time Update for affected store schedules
+    if (emp?.storeId) {
+        await pusherServer.trigger(`store-${emp.storeId}`, "schedule:updated", {
+            status: 'vacation_approved',
+            employeeId: request.employeeId
+        });
+    }
+
     revalidatePath("/dashboard/vacations");
     revalidatePath(`/dashboard/employees/${emp?.slug || request.employeeId}`);
+    revalidatePath("/dashboard/schedules");
+    revalidatePath("/[locale]/dashboard/schedules/[slug]", "page");
     revalidatePath("/dashboard");
     return JSON.parse(JSON.stringify(request));
 }
@@ -360,6 +479,11 @@ export async function rejectVacationRequest(requestId: string, reviewerId: strin
             metadata: { requestId: request._id }
         });
     } catch (e) { console.error("Vacation Reject Notification Error:", e); }
+
+    // Trigger Real-time Update for Employee
+    await pusherServer.trigger(`user-${request.employeeId}`, "vacation:rejected", {
+        requestId: request._id
+    });
 
     const emp = await Employee.findById(request.employeeId).select("slug");
     revalidatePath("/dashboard/vacations");

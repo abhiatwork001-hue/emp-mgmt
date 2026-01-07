@@ -365,7 +365,7 @@ export default async function EmployeeDetailsPage({ params }: { params: Promise<
                             </TabsContent>
 
                             <TabsContent value="schedule">
-                                <EmployeeScheduleTab employeeId={employee._id.toString()} />
+                                <EmployeeScheduleTab employeeId={employee._id.toString()} currentUser={session?.user} />
                             </TabsContent>
 
                             <TabsContent value="work">
