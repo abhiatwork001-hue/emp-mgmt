@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { EmptyState } from "@/components/ui/empty-state";
 
 
 // ... imports
@@ -144,12 +145,17 @@ export function TaskBoard({
 
                     <ScrollArea className="flex-1">
                         <div className="flex flex-col gap-3 p-4">
-                            {filteredTasks.length === 0 ? (
-                                <div className="col-span-full text-center py-12 text-muted-foreground border rounded-lg border-dashed bg-muted/20">
-                                    {searchTerm ? "No tasks matching your search." : "No tasks found in this view."}
-                                </div>
-                            ) : (
-                                filteredTasks.map(task => (
+                            <div className="col-span-full">
+                                <EmptyState
+                                    title={searchTerm ? "No tasks found" : "No tasks"}
+                                    description={searchTerm ? "No tasks matching your search." : "No tasks found in this view."}
+                                    icon={CheckSquare}
+                                    actionLabel={canCreateTask && !searchTerm && filter === 'all' ? "Create Task" : undefined}
+                                    onAction={() => setIsCreateOpen(true)}
+                                />
+                            </div>
+                            <>
+                                {filteredTasks.slice(0, 5).map(task => (
                                     <TaskCard
                                         key={task._id}
                                         task={task}
@@ -157,8 +163,18 @@ export function TaskBoard({
                                         currentUserRoles={currentUser?.roles || []}
                                         onClick={() => router.push(`/dashboard/tasks/${task.slug || task._id}`)}
                                     />
-                                ))
-                            )}
+                                ))}
+                                {filteredTasks.length > 5 && (
+                                    <Button
+                                        variant="ghost"
+                                        className="w-full text-xs text-muted-foreground mt-2"
+                                        onClick={() => router.push('/dashboard/tasks')}
+                                    >
+                                        View all {filteredTasks.length} tasks
+                                    </Button>
+                                )}
+                            </>
+                            )
                         </div>
                     </ScrollArea>
                 </Tabs>

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EditStoreDialog } from "@/components/stores/edit-store-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 
 
 interface Store {
@@ -57,6 +58,17 @@ export function StoreList({ initialStores }: { initialStores: Store[] }) {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredStores.length === 0 && (
+                    <div className="col-span-full">
+                        <EmptyState
+                            title={searchTerm ? "No stores found" : "No stores"}
+                            description={searchTerm ? "Try adjusting your search terms." : "Get started by creating your first store."}
+                            icon={Building2}
+                            actionLabel={!searchTerm ? "Add Store" : undefined}
+                            actionHref="/dashboard/stores/new"
+                        />
+                    </div>
+                )}
                 {filteredStores.map((store) => (
                     <Link href={`/dashboard/stores/${store.slug}`} key={store._id}>
                         <Card className="bg-card border hover:bg-accent/50 transition cursor-pointer">

@@ -33,29 +33,48 @@ Update `roleAccess` object to strictly enforce:
     *   *Stats*: Global aggregate for their department type.
     *   *Tools*: Create Notice (Global Dept scope).
 
-### 4. Restrictions (Server Actions & UI)
-*   **Notices**: `createNotice` action must check user role and scope (Store vs StoreDept).
-*   **Schedules**: `getSchedule` must authorize based on Store/Dept.
+### 4. Restrictions  - [ ] Consolidate Dashboard Widgets (Tasks + Approvals)
+  - [ ] Fix Schedule "Total Hours" Calculation
+  - [ ] Update Recipe Food Cost Permissions
+  - [ ] Support Store Redirect in Schedule Page
 
-## Part 2: Database Seeding (`scripts/seed-v2.ts`)
+  ## User Review Required
+  > [!IMPORTANT]
+  > **Permissions Update**: "Admin" role will be granted access to view Food Cost in Recipe Details, previously excluded.
+  
+  > [!NOTE]
+  > **Dashboard Layout**: The split grid for Tasks and Approvals will be replaced by a unified "Action Center" (Tasks/Approvals) widget to improve layout on role dashboards.
 
-### Goal
-Wipe DB and create:
-*   5 Stores, 4 Departments (Kitchen, FOH, Bar, Management).
-*   80 Employees total.
-*   Roles: Store Managers, Store Dept Heads, Global Dept Heads, HR, Owner, Tech.
-*   Naming: `storeAemployee1`, `storeAManager1`, etc.
-*   History: Past schedules, vacations, absences.
+### Dashboard UI
+#### [MODIFY] [store-manager-dashboard.tsx](file:///Users/abhisheksharma/Desktop/Projects/google%20antigravity/chick%20main/src/components/dashboard/role-views/store-manager-dashboard.tsx)
+- Consolidate `TaskBoard` and `PendingApprovalsWidget` into a single container or tabs.
+- Ensure full width usage for better visibility.
 
-### Script Logic
-1.  **Clean**: `deleteMany({})` for all collections.
+### Schedule Management
+#### [MODIFY] [schedule.actions.ts](file:///Users/abhisheksharma/Desktop/Projects/google%20antigravity/chick%20main/src/lib/actions/schedule.actions.ts)
+- Fix time difference calculation (manual hh:mm parsing).
+- Deduct `breakMinutes` in `getDashboardData`.
+- Ensure `getEmployeeWorkHistory` correctly parses times and handles empty scenarios.
+
+#### [MODIFY] [page.tsx (Schedules)](file:///Users/abhisheksharma/Desktop/Projects/google%20antigravity/chick%20main/src/app/[locale]/dashboard/schedules/page.tsx)
+- Add `searchParams` support to read `storeId`.
+- Prioritize `storeId` param for filtering if present.
+
+### Recipe Management
+#### [MODIFY] [recipe.actions.ts](file:///Users/abhisheksharma/Desktop/Projects/google%20antigravity/chick%20main/src/lib/actions/recipe.actions.ts)
+- Update `checkFinancialAccess` to include `admin` role.
+
+### Seed Data
+#### [COMPLETED] [seed/steps/*.ts](file:///Users/abhisheksharma/Desktop/Projects/google%20antigravity/chick%20main/seed/steps/06-employees.ts)
+- 1000 employees, 50 stores.
+- Eduardo Sotelo as Global Kitchen Head.
+- Vacation/Absence scenarios (Today/Tomorrow/Next Week).
 2.  **Create Global Depts**: Kitchen, Service, Bar, Management.
 3.  **Create Stores**: Store A - E.
 4.  **Create Store Depts**: Link Global Depts to Stores.
 5.  **Create Positions**: Chef, Server, Manager, etc.
 6.  **Create Employees**:
     *   Loop to create Staff, Managers, Heads.
-    *   Assign Roles & Passwords.
 7.  **Generate History**:
     *   Create Schedules for past/future weeks.
     *   Create Vacation/Absence records.

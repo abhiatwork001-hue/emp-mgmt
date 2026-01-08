@@ -11,6 +11,7 @@ import { getEmployeeById } from "@/lib/actions/employee.actions";
 import { getAllStores, getStoreDepartments } from "@/lib/actions/store.actions";
 import { getAllGlobalDepartments } from "@/lib/actions/department.actions";
 import { CreateNoticeDialog } from "@/components/notices/create-notice-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default async function NoticeListPage() {
     const session = await getServerSession(authOptions);
@@ -118,9 +119,12 @@ export default async function NoticeListPage() {
                 ))}
 
                 {notices.length === 0 && (
-                    <div className="col-span-full py-12 text-center text-muted-foreground border-2 border-dashed rounded-lg">
-                        <Megaphone className="h-10 w-10 mx-auto mb-4 opacity-20" />
-                        <p>No notices found.</p>
+                    <div className="col-span-full">
+                        <EmptyState
+                            title="No Notices Found"
+                            description="There are currently no notices to display. Check back later for updates."
+                            icon={Megaphone}
+                        />
                     </div>
                 )}
             </div>

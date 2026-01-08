@@ -160,7 +160,7 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
     ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     // Limit to items for widget
-    const limit = compact ? 5 : 10;
+    const limit = 5; // User requested limit
     const items = allItems.slice(0, limit);
     const hasMore = allItems.length > limit;
 

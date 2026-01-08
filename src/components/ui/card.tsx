@@ -14,7 +14,7 @@ function Card({ className, glass, premium, ...props }: CardProps) {
       className={cn(
         "bg-card text-card-foreground flex flex-col gap-6 rounded-2xl border py-6 shadow-sm transition-all duration-300",
         glass && "glass-card hover:bg-white/80 dark:hover:bg-slate-900/40",
-        premium && "premium-shadow hover:scale-[1.01] hover:border-primary/20",
+        premium && "premium-shadow hover:border-primary/20",
         className
       )}
       {...props}

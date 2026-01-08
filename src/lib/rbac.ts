@@ -17,7 +17,7 @@ export const roleAccess: Record<string, string[]> = {
     "store_department_head": ["/dashboard", "/dashboard/pending-actions", "/dashboard/notices", "/dashboard/stores", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages"],
 
     // Employee - Basic Access
-    "employee": ["/dashboard", "/dashboard/pending-actions", "/dashboard/stores", "/dashboard/notices", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/problems", "/dashboard/employees"]
+    "employee": ["/dashboard", "/dashboard/pending-actions", "/dashboard/stores", "/dashboard/notices", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/problems"]
 };
 
 // Mapping of functional permissions to paths (Overrides)

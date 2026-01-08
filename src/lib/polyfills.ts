@@ -55,7 +55,13 @@ if (typeof fetch === 'undefined') {
 
 // IntersectionObserver polyfill check
 if (typeof IntersectionObserver === 'undefined') {
-    console.warn('IntersectionObserver not available - lazy loading may not work');
+    // Mock IntersectionObserver for SSR/Server environments to prevent crashes
+    (globalThis as any).IntersectionObserver = class IntersectionObserver {
+        constructor() { }
+        observe() { return null; }
+        unobserve() { return null; }
+        disconnect() { return null; }
+    };
 }
 
 export { };

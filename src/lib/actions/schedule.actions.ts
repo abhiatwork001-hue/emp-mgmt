@@ -374,6 +374,30 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         if (!hasAuthority && !(isRevertingDraft && (isManager || isCreator))) {
             throw new Error(`Permission Denied: Only HR, Owners, or Tech can ${status} schedules.`);
         }
+
+        // Feature: Prevent Approving/Publishing Empty Schedules
+        // If status is 'approved' or 'published', we must ensure there is at least one shift with employees
+        if (status === 'approved' || status === 'published') {
+            // We need full schedule data to check shifts
+            const fullSchedule = await Schedule.findById(id).lean();
+
+            let hasShifts = false;
+            if (fullSchedule && fullSchedule.days && Array.isArray(fullSchedule.days)) {
+                for (const day of fullSchedule.days) {
+                    if (day.shifts && day.shifts.length > 0) {
+                        // Check if at least one shift has employees assigned (or just exists, user said "empty and there is noone and no shifts")
+                        // "when schedule is empty and there is noone and no shifts"
+                        // We can check if any shift exists.
+                        hasShifts = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!hasShifts) {
+                throw new Error(`Cannot ${status} an empty schedule. Please add shifts before approving.`);
+            }
+        }
     }
 
     const update: any = {
@@ -905,8 +929,16 @@ export async function getDashboardData(date: Date = new Date(), storeIdFilter?: 
                 const employees = new Set();
                 sch.days.forEach((day: any) => {
                     day.shifts.forEach((shift: any) => {
-                        const start = new Date(`1970-01-01T${shift.startTime} Z`);
-                        const end = new Date(`1970-01-01T${shift.endTime} Z`);
+                        const [startH, startM] = shift.startTime.split(':').map(Number);
+                        const [endH, endM] = shift.endTime.split(':').map(Number);
+
+                        // Use a fixed date for calculation
+                        const start = new Date(0);
+                        start.setUTCHours(startH, startM, 0, 0);
+
+                        const end = new Date(0);
+                        end.setUTCHours(endH, endM, 0, 0);
+
                         let diff = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
                         if (diff < 0) diff += 24; // Handle overnight
                         totalHours += diff;
@@ -1264,5 +1296,68 @@ export async function removeEmployeeFromSchedulesInRange(employeeId: string, sta
                 details: { employeeId, startDate, endDate }
             });
         }
+    }
+}
+
+export async function notifyScheduleReminders(entityIds: string[], type: 'store' | 'department') {
+    await dbConnect();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+
+    // Check permission (Admin/Owner/HR/SuperUser)
+    await checkSchedulePermission((session.user as any).id);
+
+    let recipientsCount = 0;
+
+    try {
+        if (type === 'store') {
+            const managers = await Employee.find({
+                storeId: { $in: entityIds },
+                roles: { $in: ['store_manager', 'Store Manager'] },
+                active: true
+            }).select('_id firstName lastName storeId');
+
+            for (const manager of managers) {
+                await triggerNotification({
+                    title: "Urgent: Schedule Submission Overdue",
+                    message: "Next week's schedule for your store is overdue. Please submit it immediately.",
+                    type: "warning",
+                    category: "schedule",
+                    link: "/dashboard/schedules",
+                    recipients: [manager._id.toString()],
+                    senderId: (session.user as any).id,
+
+                    relatedStoreId: manager.storeId
+                });
+            }
+            recipientsCount = managers.length;
+        } else {
+            const heads = await Employee.find({
+                storeDepartmentId: { $in: entityIds },
+                roles: { $in: ['store_department_head', 'Department Head'] },
+                active: true
+            }).select('_id firstName lastName storeDepartmentId storeId');
+
+            for (const head of heads) {
+                await triggerNotification({
+                    title: "Urgent: Schedule Submission Overdue",
+                    message: "Next week's schedule for your department is overdue.",
+                    type: "warning",
+                    category: "schedule",
+                    link: "/dashboard/schedules",
+                    recipients: [head._id.toString()],
+                    senderId: (session.user as any).id,
+
+                    relatedStoreId: head.storeId,
+                    relatedDepartmentId: head.storeDepartmentId
+                });
+            }
+            recipientsCount = heads.length;
+        }
+
+        return { success: true, count: recipientsCount };
+    } catch (e: any) {
+        console.error("Failed to notify reminders", e);
+        return { success: false, error: e.message };
     }
 }

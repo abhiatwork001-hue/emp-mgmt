@@ -21,10 +21,24 @@ import { UploadButton } from "@/lib/uploadthing";
 interface ReportAbsenceDialogProps {
     employeeId?: string;
     trigger?: React.ReactNode;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
+    preselectedDate?: Date;
+    preselectedShiftId?: string;
 }
 
-export function ReportAbsenceDialog({ employeeId, trigger }: ReportAbsenceDialogProps) {
-    const [open, setOpen] = useState(false);
+export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen, onOpenChange: setControlledOpen, preselectedDate, preselectedShiftId }: ReportAbsenceDialogProps) {
+    const [internalOpen, setInternalOpen] = useState(false);
+    const isControlled = controlledOpen !== undefined;
+    const open = isControlled ? controlledOpen : internalOpen;
+    const setOpen = (val: boolean) => {
+        if (isControlled) {
+            setControlledOpen?.(val);
+        } else {
+            setInternalOpen(val);
+        }
+    };
+
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const t = useTranslations("Absence");
@@ -38,14 +52,26 @@ export function ReportAbsenceDialog({ employeeId, trigger }: ReportAbsenceDialog
 
     // Shift Logic
     const [shifts, setShifts] = useState<any[]>([]);
-    const [selectedShiftId, setSelectedShiftId] = useState<string>("none");
+    const [selectedShiftId, setSelectedShiftId] = useState<string>(preselectedShiftId || "none");
     const [files, setFiles] = useState<string[]>([]);
 
     const [formData, setFormData] = useState({
-        date: new Date().toISOString().split('T')[0],
+        date: preselectedDate ? preselectedDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         type: "sick",
         reason: ""
     });
+
+    // Reset/Sync when opening
+    useEffect(() => {
+        if (open) {
+            if (preselectedDate) {
+                setFormData(prev => ({ ...prev, date: preselectedDate.toISOString().split('T')[0] }));
+            }
+            if (preselectedShiftId) {
+                setSelectedShiftId(preselectedShiftId);
+            }
+        }
+    }, [open, preselectedDate, preselectedShiftId]);
 
     // If employeeId is NOT provided, load stores to enable selection
     useEffect(() => {

@@ -26,16 +26,17 @@ export default async function EmployeesPage({ searchParams }: EmployeesPageProps
 
     // Await searchParams before access to ensure compatibility with Next.js specific behavior or future changes
     const resolvedParams = await searchParams;
-    const { search, storeId, departmentId, positionId, sort } = resolvedParams;
+    const { search, storeId, departmentId, positionId, sort, page } = resolvedParams;
+    const currentPage = Number(page) || 1;
 
-    const [employees, stores, departments, positions] = await Promise.all([
+    const [employeesData, stores, departments, positions] = await Promise.all([
         getAllEmployees({
             search: typeof search === 'string' ? search : undefined,
             storeId: typeof storeId === 'string' ? storeId : undefined,
             departmentId: typeof departmentId === 'string' ? departmentId : undefined,
             positionId: typeof positionId === 'string' ? positionId : undefined,
             sort: typeof sort === 'string' ? sort : undefined,
-        }),
+        }, currentPage),
         getAllStores(),
         getAllGlobalDepartments(),
         getAllPositions()
@@ -45,7 +46,8 @@ export default async function EmployeesPage({ searchParams }: EmployeesPageProps
         <div className="space-y-6">
             <h2 className="text-3xl font-bold tracking-tight text-foreground">Employees</h2>
             <EmployeeList
-                initialEmployees={employees}
+                initialEmployees={employeesData.employees}
+                pagination={employeesData.pagination}
                 stores={stores}
                 departments={departments}
                 positions={positions}

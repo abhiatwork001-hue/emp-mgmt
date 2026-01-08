@@ -58,6 +58,11 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
     const employees = await getStoreEmployeesWithTodayStatus(storeId);
     const storeDepartments = await getStoreDepartments(storeId);
 
+    // Fetch Active Schedules Count
+    const { getSchedules } = require("@/lib/actions/schedule.actions");
+    const allSchedules = await getSchedules(storeId);
+    const activeSchedulesCount = allSchedules.filter((s: any) => s.status === 'published' || s.status === 'active').length;
+
     return (
         <div className="space-y-6">
             {/* Header */}
@@ -206,7 +211,13 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
                                 </div>
                                 <div className="flex justify-between items-center">
                                     <span className="text-sm text-muted-foreground">Active Schedules</span>
-                                    <span className="text-2xl font-bold">-</span>
+                                    <span className="text-2xl font-bold">
+                                        {(() => {
+                                            // TODO: Move this data fetching up to the component level for cleaner code
+                                            // For now, doing it here is cleaner than restructuring the whole file
+                                            return activeSchedulesCount;
+                                        })()}
+                                    </span>
                                 </div>
                             </div>
                         </CardContent>

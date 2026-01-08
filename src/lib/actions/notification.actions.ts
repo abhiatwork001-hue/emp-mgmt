@@ -145,7 +145,7 @@ import { getAllEmployees } from "./employee.actions";
 
 export async function sendTestBroadcast(message: string) {
     // 1. Get all active employees
-    const employees = await getAllEmployees();
+    const { employees } = await getAllEmployees();
     const recipientIds = employees.map((e: any) => e._id);
 
     if (recipientIds.length === 0) return { success: false, error: "No employees found" };

@@ -9,7 +9,7 @@ import { updateVacationTracker } from "@/lib/actions/vacation.actions";
 import { toast } from "sonner";
 import { Settings2, Loader2 } from "lucide-react";
 
-export function VacationCorrectionDialog({ employeeId, currentTracker, onUpdate }: { employeeId: string, currentTracker: any, onUpdate?: () => void }) {
+export function VacationCorrectionDialog({ employeeId, currentTracker, onUpdate, trigger }: { employeeId: string, currentTracker: any, onUpdate?: () => void, trigger?: React.ReactNode }) {
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState({
@@ -35,9 +35,11 @@ export function VacationCorrectionDialog({ employeeId, currentTracker, onUpdate 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors">
-                    <Settings2 className="h-4 w-4" />
-                </Button>
+                {trigger ? trigger : (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors">
+                        <Settings2 className="h-4 w-4" />
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>

@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Building2, Users, Briefcase } from "lucide-react";
 import { EditGlobalDepartmentDialog } from "@/components/departments/edit-global-department-dialog";
+import { EmptyState } from "@/components/ui/empty-state";
 
 interface Department {
     _id: string;
@@ -93,8 +94,14 @@ export function DepartmentList({ initialDepartments }: { initialDepartments: Dep
                     </Link>
                 ))}
                 {filteredDependencies.length === 0 && (
-                    <div className="text-center py-10 text-muted-foreground">
-                        No departments found.
+                    <div className="col-span-full">
+                        <EmptyState
+                            title={searchTerm ? "No departments found" : "No departments"}
+                            description={searchTerm ? "Try adjusting your search terms." : "Get started by creating your first global department."}
+                            icon={Building2}
+                            actionLabel={!searchTerm ? "Add Department" : undefined}
+                            actionHref="/dashboard/departments/new"
+                        />
                     </div>
                 )}
             </div>

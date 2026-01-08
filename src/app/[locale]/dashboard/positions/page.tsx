@@ -8,9 +8,10 @@ import { PositionFormDialog } from "@/components/positions/position-form-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Briefcase } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Link } from "@/i18n/routing";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export default async function PositionsPage() {
     const session = await getServerSession(authOptions);
@@ -71,8 +72,12 @@ export default async function PositionsPage() {
                     </Link>
                 ))}
                 {positions.length === 0 && (
-                    <div className="col-span-full text-center py-10 text-muted-foreground">
-                        No positions found. Create one to get started.
+                    <div className="col-span-full">
+                        <EmptyState
+                            title="No positions found"
+                            description="Get started by creating your first position hierarchy."
+                            icon={Briefcase}
+                        />
                     </div>
                 )}
             </div>

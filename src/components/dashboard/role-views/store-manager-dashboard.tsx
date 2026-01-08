@@ -78,25 +78,29 @@ interface StoreManagerDashboardProps {
     currentUserRoles?: string[];
 }
 
+import { ScheduleAlertModal } from "@/components/dashboard/schedule-alert-modal";
+
 export function StoreManagerDashboard({
     employee,
-    pendingRequests,
+    pendingRequests = [],
     requests,
-    storeStats,
+    storeStats = { totalEmployees: 0, onVacation: 0, todayShifts: 0 },
     todaysCoworkers = [],
     currentScheduleId,
     currentScheduleSlug,
     currentUserRole = "store_manager",
     operationsData,
-    tasks,
-    personalTodos,
-    swapRequests,
+    tasks = [],
+    personalTodos = [],
+    swapRequests = [],
     currentUserRoles = [],
     stores = [],
     departments = [],
     managers = [],
     activeActions = { vacations: [], absences: [], coverageRequests: [], coverageOffers: [] }
 }: StoreManagerDashboardProps) {
+    const [showScheduleAlert, setShowScheduleAlert] = useState(false);
+
     // Helper: Compute Extended Stats for StatsCards
     const extendedStats = {
         totalEmployees: storeStats.totalEmployees,
@@ -111,7 +115,11 @@ export function StoreManagerDashboard({
     const isDeptLevel = ["department_head", "store_department_head"].includes(currentUserRole);
 
     const userStoreId = typeof employee.storeId === 'object' ? employee.storeId?._id : employee.storeId;
-    const effectiveStoreId = userStoreId || stores[0]?._id;
+    // Fix: For High Level roles (Network View), do NOT default to stores[0] if user has no store.
+    // This allows widgets to see "All Stores" (undefined storeId).
+    // Only default to stores[0] if we are in a role that REQUIRES a store view but somehow lost it, OR if we want to ensure a fallback.
+    // Actually, if isHighLevel is true, we want effectiveStoreId to be undefined so we see Global Data.
+    const effectiveStoreId = isHighLevel ? (userStoreId || undefined) : (userStoreId || stores[0]?._id);
 
     const hasSchedule = currentScheduleId && currentScheduleId !== "null";
     const hasCoworkers = Array.isArray(todaysCoworkers) && todaysCoworkers.length > 0;
@@ -337,13 +345,18 @@ export function StoreManagerDashboard({
                                         {currentUserRole === 'store_manager' ? ' departments ' : ' stores '}
                                         have not yet published their rotas:
                                         <span className="block mt-2 font-bold text-red-700">
-                                            {operationsData.scheduleHealth.missingEntities?.join(", ") || "All entities"}
+                                            {operationsData.scheduleHealth.missingEntities?.slice(0, 3).join(", ") || "All entities"}
+                                            {(operationsData.scheduleHealth.missingEntities?.length || 0) > 3 && ` + ${(operationsData.scheduleHealth.missingEntities?.length || 0) - 3} more`}
                                         </span>
                                     </p>
                                 </div>
                                 <div className="hidden md:flex flex-col gap-2">
-                                    <Button asChild variant="destructive" className="font-bold italic uppercase tracking-tight">
-                                        <Link href="/dashboard/schedules">View Master Schedule</Link>
+                                    <Button
+                                        variant="destructive"
+                                        className="font-bold italic uppercase tracking-tight"
+                                        onClick={() => setShowScheduleAlert(true)}
+                                    >
+                                        Review Breakdown & Alert
                                     </Button>
                                 </div>
                             </CardContent>
@@ -389,13 +402,15 @@ export function StoreManagerDashboard({
                         <div className="flex-1">
                             {widgets["task-board"]}
                         </div>
-                        <div>
-                            {widgets["credential-manager"]}
-                        </div>
                     </div>
                     <div className="h-full">
                         {widgets["pending-approvals-card"]}
                     </div>
+                </div>
+
+                {/* 4b. Credential Manager (Full Width) */}
+                <div className="w-full">
+                    {widgets["credential-manager"]}
                 </div>
 
 
@@ -441,6 +456,14 @@ export function StoreManagerDashboard({
                         {widgets["holiday-widget"]}
                     </div>
                 </div>
+
+                <ScheduleAlertModal
+                    isOpen={showScheduleAlert}
+                    onOpenChange={setShowScheduleAlert}
+                    missingEntities={operationsData?.scheduleHealth?.missingEntities || []}
+                    missingEntityObjects={(operationsData?.scheduleHealth as any)?.missingEntityObjects || []}
+                    type={currentUserRole === 'store_manager' ? 'department' : 'store'}
+                />
             </div>
         </DashboardLayout>
     );

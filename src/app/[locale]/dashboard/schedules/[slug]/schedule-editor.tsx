@@ -28,6 +28,7 @@ import { SwapRequestDialog } from "@/components/schedules/swap-request-dialog";
 import { OvertimeRequestDialog } from "@/components/schedules/overtime-request-dialog";
 import { MobileScheduleView } from "./mobile-view";
 import { ShiftDetailsDialog } from "@/components/schedules/shift-details-dialog";
+import { ReportAbsenceDialog } from "@/components/absences/report-absence-dialog";
 import { useRouter } from "next/navigation";
 import { getOrCreateSchedule, updateScheduleStatus, updateSchedule, copyPreviousSchedule, findConflictingShifts, deleteSchedule } from "@/lib/actions/schedule.actions";
 import { toast } from "sonner";
@@ -175,6 +176,33 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
     // Shift Details Dialog State
     const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
     const [targetDetailsShift, setTargetDetailsShift] = useState<any>(null);
+
+    // KEY CHANGE: Absence Request Dialog State
+    const [absenceDialogOpen, setAbsenceDialogOpen] = useState(false);
+    const [targetAbsenceShift, setTargetAbsenceShift] = useState<{ shiftId: string, date: string, employeeId: string } | null>(null);
+
+    const handleSwapRequest = (shift: any, date: string, employeeId: string) => {
+        setTargetSwapShift({
+            scheduleId: schedule._id,
+            dayDate: date,
+            shiftId: shift._id,
+            shiftName: shift.shiftName,
+            startTime: shift.startTime,
+            endTime: shift.endTime,
+            employeeId: employeeId,
+            employeeName: "Me" // Logic to get name from ID involves finding in employees array, can do if needed but dialog might fetch it or just use "Me"
+        });
+        setSwapDialogOpen(true);
+    };
+
+    const handleAbsenceRequest = (shift: any, date: string, employeeId: string) => {
+        setTargetAbsenceShift({
+            shiftId: shift._id,
+            date: date,
+            employeeId: employeeId
+        });
+        setAbsenceDialogOpen(true);
+    };
 
     const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
 
@@ -943,11 +971,13 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                     employees={uniqueEmployees}
                     weekDays={weekDays}
                     isEditMode={isEditMode}
+                    currentUserId={userId}
                     onEditShift={handleEditClick}
                     onAddShift={handleAddClick}
                     onDeleteShift={confirmDeleteShift}
+                    onSwapRequest={handleSwapRequest}
+                    onAbsenceRequest={handleAbsenceRequest}
                     isToday={isToday}
-                    currentUserId={userId}
                 />
             </div>
 
@@ -1640,6 +1670,14 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                 onOpenChange={setOvertimeDialogOpen}
                 userId={userId}
                 shift={targetOvertimeShift}
+            />
+
+            <ReportAbsenceDialog
+                open={absenceDialogOpen}
+                onOpenChange={setAbsenceDialogOpen}
+                employeeId={targetAbsenceShift?.employeeId}
+                preselectedDate={targetAbsenceShift ? new Date(targetAbsenceShift.date) : undefined}
+                preselectedShiftId={targetAbsenceShift?.shiftId}
             />
 
             <ShiftDetailsDialog

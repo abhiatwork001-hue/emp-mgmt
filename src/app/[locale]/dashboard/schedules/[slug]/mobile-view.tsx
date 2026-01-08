@@ -10,6 +10,16 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ArrowLeftRight, CalendarOff } from "lucide-react";
+
 interface MobileScheduleViewProps {
     employees: any[];
     weekDays: any[];
@@ -17,6 +27,8 @@ interface MobileScheduleViewProps {
     onEditShift: (shift: any, date: string, index: number) => void;
     onAddShift: (date: string, employeeId?: string) => void;
     onDeleteShift: (date: string, index: number, employeeId?: string) => void;
+    onSwapRequest?: (shift: any, date: string, employeeId: string) => void;
+    onAbsenceRequest?: (shift: any, date: string, employeeId: string) => void;
     isToday: (date: Date) => boolean;
     currentUserId?: string;
 }
@@ -28,6 +40,8 @@ export function MobileScheduleView({
     onEditShift,
     onAddShift,
     onDeleteShift,
+    onSwapRequest,
+    onAbsenceRequest,
     isToday,
     currentUserId
 }: MobileScheduleViewProps) {
@@ -181,41 +195,77 @@ export function MobileScheduleView({
                                     {/* Slot */}
                                     {hasShift ? (
                                         <div className="space-y-2">
-                                            {empShifts.map((shift: any) => (
-                                                <button
-                                                    key={shift.originalIndex}
-                                                    onClick={() => isEditMode && onEditShift(shift, currentDay.date, shift.originalIndex)}
-                                                    className={cn(
-                                                        "w-full text-left text-xs p-2 rounded-lg border flex items-center justify-between group relative",
-                                                        isOff
-                                                            ? "bg-transparent border-transparent text-muted-foreground font-medium uppercase tracking-widest"
-                                                            : "bg-primary/5 border-primary/20 text-foreground font-medium"
-                                                    )}
-                                                    style={shift.color && !isOff ? { borderLeft: `3px solid ${shift.color}` } : {}}
-                                                >
-                                                    {isOff ? (
-                                                        <span>Day Off</span>
-                                                    ) : (
-                                                        <>
-                                                            <span>{shift.startTime} - {shift.endTime}</span>
-                                                            {shift.breakMinutes > 0 && <span className="opacity-50 text-[9px]">{shift.breakMinutes}m break</span>}
-                                                        </>
-                                                    )}
+                                            {empShifts.map((shift: any) => {
+                                                const isCurrentUser = currentUserId && emp._id === currentUserId;
+                                                const canPerformActions = isCurrentUser && !isEditMode && !isOff && (onSwapRequest || onAbsenceRequest);
 
-                                                    {/* Delete Button (Visible on Touch/Hover if Edit Mode) */}
-                                                    {isEditMode && (
-                                                        <div
-                                                            className="ml-2 p-1 bg-destructive/10 text-destructive rounded-full"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                onDeleteShift(currentDay.date, shift.originalIndex, emp._id);
-                                                            }}
-                                                        >
-                                                            <X className="h-3 w-3" />
-                                                        </div>
-                                                    )}
-                                                </button>
-                                            ))}
+                                                const ShiftCard = (
+                                                    <div
+                                                        className={cn(
+                                                            "w-full text-left text-xs p-2 rounded-lg border flex items-center justify-between group relative transition-colors",
+                                                            isOff
+                                                                ? "bg-transparent border-transparent text-muted-foreground font-medium uppercase tracking-widest"
+                                                                : "bg-primary/5 border-primary/20 text-foreground font-medium",
+                                                            canPerformActions && "hover:bg-primary/10 cursor-pointer active:scale-[0.98]"
+                                                        )}
+                                                        style={shift.color && !isOff ? { borderLeft: `3px solid ${shift.color}` } : {}}
+                                                        onClick={() => isEditMode && onEditShift(shift, currentDay.date, shift.originalIndex)}
+                                                    >
+                                                        {isOff ? (
+                                                            <span>Day Off</span>
+                                                        ) : (
+                                                            <>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span>{shift.startTime} - {shift.endTime}</span>
+                                                                    {canPerformActions && <MoreVertical className="h-3 w-3 text-muted-foreground" />}
+                                                                </div>
+                                                                {shift.breakMinutes > 0 && <span className="opacity-50 text-[9px]">{shift.breakMinutes}m break</span>}
+                                                            </>
+                                                        )}
+
+                                                        {/* Delete Button (Visible on Touch/Hover if Edit Mode) */}
+                                                        {isEditMode && (
+                                                            <div
+                                                                className="ml-2 p-1 bg-destructive/10 text-destructive rounded-full"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    onDeleteShift(currentDay.date, shift.originalIndex, emp._id);
+                                                                }}
+                                                            >
+                                                                <X className="h-3 w-3" />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+
+                                                if (canPerformActions) {
+                                                    return (
+                                                        <DropdownMenu key={shift.originalIndex}>
+                                                            <DropdownMenuTrigger asChild>
+                                                                {ShiftCard}
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end" className="w-48">
+                                                                <DropdownMenuLabel>Shift Actions</DropdownMenuLabel>
+                                                                <DropdownMenuSeparator />
+                                                                {onSwapRequest && (
+                                                                    <DropdownMenuItem onClick={() => onSwapRequest(shift, currentDay.date, emp._id)}>
+                                                                        <ArrowLeftRight className="mr-2 h-4 w-4" />
+                                                                        <span>Swap Shift</span>
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                {onAbsenceRequest && (
+                                                                    <DropdownMenuItem onClick={() => onAbsenceRequest(shift, currentDay.date, emp._id)}>
+                                                                        <CalendarOff className="mr-2 h-4 w-4" />
+                                                                        <span>Request Absence</span>
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    );
+                                                }
+
+                                                return <div key={shift.originalIndex}>{ShiftCard}</div>;
+                                            })}
                                         </div>
                                     ) : (
                                         // Empty Slot -> Add Button

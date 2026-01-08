@@ -119,7 +119,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
     const stores = await getAllStores();
     const depts = await getAllGlobalDepartments();
-    const managers = await getAllEmployees({});
+    const { employees: managers } = await getAllEmployees({});
 
     // Fetch Store Departments if viewing as Store Manager
     let localStoreDepartments: any[] = [];
@@ -156,7 +156,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
             const storeEmployees = storeId
                 ? await getEmployeesByStore(storeId)
-                : await getAllEmployees({});
+                : (await getAllEmployees({})).employees;
 
             // Fetch current schedule to count shifts
 
@@ -238,6 +238,9 @@ export default async function DashboardPage(props: DashboardPageProps) {
                     const currentSchedule = storeSchedules.find((s: any) => {
                         const start = new Date(s.dateRange.startDate);
                         const end = new Date(s.dateRange.endDate);
+                        // Fix Date Comparison
+                        start.setHours(0, 0, 0, 0);
+                        end.setHours(23, 59, 59, 999);
                         return today >= start && today <= end;
                     });
 
@@ -248,6 +251,20 @@ export default async function DashboardPage(props: DashboardPageProps) {
                         if (todayNode) {
                             todayShiftsCount += todayNode.shifts?.reduce((acc: number, s: any) => acc + (s.employees?.length || 0), 0) || 0;
                         }
+
+                        // Calculate Hours for this store's schedule
+                        currentSchedule.days?.forEach((day: any) => {
+                            day.shifts?.forEach((shift: any) => {
+                                if (!shift.startTime || !shift.endTime) return;
+                                const [sh, sm] = shift.startTime.split(':').map(Number);
+                                const [eh, em] = shift.endTime.split(':').map(Number);
+                                let mins = (eh * 60 + em) - (sh * 60 + sm);
+                                if (mins < 0) mins += 24 * 60;
+                                mins -= (shift.breakMinutes || 0);
+                                const hours = Math.max(0, mins) / 60;
+                                totalScheduledHours += hours * (shift.employees?.length || 0);
+                            });
+                        });
                     }
                 });
             }
@@ -326,6 +343,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
             // Advanced Alert Logic: Identify SPECIFIC missing entities
             let missingEntityNames: string[] = [];
+            let missingEntityObjects: { id: string, name: string }[] = [];
             let nextWeekPublished = false;
 
             if (storeId) {
@@ -341,16 +359,18 @@ export default async function DashboardPage(props: DashboardPageProps) {
                     }
                 });
 
-                missingEntityNames = storeDepts
-                    .filter((d: any) => d.active !== false && !deptStatusMap.has(d._id.toString()))
-                    .map((d: any) => d.name);
+                const missingDepts = storeDepts.filter((d: any) => d.active !== false && !deptStatusMap.has(d._id.toString()));
+
+                missingEntityObjects = missingDepts.map((d: any) => ({
+                    id: d._id.toString(),
+                    name: d.name
+                }));
+                missingEntityNames = missingEntityObjects.map((d: any) => d.name);
 
                 nextWeekPublished = missingEntityNames.length === 0;
 
             } else {
                 // Network View (Owner/HR): Check Stores
-                // We need to fetch next week's schedules for ALL stores
-                // Optimization: Fetch all schedules for next week across the company
                 const { Schedule } = require("@/lib/models");
                 const allNextWeekSchedules = await Schedule.find({
                     year: nextWeekISO.year,
@@ -360,9 +380,13 @@ export default async function DashboardPage(props: DashboardPageProps) {
 
                 const fulfilledStoreIds = new Set(allNextWeekSchedules.map((s: any) => s.storeId.toString()));
 
-                missingEntityNames = stores
-                    .filter((s: any) => s.active !== false && !fulfilledStoreIds.has(s._id.toString()))
-                    .map((s: any) => s.name);
+                const missingStores = stores.filter((s: any) => s.active !== false && !fulfilledStoreIds.has(s._id.toString()));
+
+                missingEntityObjects = missingStores.map((s: any) => ({
+                    id: s._id.toString(),
+                    name: s.name
+                }));
+                missingEntityNames = missingEntityObjects.map((s: any) => s.name);
 
                 nextWeekPublished = missingEntityNames.length === 0;
             }
@@ -371,7 +395,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 nextWeekPublished,
                 daysUntilDeadline: 2,
                 overdue: !nextWeekPublished && new Date().getDay() > 2,
-                missingEntities: missingEntityNames // Pass this data down
+                missingEntities: missingEntityNames,
+                missingEntityObjects: missingEntityObjects
             };
 
             if (!nextWeekPublished) {
@@ -460,7 +485,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
             const pendingAbsences = await getAllAbsenceRequests({ status: 'pending' });
             const pendingRequests = mergeRequests(pendingVacations, pendingAbsences, [], []);
 
-            const allEmployees = await getAllEmployees({});
+            const { employees: allEmployees } = await getAllEmployees({});
             const deptStats = {
                 totalEmployees: allEmployees.length,
                 onVacation: allEmployees.filter((e: any) => e.status === 'vacation').length,
@@ -486,7 +511,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
             }
 
             const pendingRequests = mergeRequests(pendingVacations, pendingAbsences, [], []);
-            const deptEmployees = await getAllEmployees({ storeDepartmentId: deptId });
+            const { employees: deptEmployees } = await getAllEmployees({ storeDepartmentId: deptId });
             const deptStats = {
                 totalEmployees: deptEmployees.length,
                 onVacation: deptEmployees.filter((e: any) => e.status === 'vacation').length,

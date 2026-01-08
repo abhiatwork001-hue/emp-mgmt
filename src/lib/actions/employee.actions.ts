@@ -24,7 +24,7 @@ export interface EmployeeFilterOptions {
     sort?: string;
 }
 
-export async function getAllEmployees(options: EmployeeFilterOptions = {}) {
+export async function getAllEmployees(options: EmployeeFilterOptions = {}, page = 1, limit = 20) {
     await dbConnect();
 
     const { search, storeId, departmentId, storeDepartmentId, positionId, sort } = options;
@@ -86,8 +86,63 @@ export async function getAllEmployees(options: EmployeeFilterOptions = {}) {
             .populate("positionId", "name translations");
     }
 
-    const employees = await employeesQuery.sort(sortOptions).select("-password").lean();
-    return JSON.parse(JSON.stringify(employees));
+    // Pagination Logic
+    const totalEmployees = await Employee.countDocuments(query);
+    const totalPages = Math.ceil(totalEmployees / limit);
+    const skip = (page - 1) * limit;
+
+    const employees = await employeesQuery
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limit)
+        .select("-password")
+        .lean();
+
+    // Enhancing with Status (Vacation/Absence)
+    if (employees.length > 0) {
+        const { VacationRecord, AbsenceRecord } = require("@/lib/models");
+        const empIds = employees.map((e: any) => e._id);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const [vacations, absences] = await Promise.all([
+            VacationRecord.find({
+                employeeId: { $in: empIds },
+                status: "approved",
+                from: { $lte: today },
+                to: { $gte: today }
+            }).select("employeeId type"),
+            AbsenceRecord.find({
+                employeeId: { $in: empIds },
+                status: "approved",
+                date: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) }
+            }).select("employeeId reason")
+        ]);
+
+        const vacationMap = new Map(vacations.map((v: any) => [v.employeeId.toString(), v]));
+        const absenceMap = new Map(absences.map((a: any) => [a.employeeId.toString(), a]));
+
+        employees.forEach((emp: any) => {
+            const empId = emp._id.toString();
+            if (vacationMap.has(empId)) {
+                emp.currentStatus = "vacation";
+            } else if (absenceMap.has(empId)) {
+                emp.currentStatus = "absence";
+            } else {
+                emp.currentStatus = "active";
+            }
+        });
+    }
+
+    return {
+        employees: JSON.parse(JSON.stringify(employees)),
+        pagination: {
+            total: totalEmployees,
+            pages: totalPages,
+            current: page,
+            limit
+        }
+    };
 }
 
 export async function getEmployeesByStore(storeId: string) {

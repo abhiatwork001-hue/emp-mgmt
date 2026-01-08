@@ -6,7 +6,7 @@ import { Link } from "@/i18n/routing";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Building2, MapPin, Briefcase, Filter, X, KeyRound, ShieldAlert } from "lucide-react";
+import { Plus, Search, Building2, MapPin, Briefcase, Filter, X, KeyRound, ShieldAlert, ChevronLeft, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +22,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { useTranslations, useLocale } from "next-intl";
 import { getLocalized } from "@/lib/utils";
-import { VacationCorrectionDialog } from "@/components/dashboard/hr/vacation-correction-dialog";
 
 interface Employee {
     _id: string;
@@ -38,6 +37,7 @@ interface Employee {
     contract?: { employmentType?: string };
     passwordResetRequested?: boolean;
     slug: string;
+    currentStatus?: string;
     vacationTracker?: {
         defaultDays: number;
         rolloverDays: number;
@@ -51,14 +51,22 @@ interface FilterOption {
     name: string;
 }
 
+interface PaginationMeta {
+    total: number;
+    pages: number;
+    current: number;
+    limit: number;
+}
+
 interface EmployeeListProps {
     initialEmployees: Employee[];
+    pagination: PaginationMeta;
     stores: FilterOption[];
     departments: FilterOption[];
     positions: FilterOption[];
 }
 
-export function EmployeeList({ initialEmployees, stores, departments, positions }: EmployeeListProps) {
+export function EmployeeList({ initialEmployees, pagination, stores, departments, positions }: EmployeeListProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -115,8 +123,21 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
     // Let's just update immediately for now, or on blur for text.
     // Actually, controlled input + onKeyDown Enter is best for search.
 
+
     const applyFilter = (key: string, value: string) => {
-        router.push(pathname + "?" + createQueryString(key, value));
+        const params = new URLSearchParams(searchParams.toString());
+        if (value && value !== "all") {
+            params.set(key, value);
+        } else {
+            params.delete(key);
+        }
+        params.delete("page"); // Reset page when filtering
+        router.push(pathname + "?" + params.toString());
+    };
+
+    const changePage = (newPage: number) => {
+        if (newPage < 1 || newPage > pagination.pages) return;
+        router.push(pathname + "?" + createQueryString("page", newPage.toString()));
     };
 
     const clearFilters = () => {
@@ -146,9 +167,9 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
     return (
         <div className="space-y-8">
             {/* Controls Filter Bar */}
-            <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
+            <div
+                /*                 initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }} */
                 className="glass-card p-6 rounded-2xl border-primary/10 flex flex-col gap-6"
             >
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -212,168 +233,73 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
                         </Button>
                     )}
                 </div>
-            </motion.div>
+            </div>
 
-            <Card glass premium className="p-0 overflow-hidden border-border/40 flex flex-col">
+            <Card glass premium className="p-0 overflow-hidden border-border/40">
                 <div className="overflow-x-auto">
-                    <div className="min-w-[1000px]">
+                    <div className="min-w-full sm:min-w-[1000px]">
                         {/* Header */}
-                        {/* Header */}
-                        <div className="hidden md:grid md:grid-cols-12 md:gap-4 p-5 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30 border-b">
+                        <div className="hidden md:grid md:grid-cols-12 md:gap-4 p-4 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30 border-b">
                             <div className="col-span-4 pl-4">{t("employees")}</div>
+                            <div className="col-span-2">Status</div>
                             <div className="col-span-2">{t("positions")}</div>
-                            <div className="col-span-2">Status & Actions</div>
-                            <div className="col-span-1 text-center">Balance</div>
                             <div className="col-span-2">{t("stores")}</div>
-                            <div className="col-span-1">{t("departments")}</div>
+                            <div className="col-span-2">{t("departments")}</div>
                         </div>
 
                         {/* Rows */}
                         <div className="divide-y divide-border/20">
                             <AnimatePresence>
                                 {initialEmployees.map((emp, index) => (
-                                    <motion.div
-                                        key={emp._id}
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                    >
-                                        <Link href={`/dashboard/employees/${emp.slug}`} className="block hover:bg-primary/5 transition-all group border-b last:border-0 md:border-0 relative">
-                                            {/* Link overlay to handle full card click while buttons still work */}
-                                            <div className="flex flex-col gap-3 p-6 md:hidden">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-4">
-                                                        <Avatar className="h-12 w-12 border-2 border-border group-hover:border-primary/50 transition-all shadow-sm">
-                                                            <AvatarImage src={emp.image} alt={`${emp.firstName} ${emp.lastName}`} />
-                                                            <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                                                                {emp.firstName?.[0]}{emp.lastName?.[0]}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div>
-                                                            <p className="text-foreground font-bold group-hover:text-primary transition-colors">{emp.firstName} {emp.lastName}</p>
-                                                            <p className="text-xs text-muted-foreground">{emp.email}</p>
-                                                        </div>
+                                    <div key={emp._id}>
+                                        <Link href={`/dashboard/employees/${emp.slug}`} className="block hover:bg-primary/5 transition-colors group relative">
+
+
+                                            {/* Desktop View (Grid) */}
+                                            <div className="hidden md:grid md:grid-cols-12 md:gap-4 md:p-4 md:items-center">
+                                                <div className="col-span-4 flex items-center gap-3 pl-2">
+                                                    <Avatar className="h-9 w-9 border border-border group-hover:border-primary/50 transition-all">
+                                                        <AvatarImage src={emp.image} alt={`${emp.firstName} ${emp.lastName}`} />
+                                                        <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
+                                                            {emp.firstName?.[0]}{emp.lastName?.[0]}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-col">
+                                                        <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate">{emp.firstName} {emp.lastName}</p>
+                                                        <p className="text-[10px] text-muted-foreground truncate max-w-[180px]">{emp.email}</p>
                                                     </div>
+                                                </div>
+
+                                                <div className="col-span-2 flex flex-wrap gap-1.5">
                                                     {emp.active ? (
-                                                        <Badge className="bg-emerald-500/10 text-emerald-600 border-0 text-[10px] font-bold uppercase tracking-tighter">{t('active')}</Badge>
+                                                        <Badge className="w-fit bg-emerald-500/10 text-emerald-600 border-0 text-[10px] font-bold uppercase tracking-tight">{t('active')}</Badge>
                                                     ) : (
-                                                        <Badge className="bg-red-500/10 text-red-600 border-0 text-[10px] font-bold uppercase tracking-tighter">{t('inactive')}</Badge>
+                                                        <Badge className="w-fit bg-red-500/10 text-red-600 border-0 text-[10px] font-bold uppercase tracking-tight">{t('inactive')}</Badge>
+                                                    )}
+                                                    {emp.currentStatus === 'vacation' && (
+                                                        <Badge variant="outline" className="w-fit border-amber-500/30 text-amber-600 bg-amber-500/5 text-[10px] uppercase font-bold tracking-tight">On Vacation</Badge>
+                                                    )}
+                                                    {emp.currentStatus === 'absence' && (
+                                                        <Badge variant="outline" className="w-fit border-red-500/30 text-red-600 bg-red-500/5 text-[10px] uppercase font-bold tracking-tight">Absent</Badge>
                                                     )}
                                                 </div>
 
-                                                {emp.passwordResetRequested && (
-                                                    <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-900/30 p-2 rounded-lg flex items-center justify-between mt-1">
-                                                        <span className="text-[10px] font-bold text-amber-700 dark:text-amber-500 flex items-center gap-1 uppercase">
-                                                            <ShieldAlert className="h-3.5 w-3.5" /> Identity Reset
-                                                        </span>
-                                                        <Button size="sm" className="h-7 px-3 bg-amber-600 text-white border-0" onClick={(e) => handleConfirmReset(e, emp._id)}>Confirm</Button>
-                                                    </div>
-                                                )}
-
-                                                <div className="flex items-center justify-between mt-2">
-                                                    <div className="flex flex-col">
-                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Balance</span>
-                                                        <span className="text-sm font-semibold">{(emp.vacationTracker?.defaultDays || 0) + (emp.vacationTracker?.rolloverDays || 0) - (emp.vacationTracker?.usedDays || 0)} Days Left</span>
-                                                    </div>
-                                                    <div onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                                                        <VacationCorrectionDialog
-                                                            employeeId={emp._id}
-                                                            currentTracker={emp.vacationTracker}
-                                                            onUpdate={() => router.refresh()}
-                                                        />
-                                                    </div>
+                                                <div className="col-span-2 text-sm text-foreground/80 truncate">
+                                                    {getLocalized(emp.positionId, "name", locale) || "-"}
                                                 </div>
 
-                                                <div className="grid grid-cols-2 gap-4 text-sm mt-2 p-3 bg-muted/20 rounded-xl border border-border/40">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{t("positions")}</span>
-                                                        <span className="font-semibold text-foreground/90">{getLocalized(emp.positionId, "name", locale) || "No Position"}</span>
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">{t("stores")}</span>
-                                                        <div className="flex items-center gap-1.5 text-foreground/80">
-                                                            <MapPin className="h-3 w-3 text-primary/60" />
-                                                            <span className="truncate font-semibold">{getLocalized(emp.storeId, "name", locale) || "-"}</span>
-                                                        </div>
-                                                    </div>
+                                                <div className="col-span-2 text-sm text-muted-foreground truncate flex items-center gap-1.5">
+                                                    <MapPin className="h-3 w-3 opacity-50" />
+                                                    {getLocalized(emp.storeId, "name", locale) || "-"}
                                                 </div>
-                                            </div>
 
-                                            {/* Desktop View (Grid) */}
-                                            <div className="hidden md:grid md:grid-cols-12 md:gap-4 md:p-5 md:items-center">
-                                                <div className="col-span-4 flex items-center gap-4 pl-2">
-                                                    <div className="relative">
-                                                        <Avatar className="h-12 w-12 border-2 border-border group-hover:border-primary/50 transition-all shadow-md">
-                                                            <AvatarImage src={emp.image} alt={`${emp.firstName} ${emp.lastName}`} />
-                                                            <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                                                                {emp.firstName?.[0]}{emp.lastName?.[0]}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        {emp.active && (
-                                                            <span className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-background rounded-full" />
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-foreground font-bold text-base group-hover:text-primary transition-colors truncate max-w-[180px]">{emp.firstName} {emp.lastName}</p>
-                                                        <p className="text-xs text-muted-foreground font-medium truncate max-w-[180px]">{emp.email}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="col-span-2 text-sm font-semibold text-foreground/90 truncate">
-                                                    {getLocalized(emp.positionId, "name", locale) || "No Position"}
-                                                </div>
-                                                <div className="col-span-2">
-                                                    <div className="flex flex-col gap-2">
-                                                        {emp.active ? (
-                                                            <Badge className="w-fit bg-emerald-500/10 text-emerald-600 border-0 text-[10px] font-bold uppercase hover:bg-emerald-500/20">{t('active')}</Badge>
-                                                        ) : (
-                                                            <Badge className="w-fit bg-red-500/10 text-red-600 border-0 text-[10px] font-bold uppercase hover:bg-red-500/20">{t('inactive')}</Badge>
-                                                        )}
-                                                        {emp.passwordResetRequested && (
-                                                            <motion.div
-                                                                initial={{ scale: 0.9, opacity: 0 }}
-                                                                animate={{ scale: 1, opacity: 1 }}
-                                                                className="flex flex-col gap-1.5"
-                                                            >
-                                                                <Badge variant="outline" className="w-fit text-[9px] border-amber-500/50 text-amber-700 bg-amber-50 gap-1 animate-pulse uppercase font-extrabold">
-                                                                    <ShieldAlert className="h-3 w-3" /> Reset Req
-                                                                </Badge>
-                                                                <Button
-                                                                    size="sm"
-                                                                    className="h-7 px-3 text-[9px] gap-1 bg-amber-600 hover:bg-amber-700 text-white border-0 shadow-lg shadow-amber-200 dark:shadow-none font-bold uppercase tracking-tight"
-                                                                    onClick={(e) => handleConfirmReset(e, emp._id)}
-                                                                >
-                                                                    <KeyRound className="h-3 w-3" /> Confirm Reset
-                                                                </Button>
-                                                            </motion.div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <div className="col-span-1 flex items-center justify-center" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                                                    <VacationCorrectionDialog
-                                                        employeeId={emp._id}
-                                                        currentTracker={emp.vacationTracker}
-                                                        onUpdate={() => router.refresh()}
-                                                    />
-                                                </div>
-                                                <div className="col-span-2 text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                                    <div className="p-1.5 rounded-lg bg-muted/50">
-                                                        <MapPin className="h-3.5 w-3.5 text-primary/60" />
-                                                    </div>
-                                                    <span className="truncate max-w-[140px]" title={getLocalized(emp.storeId, "name", locale)}>
-                                                        {getLocalized(emp.storeId, "name", locale) || "-"}
-                                                    </span>
-                                                </div>
-                                                <div className="col-span-1 text-sm font-medium text-muted-foreground flex items-center gap-2">
-                                                    <div className="p-1.5 rounded-lg bg-muted/50">
-                                                        <Briefcase className="h-3.5 w-3.5 text-primary/60" />
-                                                    </div>
-                                                    <span className="truncate max-w-[100px]" title={getLocalized(emp.storeDepartmentId, "name", locale)}>
-                                                        {getLocalized(emp.storeDepartmentId, "name", locale) || "-"}
-                                                    </span>
+                                                <div className="col-span-2 text-sm text-muted-foreground truncate flex items-center gap-1.5">
+                                                    <Briefcase className="h-3 w-3 opacity-50" />
+                                                    {getLocalized(emp.storeDepartmentId, "name", locale) || "-"}
                                                 </div>
                                             </div>
                                         </Link>
-                                    </motion.div>
+                                    </div>
                                 ))}
                             </AnimatePresence>
 
@@ -385,16 +311,45 @@ export function EmployeeList({ initialEmployees, stores, departments, positions 
                                     <p className="text-xl font-bold text-foreground">No matching employees</p>
                                     <p className="text-sm mt-1">Try adjusting your filters or searching for another name.</p>
                                     <Button variant="link" onClick={clearFilters} className="mt-4 font-bold text-primary">Clear all filters</Button>
-
                                 </div>
                             )}
                         </div>
+
                     </div>
                 </div>
             </Card>
 
-            <div className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground text-center pt-4">
-                {initialEmployees.length} result{initialEmployees.length !== 1 && 's'} in registry
+            {/* Pagination Controls */}
+            {pagination.pages > 1 && (
+                <div className="flex flex-col items-center gap-4 py-4">
+                    <div className="flex items-center gap-4 text-sm font-medium text-muted-foreground">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={pagination.current <= 1}
+                            onClick={() => changePage(pagination.current - 1)}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="uppercase tracking-widest text-xs font-bold">
+                            Page {pagination.current} of {pagination.pages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={pagination.current >= pagination.pages}
+                            onClick={() => changePage(pagination.current + 1)}
+                            className="h-8 w-8 p-0"
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            )}
+
+            <div className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground text-center pt-2">
+                {pagination.total} result{pagination.total !== 1 && 's'} in registry
             </div>
         </div>
     );

@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
 interface BirthdayWidgetProps {
-    storeId: string;
+    storeId?: string;
     currentUserId: string;
     className?: string;
 }
