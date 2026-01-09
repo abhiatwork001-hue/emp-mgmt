@@ -298,6 +298,9 @@ export async function updateSchedule(id: string, data: any) {
 
     if (changes.length === 0 && data.days) changes.push("Minor adjustments");
 
+    // Add lastChanges to the update payload
+    data.lastChanges = changes.slice(0, 10);
+
     await logAction({
         action: 'UPDATE_SCHEDULE',
         performedBy: (session.user as any).id,
@@ -411,6 +414,16 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
             }
         }
     };
+    // If publishing, maybe we want to keep the last changes visible? Or clear them as "this is the new baseline"?
+    // User wants to see "Updated". If I publish, it IS updated.
+    // Let's NOT clear lastChanges here, unless we want to.
+    // Actually, updateScheduleStatus is likely just changing status. The actual 'content' update happens in updateSchedule.
+    // If we just approve, content didn't change.
+
+    // Let's leave lastChanges alone in updateScheduleStatus for now, or maybe add a note?
+    // The user wants "New" vs "Updated".
+    // "New" = Published for the first time? Or status changed to published?
+    // "Updated" = Content changed AFTER publish.
 
     const updated = await Schedule.findByIdAndUpdate(id, update, { new: true })
         .populate("storeId", "name")
@@ -780,7 +793,25 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
     const employeeObj = await Employee.findById(employeeId).select('dob');
     const dob = employeeObj?.dob;
 
-    if (!schedules || schedules.length === 0) return JSON.parse(JSON.stringify({ weekNumber, year, days: [], dob }));
+    if (!schedules || schedules.length === 0) return JSON.parse(JSON.stringify({ weekNumber, year, days: [], dob, isNew: false, isUpdated: false, lastChanges: [] }));
+
+    // Determine Status flags based on the PRIMARY schedule (first one found)
+    const primarySchedule = schedules[0];
+    const now = new Date();
+    const publishedAt = primarySchedule.approvalHistory?.find((h: any) => h.status === 'published')?.createdAt;
+    const updatedAt = primarySchedule.updatedAt ? new Date(primarySchedule.updatedAt) : new Date(primarySchedule.createdAt || now);
+
+    const isRecent = (date: Date) => (now.getTime() - new Date(date).getTime()) < (48 * 60 * 60 * 1000);
+
+    // "New": Published in last 48h AND no recent content updates log
+    const isNew = publishedAt && isRecent(publishedAt) && (!primarySchedule.lastChanges || primarySchedule.lastChanges.length === 0);
+
+    // "Updated": Recent update timestamp AND has logged changes
+    const isUpdated = isRecent(updatedAt) && primarySchedule.lastChanges && primarySchedule.lastChanges.length > 0;
+
+    const lastChanges = primarySchedule.lastChanges || [];
+
+
 
     // 3. Merge Shifts
     const daysMap = new Map();
@@ -956,7 +987,7 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
     const targetDate = new Date(date);
     targetDate.setHours(0, 0, 0, 0);
 
-    const primarySchedule = schedules.find((s: any) => {
+    const scheduleForLink = schedules.find((s: any) => {
         const start = new Date(s.dateRange.startDate);
         const end = new Date(s.dateRange.endDate);
         start.setHours(0, 0, 0, 0);
@@ -968,8 +999,11 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
         weekNumber,
         year,
         days: sortedDays,
-        primaryScheduleSlug: primarySchedule?.slug,
-        dob
+        primaryScheduleSlug: scheduleForLink?.slug || primarySchedule?.slug,
+        dob,
+        isNew,
+        isUpdated,
+        lastChanges: isUpdated ? lastChanges : []
     }));
 }
 

@@ -267,6 +267,7 @@ export interface ISchedule extends Document {
         }[];
     }[];
     notes?: string;
+    lastChanges?: string[]; // New: Summary of last update diff
     createdAt?: Date;
     updatedAt?: Date;
 }
@@ -583,7 +584,8 @@ const ScheduleSchema = new Schema<ISchedule>({
 
     createdBy: { type: Schema.Types.ObjectId, ref: 'Employee' },
     days: [DaySchema],
-    notes: { type: String }
+    notes: { type: String },
+    lastChanges: [{ type: String }]
 }, { timestamps: true });
 
 const VacationRecordSchema = new Schema<IVacationRecord>({

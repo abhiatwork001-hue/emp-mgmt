@@ -70,6 +70,41 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
         <div className="space-y-6">
             <ShiftOfferList employeeId={employeeId} />
 
+            {scheduleData && (scheduleData.isNew || scheduleData.isUpdated) && (
+                <div className={cn(
+                    "p-4 rounded-lg flex items-start gap-4 animate-in slide-in-from-top-2",
+                    scheduleData.isNew ? "bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-300" : "bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300"
+                )}>
+                    {scheduleData.isNew ? (
+                        <div className="p-2 bg-blue-500 rounded-full text-white shrink-0">
+                            <Calendar className="h-4 w-4" />
+                        </div>
+                    ) : (
+                        <div className="p-2 bg-amber-500 rounded-full text-white shrink-0">
+                            <ClockIcon className="h-4 w-4" />
+                        </div>
+                    )}
+                    <div className="flex-1 space-y-1">
+                        <p className="font-bold text-sm">
+                            {scheduleData.isNew ? "New Schedule Published" : "Schedule Updated"}
+                        </p>
+                        <div className="text-xs opacity-90">
+                            {scheduleData.isNew
+                                ? "The schedule for this week has just been published."
+                                : "The following changes were made recently:"
+                            }
+                        </div>
+                        {scheduleData.isUpdated && scheduleData.lastChanges && scheduleData.lastChanges.length > 0 && (
+                            <ul className="text-xs list-disc pl-4 space-y-0.5 mt-2 opacity-90 font-medium">
+                                {scheduleData.lastChanges.map((change: string, i: number) => (
+                                    <li key={i}>{change}</li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </div>
+            )}
+
             <Card className="bg-card border-border">
                 <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 pb-2">
                     <div>
