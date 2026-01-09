@@ -24,6 +24,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { NoticeBoard } from "@/components/notices/notice-board";
 import { ActiveActionsWidget } from "@/components/dashboard/active-actions-widget";
 import { EmployeePendingActionsWidget } from "@/components/dashboard/employee-pending-actions-widget";
+import { OvertimeRequestDialog } from "@/components/schedules/overtime-request-dialog";
 
 export function EmployeeDashboard({
     employee,

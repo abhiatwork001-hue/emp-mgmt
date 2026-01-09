@@ -11,6 +11,8 @@ import { Separator } from "@/components/ui/separator";
 
 import { getEmployeeById } from "@/lib/actions/employee.actions";
 import { YearSelector } from "@/components/layout/year-selector";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AbsenceCalendarView } from "@/components/absences/absence-calendar-view";
 
 export default async function AbsencesPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
     const { year } = await searchParams;
@@ -78,7 +80,22 @@ export default async function AbsencesPage({ searchParams }: { searchParams: Pro
                 </Card>
             </div>
 
-            <AbsenceRequestList initialRequests={requests} />
+            <Tabs defaultValue="calendar" className="w-full">
+                <div className="flex items-center justify-between mb-4">
+                    <TabsList>
+                        <TabsTrigger value="calendar">Calendar View</TabsTrigger>
+                        <TabsTrigger value="list">List View</TabsTrigger>
+                    </TabsList>
+                </div>
+
+                <TabsContent value="calendar" className="mt-0">
+                    <AbsenceCalendarView requests={requests} />
+                </TabsContent>
+
+                <TabsContent value="list" className="mt-0">
+                    <AbsenceRequestList initialRequests={requests} />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

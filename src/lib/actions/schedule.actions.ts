@@ -810,6 +810,16 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
         absenceMap.set(dateStr, abs);
     });
 
+    // Fetch Vacations for this week
+    const { VacationRecord } = require("@/lib/models");
+    const vacations = await VacationRecord.find({
+        employeeId: employeeId,
+        from: { $lte: weekEnd }, // Vacation starts before or on week end
+        to: { $gte: weekStart },  // Vacation ends after or on week start
+        status: 'approved'        // Only show approved vacations
+    }).lean();
+    // A vacation might span multiple days, we need to map it to each day in the range
+
     for (let i = 0; i < 7; i++) {
         const loopDate = new Date(monday);
         loopDate.setDate(monday.getDate() + i);
@@ -827,6 +837,44 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
             shifts: []
         });
     }
+
+    // Populate Vacations into daysMap (Priority: Absences > Vacations > Shifts)
+    // Actually, if there is a vacation, there shouldn't be shifts usually.
+    vacations.forEach((vac: any) => {
+        const vStart = new Date(vac.from);
+        const vEnd = new Date(vac.to);
+
+        // Iterate through week days and check if they fall in vacation range
+        for (let i = 0; i < 7; i++) {
+            const loopDate = new Date(monday);
+            loopDate.setDate(monday.getDate() + i);
+
+            // Check overlap
+            // We compare dates at midnight to avoid time issues
+            const checkDate = new Date(loopDate);
+            checkDate.setHours(0, 0, 0, 0);
+            const s = new Date(vStart); s.setHours(0, 0, 0, 0);
+            const e = new Date(vEnd); e.setHours(0, 0, 0, 0);
+
+            if (checkDate >= s && checkDate <= e) {
+                const dateStr = checkDate.toISOString().split('T')[0];
+                const dayObj = daysMap.get(dateStr);
+                if (dayObj) {
+                    // Add Vacation Shift
+                    dayObj.shifts.push({
+                        _id: vac._id,
+                        startTime: "00:00",
+                        endTime: "00:00",
+                        storeName: "Vacation",
+                        deptName: "Vacation",
+                        shiftName: "Vacation", // Simple name
+                        isVacation: true, // New Flag
+                        totalDays: vac.totalDays
+                    });
+                }
+            }
+        }
+    });
 
     schedules.forEach((sch: any) => {
         const storeName = sch.storeId?.name || "Unknown Store";
@@ -853,13 +901,21 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
 
             const absence = absenceMap.get(dateStr);
 
+            // Check if already has vacation (vacation takes precedence over regular shifts, but absence takes precedence over vacation? usually one or other)
+            // If we have vacation, we might still show absence if they were supposed to be on vacation but marked absent? unlikely.
+            // Let's assume Absence > Vacation > Shift.
+            // If vacation exists, we might have added it above.
+            const hasVacation = dayObj.shifts.some((s: any) => s.isVacation);
+
             if (absence) {
-                // Check if we already added the absence shift to avoid duplicates from multiple schedules
+                // If there's an absence record, it overrides everything including vacation (odd case but safe)
+                // Filter out any vacation shift if we are adding absence? Or just add absence.
+                // Let's add absence.
                 const alreadyHasAbsence = dayObj.shifts.some((s: any) => s.isAbsent);
                 if (!alreadyHasAbsence) {
                     dayObj.shifts.push({
                         _id: absence._id,
-                        startTime: "00:00", // Dummy time for sorting, rendering handles it
+                        startTime: "00:00",
                         endTime: "00:00",
                         storeName: "Absent",
                         deptName: "Absent",
@@ -869,7 +925,11 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
                         absenceStatus: absence.justification
                     });
                 }
-            } else {
+            } else if (!hasVacation) {
+                // Only add regular shifts if NO Vacation AND NO Absence (implied by absence check logic if we structure right, but here we iterate schedules)
+                // Wait, if absence is added, we still might process this block? No, `if (absence)` handles it.
+                // But `hasVacation` check is needed.
+
                 const userShifts = day.shifts.filter((s: any) =>
                     s.employees.some((e: any) => (e._id ? e._id.toString() : e.toString()) === employeeId)
                 );

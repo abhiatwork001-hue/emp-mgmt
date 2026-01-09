@@ -1005,6 +1005,18 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                     onDeleteShift={confirmDeleteShift}
                     onSwapRequest={handleSwapRequest}
                     onAbsenceRequest={handleAbsenceRequest}
+                    onOvertimeRequest={(shift, date, employeeId) => {
+                        setTargetOvertimeShift({
+                            scheduleId: schedule._id,
+                            dayDate: date,
+                            shiftId: shift._id,
+                            shiftName: shift.shiftName,
+                            startTime: shift.startTime,
+                            endTime: shift.endTime,
+                            employeeId: employeeId
+                        });
+                        setOvertimeDialogOpen(true);
+                    }}
                     isToday={isToday}
                 />
             </div>

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getEmployeeScheduleView } from "@/lib/actions/schedule.actions";
-import { Loader2, ChevronLeft, ChevronRight, Calculator, Calendar } from "lucide-react";
+import { Loader2, ChevronLeft, ChevronRight, Calculator, Calendar, Plane as PlaneIcon } from "lucide-react";
 import { ReportShiftAbsenceDialog } from "./report-shift-absence-dialog";
 import { Link } from "@/i18n/routing";
 import { cn } from "@/lib/utils";
@@ -184,25 +184,37 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                                             } catch (e) { }
 
                                                             const isAbsent = shift.isAbsent;
+                                                            const isVacation = shift.isVacation;
 
                                                             return (
                                                                 <div key={sIdx} className={cn(
                                                                     "group flex items-center justify-between p-3 rounded-lg border transition-all",
-                                                                    isAbsent ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" : "bg-background border-border hover:border-primary/50"
+                                                                    isAbsent
+                                                                        ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10"
+                                                                        : isVacation
+                                                                            ? "bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10"
+                                                                            : "bg-background border-border hover:border-primary/50"
                                                                 )}>
                                                                     <div className="flex items-center gap-4">
                                                                         <div className="space-y-1">
                                                                             <div className="flex items-center gap-2">
                                                                                 {isAbsent ? (
                                                                                     <Badge variant="destructive" className="text-[10px] h-5 uppercase font-bold tracking-wider">Absent</Badge>
+                                                                                ) : isVacation ? (
+                                                                                    <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] h-5 uppercase font-bold tracking-wider">Vacation</Badge>
                                                                                 ) : (
                                                                                     <span className="text-sm font-bold font-mono text-foreground">{shift.startTime} - {shift.endTime}</span>
                                                                                 )}
-                                                                                {!isAbsent && <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-normal text-muted-foreground bg-muted/50">{duration}</Badge>}
+                                                                                {!isAbsent && !isVacation && <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-normal text-muted-foreground bg-muted/50">{duration}</Badge>}
                                                                             </div>
                                                                             <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                                                                                 {isAbsent ? (
                                                                                     <span className="text-red-500 font-medium">{shift.shiftName.replace("Absent: ", "")}</span>
+                                                                                ) : isVacation ? (
+                                                                                    <span className="text-emerald-600 font-medium flex items-center gap-1.5">
+                                                                                        <PlaneIcon className="w-3 h-3" />
+                                                                                        On Leave
+                                                                                    </span>
                                                                                 ) : (
                                                                                     <>
                                                                                         {shift.storeName && <span>{shift.storeName}</span>}
@@ -214,7 +226,7 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                                                     </div>
 
                                                                     <div className="flex items-center gap-2">
-                                                                        {shift.shiftName && !isAbsent && (
+                                                                        {shift.shiftName && !isAbsent && !isVacation && (
                                                                             <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">{shift.shiftName}</Badge>
                                                                         )}
 

@@ -69,33 +69,37 @@ export function CreateTaskDialog({
     // Assignment Builder State
     const [assignments, setAssignments] = useState<{ type: string; id: string; label: string }[]>(initialAssignments);
 
-    // RBAC Logic
+    // Sanitize inputs to ensure they are arrays (handle null passed from parent)
+    const safeStores = Array.isArray(stores) ? stores : [];
+    const safeEmployees = Array.isArray(allEmployees) ? allEmployees : [];
+    const safeDepts = Array.isArray(storeDepartments) ? storeDepartments : [];
+
     // RBAC Logic
     const rawRoles = currentUser?.roles;
-    const roles = (Array.isArray(rawRoles) ? rawRoles : []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const roles = (Array.isArray(rawRoles) ? rawRoles : []).map((r: string) => r?.toLowerCase().replace(/ /g, "_") || "");
     const isGlobalAdmin = roles.some((r: string) => ["admin", "owner", "hr", "super_user"].includes(r));
     const isStoreManager = roles.includes("store_manager");
     const isStoreDeptHead = roles.includes("store_department_head");
     const isGlobalHead = roles.includes("department_head"); // Global Dept Head
 
     // Filter available entities based on role
-    const availableStores = isGlobalAdmin ? stores : (
+    const availableStores = isGlobalAdmin ? safeStores : (
         (isStoreManager || isStoreDeptHead) && currentUser.storeId
-            ? stores.filter(s => s._id === (currentUser.storeId._id || currentUser.storeId))
+            ? safeStores.filter(s => s._id === (currentUser.storeId._id || currentUser.storeId))
             : []
     );
 
-    const availableDepts = isGlobalAdmin ? storeDepartments : (
+    const availableDepts = isGlobalAdmin ? safeDepts : (
         isStoreManager && currentUser.storeId
-            ? storeDepartments.filter(d => d.storeId === (currentUser.storeId._id || currentUser.storeId))
+            ? safeDepts.filter(d => d.storeId === (currentUser.storeId._id || currentUser.storeId))
             : isStoreDeptHead && currentUser.storeDepartmentId
-                ? storeDepartments.filter(d => d._id === (currentUser.storeDepartmentId._id || currentUser.storeDepartmentId))
+                ? safeDepts.filter(d => d._id === (currentUser.storeDepartmentId._id || currentUser.storeDepartmentId))
                 : []
     );
 
-    const availableEmployees = isGlobalAdmin ? allEmployees : (
+    const availableEmployees = isGlobalAdmin ? safeEmployees : (
         (isStoreManager || isStoreDeptHead) && currentUser.storeId
-            ? allEmployees.filter(e => e.storeId === (currentUser.storeId._id || currentUser.storeId))
+            ? safeEmployees.filter(e => e.storeId === (currentUser.storeId._id || currentUser.storeId))
             : []
     );
     // Note: Store Dept Head should technically only see employees in their Dept, handled in scope logic below or filter here.

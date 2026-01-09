@@ -29,6 +29,7 @@ interface MobileScheduleViewProps {
     onDeleteShift: (date: string, index: number, employeeId?: string) => void;
     onSwapRequest?: (shift: any, date: string, employeeId: string) => void;
     onAbsenceRequest?: (shift: any, date: string, employeeId: string) => void;
+    onOvertimeRequest?: (shift: any, date: string, employeeId: string) => void;
     isToday: (date: Date) => boolean;
     currentUserId?: string;
 }
@@ -42,6 +43,7 @@ export function MobileScheduleView({
     onDeleteShift,
     onSwapRequest,
     onAbsenceRequest,
+    onOvertimeRequest,
     isToday,
     currentUserId
 }: MobileScheduleViewProps) {
@@ -199,9 +201,15 @@ export function MobileScheduleView({
                                                 const isCurrentUser = currentUserId && emp._id === currentUserId;
 
                                                 // Actions Logic
-                                                const canSwap = !isCurrentUser && !isEditMode && !isOff && !!onSwapRequest;
+                                                const shiftStartDateTime = new Date(currentDay.date);
+                                                const [startHours, startMinutes] = shift.startTime.split(':').map(Number);
+                                                shiftStartDateTime.setHours(startHours, startMinutes, 0, 0);
+                                                const hasStarted = new Date() > shiftStartDateTime;
+
+                                                const canSwap = !isCurrentUser && !isEditMode && !isOff && !!onSwapRequest && !hasStarted;
                                                 const canAbsence = isCurrentUser && !isEditMode && !isOff && !!onAbsenceRequest;
-                                                const canPerformActions = canSwap || canAbsence;
+                                                const canOvertime = isCurrentUser && !isEditMode && !isOff && !!onOvertimeRequest;
+                                                const canPerformActions = canSwap || canAbsence || canOvertime;
 
                                                 const ShiftCard = (
                                                     <div
@@ -261,6 +269,12 @@ export function MobileScheduleView({
                                                                     <DropdownMenuItem onClick={() => onAbsenceRequest(shift, currentDay.date, emp._id)}>
                                                                         <CalendarOff className="mr-2 h-4 w-4" />
                                                                         <span>Request Absence</span>
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                                {canOvertime && (
+                                                                    <DropdownMenuItem onClick={() => onOvertimeRequest && onOvertimeRequest(shift, currentDay.date, emp._id)}>
+                                                                        <Clock className="mr-2 h-4 w-4" />
+                                                                        <span>Request Overtime</span>
                                                                     </DropdownMenuItem>
                                                                 )}
                                                             </DropdownMenuContent>
