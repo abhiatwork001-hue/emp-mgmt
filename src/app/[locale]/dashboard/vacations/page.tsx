@@ -24,6 +24,10 @@ import { YearSelector } from "@/components/layout/year-selector";
 
 import { getEmployeeById } from "@/lib/actions/employee.actions";
 
+import { getAllStores } from "@/lib/actions/store.actions";
+import { getAllGlobalDepartments } from "@/lib/actions/department.actions";
+import { getAllAbsenceRequests } from "@/lib/actions/absence.actions";
+
 export default async function VacationsPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
     const { year } = await searchParams;
     const session = await getServerSession(authOptions);
@@ -31,31 +35,33 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
 
     const employee = await getEmployeeById((session.user as any).id);
     const roles = (employee?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-    // Vacations Management Page: Likely only for HR, Admin, Managers, Heads.
-    const ALLOWED_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr"];
+    const ALLOWED_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr", "tech"];
     if (!roles.some((r: string) => ALLOWED_ROLES.includes(r))) {
         redirect("/dashboard");
     }
 
-    // Determine strict scope
     let storeIdFilter = undefined;
     const isStoreLevel = roles.some((r: string) => ["store_manager", "store_department_head"].includes(r));
-    const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "department_head"].includes(r));
+    const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "tech", "department_head"].includes(r));
 
     if (!isGlobalLevel && isStoreLevel) {
         storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
     }
 
     const currentYear = year ? parseInt(year) : new Date().getFullYear();
-    const requests = await getAllVacationRequests({ storeId: storeIdFilter, year: currentYear });
 
-    // Calculate basic stats
+    // Parallel fetch for data
+    const [requests, stores, departments, absences] = await Promise.all([
+        getAllVacationRequests({ storeId: storeIdFilter, year: currentYear }),
+        getAllStores(),
+        getAllGlobalDepartments(),
+        getAllAbsenceRequests({ storeId: storeIdFilter, year: currentYear })
+    ]);
+
     const pendingCount = requests.filter((r: any) => r.status === 'pending').length;
     const approvedCount = requests.filter((r: any) => r.status === 'approved').length;
 
-    // Role-based visibility
     const isGlobal = roles.some((r: string) => ["owner", "admin", "hr", "tech", "super_user"].includes(r));
-    const isManager = roles.includes("store_manager");
 
     return (
         <div className="space-y-6">
@@ -71,7 +77,7 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
                     </div>
                 )}
             </div>
-            {/* Admin Tools */}
+
             <AdminRecordVacationDialog />
 
             <div className="grid gap-4 md:grid-cols-3">
@@ -93,9 +99,15 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
                         <div className="text-2xl font-bold">{approvedCount}</div>
                     </CardContent>
                 </Card>
+                {/* Stats Card can be added here */}
             </div>
 
-            <VacationRequestList initialRequests={requests} />
+            <VacationRequestList
+                initialRequests={requests}
+                stores={stores}
+                departments={departments}
+                initialAbsences={absences}
+            />
         </div>
     );
 }

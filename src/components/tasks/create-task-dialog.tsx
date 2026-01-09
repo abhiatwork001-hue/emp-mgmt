@@ -70,7 +70,9 @@ export function CreateTaskDialog({
     const [assignments, setAssignments] = useState<{ type: string; id: string; label: string }[]>(initialAssignments);
 
     // RBAC Logic
-    const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    // RBAC Logic
+    const rawRoles = currentUser?.roles;
+    const roles = (Array.isArray(rawRoles) ? rawRoles : []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
     const isGlobalAdmin = roles.some((r: string) => ["admin", "owner", "hr", "super_user"].includes(r));
     const isStoreManager = roles.includes("store_manager");
     const isStoreDeptHead = roles.includes("store_department_head");

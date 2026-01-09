@@ -4,7 +4,8 @@ import { redirect } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 
-export default async function EmployeeViewerPage({ params: { locale } }: { params: { locale: string } }) {
+export default async function EmployeeViewerPage({ params }: { params: Promise<{ locale: string }> }) {
+    const { locale } = await params;
     const t = await getTranslations("EmployeeViewer");
 
     try {

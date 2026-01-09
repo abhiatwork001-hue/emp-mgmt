@@ -11,30 +11,26 @@ async function verifySeed() {
         const techUser = await Employee.findOne({ email: 'tech@chickinho.com' });
         console.log('Tech User:', techUser ? '✅ Found' : '❌ Missing');
 
-        const asish = await Employee.findOne({ email: 'asish.poudel@chickinho.com' });
-        console.log('Asish:', asish ? '✅ Found' : '❌ Missing');
-        if (asish) console.log('Asish Store:', await Store.findById(asish.storeId).then((s: any) => s?.name));
+        const marcos = await Employee.findOne({ email: 'marcos.oliveira@chickinho.com' });
+        console.log('Marcos (LX FOH Head):', marcos ? '✅ Found' : '❌ Missing');
+        if (marcos) console.log('Marcos Store:', await Store.findById(marcos.storeId).then((s: any) => s?.name));
 
         // 2. Verify Lx Factory Assignments
-        const lx = await Store.findOne({ name: 'Lx Factory' });
+        const lx = await Store.findOne({ name: 'LX Factory' });
         if (lx) {
-            const managers = await Employee.find({ _id: { $in: lx.managers } });
-            console.log('Lx Managers:', managers.map((m: any) => m.firstName).join(', '));
-
             const kitchenDept = await StoreDepartment.findOne({ storeId: lx._id, name: { $regex: 'Kitchen' } });
             const fohDept = await StoreDepartment.findOne({ storeId: lx._id, name: { $regex: 'Front' } });
 
             if (kitchenDept) {
                 const head = await Employee.findById(kitchenDept.headOfDepartment);
-                console.log('Lx Kitchen Head:', head?.firstName);
+                console.log('Lx Kitchen Head (Should be Abhishek):', head?.firstName);
                 const staff = await Employee.find({ storeDepartmentId: kitchenDept._id });
                 console.log('Lx Kitchen Staff Count:', staff.length);
-                console.log('Lx Kitchen Staff:', staff.map((s: any) => s.firstName).slice(0, 5).join(', '));
             }
 
             if (fohDept) {
                 const head = await Employee.findById(fohDept.headOfDepartment);
-                console.log('Lx FOH Head:', head?.firstName);
+                console.log('Lx FOH Head (Should be Marcos):', head?.firstName);
                 const staff = await Employee.find({ storeDepartmentId: fohDept._id });
                 console.log('Lx FOH Staff Count:', staff.length);
             }

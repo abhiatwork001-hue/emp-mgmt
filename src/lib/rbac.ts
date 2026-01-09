@@ -8,7 +8,7 @@ export const roleAccess: Record<string, string[]> = {
 
     // Store Manager - NO Employees/Positions/Approvals (Check context rules), NO Global Depts, NO Settings. HAS Tips.
     // User Update: Employees/Positions removed. Approvals removed (view context only in widgets).
-    "store_manager": ["/dashboard", "/dashboard/pending-actions", "/dashboard/notices", "/dashboard/stores", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips"],
+    "store_manager": ["/dashboard", "/dashboard/pending-actions", "/dashboard/notices", "/dashboard/stores", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips", "/dashboard/coverage"],
 
     // Dept Head (Global) - HAS Global Departments. NO Emp/Pos/Approv.
     "department_head": ["/dashboard", "/dashboard/pending-actions", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages"],
@@ -32,8 +32,8 @@ export const hasAccess = (roles: string | string[], path: string, deptName: stri
     return rolesArray.some(role => {
         const normalizedRole = role.toLowerCase().replace(/ /g, "_");
 
-        // Super users have access to everything
-        if (["super_user"].includes(normalizedRole)) return true;
+        // Super users and High Level Roles have access to everything
+        if (["super_user", "tech", "owner", "admin", "hr"].includes(normalizedRole)) return true;
 
         // 1. Special Logic: Recipes (Kitchen Dept Only)
         if (path === "/dashboard/recipes") {

@@ -260,20 +260,34 @@ export async function getActiveOngoingActions(employeeId: string) {
         })
         .lean();
 
-    const employee = await Employee.findById(employeeId).select('roles');
+    const employee = await Employee.findById(employeeId).select('roles storeId storeDepartmentId');
     const PRIVILEGED_ROLES = ["admin", "hr", "owner", "tech", "super_user"];
     const isPrivileged = employee?.roles?.some((r: string) =>
         PRIVILEGED_ROLES.includes(r.toLowerCase().replace(/ /g, "_"))
     );
 
+    // 9. Get Ongoing actions for employee (unified) - UPDATED for Open Market
     const coverageOffersQuery: any = {
         status: 'seeking_coverage',
         acceptedBy: { $exists: false }
     };
 
     if (!isPrivileged) {
-        coverageOffersQuery.candidates = employeeId;
+        // Allow if:
+        // A) User is explicitly invited (candidates)
+        // B) User matches the Store AND Department of the shift (Open Market within Dept)
+        // C) User matches the Store (if generic coverage? Sticking to Dept for now to be safe)
+
+        coverageOffersQuery.$or = [
+            { candidates: employeeId },
+            {
+                "originalShift.storeId": employee.storeId,
+                "originalShift.storeDepartmentId": employee.storeDepartmentId
+            }
+        ];
     }
+    // ... (keep rest of query execution)
+
 
     const requests = await ShiftCoverageRequest.find(coverageOffersQuery)
         .populate('originalEmployeeId', 'firstName lastName image')
@@ -430,10 +444,27 @@ export async function acceptCoverageOffer(requestId: string, employeeId: string)
     );
 
     if (updated) {
+        // Notify Admins
         await pusherServer.trigger(`admin-updates`, "coverage:accepted", {
             requestId: updated._id,
             acceptedBy: employeeId
         });
+
+        // Notify Requestor
+        await pusherServer.trigger(`user-${request.originalEmployeeId}`, "coverage:accepted", {
+            requestId: updated._id,
+            acceptedBy: employeeId
+        });
+
+        // Notify Candidates (to remove from their list)
+        if (request.candidates && request.candidates.length > 0) {
+            request.candidates.forEach(async (candidateId: any) => {
+                await pusherServer.trigger(`user-${candidateId.toString()}`, "coverage:taken", {
+                    requestId: updated._id,
+                    acceptedBy: employeeId
+                });
+            });
+        }
         await pusherServer.trigger(`user-${updated.originalEmployeeId}`, "coverage:updated", { requestId: updated._id, status: 'accepted' });
         await pusherServer.trigger(`user-${employeeId}`, "coverage:updated", { requestId: updated._id, status: 'accepted' });
     }

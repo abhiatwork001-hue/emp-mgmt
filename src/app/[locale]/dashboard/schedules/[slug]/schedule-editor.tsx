@@ -58,7 +58,13 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
     const tc = useTranslations("Common");
     const [schedule, setSchedule] = useState(initialSchedule);
     const [weekDays, setWeekDays] = useState<any[]>(initialSchedule.days || []);
+    const [viewMode, setViewMode] = useState<'employees' | 'shifts'>('employees');
     const [actionLoading, setActionLoading] = useState(false);
+
+    // Derived Unique Shifts for Shift View
+    const uniqueShiftTimes = Array.from(new Set(
+        weekDays.flatMap(day => day.shifts.map((s: any) => `${s.startTime}-${s.endTime}`))
+    )).sort();
 
     // Persistence State
     const [isSaving, setIsSaving] = useState(false);
@@ -739,6 +745,28 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                         <Link href="/dashboard/schedules"><ChevronLeft className="h-4 w-4" /></Link>
                     </Button>
 
+                    {/* View Mode Toggle */}
+                    <div className="flex items-center p-1 bg-muted/50 rounded-lg border border-border">
+                        <Button
+                            variant={viewMode === 'employees' ? 'secondary' : 'ghost'}
+                            size="icon"
+                            className="h-6 w-6 rounded-md"
+                            onClick={() => setViewMode('employees')}
+                            title="Employee View"
+                        >
+                            <Users className="h-3 w-3" />
+                        </Button>
+                        <Button
+                            variant={viewMode === 'shifts' ? 'secondary' : 'ghost'}
+                            size="icon"
+                            className="h-6 w-6 rounded-md"
+                            onClick={() => setViewMode('shifts')}
+                            title="Shift View"
+                        >
+                            <Clock className="h-3 w-3" />
+                        </Button>
+                    </div>
+
                     <div className="flex items-center gap-2 border border-border rounded-md p-1 bg-muted/40">
                         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleNavigate('prev')} disabled={actionLoading}>
                             <ArrowLeft className="h-4 w-4" />
@@ -987,8 +1015,10 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left">
                             <thead className="bg-muted/50 text-muted-foreground">
-                                <tr>
-                                    <th className="p-4 min-w-[200px] font-medium sticky left-0 bg-background/95 backdrop-blur z-10 border-r border-border">{t('employee')}</th>
+                                <tr className="divide-x divide-border">
+                                    <th className="p-4 min-w-[200px] font-medium sticky left-0 bg-background/95 backdrop-blur z-10 border-r border-border">
+                                        {viewMode === 'employees' ? t('employee') : "Shift Time"}
+                                    </th>
                                     {weekDays.map((day: any, i: number) => {
                                         const isCurrentDay = isToday(new Date(day.date));
                                         return (
@@ -1074,7 +1104,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                     )}
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-border">
+                            <tbody className={`divide-y divide-border ${viewMode === 'employees' ? '' : 'hidden'}`}>
                                 {uniqueEmployees.map((emp: any) => {
                                     let totalMinutes = 0;
                                     let totalShifts = 0;
@@ -1372,7 +1402,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                                                                         date: day.date,
                                                                                         employeeName: `${emp.firstName} ${emp.lastName}`,
                                                                                         storeName: schedule.storeId?.name || "This Store",
-                                                                                        canSwap: !isPastOrStarted && worksAtStore && !isMyShift && !!userShiftOnDay,
+                                                                                        canSwap: !isPastOrStarted && worksAtStore && !isMyShift && !!userShiftOnDay && !absence,
                                                                                         targetEmployeeId: emp._id
                                                                                     });
                                                                                     setDetailsDialogOpen(true);
@@ -1535,6 +1565,95 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                 )
                                 }
                             </tbody >
+
+                            {/* Shift View Body */}
+                            <tbody className={`divide-y divide-border ${viewMode === 'shifts' ? '' : 'hidden'}`}>
+                                {uniqueShiftTimes.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={9} className="p-12 text-center text-muted-foreground italic">No shifts found.</td>
+                                    </tr>
+                                ) : (
+                                    uniqueShiftTimes.map((timeKey) => {
+                                        const [start, end] = timeKey.split('-');
+                                        return (
+                                            <tr key={timeKey} className="hover:bg-muted/30 transition-colors">
+                                                {/* Time Header */}
+                                                <td className="p-4 sticky left-0 bg-background/95 backdrop-blur z-10 border-r border-border font-medium text-sm">
+                                                    <div className="flex items-center gap-2">
+                                                        <Clock className="h-4 w-4 text-muted-foreground" />
+                                                        <span>{start} - {end}</span>
+                                                    </div>
+                                                </td>
+                                                {/* Days */}
+                                                {weekDays.map((day, i) => {
+                                                    const matchingShifts = day.shifts.filter((s: any) => `${s.startTime}-${s.endTime}` === timeKey);
+                                                    const isCurrentDay = isToday(new Date(day.date));
+
+                                                    // Flatten employees from all matching shifts (usually just one shift per time slot per day, but could be multiple if same time different role)
+                                                    const slotEmployees = matchingShifts.flatMap((s: any) => s.employees.map((e: any) => ({ ...e, shiftId: s._id, color: s.color, shiftName: s.shiftName })));
+
+                                                    return (
+                                                        <td
+                                                            key={i}
+                                                            className={`p-2 border-r border-border last:border-r-0 align-top transition-colors ${day.isHoliday ? 'bg-muted/30' : isCurrentDay ? 'bg-primary/5' : ''}`}
+                                                        >
+                                                            {!day.isHoliday && (
+                                                                <div className="space-y-1.5 min-h-[50px]">
+                                                                    {slotEmployees.map((emp: any, idx: number) => (
+                                                                        <div
+                                                                            key={emp._id + idx}
+                                                                            className="flex items-center gap-1.5 p-1.5 rounded border bg-card shadow-sm text-xs hover:border-primary/50 transition-colors cursor-pointer"
+                                                                            style={{ borderLeft: `3px solid ${emp.color || '#ccc'}` }}
+                                                                            onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                // Open details/edit for the specific shift this employee belongs to
+                                                                                const originalShift = matchingShifts.find((s: any) => s._id === emp.shiftId);
+                                                                                if (originalShift && isEditMode) {
+                                                                                    handleEditClick(originalShift, day.date, day.shifts.indexOf(originalShift));
+                                                                                } // Else show details (nyi for shift view click on emp)
+                                                                            }}
+                                                                        >
+                                                                            <Avatar className="h-5 w-5 border border-border">
+                                                                                <AvatarImage src={emp.image} />
+                                                                                <AvatarFallback className="text-[8px]">{emp.firstName?.[0]}{emp.lastName?.[0]}</AvatarFallback>
+                                                                            </Avatar>
+                                                                            <div className="min-w-0 flex-1">
+                                                                                <div className="font-medium truncate leading-none">{emp.firstName} {emp.lastName}</div>
+                                                                                {emp.shiftName && <div className="text-[9px] text-muted-foreground truncate leading-tight mt-0.5">{emp.shiftName}</div>}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
+
+                                                                    {/* Add Button for this Slot */}
+                                                                    {isEditMode && (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="sm"
+                                                                            className="w-full h-6 text-[10px] border border-dashed border-transparent hover:border-border text-muted-foreground/50 hover:text-foreground"
+                                                                            onClick={() => {
+                                                                                // Pre-fill time
+                                                                                setSelectedDate(new Date(day.date));
+                                                                                // We need a way to pass pre-filled times to the dialog not just employee
+                                                                                // Current dialog uses `editingShift` or `preselectedEmployee`.
+                                                                                // We might need to enhance `handleAddClick` or set state manually.
+                                                                                // For now, normal add. Ideally passing start/end.
+                                                                                handleAddClick(day.date);
+                                                                            }}
+                                                                        >
+                                                                            <Plus className="h-3 w-3 mr-1" /> Add
+                                                                        </Button>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                        </td>
+                                                    );
+                                                })}
+                                                <td className="p-4 text-center text-muted-foreground">-</td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
                         </table >
                     </div>
                 </Card>

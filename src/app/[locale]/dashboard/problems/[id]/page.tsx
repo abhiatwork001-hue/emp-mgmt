@@ -23,6 +23,7 @@ import {
 import Link from "next/link";
 import { ProblemCommentForm } from "./problem-comment-form"; // Client component
 import { ResolveProblemButton } from "./resolve-problem-button"; // Client component
+import { ProblemRealtimeListener } from "./problem-realtime-listener";
 
 export default async function ProblemDetailsPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -212,8 +213,10 @@ export default async function ProblemDetailsPage(props: { params: Promise<{ id: 
                             </CardContent>
                         </Card>
                     )}
+
                 </div>
             </div>
+            <ProblemRealtimeListener problemId={problem._id.toString()} />
         </div>
     );
 }

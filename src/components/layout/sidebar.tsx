@@ -1,80 +1,18 @@
 "use client";
 
-import { Link, usePathname } from "@/i18n/routing";
-import { useSearchParams } from "next/navigation";
+import { Link } from "@/i18n/routing"; // Keep Link from routing
+import { usePathname as useNextPathname, useSearchParams } from "next/navigation";
 import { hasAccess } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
-import {
-    LayoutDashboard,
-    Store,
-    Users,
-    ChefHat,
-    Briefcase,
-    Settings,
-    Menu,
-    Building2,
-    Calendar,
-    Palmtree,
-    AlertCircle,
-    StickyNote,
-    Coins,
-    User,
-    ListTodo,
-    Megaphone,
-    Inbox,
-    MessageSquare,
-    ChevronLeft,
-    ChevronRight,
-    ShieldAlert,
-    AlertTriangle,
-    Lock,
-    LifeBuoy
-} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSession } from "next-auth/react";
-import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
-
 import { SidebarMessageBadge } from "./sidebar-message-badge";
-
-// Role-based access logic has been moved to src/lib/rbac.ts
-
-
-const routeGroups = [
-    { title: "Operations", routes: ["Home", "Schedule", "PendingActions", "Coverage"] },
-    { title: "People", routes: ["Employees", "Positions", "StaffViewer", "Vacations", "Absences", "Tips"] },
-    { title: "Structure", routes: ["Stores", "Departments", "Recipes", "Credentials"] },
-    { title: "Communication", routes: ["Messages", "Notices", "Tasks", "Notes", "Problems"] },
-    { title: "Account", routes: ["Profile", "Activities", "Settings"] },
-];
-
-const routes = [
-    { label: "Home", icon: LayoutDashboard, href: "/dashboard", color: "text-sky-500" },
-    { label: "Notices", icon: Megaphone, href: "/dashboard/notices", color: "text-orange-500" },
-    { label: "PendingActions", icon: Inbox, href: "/dashboard/pending-actions", color: "text-red-500" },
-    { label: "Messages", icon: MessageSquare, href: "/dashboard/messages", color: "text-blue-500" },
-    { label: "Tasks", icon: ListTodo, href: "/dashboard/tasks", color: "text-purple-500" },
-    { label: "Notes", icon: StickyNote, href: "/dashboard/notes", color: "text-yellow-400" },
-    { label: "Problems", icon: AlertTriangle, href: "/dashboard/problems", color: "text-red-600" },
-    { label: "Stores", icon: Store, href: "/dashboard/stores", color: "text-violet-500" },
-    { label: "Departments", icon: Building2, href: "/dashboard/departments", color: "text-pink-700" },
-    { label: "Recipes", icon: ChefHat, href: "/dashboard/recipes", color: "text-orange-700" },
-    { label: "Schedule", icon: Calendar, href: "/dashboard/schedules", color: "text-amber-500" },
-    { label: "Vacations", icon: Palmtree, href: "/dashboard/vacations", color: "text-emerald-500" },
-    { label: "Absences", icon: AlertCircle, href: "/dashboard/absences", color: "text-red-500" },
-    { label: "Employees", icon: Users, href: "/dashboard/employees", color: "text-green-700" },
-    { label: "StaffViewer", icon: Users, href: "/dashboard/employee-viewer", color: "text-emerald-600" },
-    { label: "Positions", icon: Briefcase, href: "/dashboard/positions", color: "text-blue-700" },
-    { label: "Tips", icon: Coins, href: "/dashboard/tips", color: "text-yellow-600" },
-    { label: "Profile", icon: User, href: "/dashboard/profile", color: "text-indigo-500" },
-    { label: "Activities", icon: ShieldAlert, href: "/dashboard/activity-log", color: "text-red-700" },
-    { label: "Credentials", icon: Lock, href: "/dashboard/credentials", color: "text-slate-500" }, // Global Store Credentials
-    { label: "Coverage", icon: LifeBuoy, href: "/dashboard/coverage", color: "text-indigo-600" },
-    { label: "Settings", icon: Settings, href: "/dashboard/settings" },
-];
+import { routeGroups, routes } from "@/lib/sidebar-config";
+import { ChevronRight, ChevronLeft, Menu } from "lucide-react";
 
 export function Sidebar({
     userRoles = ["employee"],
@@ -83,7 +21,8 @@ export function Sidebar({
     isMobile: propsIsMobile = false,
     onNavItemClick,
     hasRecipes = true,
-    hasCoverage = false
+    hasCoverage = false,
+    translations = {}
 }: {
     userRoles?: string[],
     departmentName?: string,
@@ -91,12 +30,19 @@ export function Sidebar({
     isMobile?: boolean,
     onNavItemClick?: () => void,
     hasRecipes?: boolean,
-    hasCoverage?: boolean
+    hasCoverage?: boolean,
+    translations?: { [key: string]: string }
 }) {
-    const pathname = usePathname();
+    const rawPathname = useNextPathname();
+    // Strip locale from the beginning of the path (e.g. /en/dashboard -> /dashboard)
+    const pathname = rawPathname
+        ? (rawPathname.replace(/^\/[a-z]{2}(\/|$)/, '/') === "" ? "/" : rawPathname.replace(/^\/[a-z]{2}(\/|$)/, '/'))
+        : "";
+    // Ensure that if result is //dashboard (unlikely with this regex), we fix it, but regex replace /en/ with / gives /dashboard.
+    // Only edge case is if rawPathname is just /en, replace gives /.
+
     const searchParams = useSearchParams();
     const { data: session } = useSession();
-    const t = useTranslations("Common");
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [expandedGroups, setExpandedGroups] = useState<string[]>(routeGroups.map(g => g.title));
 
@@ -115,27 +61,21 @@ export function Sidebar({
             if (!route) return null;
 
             if (route.label === "Stores") {
-                // Special handling for Stores:
-                // 1. Check if user has full access (Admin, Owner, etc.)
-                // User Request: Store Manager & Store Dept Head should ONLY see context link.
                 const isContextOnlyRole = effectiveRoles.some(r => ["store_manager", "store_department_head", "employee"].includes(r));
 
                 if (!isContextOnlyRole && hasAccess(effectiveRoles, "/dashboard/stores", departmentName, permissions)) {
                     return route;
                 }
 
-                // 2. If no full access (or restricted role), check if they have a specific store context
                 if (storeSlug) {
                     return { ...route, label: "Store", href: `/dashboard/stores/${storeSlug}` };
                 }
                 return null;
             }
 
-            // Rely on central RBAC for everything else (Activities, Tips, Departments, etc.)
             const isAccessible = hasAccess(effectiveRoles, route.href, departmentName, permissions);
             if (!isAccessible) return null;
 
-            // Conditional visibility based on data existence
             if (route.label === "Recipes" && !hasRecipes) return null;
             if (route.label === "Coverage" && !hasCoverage) return null;
 
@@ -205,34 +145,39 @@ export function Sidebar({
                                         transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }}
                                         className="overflow-hidden space-y-1.5"
                                     >
-                                        {group.routes.map((route) => (
-                                            <Link
-                                                key={route.href}
-                                                href={route.href}
-                                                onClick={() => onNavItemClick?.()}
-                                                className={cn(
-                                                    "text-sm group flex p-3 w-full font-medium cursor-pointer rounded-xl transition-all duration-200 relative",
-                                                    pathname === route.href ? "text-primary bg-primary/5 shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-accent/40",
-                                                    isCollapsed ? "justify-center" : "justify-start"
-                                                )}
-                                                title={isCollapsed ? (route.label === "Store" ? "Store" : t(route.label.toLowerCase())) : undefined}
-                                            >
-                                                <div className={cn("flex items-center", isCollapsed ? "justify-center" : "flex-1")}>
-                                                    {route.label === "Profile" ? (
-                                                        <Avatar className="h-5 w-5 shrink-0">
-                                                            <AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">{session?.user?.name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
-                                                        </Avatar>
-                                                    ) : (
-                                                        <route.icon className={cn("h-5 w-5 shrink-0 transition-all group-hover:scale-110", pathname === route.href ? route.color : "text-muted-foreground/70")} />
+                                        {group.routes.map((route) => {
+                                            const labelKey = route.label.toLowerCase();
+                                            const labelText = translations[labelKey] || (route.label === "Store" ? "Store" : route.label);
+
+                                            return (
+                                                <Link
+                                                    key={route.href}
+                                                    href={route.href}
+                                                    onClick={() => onNavItemClick?.()}
+                                                    className={cn(
+                                                        "text-sm group flex p-3 w-full font-medium cursor-pointer rounded-xl transition-all duration-200 relative",
+                                                        pathname === route.href ? "text-primary bg-primary/5 shadow-sm" : "text-muted-foreground hover:text-foreground hover:bg-accent/40",
+                                                        isCollapsed ? "justify-center" : "justify-start"
                                                     )}
-                                                    {!isCollapsed && <span className="ml-3 truncate">{route.label === "Store" ? "Store" : t(route.label.toLowerCase())}</span>}
-                                                    {route.label === "Messages" && (
-                                                        <SidebarMessageBadge userId={(session?.user as any)?.id} collapsed={isCollapsed} />
-                                                    )}
-                                                </div>
-                                                {pathname === route.href && !isCollapsed && <motion.div layoutId="active-pill" className="absolute left-0 w-1 h-6 bg-primary rounded-r-full" />}
-                                            </Link>
-                                        ))}
+                                                    title={isCollapsed ? labelText : undefined}
+                                                >
+                                                    <div className={cn("flex items-center", isCollapsed ? "justify-center" : "flex-1")}>
+                                                        {route.label === "Profile" ? (
+                                                            <Avatar className="h-5 w-5 shrink-0">
+                                                                <AvatarFallback className="bg-primary/10 text-primary font-bold text-[10px]">{session?.user?.name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+                                                            </Avatar>
+                                                        ) : (
+                                                            <route.icon className={cn("h-5 w-5 shrink-0 transition-all group-hover:scale-110", pathname === route.href ? route.color : "text-muted-foreground/70")} />
+                                                        )}
+                                                        {!isCollapsed && <span className="ml-3 truncate">{labelText}</span>}
+                                                        {route.label === "Messages" && (
+                                                            <SidebarMessageBadge userId={(session?.user as any)?.id} collapsed={isCollapsed} />
+                                                        )}
+                                                    </div>
+                                                    {pathname === route.href && !isCollapsed && <motion.div layoutId="active-pill" className="absolute left-0 w-1 h-6 bg-primary rounded-r-full" />}
+                                                </Link>
+                                            )
+                                        })}
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -249,13 +194,15 @@ export function MobileSidebar({
     departmentName = "",
     storeSlug = "",
     hasRecipes = true,
-    hasCoverage = false
+    hasCoverage = false,
+    translations = {}
 }: {
     userRoles?: string[],
     departmentName?: string,
     storeSlug?: string,
     hasRecipes?: boolean,
-    hasCoverage?: boolean
+    hasCoverage?: boolean,
+    translations?: { [key: string]: string }
 }) {
     const [open, setOpen] = useState(false);
     return (
@@ -273,8 +220,10 @@ export function MobileSidebar({
                     onNavItemClick={() => setOpen(false)}
                     hasRecipes={hasRecipes}
                     hasCoverage={hasCoverage}
+                    translations={translations}
                 />
             </SheetContent>
         </Sheet>
     );
 }
+

@@ -414,33 +414,22 @@ export function StoreManagerDashboard({
                 </div>
 
 
-                {/* 5. Scheduling & Team Presence */}
-                {(hasSchedule || hasCoworkers) && (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-                        {hasSchedule ? (
-                            <div className={cn("h-full", !hasCoworkers && "lg:col-span-2")}>
-                                {widgets["my-schedule"]}
+                {/* 5. Scheduling */}
+                <div className="w-full">
+                    {hasSchedule ? (
+                        widgets["my-schedule"]
+                    ) : (
+                        <Card className="h-full border-dashed border-2 flex flex-col items-center justify-center p-12 text-center bg-muted/5">
+                            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 rotate-12">
+                                <Calendar className="h-8 w-8" />
                             </div>
-                        ) : (
-                            <div className="lg:col-span-2 h-full">
-                                <Card className="h-full border-dashed border-2 flex flex-col items-center justify-center p-12 text-center bg-muted/5">
-                                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 rotate-12">
-                                        <Calendar className="h-8 w-8" />
-                                    </div>
-                                    <h3 className="text-xl font-black italic text-foreground mb-2">No Schedule Available</h3>
-                                    <Button asChild className="mt-6 font-black italic tracking-tight" variant="secondary">
-                                        <Link href="/dashboard/schedules">Manage Schedules</Link>
-                                    </Button>
-                                </Card>
-                            </div>
-                        )}
-                        {hasCoworkers && (
-                            <div className={cn("h-full", !hasSchedule && "lg:col-span-2")}>
-                                {widgets["coworkers-widget"]}
-                            </div>
-                        )}
-                    </div>
-                )}
+                            <h3 className="text-xl font-black italic text-foreground mb-2">No Schedule Available</h3>
+                            <Button asChild className="mt-6 font-black italic tracking-tight" variant="secondary">
+                                <Link href="/dashboard/schedules">Manage Schedules</Link>
+                            </Button>
+                        </Card>
+                    )}
+                </div>
 
                 {/* 6. Notice Board (Full Width) */}
                 <div className="w-full">

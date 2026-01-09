@@ -514,7 +514,7 @@ const EmployeeSchema = new Schema<IEmployee>({
         weeklyHours: { type: Number, default: 40 },
         workingDays: [{ type: Number }], // 0=Sunday, 1=Monday...
         maxOvertime: { type: Number },
-        employmentType: { type: String, enum: ["Contracted", "Freelancer", "Extra"], default: "Contracted" },
+        employmentType: { type: String, enum: ["Contracted", "Freelancer", "Extra", "Trial"], default: "Contracted" },
         vacationAllowed: { type: Boolean, default: true }
     },
 

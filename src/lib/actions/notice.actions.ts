@@ -204,42 +204,35 @@ export async function getNoticesForUser(userId: string) {
         const now = new Date();
 
         // Build Query
-        const criteria: any[] = [
-            { targetScope: 'global' }
+        // 1. Base criteria: Global or created by me or visible to admin (if admin)
+        const orConditions: any[] = [
+            { targetScope: 'global' },
+            { createdBy: userId }
         ];
 
-        // Store Scope
+        // 2. Store Scope
         if (user.storeId) {
-            criteria.push({ targetScope: 'store', targetId: user.storeId });
+            orConditions.push({ targetScope: 'store', targetId: user.storeId });
         }
 
-        const normalizedRoles = (user.roles || []).map((r: string) => r.toLowerCase().trim());
-
-        // Store Dept Scope
+        // 3. Store Dept Scope
         if (user.storeDepartmentId?._id) {
-            criteria.push({
+            orConditions.push({
                 targetScope: 'store_department',
-                targetId: user.storeDepartmentId._id,
-                $or: [
-                    { targetRole: null },
-                    { targetRole: { $exists: false } },
-                    { targetRole: { $in: user.roles } } // Original roles for exact match if needed, but normalized is safer if they match
-                ]
+                targetId: user.storeDepartmentId._id
             });
 
             // Global Dept Scope (Linked via Store Dept)
             if (user.storeDepartmentId.globalDepartmentId) {
-                criteria.push({ targetScope: 'department', targetId: user.storeDepartmentId.globalDepartmentId });
+                orConditions.push({ targetScope: 'department', targetId: user.storeDepartmentId.globalDepartmentId });
             }
         }
 
-        // Role Group Scope (Global OR Store-Scoped)
-        if (normalizedRoles.length > 0) {
-            criteria.push({
+        // 4. Role Group Scope
+        const normalizedRoles = (user.roles || []).map((r: string) => r.toLowerCase().trim());
+        if (user.roles && user.roles.length > 0) {
+            orConditions.push({
                 targetScope: 'role_group',
-                // We use original roles from DB for $in check because targetRole in Notice model 
-                // might be exactly as stored in DB (e.g. "Store Manager").
-                // However, the check isAdminOrHR uses normalized.
                 targetRole: { $in: user.roles },
                 $or: [
                     { targetId: null },
@@ -249,18 +242,15 @@ export async function getNoticesForUser(userId: string) {
             });
         }
 
-        // Creator Visibility: Always see notices created by self
-        criteria.push({ createdBy: userId });
-
-        // Admin Visibility (HR/Owner/Admin see marked notices)
+        // 5. Admin Visibility
         const isAdminOrHR = normalizedRoles.some((r: string) => ['admin', 'hr', 'owner', 'super_user'].includes(r));
         if (isAdminOrHR) {
-            criteria.push({ visibleToAdmin: true });
+            orConditions.push({ visibleToAdmin: true });
         }
 
         const notices = await Notice.find({
             $and: [
-                { $or: criteria },
+                { $or: orConditions },
                 { $or: [{ expiresAt: null }, { expiresAt: { $gt: now } }] }
             ]
         })

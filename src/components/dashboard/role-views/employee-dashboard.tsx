@@ -23,6 +23,7 @@ import { ReminderWidget } from "@/components/reminders/reminder-widget";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { NoticeBoard } from "@/components/notices/notice-board";
 import { ActiveActionsWidget } from "@/components/dashboard/active-actions-widget";
+import { EmployeePendingActionsWidget } from "@/components/dashboard/employee-pending-actions-widget";
 
 export function EmployeeDashboard({
     employee,
@@ -31,7 +32,8 @@ export function EmployeeDashboard({
     currentScheduleSlug,
     daysUntilNextDayOff = 0,
     personalTodos = [],
-    activeActions = { vacations: [], absences: [], coverageRequests: [], coverageOffers: [] }
+    activeActions = { vacations: [], absences: [], coverageRequests: [], coverageOffers: [] },
+    swapRequests = [] // New Prop
 }: any) {
     const router = useRouter();
 
@@ -42,16 +44,18 @@ export function EmployeeDashboard({
     const hasSchedule = currentScheduleId && currentScheduleId !== "null";
 
     const sidebarContent = {
-        todo: <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />,
+        // todo: <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />,
         notifications: (
             <div className="space-y-6">
-                <ActiveActionsWidget
-                    vacations={activeActions.vacations}
-                    absences={activeActions.absences}
-                    coverageRequests={activeActions.coverageRequests}
+                <EmployeePendingActionsWidget
+                    swapRequests={swapRequests}
                     coverageOffers={activeActions.coverageOffers}
+                    myVacations={activeActions.vacations}
+                    myAbsences={activeActions.absences}
+                    myCoverageRequests={activeActions.coverageRequests}
                     userId={employee._id}
                 />
+                <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />
                 <ReminderWidget userId={employee._id} role="employee" />
             </div>
         )
@@ -191,37 +195,7 @@ export function EmployeeDashboard({
                             />
                         </div>
 
-                        {/* 2. Working Together (Full width) */}
-                        {todaysCoworkers.length > 0 && (
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between px-1">
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                                        <Users className="h-3 w-3 text-primary" /> Working with you today
-                                    </h3>
-                                    <Badge variant="outline" className="text-[8px] h-4 border-primary/20 text-primary">{todaysCoworkers.length} active</Badge>
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                                    {todaysCoworkers.map((cw: any, idx: number) => (
-                                        <div key={idx} className="flex items-center gap-2 p-2 rounded-xl bg-muted/20 border border-border/40 hover:bg-muted/30 transition-colors group">
-                                            <Avatar className="h-8 w-8 border shadow-sm group-hover:scale-110 transition-transform">
-                                                <AvatarImage src={cw.image} />
-                                                <AvatarFallback className="text-[10px] bg-primary/5 text-primary font-bold">
-                                                    {cw.firstName?.[0]}{cw.lastName?.[0]}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="min-w-0">
-                                                <div className="text-[11px] font-bold truncate">
-                                                    {cw.firstName} {cw.lastName}
-                                                </div>
-                                                <div className="text-[8px] text-muted-foreground uppercase font-medium truncate">
-                                                    {cw.position || "Employee"}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+
 
                         <div className="h-[1px] bg-border/50" />
 

@@ -1,7 +1,7 @@
 "use server";
 
 import dbConnect from "@/lib/db";
-import { Schedule, StoreDepartment, Employee, Store, AbsenceRecord, ExtraHourRequest, VacationRecord } from "@/lib/models";
+import { Schedule, StoreDepartment, Employee, Store, AbsenceRecord, ShiftCoverageRequest, ShiftSwapRequest, VacationRecord } from "@/lib/models";
 import { pusherServer } from "@/lib/pusher";
 import mongoose from "mongoose";
 import { revalidatePath } from "next/cache";
@@ -793,6 +793,23 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
     const diff = currentD.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
     const monday = new Date(currentD.setDate(diff));
 
+    const weekStart = new Date(monday);
+    const weekEnd = new Date(monday);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    // Fetch Absences for this week
+    const absences = await AbsenceRecord.find({
+        employeeId: employeeId,
+        date: { $lte: weekEnd, $gte: weekStart },
+        status: { $ne: 'rejected' }
+    }).lean();
+
+    const absenceMap = new Map();
+    absences.forEach((abs: any) => {
+        const dateStr = new Date(abs.date).toISOString().split('T')[0];
+        absenceMap.set(dateStr, abs);
+    });
+
     for (let i = 0; i < 7; i++) {
         const loopDate = new Date(monday);
         loopDate.setDate(monday.getDate() + i);
@@ -834,20 +851,40 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
                 dayObj.holidayName = day.holidayName;
             }
 
-            const userShifts = day.shifts.filter((s: any) =>
-                s.employees.some((e: any) => (e._id ? e._id.toString() : e.toString()) === employeeId)
-            );
+            const absence = absenceMap.get(dateStr);
 
-            userShifts.forEach((s: any) => {
-                dayObj.shifts.push({
-                    ...s,
-                    storeName,
-                    deptName,
-                    scheduleId: sch._id,
-                    storeId: sch.storeId?._id || sch.storeId,
-                    storeDepartmentId: sch.storeDepartmentId?._id || sch.storeDepartmentId
+            if (absence) {
+                // Check if we already added the absence shift to avoid duplicates from multiple schedules
+                const alreadyHasAbsence = dayObj.shifts.some((s: any) => s.isAbsent);
+                if (!alreadyHasAbsence) {
+                    dayObj.shifts.push({
+                        _id: absence._id,
+                        startTime: "00:00", // Dummy time for sorting, rendering handles it
+                        endTime: "00:00",
+                        storeName: "Absent",
+                        deptName: "Absent",
+                        shiftName: `Absent: ${absence.reason || absence.type}`,
+                        isAbsent: true,
+                        absenceType: absence.type,
+                        absenceStatus: absence.justification
+                    });
+                }
+            } else {
+                const userShifts = day.shifts.filter((s: any) =>
+                    s.employees.some((e: any) => (e._id ? e._id.toString() : e.toString()) === employeeId)
+                );
+
+                userShifts.forEach((s: any) => {
+                    dayObj.shifts.push({
+                        ...s,
+                        storeName,
+                        deptName,
+                        scheduleId: sch._id,
+                        storeId: sch.storeId?._id || sch.storeId,
+                        storeDepartmentId: sch.storeDepartmentId?._id || sch.storeDepartmentId
+                    });
                 });
-            });
+            }
         });
     });
 
@@ -1255,7 +1292,76 @@ export async function getEmployeeSchedulesInRange(employeeId: string, startDate:
         .populate("storeDepartmentId", "name")
         .lean();
 
-    return JSON.parse(JSON.stringify(schedules));
+    const formattedShifts: any[] = [];
+
+    // Fetch Absences for this employee in range
+    const absences = await AbsenceRecord.find({
+        employeeId: employeeId,
+        date: { $lte: endDate, $gte: startDate },
+        status: { $ne: 'rejected' } // Include pending? Maybe. Definitely approved/covered.
+    }).lean();
+
+    const absenceMap = new Map();
+    absences.forEach((abs: any) => {
+        const dateStr = new Date(abs.date).toISOString().split('T')[0];
+        absenceMap.set(dateStr, abs);
+    });
+
+    schedules.forEach((sch: any) => {
+        sch.days.forEach((day: any) => {
+            const date = new Date(day.date);
+            const dateStr = date.toISOString().split('T')[0];
+
+            if (date >= startDate && date <= endDate) {
+                day.shifts.forEach((shift: any) => {
+                    const empParams = shift.employees.map((e: any) => e.toString());
+                    if (empParams.includes(employeeId)) {
+
+                        // Check for absence
+                        const absence = absenceMap.get(dateStr);
+
+                        if (absence) {
+                            formattedShifts.push({
+                                _id: absence._id, // Use absence ID
+                                date: day.date,
+                                start: shift.startTime,
+                                end: shift.endTime,
+                                store: sch.storeId?.name || "Unknown Store",
+                                department: "Absent", // Override department
+                                scheduleId: sch._id,
+                                storeId: sch.storeId?._id || sch.storeId,
+                                storeDepartmentId: sch.storeDepartmentId?._id || sch.storeDepartmentId,
+                                position: "Absent",
+                                shiftName: `Absent: ${absence.reason || absence.type}`,
+                                isAbsent: true,
+                                absenceType: absence.type,
+                                absenceStatus: absence.justification // justified/unjustified
+                            });
+                        } else {
+                            formattedShifts.push({
+                                _id: shift._id || `${day.date}-${shift.startTime}-${employeeId}`,
+                                date: day.date,
+                                start: shift.startTime,
+                                end: shift.endTime,
+                                store: sch.storeId?.name || "Unknown Store",
+                                department: sch.storeDepartmentId?.name || "Unknown Dept",
+                                scheduleId: sch._id,
+                                storeId: sch.storeId?._id || sch.storeId,
+                                storeDepartmentId: sch.storeDepartmentId?._id || sch.storeDepartmentId,
+                                position: "Staff", // Populate this if available in shift.employees
+                                shiftName: shift.shiftName
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    });
+
+    // Sort by date descending
+    formattedShifts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    return JSON.parse(JSON.stringify(formattedShifts));
 }
 
 export async function removeEmployeeFromSchedulesInRange(employeeId: string, startDate: Date, endDate: Date) {

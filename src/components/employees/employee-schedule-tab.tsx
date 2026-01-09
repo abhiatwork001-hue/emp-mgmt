@@ -10,6 +10,7 @@ import { getEmployeeScheduleView } from "@/lib/actions/schedule.actions";
 import { Loader2, ChevronLeft, ChevronRight, Calculator, Calendar } from "lucide-react";
 import { ReportShiftAbsenceDialog } from "./report-shift-absence-dialog";
 import { Link } from "@/i18n/routing";
+import { cn } from "@/lib/utils";
 
 import { ShiftOfferList } from "./shift-offer-list";
 import { Cake, Clock as ClockIcon } from "lucide-react";
@@ -167,38 +168,70 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                                         <span className="text-sm">{day.holidayName}</span>
                                                     </div>
                                                 ) : hasShifts ? (
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {day.shifts.map((shift: any, sIdx: number) => (
-                                                            <div key={sIdx} className="flex flex-col gap-1 bg-muted/50 p-2 rounded border border-border/50 min-w-[200px]">
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <Badge variant="outline" className="text-[10px] h-4 border-border text-muted-foreground">
-                                                                        {shift.storeName}
-                                                                    </Badge>
-                                                                    <span className="text-[10px] text-muted-foreground">•</span>
-                                                                    <span className="text-[10px] text-muted-foreground font-medium">
-                                                                        {shift.deptName}
-                                                                    </span>
-                                                                </div>
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="text-sm font-semibold font-mono text-primary">
-                                                                        {shift.startTime} - {shift.endTime}
-                                                                    </div>
-                                                                    {shift.shiftName && <Badge variant="secondary" className="text-xs">{shift.shiftName}</Badge>}
-                                                                </div>
-                                                                {shift.breakMinutes > 0 && <span className="text-[10px] text-muted-foreground mt-1">Has {shift.breakMinutes}m break</span>}
+                                                    <div className="flex flex-col gap-3">
+                                                        {day.shifts.map((shift: any, sIdx: number) => {
+                                                            // Calculate Duration
+                                                            let duration = "0h";
+                                                            try {
+                                                                if (shift.startTime && shift.endTime) {
+                                                                    const [h1, m1] = shift.startTime.split(':').map(Number);
+                                                                    const [h2, m2] = shift.endTime.split(':').map(Number);
+                                                                    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+                                                                    if (diff < 0) diff += 24 * 60;
+                                                                    if (shift.breakMinutes) diff -= shift.breakMinutes;
+                                                                    duration = `${Math.floor(diff / 60)}h ${diff % 60 > 0 ? (diff % 60) + 'm' : ''}`;
+                                                                }
+                                                            } catch (e) { }
 
-                                                                {new Date(day.date) >= new Date(new Date().setHours(0, 0, 0, 0)) &&
-                                                                    currentUser && currentUser.id === employeeId && (
-                                                                        <ReportShiftAbsenceDialog
-                                                                            shift={shift}
-                                                                            dayDate={day.date}
-                                                                            scheduleId={shift.scheduleId}
-                                                                            storeId={shift.storeId}
-                                                                            storeDepartmentId={shift.storeDepartmentId}
-                                                                        />
-                                                                    )}
-                                                            </div>
-                                                        ))}
+                                                            const isAbsent = shift.isAbsent;
+
+                                                            return (
+                                                                <div key={sIdx} className={cn(
+                                                                    "group flex items-center justify-between p-3 rounded-lg border transition-all",
+                                                                    isAbsent ? "bg-red-500/5 border-red-500/20 hover:bg-red-500/10" : "bg-background border-border hover:border-primary/50"
+                                                                )}>
+                                                                    <div className="flex items-center gap-4">
+                                                                        <div className="space-y-1">
+                                                                            <div className="flex items-center gap-2">
+                                                                                {isAbsent ? (
+                                                                                    <Badge variant="destructive" className="text-[10px] h-5 uppercase font-bold tracking-wider">Absent</Badge>
+                                                                                ) : (
+                                                                                    <span className="text-sm font-bold font-mono text-foreground">{shift.startTime} - {shift.endTime}</span>
+                                                                                )}
+                                                                                {!isAbsent && <Badge variant="secondary" className="text-[10px] h-5 px-1.5 font-normal text-muted-foreground bg-muted/50">{duration}</Badge>}
+                                                                            </div>
+                                                                            <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                                                                                {isAbsent ? (
+                                                                                    <span className="text-red-500 font-medium">{shift.shiftName.replace("Absent: ", "")}</span>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        {shift.storeName && <span>{shift.storeName}</span>}
+                                                                                        {shift.deptName && <span className="flex items-center gap-1">• {shift.deptName}</span>}
+                                                                                    </>
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-2">
+                                                                        {shift.shiftName && !isAbsent && (
+                                                                            <Badge variant="outline" className="text-[10px] hidden sm:inline-flex">{shift.shiftName}</Badge>
+                                                                        )}
+
+                                                                        {new Date(day.date) >= new Date(new Date().setHours(0, 0, 0, 0)) &&
+                                                                            currentUser && currentUser.id === employeeId && !isAbsent && (
+                                                                                <ReportShiftAbsenceDialog
+                                                                                    shift={shift}
+                                                                                    dayDate={day.date}
+                                                                                    scheduleId={shift.scheduleId}
+                                                                                    storeId={shift.storeId}
+                                                                                    storeDepartmentId={shift.storeDepartmentId}
+                                                                                />
+                                                                            )}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
                                                     </div>
                                                 ) : (
                                                     <div className="text-muted-foreground italic text-sm">No shifts scheduled</div>

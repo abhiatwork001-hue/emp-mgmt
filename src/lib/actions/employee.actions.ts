@@ -12,6 +12,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getAugmentedRolesAndPermissions } from "../auth-utils";
 import { pusherServer } from "../pusher";
+import { cache } from "react";
 
 type EmployeeData = Partial<IEmployee>;
 
@@ -839,5 +840,58 @@ export async function getViewerData() {
         stores: JSON.parse(JSON.stringify(stores)),
         departments: JSON.parse(JSON.stringify(departments)),
         role: roles.join(',')
+    };
+}
+
+export const getEmployeeByIdCached = cache(async (id: string) => {
+    return getEmployeeById(id);
+});
+
+export async function getEmployeeStats(filters: { storeId?: string, departmentId?: string, storeDepartmentId?: string } = {}) {
+    await dbConnect();
+    const { VacationRecord, Employee } = require("@/lib/models");
+    const { Types } = require("mongoose");
+
+    // Build Match Stage
+    const matchStage: any = { active: true };
+    if (filters.storeId) matchStage.storeId = filters.storeId;
+    if (filters.storeDepartmentId) matchStage.storeDepartmentId = filters.storeDepartmentId;
+
+    // Total Active Employees
+    const totalEmployees = await Employee.countDocuments(matchStage);
+
+    // Count on Vacation
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const vacationCount = await VacationRecord.aggregate([
+        {
+            $match: {
+                status: 'approved',
+                from: { $lte: today },
+                to: { $gte: today }
+            }
+        },
+        {
+            $lookup: {
+                from: 'employees',
+                localField: 'employeeId',
+                foreignField: '_id',
+                as: 'emp'
+            }
+        },
+        { $unwind: '$emp' },
+        {
+            $match: {
+                'emp.active': true,
+                ...(filters.storeId ? { 'emp.storeId': new Types.ObjectId(filters.storeId) } : {})
+            }
+        },
+        { $count: 'count' }
+    ]);
+
+    return {
+        totalEmployees,
+        onVacation: vacationCount[0]?.count || 0
     };
 }

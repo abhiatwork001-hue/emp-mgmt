@@ -106,27 +106,24 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
 
                     const data = await getEmployeeSchedulesInRange(finalEmployeeId, start, end);
                     // Flatten shifts from schedule days
-                    const foundShifts: any[] = [];
-                    data.forEach((schedule: any) => {
-                        schedule.days.forEach((day: any) => {
-                            // Match date loosely (string) to avoid timezone issues for simple checking
-                            if (new Date(day.date).toDateString() === new Date(formData.date).toDateString()) {
-                                day.shifts.forEach((shift: any) => {
-                                    // Only add if employee is in this shift
-                                    // The action returns schedules where employee is present, but check specifically for shift attribution
-                                    if (shift.employees?.some((e: any) => (e._id || e).toString() === finalEmployeeId)) {
-                                        foundShifts.push({
-                                            ...shift,
-                                            scheduleId: schedule._id,
-                                            storeId: schedule.storeId._id || schedule.storeId, // Ensure ID
-                                            storeDepartmentId: schedule.storeDepartmentId._id || schedule.storeDepartmentId
-                                        });
-                                    }
-                                });
-                            }
-                        });
+
+
+                    const foundShifts = data.filter((shift: any) => {
+                        // Robust Date Comparison
+                        const shiftDateStr = new Date(shift.date).toISOString().split('T')[0];
+                        const formDateStr = formData.date;
+                        return shiftDateStr === formDateStr;
                     });
+
                     setShifts(foundShifts);
+
+                    // FORCE COVERAGE WORKFLOW: Auto-select first shift if found
+                    if (foundShifts.length > 0) {
+                        setSelectedShiftId(foundShifts[0]._id); // API needs _id
+                        // Also auto-select store/dept if not already? (already handled by dropdowns)
+                    } else {
+                        setSelectedShiftId("none");
+                    }
                 } catch (error) {
                     console.error("Failed to fetch shifts", error);
                     setShifts([]);
@@ -161,8 +158,8 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                     scheduleId: targetShift.scheduleId,
                     dayDate: new Date(formData.date),
                     shiftName: targetShift.shiftName,
-                    startTime: targetShift.startTime,
-                    endTime: targetShift.endTime,
+                    startTime: targetShift.startTime || targetShift.start,
+                    endTime: targetShift.endTime || targetShift.end,
                     storeId: targetShift.storeId,
                     storeDepartmentId: targetShift.storeDepartmentId,
                     reason: `${formData.type.toUpperCase()}: ${formData.reason}`, // Prefix type
@@ -259,7 +256,24 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                             <Label htmlFor="date" className="text-sm font-medium">{tc('date')}</Label>
                             <DatePicker
                                 date={formData.date}
-                                setDate={(d) => setFormData(prev => ({ ...prev, date: d ? d.toISOString().split('T')[0] : "" }))}
+                                setDate={(d) => {
+                                    if (!d) {
+                                        setFormData(prev => ({ ...prev, date: "" }));
+                                        return;
+                                    }
+
+                                    // 7-Day Limit Validation
+                                    const now = new Date();
+                                    const diffTime = now.getTime() - d.getTime();
+                                    const diffDays = diffTime / (1000 * 3600 * 24);
+
+                                    if (diffDays > 7) {
+                                        toast.error("Cannot report absence for a date older than 7 days.");
+                                        return;
+                                    }
+
+                                    setFormData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
+                                }}
                                 placeholder="Select date"
                             />
                         </div>
@@ -292,17 +306,18 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                                 No shifts found for this date. A standard absence will be logged.
                             </div>
                         ) : (
-                            <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
+                            <Select value={selectedShiftId || ''} onValueChange={setSelectedShiftId}>
                                 <SelectTrigger className="bg-muted/50 border-border text-foreground">
                                     <SelectValue placeholder="Select a shift to request coverage..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="none">-- Just Report Absence (No Coverage) --</SelectItem>
+                                    {/* <SelectItem value="none">-- Just Report Absence (No Coverage) --</SelectItem> */}
                                     {shifts.map(s => (
                                         <SelectItem key={s._id} value={s._id}>
                                             <div className="flex items-center gap-2">
                                                 <Clock className="w-3 h-3 text-muted-foreground" />
-                                                <span>{s.startTime} - {s.endTime}</span>
+                                                {/* Fix: API returns start/end not startTime/endTime for flat shifts */}
+                                                <span>{s.start || s.startTime} - {s.end || s.endTime}</span>
                                                 <span className="text-muted-foreground opacity-50">| {s.shiftName}</span>
                                             </div>
                                         </SelectItem>
@@ -311,7 +326,7 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                             </Select>
                         )}
                         <p className="text-[10px] text-muted-foreground">
-                            {selectedShiftId !== "none" && shifts.length > 0
+                            {selectedShiftId && shifts.length > 0
                                 ? "Selecting a shift will trigger a coverage request for approval."
                                 : "Standard reporting logs the absence without triggering replacement Logic."}
                         </p>

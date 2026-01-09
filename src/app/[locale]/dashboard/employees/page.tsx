@@ -18,7 +18,7 @@ export default async function EmployeesPage({ searchParams }: EmployeesPageProps
 
     const employee = await getEmployeeById(user.id);
     const roles = (employee?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-    const allowedRoles = ["owner", "admin", "hr", "super_user", "store_manager", "department_head"];
+    const allowedRoles = ["owner", "admin", "hr", "super_user", "store_manager", "department_head", "tech"];
 
     if (!roles.some((r: string) => allowedRoles.includes(r))) {
         redirect("/dashboard");

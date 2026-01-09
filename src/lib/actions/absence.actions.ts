@@ -328,3 +328,17 @@ export async function getPendingAbsenceRequests() {
         .lean();
     return JSON.parse(JSON.stringify(requests));
 }
+
+export async function cancelAbsenceRequest(requestId: string, employeeId: string) {
+    await dbConnect();
+    const request = await AbsenceRequest.findById(requestId);
+    if (!request) throw new Error("Request not found");
+    if (request.employeeId.toString() !== employeeId) throw new Error("Unauthorized");
+    if (request.status !== 'pending') throw new Error("Only pending requests can be cancelled");
+
+    await AbsenceRequest.findByIdAndDelete(requestId);
+
+    revalidatePath("/dashboard/absences");
+    revalidatePath("/dashboard/pending-actions");
+    return { success: true };
+}

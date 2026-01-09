@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActionItemCard } from "./action-item-card";
+
 import {
     getPendingActions
 } from "@/lib/actions/pending-actions.actions";
@@ -29,6 +30,7 @@ import { Inbox, LayoutGrid, Palmtree, AlertCircle, Clock, CalendarDays, Loader2,
 import { useRouter } from "@/i18n/routing";
 import { FinalizeCoverageDialog } from "@/components/coverage/finalize-coverage-dialog";
 import { useRealtimeUpdates } from "@/hooks/use-realtime-updates";
+import { SwapRequestsWidget } from "./swap-requests-widget";
 
 interface PendingActionsClientProps {
     initialData: any;
@@ -166,6 +168,8 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
                         </TabsTrigger>
                     </TabsList>
 
+
+
                     {isLoading && (
                         <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest animate-pulse">
                             <Loader2 className="w-3 h-3 animate-spin" />
@@ -176,6 +180,24 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
 
                 {/* All Actions */}
                 <TabsContent value="all" className="space-y-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
+
+                    {/* Swap Requests Widget */}
+                    {data.myActions?.swaps?.length > 0 && (
+                        <section className="mb-8">
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="h-1 w-12 bg-blue-500/20 rounded-full" />
+                                <h2 className="text-xl font-black tracking-tight">Shift Swaps</h2>
+                            </div>
+                            <div className="h-[300px]">
+                                <SwapRequestsWidget
+                                    incomingRequests={data.myActions.swaps}
+                                    userId={userId}
+                                    currentUserRoles={[]} // Optional for now
+                                />
+                            </div>
+                        </section>
+                    )}
+
                     {/* My Requests Section */}
                     {hasAnyPersonal && (
                         <section className="space-y-4">

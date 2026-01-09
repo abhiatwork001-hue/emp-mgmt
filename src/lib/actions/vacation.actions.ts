@@ -324,7 +324,14 @@ export async function getAllVacationRequests(filters: any = {}) {
     }
 
     const requests = await VacationRequest.find(query)
-        .populate("employeeId", "firstName lastName image email")
+        .populate({
+            path: "employeeId",
+            select: "firstName lastName image email storeId storeDepartmentId position",
+            populate: [
+                { path: "storeId", select: "name" },
+                { path: "storeDepartmentId", select: "name globalDepartmentId" }
+            ]
+        })
         .populate("reviewedBy", "firstName lastName")
         .sort({ createdAt: -1 })
         .lean();
@@ -434,7 +441,19 @@ export async function approveVacationRequest(requestId: string, approverId: stri
     revalidatePath("/dashboard/schedules");
     revalidatePath("/[locale]/dashboard/schedules/[slug]", "page");
     revalidatePath("/dashboard");
-    return JSON.parse(JSON.stringify(request));
+    const populatedRequest = await VacationRequest.findById(request._id)
+        .populate({
+            path: "employeeId",
+            select: "firstName lastName image email storeId storeDepartmentId position",
+            populate: [
+                { path: "storeId", select: "name" },
+                { path: "storeDepartmentId", select: "name" }
+            ]
+        })
+        .populate("reviewedBy", "firstName lastName")
+        .lean();
+
+    return JSON.parse(JSON.stringify(populatedRequest));
 }
 
 export async function rejectVacationRequest(requestId: string, reviewerId: string, reason?: string) {
@@ -488,7 +507,19 @@ export async function rejectVacationRequest(requestId: string, reviewerId: strin
     const emp = await Employee.findById(request.employeeId).select("slug");
     revalidatePath("/dashboard/vacations");
     revalidatePath(`/dashboard/employees/${emp?.slug || request.employeeId}`);
-    return JSON.parse(JSON.stringify(request));
+    const populatedRequest = await VacationRequest.findById(request._id)
+        .populate({
+            path: "employeeId",
+            select: "firstName lastName image email storeId storeDepartmentId position",
+            populate: [
+                { path: "storeId", select: "name" },
+                { path: "storeDepartmentId", select: "name" }
+            ]
+        })
+        .populate("reviewedBy", "firstName lastName")
+        .lean();
+
+    return JSON.parse(JSON.stringify(populatedRequest));
 }
 
 export async function cancelVacationRecord(recordId: string, actorId: string) {

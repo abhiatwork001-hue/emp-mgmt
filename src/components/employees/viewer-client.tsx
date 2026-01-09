@@ -51,6 +51,7 @@ export function ViewerClient({ initialEmployees, stores, departments, role }: Vi
         setLoading(true);
         try {
             const data = await getEmployeeSchedulesInRange(selectedEmployee._id, dateRange.from, dateRange.to);
+            console.log("Fetched Shifts Data:", data);
             setShifts(data);
         } catch (error) {
             console.error("Failed to fetch shifts", error);
@@ -143,7 +144,7 @@ export function ViewerClient({ initialEmployees, stores, departments, role }: Vi
                                             className={cn(
                                                 "w-full flex items-center gap-3 p-2 rounded-xl transition-all group relative overflow-hidden",
                                                 selectedEmployee?._id === emp._id
-                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]"
+                                                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
                                                     : "hover:bg-muted/50 text-foreground"
                                             )}
                                         >
@@ -291,44 +292,79 @@ export function ViewerClient({ initialEmployees, stores, departments, role }: Vi
                                                         <p className="text-xs text-muted-foreground mt-1">Try selecting a different date range or employee.</p>
                                                     </div>
                                                 ) : (
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                        {shifts.map((shift, idx) => (
-                                                            <motion.div
-                                                                key={shift._id}
-                                                                initial={{ opacity: 0, y: 10 }}
-                                                                animate={{ opacity: 1, y: 0 }}
-                                                                transition={{ delay: idx * 0.03 }}
-                                                                className="group relative"
-                                                            >
-                                                                <div className="h-full p-4 rounded-2xl bg-background border border-border/40 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all group-hover:-translate-y-1">
-                                                                    <div className="flex justify-between items-start mb-4">
-                                                                        <div className="space-y-1">
-                                                                            <p className="text-xs font-black uppercase tracking-widest text-primary">{format(new Date(shift.date), "EEEE")}</p>
-                                                                            <p className="text-sm font-bold">{format(new Date(shift.date), "MMM dd, yyyy")}</p>
-                                                                        </div>
-                                                                        <Badge variant="outline" className="rounded-lg bg-muted/5 font-bold border-border/40 uppercase tracking-tighter text-[9px]">
-                                                                            {shift.position}
-                                                                        </Badge>
+                                                    <div className="flex flex-col space-y-2">
+                                                        {shifts.map((shift, idx) => {
+                                                            // Calculate Duration
+                                                            let duration = "0h";
+                                                            try {
+                                                                if (shift.start && shift.end) {
+                                                                    const [h1, m1] = shift.start.split(':').map(Number);
+                                                                    const [h2, m2] = shift.end.split(':').map(Number);
+                                                                    let diff = (h2 * 60 + m2) - (h1 * 60 + m1);
+                                                                    if (diff < 0) diff += 24 * 60; // Overnight
+                                                                    duration = `${Math.floor(diff / 60)}h ${diff % 60 > 0 ? (diff % 60) + 'm' : ''}`;
+                                                                }
+                                                            } catch (e) { }
+
+                                                            const dateObj = shift.date ? new Date(shift.date) : null;
+                                                            const isAbsent = shift.isAbsent;
+
+                                                            return (
+                                                                <div key={shift._id} className={cn(
+                                                                    "flex items-center gap-4 bg-background/50 border border-border/40 p-3 rounded-2xl transition-all hover:bg-background/80 hover:shadow-sm",
+                                                                    isAbsent && "border-red-500/20 bg-red-500/5 hover:bg-red-500/10"
+                                                                )}>
+                                                                    <div className={cn(
+                                                                        "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 font-bold text-sm shadow-inner",
+                                                                        isAbsent ? "bg-red-500/10 text-red-500" : "bg-primary/10 text-primary"
+                                                                    )}>
+                                                                        {format(new Date(shift.date), "dd")}
                                                                     </div>
 
-                                                                    <div className="flex items-center gap-2 mb-4 bg-muted/20 p-2 rounded-xl border border-border/10">
-                                                                        <Clock className="w-4 h-4 text-muted-foreground" />
-                                                                        <span className="text-lg font-black tracking-tight">{shift.start} - {shift.end}</span>
-                                                                    </div>
-
-                                                                    <div className="space-y-2 mt-2 pt-2 border-t border-border/10">
-                                                                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                                                                            <Store className="w-3 h-3" />
-                                                                            <span className="truncate">{shift.store}</span>
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <div className="flex items-center gap-2 mb-1">
+                                                                            <Badge variant="outline" className={cn(
+                                                                                "font-bold uppercase tracking-tighter text-[10px] h-5",
+                                                                                isAbsent ? "border-red-500/30 text-red-500 bg-red-500/5" : "border-primary/20 text-primary bg-primary/5"
+                                                                            )}>
+                                                                                {format(new Date(shift.date), "EEE")}
+                                                                            </Badge>
+                                                                            {isAbsent ? (
+                                                                                <Badge variant="destructive" className="h-5 text-[10px] font-bold uppercase tracking-widest bg-red-500 hover:bg-red-600">
+                                                                                    Absent
+                                                                                </Badge>
+                                                                            ) : (
+                                                                                <Badge variant="secondary" className="h-5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                                                                                    {shift.shiftName}
+                                                                                </Badge>
+                                                                            )}
                                                                         </div>
-                                                                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                                                                            <MapPin className="w-3 h-3" />
-                                                                            <span className="truncate">{shift.department}</span>
-                                                                        </div>
+                                                                        {isAbsent ? (
+                                                                            <div className="flex flex-col">
+                                                                                <span className="text-sm font-bold truncate text-red-500/80 leading-none mb-1 capitalize">
+                                                                                    {shift.absenceType || "Absent"}
+                                                                                </span>
+                                                                                <span className="text-xs text-muted-foreground truncate italic">
+                                                                                    {shift.shiftName.replace("Absent: ", "")}
+                                                                                </span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="flex flex-col">
+                                                                                <span className="text-sm font-bold truncate text-foreground leading-none mb-1">
+                                                                                    {shift.start} - {shift.end}
+                                                                                    <span className="ml-2 text-xs font-normal text-muted-foreground">({duration})</span>
+                                                                                </span>
+                                                                                <span className="text-xs text-muted-foreground truncate flex items-center gap-1.5">
+                                                                                    <Store className="w-3 h-3" /> {shift.store}
+                                                                                    <span className="opacity-30">•</span>
+                                                                                    <MapPin className="w-3 h-3" /> {shift.department}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
-                                                            </motion.div>
-                                                        ))}
+                                                            );
+                                                        })}
                                                     </div>
                                                 )}
                                             </div>

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "ts-node --project tsconfig.seed.json seed/index.ts",
-    "clear-db": "ts-node --project tsconfig.seed.json scripts/clear-database.ts"
+    "clear-db": "ts-node --project tsconfig.seed.json scripts/clear-database.ts",
+    "seed:v3": "ts-node --project tsconfig.seed.json scripts/seed-v3.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

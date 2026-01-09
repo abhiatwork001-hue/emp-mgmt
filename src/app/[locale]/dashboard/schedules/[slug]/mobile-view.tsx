@@ -197,7 +197,11 @@ export function MobileScheduleView({
                                         <div className="space-y-2">
                                             {empShifts.map((shift: any) => {
                                                 const isCurrentUser = currentUserId && emp._id === currentUserId;
-                                                const canPerformActions = isCurrentUser && !isEditMode && !isOff && (onSwapRequest || onAbsenceRequest);
+
+                                                // Actions Logic
+                                                const canSwap = !isCurrentUser && !isEditMode && !isOff && !!onSwapRequest;
+                                                const canAbsence = isCurrentUser && !isEditMode && !isOff && !!onAbsenceRequest;
+                                                const canPerformActions = canSwap || canAbsence;
 
                                                 const ShiftCard = (
                                                     <div
@@ -247,13 +251,13 @@ export function MobileScheduleView({
                                                             <DropdownMenuContent align="end" className="w-48">
                                                                 <DropdownMenuLabel>Shift Actions</DropdownMenuLabel>
                                                                 <DropdownMenuSeparator />
-                                                                {onSwapRequest && (
+                                                                {canSwap && (
                                                                     <DropdownMenuItem onClick={() => onSwapRequest(shift, currentDay.date, emp._id)}>
                                                                         <ArrowLeftRight className="mr-2 h-4 w-4" />
                                                                         <span>Swap Shift</span>
                                                                     </DropdownMenuItem>
                                                                 )}
-                                                                {onAbsenceRequest && (
+                                                                {canAbsence && (
                                                                     <DropdownMenuItem onClick={() => onAbsenceRequest(shift, currentDay.date, emp._id)}>
                                                                         <CalendarOff className="mr-2 h-4 w-4" />
                                                                         <span>Request Absence</span>

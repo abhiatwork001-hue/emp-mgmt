@@ -7,6 +7,7 @@ import {
     OvertimeRequest,
     Schedule,
     ShiftCoverageRequest,
+    ShiftSwapRequest,
     Employee
 } from "@/lib/models";
 import { getServerSession } from "next-auth";
@@ -85,6 +86,16 @@ export async function getPendingActions() {
         return { ...req, coworkers };
     }));
 
+    // 1c. Incoming Shift Swap Requests
+    const incomingSwaps = await ShiftSwapRequest.find({
+        targetUserId: userId,
+        status: 'pending'
+    })
+        .populate('requestorId', 'firstName lastName image slug')
+        .populate('targetUserId', 'firstName lastName image')
+        .sort({ createdAt: -1 })
+        .lean();
+
     // 2. Approvals (for Managers)
     const isApprover = userRoles.some((r: string) =>
         ["owner", "hr", "admin", "super_user", "tech", "store_manager"].includes(r.toLowerCase())
@@ -159,7 +170,8 @@ export async function getPendingActions() {
             vacations: JSON.parse(JSON.stringify(myVacations)),
             absences: JSON.parse(JSON.stringify(myAbsences)),
             overtime: JSON.parse(JSON.stringify(myOvertime)),
-            coverage: JSON.parse(JSON.stringify(myCoverage))
+            coverage: JSON.parse(JSON.stringify(myCoverage)),
+            swaps: JSON.parse(JSON.stringify(incomingSwaps))
         },
         availableCoverage: JSON.parse(JSON.stringify(availableCoverage)),
         approvals: JSON.parse(JSON.stringify(approvals))

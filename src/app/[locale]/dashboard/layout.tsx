@@ -2,13 +2,15 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { getEmployeeById } from "@/lib/actions/employee.actions";
+import { getEmployeeById, getEmployeeByIdCached } from "@/lib/actions/employee.actions";
 import { SetupPasswordView } from "@/components/auth/setup-password-view";
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { ContentWrapper } from "@/components/layout/content-wrapper";
 import { redirect } from "next/navigation";
 import { hasPendingCoverageActions } from "@/lib/actions/coverage.actions";
 import { hasRecipesForUser } from "@/lib/actions/recipe.actions";
+import { getTranslations } from "next-intl/server";
+import { routes } from "@/lib/sidebar-config";
 
 import { RealtimeToaster } from "@/components/layout/realtime-toaster";
 
@@ -25,7 +27,7 @@ export default async function DashboardLayout({
     const userId = user.id;
 
     // Fetch full employee to get department info
-    const employee = userId ? await getEmployeeById(userId) : null;
+    const employee = userId ? await getEmployeeByIdCached(userId) : null;
 
     // If session exists but employee not found, redirect to login to clear session
     if (session && userId && !employee) {
@@ -77,8 +79,13 @@ export default async function DashboardLayout({
     // 2. Recipe Visibility
     const hasRecipes = await hasRecipesForUser();
 
-    // 3. Approvals Visibility (for Managers)
-    const hasApprovals = isPrivileged;
+    // 3. Translations for Sidebar
+    const t = await getTranslations("Common");
+    const sidebarTranslations: { [key: string]: string } = {};
+    routes.forEach(r => {
+        const key = r.label.toLowerCase();
+        sidebarTranslations[key] = t(key);
+    });
 
     return (
         <div className="flex h-screen overflow-hidden bg-background text-foreground">
@@ -92,6 +99,7 @@ export default async function DashboardLayout({
                             storeSlug={storeSlug}
                             hasRecipes={hasRecipes}
                             hasCoverage={hasCoverageActions}
+                            translations={sidebarTranslations}
                         />
                     </div>
 

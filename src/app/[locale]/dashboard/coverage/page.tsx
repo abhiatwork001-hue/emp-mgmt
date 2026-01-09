@@ -208,11 +208,13 @@ function RequestCard({ request, statusLabel, statusColor }: any) {
 
                     <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
-                            <AvatarImage src={request.originalEmployeeId.image} />
-                            <AvatarFallback>{request.originalEmployeeId.firstName[0]}</AvatarFallback>
+                            <AvatarImage src={request.originalEmployeeId?.image} />
+                            <AvatarFallback>{request.originalEmployeeId?.firstName?.[0] || '?'}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <p className="text-sm font-medium">{request.originalEmployeeId.firstName} {request.originalEmployeeId.lastName}</p>
+                            <p className="text-sm font-medium">
+                                {request.originalEmployeeId ? `${request.originalEmployeeId.firstName} ${request.originalEmployeeId.lastName}` : "Unknown Employee"}
+                            </p>
                             <p className="text-xs text-red-400 font-medium">Out: {request.reason}</p>
                         </div>
                     </div>
