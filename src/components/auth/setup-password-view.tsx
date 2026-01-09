@@ -103,6 +103,7 @@ export function SetupPasswordView({ userId: initialUserId }: { userId?: string }
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
+                                        suppressHydrationWarning
                                     />
                                 </div>
                             </div>
@@ -118,6 +119,7 @@ export function SetupPasswordView({ userId: initialUserId }: { userId?: string }
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         required
+                                        suppressHydrationWarning
                                     />
                                 </div>
                             </div>

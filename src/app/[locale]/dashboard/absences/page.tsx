@@ -27,15 +27,19 @@ export default async function AbsencesPage({ searchParams }: { searchParams: Pro
     }
 
     let storeIdFilter = undefined;
+    let deptIdFilter = undefined;
     const isStoreLevel = roles.some((r: string) => ["store_manager", "store_department_head"].includes(r));
     const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "department_head"].includes(r));
 
     if (!isGlobalLevel && isStoreLevel) {
         storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
+        if (roles.includes("store_department_head")) {
+            deptIdFilter = (employee.storeDepartmentId?._id || employee.storeDepartmentId)?.toString();
+        }
     }
 
     const currentYear = year ? parseInt(year) : new Date().getFullYear();
-    const requests = await getAllAbsenceRequests({ storeId: storeIdFilter, year: currentYear });
+    const requests = await getAllAbsenceRequests({ storeId: storeIdFilter, storeDepartmentId: deptIdFilter, year: currentYear });
 
     const pendingCount = requests.filter((r: any) => r.status === 'pending').length;
     const historyCount = requests.filter((r: any) => r.status !== 'pending').length;

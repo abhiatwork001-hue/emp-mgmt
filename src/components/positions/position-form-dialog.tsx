@@ -31,7 +31,8 @@ import { Plus, Edit, Globe } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge"; // Added Badge import
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
 const formSchema = z.object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -201,45 +202,45 @@ export function PositionFormDialog({ position, trigger, availableRoles = [] }: P
                                     </div>
 
                                     <div className="grid grid-cols-1 gap-6">
-                                        {PERMISSION_GROUPS.map((group) => (
-                                            <div key={group.label} className="space-y-3">
-                                                <Badge variant="outline" className="rounded-sm font-bold text-[10px] tracking-widest uppercase bg-muted/50 border-primary/20">{group.label}</Badge>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                    {group.permissions.map((perm) => (
-                                                        <FormField
-                                                            key={perm.id}
-                                                            control={form.control}
-                                                            name="permissions"
-                                                            render={({ field }) => {
-                                                                const isChecked = field.value?.includes(perm.id);
-                                                                return (
-                                                                    <FormItem
-                                                                        onClick={() => {
-                                                                            const newVal = isChecked
-                                                                                ? field.value.filter(v => v !== perm.id)
-                                                                                : [...(field.value || []), perm.id];
-                                                                            field.onChange(newVal);
-                                                                        }}
-                                                                        className={cn(
-                                                                            "flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-3 cursor-pointer transition-all",
-                                                                            isChecked ? "bg-primary/5 border-primary/30 ring-1 ring-primary/20" : "bg-card hover:bg-muted/50 border-border/60"
-                                                                        )}
-                                                                    >
-                                                                        <FormControl>
+                                        <FormField
+                                            control={form.control}
+                                            name="permissions"
+                                            render={({ field }) => (
+                                                <>
+                                                    {PERMISSION_GROUPS.map((group) => (
+                                                        <div key={group.label} className="space-y-3">
+                                                            <Badge variant="outline" className="rounded-sm font-bold text-[10px] tracking-widest uppercase bg-muted/50 border-primary/20">{group.label}</Badge>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                {group.permissions.map((perm) => {
+                                                                    const isChecked = field.value?.includes(perm.id);
+                                                                    return (
+                                                                        <div
+                                                                            key={perm.id}
+                                                                            onClick={() => {
+                                                                                const newVal = isChecked
+                                                                                    ? field.value.filter((v: string) => v !== perm.id)
+                                                                                    : [...(field.value || []), perm.id];
+                                                                                field.onChange(newVal);
+                                                                            }}
+                                                                            className={cn(
+                                                                                "flex flex-row items-start space-x-3 space-y-0 rounded-xl border p-3 cursor-pointer transition-all select-none",
+                                                                                isChecked ? "bg-primary/5 border-primary/30 ring-1 ring-primary/20" : "bg-card hover:bg-muted/50 border-border/60"
+                                                                            )}
+                                                                        >
                                                                             <Checkbox checked={isChecked} />
-                                                                        </FormControl>
-                                                                        <div className="space-y-1">
-                                                                            <FormLabel className="text-sm font-bold cursor-pointer">{perm.label}</FormLabel>
-                                                                            <p className="text-[10px] text-muted-foreground leading-tight">{perm.description}</p>
+                                                                            <div className="space-y-1">
+                                                                                <Label className="text-sm font-bold cursor-pointer pointer-events-none">{perm.label}</Label>
+                                                                                <p className="text-[10px] text-muted-foreground leading-tight pointer-events-none">{perm.description}</p>
+                                                                            </div>
                                                                         </div>
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
                                                     ))}
-                                                </div>
-                                            </div>
-                                        ))}
+                                                </>
+                                            )}
+                                        />
                                     </div>
                                 </div>
 

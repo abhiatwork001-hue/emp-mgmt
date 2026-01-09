@@ -92,9 +92,11 @@ export function TaskBoard({
             if (!relevantDeptIds.some(did => String(did) === filterDept)) return false;
         }
 
-        if (filter === 'all') return task.status !== 'completed';
-        if (filter === 'completed') return task.status === 'completed';
-        if (filter === 'high_priority') return task.priority === 'high' && task.status !== 'completed';
+        const isCompletedByUser = task.completedBy?.some((cb: any) => cb.userId === currentUserId) || task.status === 'completed';
+
+        if (filter === 'all') return !isCompletedByUser;
+        if (filter === 'completed') return isCompletedByUser;
+        if (filter === 'high_priority') return task.priority === 'high' && !isCompletedByUser;
         return true;
     });
 

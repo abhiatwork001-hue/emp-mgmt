@@ -41,21 +41,25 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
     }
 
     let storeIdFilter = undefined;
+    let deptIdFilter = undefined;
     const isStoreLevel = roles.some((r: string) => ["store_manager", "store_department_head"].includes(r));
     const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "tech", "department_head"].includes(r));
 
     if (!isGlobalLevel && isStoreLevel) {
         storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
+        if (roles.includes("store_department_head")) {
+            deptIdFilter = (employee.storeDepartmentId?._id || employee.storeDepartmentId)?.toString();
+        }
     }
 
     const currentYear = year ? parseInt(year) : new Date().getFullYear();
 
     // Parallel fetch for data
     const [requests, stores, departments, absences] = await Promise.all([
-        getAllVacationRequests({ storeId: storeIdFilter, year: currentYear }),
+        getAllVacationRequests({ storeId: storeIdFilter, storeDepartmentId: deptIdFilter, year: currentYear }),
         getAllStores(),
         getAllGlobalDepartments(),
-        getAllAbsenceRequests({ storeId: storeIdFilter, year: currentYear })
+        getAllAbsenceRequests({ storeId: storeIdFilter, storeDepartmentId: deptIdFilter, year: currentYear })
     ]);
 
     const pendingCount = requests.filter((r: any) => r.status === 'pending').length;

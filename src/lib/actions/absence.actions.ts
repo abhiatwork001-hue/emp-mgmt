@@ -90,12 +90,30 @@ export async function getAllAbsenceRequests(filters: any = {}) {
     }
 
     if (filters.storeId) {
-        const employeesInStore = await Employee.find({ storeId: filters.storeId }).select("_id");
+        const storeQuery: any = { storeId: filters.storeId };
+        if (filters.storeDepartmentId) {
+            storeQuery.storeDepartmentId = filters.storeDepartmentId;
+        }
+
+        const employeesInStore = await Employee.find(storeQuery).select("_id");
         const empIds = employeesInStore.map(e => e._id);
+
         if (query.employeeId) {
-            if (!empIds.some(id => id.toString() === query.employeeId.toString())) {
-                return [];
-            }
+            const existing = Array.isArray(query.employeeId.$in) ? query.employeeId.$in : [query.employeeId];
+            query.employeeId = {
+                $in: empIds.filter((id: any) => existing.some((ex: any) => ex.toString() === id.toString()))
+            };
+        } else {
+            query.employeeId = { $in: empIds };
+        }
+    } else if (filters.storeDepartmentId) {
+        const employeesInDept = await Employee.find({ storeDepartmentId: filters.storeDepartmentId }).select("_id");
+        const empIds = employeesInDept.map(e => e._id);
+        if (query.employeeId) {
+            const existing = Array.isArray(query.employeeId.$in) ? query.employeeId.$in : [query.employeeId];
+            query.employeeId = {
+                $in: empIds.filter((id: any) => existing.some((ex: any) => ex.toString() === id.toString()))
+            };
         } else {
             query.employeeId = { $in: empIds };
         }
