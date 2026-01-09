@@ -43,12 +43,23 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
     let storeIdFilter = undefined;
     let deptIdFilter = undefined;
     const isStoreLevel = roles.some((r: string) => ["store_manager", "store_department_head"].includes(r));
-    const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "tech", "department_head"].includes(r));
+    // department_head removed from global level to prevent leak. 
+    // Only true Admins/HR/Tech see everything.
+    const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "tech"].includes(r));
 
-    if (!isGlobalLevel && isStoreLevel) {
-        storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
-        if (roles.includes("store_department_head")) {
-            deptIdFilter = (employee.storeDepartmentId?._id || employee.storeDepartmentId)?.toString();
+    if (!isGlobalLevel) {
+        // Enforce filters for non-global users
+        if (isStoreLevel) {
+            storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
+            if (!storeIdFilter) storeIdFilter = "000000000000000000000000"; // Block if no store
+
+            if (roles.includes("store_department_head")) {
+                deptIdFilter = (employee.storeDepartmentId?._id || employee.storeDepartmentId)?.toString();
+                if (!deptIdFilter) deptIdFilter = "000000000000000000000000"; // Block if no dept
+            }
+        } else {
+            // If not Global AND not Store Level (e.g. some other weird role), block everything.
+            storeIdFilter = "000000000000000000000000";
         }
     }
 

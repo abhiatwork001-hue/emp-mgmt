@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useEffect } from "react";
+import { pusherClient } from "@/lib/pusher";
 
 
 // ... imports
@@ -40,6 +42,30 @@ export function TaskBoard({
     const [searchTerm, setSearchTerm] = useState("");
     const [filterStore, setFilterStore] = useState("all");
     const [filterDept, setFilterDept] = useState("all");
+
+    // Real-time updates
+    useEffect(() => {
+        if (!currentUserId) return;
+
+        const handleTaskUpdate = (data: any) => {
+            // We can be more granular here if we want, replacing state, but router.refresh() is safest single source of truth
+            toast.info("Tasks updated");
+            router.refresh();
+        };
+
+        const globalChannel = pusherClient.subscribe("global");
+        const userChannel = pusherClient.subscribe(`user-${currentUserId}`);
+
+        globalChannel.bind("task:updated", handleTaskUpdate);
+        userChannel.bind("task:updated", handleTaskUpdate);
+
+        return () => {
+            pusherClient.unsubscribe("global");
+            pusherClient.unsubscribe(`user-${currentUserId}`);
+            globalChannel.unbind("task:updated", handleTaskUpdate);
+            userChannel.unbind("task:updated", handleTaskUpdate);
+        };
+    }, [currentUserId, router]);
 
     // Permission Check: Can create tasks?
     // Employee cannot create tasks (unless they are also something else)

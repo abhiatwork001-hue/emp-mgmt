@@ -45,7 +45,7 @@ export function EmployeeDashboard({
     const hasSchedule = currentScheduleId && currentScheduleId !== "null";
 
     const sidebarContent = {
-        // todo: <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />,
+        todo: <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />,
         notifications: (
             <div className="space-y-6">
                 <EmployeePendingActionsWidget
@@ -56,7 +56,6 @@ export function EmployeeDashboard({
                     myCoverageRequests={activeActions.coverageRequests}
                     userId={employee._id}
                 />
-                <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />
                 <ReminderWidget userId={employee._id} role="employee" />
             </div>
         )

@@ -25,6 +25,24 @@ interface StoreEmployeesListProps {
     currentUserRoles: string[];
 }
 
+const isWorkingNow = (details: string | undefined) => {
+    if (!details || !details.includes(' - ')) return false;
+    const [start, end] = details.split(' - ');
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+
+    const [startH, startM] = start.split(':').map(Number);
+    const [endH, endM] = end.split(':').map(Number);
+
+    const startTime = startH * 60 + startM;
+    let endTime = endH * 60 + endM;
+
+    // Handle overnight shifts (end time < start time)
+    if (endTime < startTime) endTime += 24 * 60;
+
+    return currentTime >= startTime && currentTime <= endTime;
+};
+
 export function StoreEmployeesList({
     storeId,
     employees,
@@ -35,6 +53,7 @@ export function StoreEmployeesList({
     const [searchTerm, setSearchTerm] = useState("");
     const [departmentFilter, setDepartmentFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [activeFilter, setActiveFilter] = useState("all");
     const [editMode, setEditMode] = useState(false);
 
     // Ensure storeId is a string for child components
@@ -50,9 +69,17 @@ export function StoreEmployeesList({
             emp.departmentId === departmentFilter ||
             (emp.departments && emp.departments.some((d: any) => d._id === departmentFilter || d === departmentFilter));
 
-        const matchesStatus = statusFilter === "all" || emp.todayStatus === statusFilter;
+        let matchesStatus = true;
+        if (statusFilter === "working_now") {
+            matchesStatus = emp.todayStatus === "working" && isWorkingNow(emp.statusDetails);
+        } else if (statusFilter !== "all") {
+            matchesStatus = emp.todayStatus === statusFilter;
+        }
 
-        return matchesSearch && matchesDepartment && matchesStatus;
+        const matchesActive = activeFilter === "all" ||
+            (activeFilter === "active" ? (emp.isActive !== false) : (emp.isActive === false));
+
+        return matchesSearch && matchesDepartment && matchesStatus && matchesActive;
     });
 
     return (
@@ -70,16 +97,40 @@ export function StoreEmployeesList({
                         />
                     </div>
                     <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-                        <SelectTrigger className="w-[150px]">
+                        <SelectTrigger className="w-[140px]">
                             <SelectValue placeholder="Department" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Departments</SelectItem>
+                            <SelectItem value="all">All Depts</SelectItem>
                             {departments.map((dept: any) => (
                                 <SelectItem key={dept._id} value={dept._id}>
                                     {dept.name}
                                 </SelectItem>
                             ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-[140px]">
+                            <SelectValue placeholder="Status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Statuses</SelectItem>
+                            <SelectItem value="working">Working Today</SelectItem>
+                            <SelectItem value="working_now">Working Now</SelectItem>
+                            <SelectItem value="day_off">Day Off</SelectItem>
+                            <SelectItem value="leave">On Leave</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    <Select value={activeFilter} onValueChange={setActiveFilter}>
+                        <SelectTrigger className="w-[110px]">
+                            <SelectValue placeholder="Active" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="inactive">Inactive</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

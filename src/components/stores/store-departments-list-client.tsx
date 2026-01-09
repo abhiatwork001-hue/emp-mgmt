@@ -12,9 +12,10 @@ interface StoreDepartmentsListClientProps {
     storeDepartments: any[];
     storeSlug: string;
     storeId: string;
+    canManage: boolean;
 }
 
-export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeId }: StoreDepartmentsListClientProps) {
+export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeId, canManage }: StoreDepartmentsListClientProps) {
     const [isEditing, setIsEditing] = useState(false);
 
     return (
@@ -26,15 +27,17 @@ export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeI
                 </div>
                 <div className="flex gap-2">
                     {/* AddDepartmentDialog needs ID for backend */}
-                    <AddDepartmentDialog storeId={storeId} />
-                    <Button
-                        variant={isEditing ? "secondary" : "outline"}
-                        size="sm"
-                        className="border-zinc-700 hover:bg-zinc-800"
-                        onClick={() => setIsEditing(!isEditing)}
-                    >
-                        {isEditing ? "Done Editing" : "Edit Departments"}
-                    </Button>
+                    {canManage && <AddDepartmentDialog storeId={storeId} />}
+                    {canManage && (
+                        <Button
+                            variant={isEditing ? "secondary" : "outline"}
+                            size="sm"
+                            className="border-zinc-700 hover:bg-zinc-800"
+                            onClick={() => setIsEditing(!isEditing)}
+                        >
+                            {isEditing ? "Done Editing" : "Manage Depts"}
+                        </Button>
+                    )}
                 </div>
             </CardHeader>
             <CardContent>

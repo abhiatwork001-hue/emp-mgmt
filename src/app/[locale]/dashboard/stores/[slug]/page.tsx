@@ -37,7 +37,7 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
     const userRoles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
 
     // Permission Logic
-    const isGlobalAdmin = userRoles.some((r: string) => ["admin", "owner", "super_user", "hr"].includes(r));
+    const isGlobalAdmin = userRoles.some((r: string) => ["admin", "owner", "super_user", "hr", "tech"].includes(r));
     const isStoreManager = userRoles.includes("store_manager");
 
     // "employee and storeDepartmentHead should not see the edit store Button"
@@ -166,7 +166,7 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
                             </Link>
                         </CardHeader>
                         <CardContent>
-                            <StoreDepartmentsListClient storeDepartments={storeDepartments} storeSlug={store.slug} storeId={store._id.toString()} />
+                            <StoreDepartmentsListClient storeDepartments={storeDepartments} storeSlug={store.slug} storeId={store._id.toString()} canManage={canEditStore} />
                         </CardContent>
                     </Card>
 

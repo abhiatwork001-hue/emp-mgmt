@@ -19,6 +19,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ArrowLeftRight, CalendarOff } from "lucide-react";
+import { PwaInstallPrompt } from "@/components/pwa/install-prompt";
 
 interface MobileScheduleViewProps {
     employees: any[];
@@ -322,6 +323,7 @@ export function MobileScheduleView({
                     </div>
                 )}
             </div>
+            <PwaInstallPrompt />
         </div>
     );
 }

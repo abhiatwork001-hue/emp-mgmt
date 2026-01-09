@@ -661,10 +661,10 @@ function VacationRequestCard({ req, onAction, loading, isHistory, canManage }: {
                                 {tc(req.status)}
                             </Badge>
                         ) : canManage ? (
-                            <div className="flex gap-2 w-full md:w-auto">
+                            <div className="flex flex-wrap gap-2 w-full md:w-auto">
                                 <Button
                                     size="sm"
-                                    className="bg-emerald-500 hover:bg-emerald-600 text-white flex-1 md:flex-none shadow-sm"
+                                    className="bg-emerald-500 hover:bg-emerald-600 text-white flex-1 md:flex-none shadow-sm min-w-[100px]"
                                     onClick={() => onAction(req._id, 'approve')}
                                     disabled={loading}
                                 >
@@ -674,7 +674,7 @@ function VacationRequestCard({ req, onAction, loading, isHistory, canManage }: {
                                 <Button
                                     size="sm"
                                     variant="outline"
-                                    className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 flex-1 md:flex-none"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20 flex-1 md:flex-none min-w-[100px]"
                                     onClick={() => onAction(req._id, 'reject')}
                                     disabled={loading}
                                 >

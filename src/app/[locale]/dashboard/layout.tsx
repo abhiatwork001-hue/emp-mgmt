@@ -13,6 +13,7 @@ import { getTranslations } from "next-intl/server";
 import { routes } from "@/lib/sidebar-config";
 
 import { RealtimeToaster } from "@/components/layout/realtime-toaster";
+import { PwaInstallPrompt } from "@/components/pwa/install-prompt";
 
 export default async function DashboardLayout({
     children,
@@ -90,6 +91,7 @@ export default async function DashboardLayout({
     return (
         <div className="flex h-screen overflow-hidden bg-background text-foreground">
             {userId && <RealtimeToaster userId={userId} />}
+            <PwaInstallPrompt />
             {isPasswordChanged ? (
                 <>
                     <div className="hidden md:flex h-full z-[80] bg-sidebar text-sidebar-foreground border-r border-sidebar-border shrink-0 overflow-visible print-hidden">

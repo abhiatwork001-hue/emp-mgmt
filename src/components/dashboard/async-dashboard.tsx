@@ -71,7 +71,8 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             getPendingOvertimeRequests({ storeId: sid }),
             getPendingSchedules(sid),
             getPendingCoverageApprovals(sid),
-            storeId ? getEmployeesByStore(storeId) : getEmployeeStats({})
+            // STRICT SECURITY: If sid (storeId) is missing for a store manager, we MUST NOT return stats.
+            storeId ? getEmployeesByStore(storeId) : Promise.resolve([])
         ]);
 
         // Schedule Calculation
@@ -286,30 +287,48 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
     }
 
     if (viewRole === "department_head") {
-        const [pendingVacations, pendingAbsences, { employees: allEmployees }] = await Promise.all([
-            getAllVacationRequests({ status: 'pending' }),
-            getAllAbsenceRequests({ status: 'pending' }),
-            getAllEmployees({}, 1, 10000)
-        ]);
+        // Security Patch: If they have a StoreDepartmentId, they are likely a Store Dept Head misclassified or with dual roles.
+        // We must restrict them if they are not truly global.
+        const effectiveDeptId = employee.storeDepartmentId?._id || employee.storeDepartmentId;
+
+        let pendingVacations, pendingAbsences, allEmployees;
+
+        if (effectiveDeptId) {
+            const queryId = effectiveDeptId.toString();
+            [pendingVacations, pendingAbsences, { employees: allEmployees }] = await Promise.all([
+                getAllVacationRequests({ status: 'pending', storeDepartmentId: queryId }),
+                getAllAbsenceRequests({ status: 'pending', storeDepartmentId: queryId }),
+                getAllEmployees({ storeDepartmentId: queryId }, 1, 10000)
+            ]);
+        } else {
+            // Truly global Department Head (or unassigned)
+            [pendingVacations, pendingAbsences, { employees: allEmployees }] = await Promise.all([
+                getAllVacationRequests({ status: 'pending' }),
+                getAllAbsenceRequests({ status: 'pending' }),
+                getAllEmployees({}, 1, 10000)
+            ]);
+        }
+
         const pendingRequests = mergeRequests(pendingVacations, pendingAbsences, [], []);
         const deptStats = {
             totalEmployees: allEmployees.length,
             onVacation: allEmployees.filter((e: any) => e.status === 'vacation').length,
             todayShifts: 0
         };
-        return <DepartmentHeadDashboard employee={employee} pendingRequests={pendingRequests} deptStats={deptStats} activeActions={activeActions} />;
+        return <DepartmentHeadDashboard employee={employee} pendingRequests={pendingRequests} deptStats={deptStats} activeActions={activeActions} personalTodos={personalTodos} />;
     }
 
     if (viewRole === "store_department_head") {
         const deptId = employee.storeDepartmentId?._id || employee.storeDepartmentId;
-        let [pendingVacations, pendingAbsences] = await Promise.all([
-            getAllVacationRequests({ status: 'pending' }),
-            getAllAbsenceRequests({ status: 'pending' })
+        // Secure: Filter at DB level. If no deptId, prevent fetching (pass dummy or empty).
+        const queryDeptId = deptId ? deptId.toString() : "000000000000000000000000";
+
+        // Pass storeDepartmentId to actions
+        const [pendingVacations, pendingAbsences] = await Promise.all([
+            getAllVacationRequests({ status: 'pending', storeDepartmentId: queryDeptId }),
+            getAllAbsenceRequests({ status: 'pending', storeDepartmentId: queryDeptId })
         ]);
-        if (deptId) {
-            pendingVacations = pendingVacations.filter((r: any) => r.employeeId?.storeDepartmentId === deptId);
-            pendingAbsences = pendingAbsences.filter((r: any) => r.employeeId?.storeDepartmentId === deptId);
-        }
+
         const pendingRequests = mergeRequests(pendingVacations, pendingAbsences, [], []);
         const { employees: deptEmployees } = await getAllEmployees({ storeDepartmentId: deptId }, 1, 10000);
         const deptStats = {
@@ -317,7 +336,7 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             onVacation: deptEmployees.filter((e: any) => e.status === 'vacation').length,
             todayShifts: 0
         };
-        return <StoreDepartmentHeadDashboard employee={employee} pendingRequests={pendingRequests} deptStats={deptStats} activeActions={activeActions} />;
+        return <StoreDepartmentHeadDashboard employee={employee} pendingRequests={pendingRequests} deptStats={deptStats} activeActions={activeActions} personalTodos={personalTodos} />;
     }
 
     // Employee View

@@ -71,17 +71,17 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
             <ShiftOfferList employeeId={employeeId} />
 
             <Card className="bg-card border-border">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 pb-2">
                     <div>
                         <CardTitle className="text-lg">Weekly Schedule</CardTitle>
                         <p className="text-sm text-muted-foreground">View working hours and shifts</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                         {scheduleData?.primaryScheduleSlug && (
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="mr-2"
+                                className="mr-0 sm:mr-2 w-full sm:w-auto justify-center"
                                 asChild
                             >
                                 <Link href={`/dashboard/schedules/${scheduleData.primaryScheduleSlug}`}>
@@ -90,14 +90,14 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                 </Link>
                             </Button>
                         )}
-                        <div className="flex items-center gap-2 bg-muted p-1 rounded-md border border-border">
-                            <Button variant="ghost" size="icon" onClick={handlePrevWeek} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                        <div className="flex items-center justify-between sm:justify-start gap-2 bg-muted p-1 rounded-md border border-border w-full sm:w-auto">
+                            <Button variant="ghost" size="icon" onClick={handlePrevWeek} className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0">
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <span className="text-sm font-medium w-48 text-center">
+                            <span className="text-sm font-medium flex-1 sm:w-48 text-center truncate px-2">
                                 {format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d, yyyy')}
                             </span>
-                            <Button variant="ghost" size="icon" onClick={handleNextWeek} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                            <Button variant="ghost" size="icon" onClick={handleNextWeek} className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0">
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>

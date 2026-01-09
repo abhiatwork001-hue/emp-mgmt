@@ -29,12 +29,21 @@ export default async function AbsencesPage({ searchParams }: { searchParams: Pro
     let storeIdFilter = undefined;
     let deptIdFilter = undefined;
     const isStoreLevel = roles.some((r: string) => ["store_manager", "store_department_head"].includes(r));
-    const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "department_head"].includes(r));
+    // department_head removed from global level
+    const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr"].includes(r));
 
-    if (!isGlobalLevel && isStoreLevel) {
-        storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
-        if (roles.includes("store_department_head")) {
-            deptIdFilter = (employee.storeDepartmentId?._id || employee.storeDepartmentId)?.toString();
+    if (!isGlobalLevel) {
+        if (isStoreLevel) {
+            storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
+            if (!storeIdFilter) storeIdFilter = "000000000000000000000000";
+
+            if (roles.includes("store_department_head")) {
+                deptIdFilter = (employee.storeDepartmentId?._id || employee.storeDepartmentId)?.toString();
+                if (!deptIdFilter) deptIdFilter = "000000000000000000000000";
+            }
+        } else {
+            // Block access if no relevant roles
+            storeIdFilter = "000000000000000000000000";
         }
     }
 
