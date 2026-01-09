@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 import {
     Select,
     SelectContent,
@@ -22,9 +23,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Plus, X, ListTodo, Users, Building2, Briefcase } from "lucide-react";
+import { Plus, X, ListTodo, Users, Building2, Briefcase, Search } from "lucide-react";
 import { DatePicker } from "@/components/ui/date-picker";
 import { createTask } from "@/lib/actions/task.actions";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Assume we fetch these lists from props or API context
 // For simplicity in this iteration, passing as props or mocking could work, 
@@ -112,6 +114,9 @@ export function CreateTaskDialog({
     const [scope, setScope] = useState("");
     const [selectedEntityId, setSelectedEntityId] = useState("");
     const [selectedSubOption, setSelectedSubOption] = useState("all");
+    const [employeeSearch, setEmployeeSearch] = useState("");
+    const [empFilterStore, setEmpFilterStore] = useState("all");
+    const [empFilterDept, setEmpFilterDept] = useState("all");
 
     // Determine default scope on open or role change
     useEffect(() => {
@@ -196,7 +201,7 @@ export function CreateTaskDialog({
             if (user) {
                 newAssignment = {
                     type: 'individual',
-                    id: user._id,
+                    id: String(user._id),
                     label: `👤 ${user.firstName} ${user.lastName}`
                 };
             }
@@ -208,7 +213,7 @@ export function CreateTaskDialog({
                 const labelSuffix = selectedSubOption === 'managers' ? '(Managers Only)' : '(All Staff)';
                 newAssignment = {
                     type: type,
-                    id: store._id,
+                    id: String(store._id),
                     label: `🏪 Store: ${store.name} ${labelSuffix}`
                 };
             }
@@ -218,7 +223,7 @@ export function CreateTaskDialog({
             if (dept) {
                 newAssignment = {
                     type: 'store_department_all',
-                    id: dept._id,
+                    id: String(dept._id),
                     label: `📂 Dept: ${dept.name}`
                 };
             }
@@ -285,6 +290,7 @@ export function CreateTaskDialog({
 
         if (res.success) {
             onOpenChange(false);
+            toast.success("Task created successfully");
             // Reset state
             setTitle("");
             setDescription("");
@@ -292,6 +298,8 @@ export function CreateTaskDialog({
             setRequiresSubmission(false);
             setRequiredFileNames([]);
             setAssignments(initialAssignments);
+        } else {
+            toast.error(res.error || "Failed to create task");
         }
     };
 
@@ -450,14 +458,92 @@ export function CreateTaskDialog({
                                         <Label className="text-xs mb-1 block text-muted-foreground">Target</Label>
 
                                         {scope === 'individual' && (
-                                            <Select value={selectedEntityId} onValueChange={setSelectedEntityId}>
-                                                <SelectTrigger><SelectValue placeholder="Select Employee..." /></SelectTrigger>
-                                                <SelectContent>
-                                                    {(isStoreDeptHead ? deptHeadEmployees : availableEmployees).map(m => (
-                                                        <SelectItem key={m._id} value={m._id}>{m.firstName} {m.lastName}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <div className="space-y-3 p-3 border rounded-md bg-background/50">
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    {(isGlobalAdmin || availableStores.length > 1) && (
+                                                        <Select value={empFilterStore} onValueChange={setEmpFilterStore}>
+                                                            <SelectTrigger className="h-8 text-xs bg-background">
+                                                                <SelectValue placeholder="Filter Store" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="all">All Stores</SelectItem>
+                                                                {availableStores.map(s => (
+                                                                    <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
+
+                                                    <Select value={empFilterDept} onValueChange={setEmpFilterDept}>
+                                                        <SelectTrigger className="h-8 text-xs bg-background">
+                                                            <SelectValue placeholder="Filter Dept" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="all">All Depts</SelectItem>
+                                                            {availableDepts.map(d => (
+                                                                <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+
+                                                <div className="relative">
+                                                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                                                    <Input
+                                                        placeholder="Search by name..."
+                                                        className="h-8 pl-8 text-xs bg-background"
+                                                        value={employeeSearch}
+                                                        onChange={(e) => setEmployeeSearch(e.target.value)}
+                                                    />
+                                                </div>
+
+                                                <ScrollArea className="h-[180px] w-full rounded-md border bg-background">
+                                                    <div className="p-2 space-y-1">
+                                                        {(isStoreDeptHead ? deptHeadEmployees : availableEmployees)
+                                                            .filter(e => {
+                                                                if (empFilterStore !== 'all' && (e.storeId?._id || e.storeId) !== empFilterStore) return false;
+                                                                if (empFilterDept !== 'all' && (e.storeDepartmentId?._id || e.storeDepartmentId || e.departmentId) !== empFilterDept) return false;
+                                                                if (employeeSearch) {
+                                                                    const full = `${e.firstName} ${e.lastName}`.toLowerCase();
+                                                                    if (!full.includes(employeeSearch.toLowerCase())) return false;
+                                                                }
+                                                                return true;
+                                                            })
+                                                            .map(e => (
+                                                                <div
+                                                                    key={e._id}
+                                                                    className={`flex items-center gap-2 p-2 rounded-sm cursor-pointer text-sm transition-colors ${selectedEntityId === e._id ? "bg-primary text-primary-foreground font-medium" : "hover:bg-muted"}`}
+                                                                    onClick={() => setSelectedEntityId(e._id)}
+                                                                >
+                                                                    <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold ${selectedEntityId === e._id ? "bg-primary-foreground/20" : "bg-muted text-muted-foreground"}`}>
+                                                                        {e.firstName?.[0]}{e.lastName?.[0]}
+                                                                    </div>
+                                                                    <div className="flex-1">
+                                                                        {e.firstName} {e.lastName}
+                                                                        <div className={`text-[10px] ${selectedEntityId === e._id ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
+                                                                            {e.position || "Employee"}
+                                                                        </div>
+                                                                    </div>
+                                                                    {selectedEntityId === e._id && <Users className="h-3 w-3" />}
+                                                                </div>
+                                                            ))}
+
+                                                        {(isStoreDeptHead ? deptHeadEmployees : availableEmployees).filter(e => {
+                                                            if (empFilterStore !== 'all' && (e.storeId?._id || e.storeId) !== empFilterStore) return false;
+                                                            if (empFilterDept !== 'all' && (e.storeDepartmentId?._id || e.storeDepartmentId || e.departmentId) !== empFilterDept) return false;
+                                                            if (employeeSearch) {
+                                                                const full = `${e.firstName} ${e.lastName}`.toLowerCase();
+                                                                if (!full.includes(employeeSearch.toLowerCase())) return false;
+                                                            }
+                                                            return true;
+                                                        }).length === 0 && (
+                                                                <div className="text-center py-8 text-xs text-muted-foreground">
+                                                                    No employees found.
+                                                                </div>
+                                                            )}
+                                                    </div>
+                                                </ScrollArea>
+                                            </div>
                                         )}
 
                                         {scope === 'store' && (

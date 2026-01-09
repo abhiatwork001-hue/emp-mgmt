@@ -132,7 +132,7 @@ export function TaskCard({ task, currentUserId, currentUserRoles, onClick }: Tas
                                     key={a.id?._id || a.id}
                                     employeeId={a.id?._id || a.id}
                                     slug={a.id?.slug || a.slug}
-                                    name={`${a.firstName || a.id?.firstName} ${a.lastName || a.id?.lastName}`}
+                                    name={`${(a.firstName || a.id?.firstName) || "Unknown"} ${(a.lastName || a.id?.lastName) || ""}`}
                                     currentUserRoles={currentUserRoles}
                                     className="text-[10px]"
                                 />

@@ -21,7 +21,8 @@ export default async function TasksPage() {
     const tasks = await getTasksForUser(userId);
     const stores = await getAllStores();
     const depts = await getAllGlobalDepartments();
-    const allEmployees = await getAllEmployees();
+    // Fetch all employees for assignment (limit 1000 to cover company)
+    const { employees: allEmployees } = await getAllEmployees({}, 1, 1000);
 
     return (
         <div className="flex-1 p-6 md:p-8 h-full flex flex-col bg-background/50">

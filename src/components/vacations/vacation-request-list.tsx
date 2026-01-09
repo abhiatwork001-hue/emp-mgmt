@@ -58,8 +58,10 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
 
     const t = useTranslations("Vacation");
     const tc = useTranslations("Common");
+    const roles = (session?.user as any)?.roles || [];
+    const canManage = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech'].includes(r.toLowerCase()));
 
-    // Derive unique positions
+    // ... existing filters ...
     const uniquePositions = useMemo(() => {
         const positions = new Set<string>();
         requests.forEach((r: any) => {
@@ -417,7 +419,7 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                         ) : (
                             <div className="grid grid-cols-1 gap-4">
                                 {pendingRequests.map((req: any) => (
-                                    <VacationRequestCard key={req._id} req={req} onAction={updateStatus} loading={loadingMap[req._id]} />
+                                    <VacationRequestCard key={req._id} req={req} onAction={updateStatus} loading={loadingMap[req._id]} canManage={canManage} />
                                 ))}
                             </div>
                         )}
@@ -428,7 +430,7 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                         ) : (
                             <div className="grid grid-cols-1 gap-4">
                                 {upcomingRequests.map((req: any) => (
-                                    <VacationRequestCard key={req._id} req={req} onAction={updateStatus} loading={loadingMap[req._id]} isHistory />
+                                    <VacationRequestCard key={req._id} req={req} onAction={updateStatus} loading={loadingMap[req._id]} isHistory canManage={canManage} />
                                 ))}
                             </div>
                         )}
@@ -444,7 +446,7 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                         ) : (
                             <div className="grid grid-cols-1 gap-4">
                                 {historicalRequests.map((req: any) => (
-                                    <VacationRequestCard key={req._id} req={req} onAction={updateStatus} loading={loadingMap[req._id]} isHistory />
+                                    <VacationRequestCard key={req._id} req={req} onAction={updateStatus} loading={loadingMap[req._id]} isHistory canManage={canManage} />
                                 ))}
                             </div>
                         )}
@@ -610,7 +612,7 @@ function EmptyState({ message }: { message: string }) {
     );
 }
 
-function VacationRequestCard({ req, onAction, loading, isHistory }: { req: any, onAction: any, loading: boolean, isHistory?: boolean }) {
+function VacationRequestCard({ req, onAction, loading, isHistory, canManage }: { req: any, onAction: any, loading: boolean, isHistory?: boolean, canManage?: boolean }) {
     const t = useTranslations("Vacation");
     const tc = useTranslations("Common");
 
@@ -658,7 +660,7 @@ function VacationRequestCard({ req, onAction, loading, isHistory }: { req: any, 
                                 {req.status === 'rejected' && <XCircle className="h-3 w-3 mr-1.5" />}
                                 {tc(req.status)}
                             </Badge>
-                        ) : (
+                        ) : canManage ? (
                             <div className="flex gap-2 w-full md:w-auto">
                                 <Button
                                     size="sm"
@@ -680,6 +682,10 @@ function VacationRequestCard({ req, onAction, loading, isHistory }: { req: any, 
                                     {tc('reject')}
                                 </Button>
                             </div>
+                        ) : (
+                            <Badge variant="secondary" className="px-3 py-1 bg-muted text-muted-foreground">
+                                Pending Review
+                            </Badge>
                         )}
                     </div>
                 </div>

@@ -5,13 +5,14 @@ import { TaskCard } from "./task-card";
 import { CreateTaskDialog } from "./create-task-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, CheckSquare, Download, Search } from "lucide-react";
+import { Plus, CheckSquare, Download, Search, Filter } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useRouter } from "next/navigation";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 // ... imports
@@ -37,6 +38,8 @@ export function TaskBoard({
     const router = useRouter();
     const [filter, setFilter] = useState("all");
     const [searchTerm, setSearchTerm] = useState("");
+    const [filterStore, setFilterStore] = useState("all");
+    const [filterDept, setFilterDept] = useState("all");
 
     // Permission Check: Can create tasks?
     // Employee cannot create tasks (unless they are also something else)
@@ -52,6 +55,41 @@ export function TaskBoard({
         if (searchTerm) {
             const lowerInfo = (task.title + (task.description || "")).toLowerCase();
             if (!lowerInfo.includes(searchTerm.toLowerCase())) return false;
+        }
+
+        // Store Filter
+        if (filterStore !== "all") {
+            // Check if creator or any assignee belongs to the store
+            // We need to look up storeId from `managers` array
+            const creator = managers.find(m => m._id === (task.createdBy?._id || task.createdBy));
+            const creatorStoreId = creator?.storeId?._id || creator?.storeId;
+
+            const assigneeStoreIds = (task.assignedTo || []).map((a: any) => {
+                const u = managers.find(m => m._id === (a.id?._id || a.id));
+                return u?.storeId?._id || u?.storeId;
+            });
+
+            const relevantStoreIds = [creatorStoreId, ...assigneeStoreIds].filter(Boolean);
+            // Check if selected store is in the list (fuzzy match string)
+            if (!relevantStoreIds.some(sid => String(sid) === filterStore)) return false;
+        }
+
+        // Dept Filter
+        if (filterDept !== "all") {
+            // Similar logic for Dept
+            const creator = managers.find(m => m._id === (task.createdBy?._id || task.createdBy));
+            // Dept might be nested storeDepartmentId -> globalDepartmentId? 
+            // Or just storeDepartmentId. The filter likely uses global dept ID or store dept ID?
+            // Let's assume storeDepartmentId for now or departmentId.
+            const creatorDeptId = creator?.storeDepartmentId?._id || creator?.storeDepartmentId || creator?.departmentId;
+
+            const assigneeDeptIds = (task.assignedTo || []).map((a: any) => {
+                const u = managers.find(m => m._id === (a.id?._id || a.id));
+                return u?.storeDepartmentId?._id || u?.storeDepartmentId || u?.departmentId;
+            });
+
+            const relevantDeptIds = [creatorDeptId, ...assigneeDeptIds].filter(Boolean);
+            if (!relevantDeptIds.some(did => String(did) === filterDept)) return false;
         }
 
         if (filter === 'all') return task.status !== 'completed';
@@ -122,8 +160,8 @@ export function TaskBoard({
                 </div>
             </CardHeader>
             <CardContent className="flex-1 p-0 overflow-hidden flex flex-col">
-                <div className="px-4 py-2 border-b flex items-center gap-2 bg-muted/5">
-                    <div className="relative flex-1">
+                <div className="px-4 py-2 border-b flex flex-col md:flex-row items-center gap-2 bg-muted/5">
+                    <div className="relative flex-1 w-full md:w-auto">
                         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
                             placeholder="Search tasks..."
@@ -131,6 +169,36 @@ export function TaskBoard({
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="h-9 pl-8 text-sm bg-background/50 border-input/50 focus-visible:bg-background transition-colors"
                         />
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full md:w-auto">
+                        {stores && stores.length > 0 && (
+                            <Select value={filterStore} onValueChange={setFilterStore}>
+                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs">
+                                    <SelectValue placeholder="All Stores" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Stores</SelectItem>
+                                    {stores.map((s: any) => (
+                                        <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+
+                        {storeDepartments && storeDepartments.length > 0 && (
+                            <Select value={filterDept} onValueChange={setFilterDept}>
+                                <SelectTrigger className="w-full md:w-[140px] h-9 text-xs">
+                                    <SelectValue placeholder="All Depts" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Depts</SelectItem>
+                                    {storeDepartments.map((d: any) => (
+                                        <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                     </div>
                 </div>
 
@@ -146,35 +214,37 @@ export function TaskBoard({
                     <ScrollArea className="flex-1">
                         <div className="flex flex-col gap-3 p-4">
                             <div className="col-span-full">
-                                <EmptyState
-                                    title={searchTerm ? "No tasks found" : "No tasks"}
-                                    description={searchTerm ? "No tasks matching your search." : "No tasks found in this view."}
-                                    icon={CheckSquare}
-                                    actionLabel={canCreateTask && !searchTerm && filter === 'all' ? "Create Task" : undefined}
-                                    onAction={() => setIsCreateOpen(true)}
-                                />
-                            </div>
-                            <>
-                                {filteredTasks.slice(0, 5).map(task => (
-                                    <TaskCard
-                                        key={task._id}
-                                        task={task}
-                                        currentUserId={currentUserId}
-                                        currentUserRoles={currentUser?.roles || []}
-                                        onClick={() => router.push(`/dashboard/tasks/${task.slug || task._id}`)}
+                                {filteredTasks.length === 0 ? (
+                                    <EmptyState
+                                        title={searchTerm ? "No tasks found" : "No tasks"}
+                                        description={searchTerm ? "No tasks matching your search." : "No tasks found in this view."}
+                                        icon={CheckSquare}
+                                        actionLabel={canCreateTask && !searchTerm && filter === 'all' ? "Create Task" : undefined}
+                                        onAction={() => setIsCreateOpen(true)}
                                     />
-                                ))}
-                                {filteredTasks.length > 5 && (
-                                    <Button
-                                        variant="ghost"
-                                        className="w-full text-xs text-muted-foreground mt-2"
-                                        onClick={() => router.push('/dashboard/tasks')}
-                                    >
-                                        View all {filteredTasks.length} tasks
-                                    </Button>
+                                ) : (
+                                    <>
+                                        {filteredTasks.slice(0, 5).map(task => (
+                                            <TaskCard
+                                                key={task._id}
+                                                task={task}
+                                                currentUserId={currentUserId}
+                                                currentUserRoles={currentUser?.roles || []}
+                                                onClick={() => router.push(`/dashboard/tasks/${task.slug || task._id}`)}
+                                            />
+                                        ))}
+                                        {filteredTasks.length > 5 && (
+                                            <Button
+                                                variant="ghost"
+                                                className="w-full text-xs text-muted-foreground mt-2"
+                                                onClick={() => router.push('/dashboard/tasks')}
+                                            >
+                                                View all {filteredTasks.length} tasks
+                                            </Button>
+                                        )}
+                                    </>
                                 )}
-                            </>
-                            )
+                            </div>
                         </div>
                     </ScrollArea>
                 </Tabs>

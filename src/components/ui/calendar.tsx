@@ -28,14 +28,14 @@ function Calendar({
                 dropdown: "bg-transparent cursor-pointer p-1 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring rounded-md border border-input/50 hover:bg-accent/50 transition-colors h-8 leading-none",
                 dropdown_year: "min-w-[4.5rem]",
                 dropdown_month: "min-w-[8rem]",
-                nav: "flex items-center",
+                nav: "space-x-1 flex items-center",
                 button_previous: cn(
                     buttonVariants({ variant: "outline" }),
-                    "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-1 top-1 z-20"
+                    "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute left-4 top-3 z-20"
                 ),
                 button_next: cn(
                     buttonVariants({ variant: "outline" }),
-                    "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-1 top-1 z-20"
+                    "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 absolute right-4 top-3 z-20"
                 ),
                 month_grid: "w-full border-collapse",
                 weekdays: "grid grid-cols-7 w-full mb-1",
