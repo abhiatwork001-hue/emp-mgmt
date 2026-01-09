@@ -113,6 +113,12 @@ export async function getAllAbsenceRequests(filters: any = {}) {
 export async function approveAbsenceRequest(requestId: string, approverId: string, payload: { justification?: string, type?: string } = {}) {
     await dbConnect();
 
+    // Permission Check
+    const approver = await Employee.findById(approverId).select("roles");
+    const roles = (approver?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const allowed = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech'].includes(r));
+    if (!allowed) throw new Error("Permission Denied: Only HR, Owners, Admin, or Tech can approve absences.");
+
     const request = await AbsenceRequest.findById(requestId);
     if (!request) throw new Error("Request not found");
     if (request.status !== 'pending') throw new Error("Request is not pending");
@@ -205,6 +211,12 @@ export async function getEmployeeAbsences(employeeId: string) {
 export async function rejectAbsenceRequest(requestId: string, reviewerId: string, reason?: string) {
     await dbConnect();
 
+    // Permission Check
+    const reviewer = await Employee.findById(reviewerId).select("roles");
+    const roles = (reviewer?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const allowed = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech'].includes(r));
+    if (!allowed) throw new Error("Permission Denied: Only HR, Owners, Admin, or Tech can reject absences.");
+
     const request = await AbsenceRequest.findById(requestId);
     if (!request) throw new Error("Request not found");
 
@@ -266,7 +278,7 @@ export async function cancelAbsenceRecord(recordId: string, actorId: string) {
     // Permission check (using same logic as approve)
     const actor = await Employee.findById(actorId).select("roles");
     const roles = (actor?.roles || []).map((r: string) => r.toLowerCase());
-    const isPrivileged = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech', 'super_user'].includes(r));
+    const isPrivileged = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech'].includes(r));
     if (!isPrivileged) throw new Error("Unauthorized to cancel absence records");
 
     const record = await AbsenceRecord.findById(recordId);

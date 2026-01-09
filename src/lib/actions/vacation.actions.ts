@@ -343,9 +343,9 @@ export async function getAllVacationRequests(filters: any = {}) {
 async function checkApprovalPermission(userId: string) {
     const user = await Employee.findById(userId).select("roles");
     const roles = (user?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-    const allowed = roles.some((r: string) => ['hr', 'owner', 'super_user', 'admin', 'tech'].includes(r));
+    const allowed = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech'].includes(r));
     if (!allowed) {
-        throw new Error("Permission Denied: Only HR, Owners, or Tech can approve/reject vacations.");
+        throw new Error("Permission Denied: Only HR, Owners, Admin, or Tech can approve/reject vacations.");
     }
 }
 

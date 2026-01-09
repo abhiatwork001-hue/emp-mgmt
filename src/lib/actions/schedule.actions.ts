@@ -359,8 +359,8 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
     if (['approved', 'rejected', 'published'].includes(status)) {
         const actor = await getEmployeeById(userId);
         const roles = (actor?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-        // Allowing Admin/Super User as well for system stability, alongside requested HR/Owner
-        const hasAuthority = roles.some((r: string) => ['hr', 'owner', 'super_user', 'admin', 'tech'].includes(r));
+        // Allowing Admin/Owner/HR/Tech ONLY as per strict request
+        const hasAuthority = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech'].includes(r));
 
         // EXCEPTION: Allow Store Managers to "Publish" if they are reverting a Draft to Published (Cancel Edit)
         // Check if the current schedule is in 'draft' status.
@@ -372,7 +372,7 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         const isCreator = currentSchedule?.createdBy?.toString() === userId;
 
         if (!hasAuthority && !(isRevertingDraft && (isManager || isCreator))) {
-            throw new Error(`Permission Denied: Only HR, Owners, or Tech can ${status} schedules.`);
+            throw new Error(`Permission Denied: Only HR, Owners, Admin, or Tech can ${status} schedules.`);
         }
 
         // Feature: Prevent Approving/Publishing Empty Schedules

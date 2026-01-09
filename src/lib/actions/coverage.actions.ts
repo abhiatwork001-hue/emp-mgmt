@@ -569,6 +569,12 @@ export async function finalizeCoverage(
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
 
+    // Permission Check
+    const actor = await Employee.findById(userId).select("roles");
+    const roles = (actor?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const allowed = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech'].includes(r));
+    if (!allowed) throw new Error("Permission Denied: Only HR, Owners, Admin, or Tech can finalize coverage.");
+
     const request = await ShiftCoverageRequest.findById(requestId);
     if (!request || !request.acceptedBy) throw new Error("Invalid request state.");
 
