@@ -206,9 +206,20 @@ export function MobileScheduleView({
                                                 shiftStartDateTime.setHours(startHours, startMinutes, 0, 0);
                                                 const hasStarted = new Date() > shiftStartDateTime;
 
+                                                // Calculate Has Ended for Overtime
+                                                const shiftEndDateTime = new Date(currentDay.date);
+                                                const [endHours, endMinutes] = shift.endTime.split(':').map(Number);
+                                                shiftEndDateTime.setHours(endHours, endMinutes, 0, 0);
+                                                // Handle overnight (if end < start, or if we want to be safe, if end < start in same day numbers, add 1 day)
+                                                // Comparing hours directly is safest if we assume valid shift times
+                                                if (endHours < startHours) {
+                                                    shiftEndDateTime.setDate(shiftEndDateTime.getDate() + 1);
+                                                }
+                                                const hasEnded = new Date() > shiftEndDateTime;
+
                                                 const canSwap = !isCurrentUser && !isEditMode && !isOff && !!onSwapRequest && !hasStarted;
                                                 const canAbsence = isCurrentUser && !isEditMode && !isOff && !!onAbsenceRequest;
-                                                const canOvertime = isCurrentUser && !isEditMode && !isOff && !!onOvertimeRequest;
+                                                const canOvertime = isCurrentUser && !isEditMode && !isOff && !!onOvertimeRequest && hasEnded;
                                                 const canPerformActions = canSwap || canAbsence || canOvertime;
 
                                                 const ShiftCard = (
