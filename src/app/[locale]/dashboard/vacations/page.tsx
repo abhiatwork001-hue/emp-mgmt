@@ -93,7 +93,7 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
                 )}
             </div>
 
-            <AdminRecordVacationDialog />
+            {isGlobal && <AdminRecordVacationDialog />}
 
             <div className="grid gap-4 md:grid-cols-3">
                 <Card className="bg-[#1e293b] border-none text-white">

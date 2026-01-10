@@ -29,6 +29,8 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
     const isSuper = roles.some((r: string) => ["owner", "admin", "hr", "super_user", "tech"].includes(r));
     const isKitchen = roles.some((r: string) => ["chef", "head_chef", "cook", "kitchen_staff"].includes(r));
     const isManager = roles.includes("store_manager");
+    const isStoreDeptHead = roles.includes("store_department_head");
+    const isGlobalDeptHead = roles.includes("department_head");
 
     const hasFullAccess = isSuper;
 
@@ -65,9 +67,24 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
     // 1. Employee Scope
     if (isSuper) {
         // Can see all employees
+    } else if (isGlobalDeptHead) {
+        // Can see employees in their Global Department (across stores)
+        // Need to find which global dept they lead
+        const { GlobalDepartment, StoreDepartment } = await import("@/lib/models");
+        const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: currentUser._id }).select('_id');
+        const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
+
+        // Find Store Departments linked to these
+        const allowedStoreDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).select('_id');
+        employeeFilter.storeDepartmentId = { $in: allowedStoreDepts };
+
     } else if (isManager && currentUser.storeId) {
         // Can see employees in their store
         employeeFilter.storeId = currentUser.storeId;
+    } else if (isStoreDeptHead && currentUser.storeDepartmentId && currentUser.storeId) {
+        // Can see employees in their DEPARTMENT only
+        employeeFilter.storeId = currentUser.storeId;
+        employeeFilter.storeDepartmentId = currentUser.storeDepartmentId;
     } else {
         // Regular employees can only search for THEMSELVES (privacy)
         employeeFilter._id = currentUser._id;

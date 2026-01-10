@@ -71,8 +71,9 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             getPendingOvertimeRequests({ storeId: sid }),
             getPendingSchedules(sid),
             getPendingCoverageApprovals(sid),
-            // STRICT SECURITY: If sid (storeId) is missing for a store manager, we MUST NOT return stats.
-            storeId ? getEmployeesByStore(storeId) : Promise.resolve([])
+            // STRICT SECURITY: If sid (storeId) is missing for a store manager, we MUST NOT return stats?
+            // Actually for Admin/Tech/Global Owner, we WANT global stats.
+            storeId ? getEmployeesByStore(storeId) : getEmployeeStats({})
         ]);
 
         // Schedule Calculation

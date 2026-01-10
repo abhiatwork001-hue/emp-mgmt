@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Star, Loader2, Sparkles } from "lucide-react";
+import { seedMockReviewsForAllStores } from "@/lib/actions/google-places.actions";
 import { EditStoreDialog } from "@/components/stores/edit-store-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -21,11 +23,29 @@ interface Store {
     employeeCount: number;
     departmentCount: number;
     manager?: { firstName: string; lastName: string; email: string };
+
     managers?: any[]; // Populated check
+    googleRating?: number;
+    googleUserRatingsTotal?: number;
 }
 
-export function StoreList({ initialStores }: { initialStores: Store[] }) {
+export function StoreList({ initialStores, currentUserRoles = [] }: { initialStores: Store[], currentUserRoles?: string[] }) {
     const [searchTerm, setSearchTerm] = useState("");
+    const [isSeeding, setIsSeeding] = useState(false);
+
+    const isTech = currentUserRoles.includes("tech");
+
+    const handleSeed = async () => {
+        setIsSeeding(true);
+        try {
+            await seedMockReviewsForAllStores();
+            window.location.reload();
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsSeeding(false);
+        }
+    };
 
     const filteredStores = initialStores
         .filter((store) =>
@@ -50,11 +70,19 @@ export function StoreList({ initialStores }: { initialStores: Store[] }) {
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
                 </div>
-                <Link href="/dashboard/stores/new">
-                    <Button>
-                        <Plus className="mr-2 h-4 w-4" /> Add Store
-                    </Button>
-                </Link>
+                <div className="flex items-center gap-2">
+                    {isTech && (
+                        <Button variant="outline" onClick={handleSeed} disabled={isSeeding}>
+                            {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4 text-yellow-500" />}
+                            Generate Fake Data
+                        </Button>
+                    )}
+                    <Link href="/dashboard/stores/new">
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" /> Add Store
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -80,9 +108,17 @@ export function StoreList({ initialStores }: { initialStores: Store[] }) {
                                         </div>
                                         <div>
                                             <h3 className="font-semibold text-lg text-foreground">{store.name}</h3>
-                                            <p className="text-xs text-muted-foreground">
-                                                {store.manager ? `${store.manager.firstName} ${store.manager.lastName}` : "No Manager Assigned"}
-                                            </p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="text-xs text-muted-foreground">
+                                                    {store.manager ? `${store.manager.firstName} ${store.manager.lastName}` : "No Manager Assigned"}
+                                                </p>
+                                                {store.googleRating && store.googleRating > 0 && (
+                                                    <div className="flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded text-[10px] font-medium text-yellow-700 dark:text-yellow-400">
+                                                        <span>{store.googleRating.toFixed(1)}</span>
+                                                        <Star className="w-3 h-3 fill-current" />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                     {store.active ? (

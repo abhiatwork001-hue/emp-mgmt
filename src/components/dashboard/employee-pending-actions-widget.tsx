@@ -200,7 +200,7 @@ export function EmployeePendingActionsWidget({
 
                                 {/* 1. SWAP REQUEST */}
                                 {item.type === 'swap' && (
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 hidden md:block">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-9 w-9 border">
@@ -256,7 +256,7 @@ export function EmployeePendingActionsWidget({
 
                                 {/* 2. COVERAGE OFFER */}
                                 {item.type === 'coverage_offer' && (
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 hidden md:block">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="h-9 w-9 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 border border-violet-200">
@@ -388,7 +388,7 @@ export function EmployeePendingActionsWidget({
 
                                 {/* 4. MY COVERAGE REQUEST */}
                                 {item.type === 'coverage_request' && (
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 hidden md:block">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex items-center gap-3">
                                                 <div className="h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 border border-amber-200">

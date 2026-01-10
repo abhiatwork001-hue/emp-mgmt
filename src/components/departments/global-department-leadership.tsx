@@ -11,6 +11,7 @@ interface GlobalDepartmentLeadershipProps {
     departmentName: string;
     departmentHeads: any[];
     subHeads: any[];
+    canManage?: boolean;
 }
 
 export function GlobalDepartmentLeadership({
@@ -18,6 +19,7 @@ export function GlobalDepartmentLeadership({
     departmentName,
     departmentHeads,
     subHeads,
+    canManage = false,
 }: GlobalDepartmentLeadershipProps) {
     const [isEditing, setIsEditing] = useState(false);
 
@@ -25,20 +27,22 @@ export function GlobalDepartmentLeadership({
         <div className="space-y-6">
             <div className="flex items-center justify-between mb-4">
                 <p className="text-sm text-muted-foreground">Manage department heads and employees for this department</p>
-                <Button
-                    variant={isEditing ? "secondary" : "outline"}
-                    size="sm"
-                    className=""
-                    onClick={() => setIsEditing(!isEditing)}
-                >
-                    {isEditing ? (
-                        "Done Editing"
-                    ) : (
-                        <>
-                            <UserCog className="mr-2 h-4 w-4" /> Manage Leadership
-                        </>
-                    )}
-                </Button>
+                {canManage && (
+                    <Button
+                        variant={isEditing ? "secondary" : "outline"}
+                        size="sm"
+                        className=""
+                        onClick={() => setIsEditing(!isEditing)}
+                    >
+                        {isEditing ? (
+                            "Done Editing"
+                        ) : (
+                            <>
+                                <UserCog className="mr-2 h-4 w-4" /> Manage Leadership
+                            </>
+                        )}
+                    </Button>
+                )}
             </div>
 
             {/* Department Head */}

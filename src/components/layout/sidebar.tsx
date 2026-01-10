@@ -12,6 +12,7 @@ import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SidebarMessageBadge } from "./sidebar-message-badge";
 import { routeGroups, routes } from "@/lib/sidebar-config";
+import { GlobalSearch } from "@/components/global-search";
 import { ChevronRight, ChevronLeft, Menu } from "lucide-react";
 
 export function Sidebar({
@@ -76,6 +77,20 @@ export function Sidebar({
             const isAccessible = hasAccess(effectiveRoles, route.href, departmentName, permissions);
             if (!isAccessible) return null;
 
+            // Custom Business Logic Overrides
+            if (route.label === "Departments") {
+                // HIDE for Store Manager unless they are also Global/Admin/HR etc.
+                const isRestricted = effectiveRoles.includes("store_manager") &&
+                    !effectiveRoles.some((r: string) => ["admin", "owner", "hr", "tech", "department_head"].includes(r));
+                if (isRestricted) return null;
+            }
+
+            if (route.label === "Tips") {
+                // STRICT Allowlist: Only Store Manager and Tech
+                const isAllowed = effectiveRoles.some((r: string) => ["store_manager", "tech"].includes(r));
+                if (!isAllowed) return null;
+            }
+
             if (route.label === "Recipes" && !hasRecipes) return null;
             if (route.label === "Coverage" && !hasCoverage) return null;
 
@@ -119,6 +134,11 @@ export function Sidebar({
                 </Link>
 
                 <div className="space-y-8">
+                    {propsIsMobile && (
+                        <div className="mb-6">
+                            <GlobalSearch />
+                        </div>
+                    )}
                     {groupedRoutes.map((group, groupIdx) => (
                         <motion.div
                             key={group.title}

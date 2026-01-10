@@ -23,11 +23,105 @@ async function checkSchedulePermission(userId: string) {
     }
 }
 
-export async function getSchedules(storeId: string, departmentId?: string, year?: number, week?: number) {
+export async function getSchedules(storeId?: string, departmentId?: string, year?: number, week?: number) {
     await dbConnect();
-    const query: any = { storeId };
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
 
-    if (departmentId) query.storeDepartmentId = departmentId;
+    const currentUser = await getEmployeeById((session.user as any).id);
+    const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const isGlobalAdmin = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
+    const isStoreManager = roles.includes("store_manager");
+    const isStoreDeptHead = roles.includes("store_department_head");
+    const isGlobalDeptHead = roles.includes("department_head");
+
+    const query: any = {};
+
+    // 1. Store Filters
+    if (storeId) {
+        // Explicit request for a store
+        query.storeId = storeId;
+    }
+
+    // Security Scoping
+    if (isGlobalAdmin) {
+        // No restrictions, trust the params
+    } else if (isGlobalDeptHead) {
+        // Can access any store, but ONLY for their global department
+        // We need to know which global department they lead.
+        // Assuming currentUser.storeDepartmentId links to it (or we need a new field for global dept head?)
+        // The prompt says "access all the storeDepartment that is related to that department"
+        // Let's assume currentUser.globalDepartmentId or similar. 
+        // Checking schema: Employee has storeDepartmentId. GlobalDepartment has departmentHead (array of employeeIds).
+        // Reverse lookup: Find GlobalDepartment where this user is head.
+
+        // Optimisation: Just trust the query if filtering by dept? No, must enforce.
+        // Let's find their global departments
+        // This is complex. For now, if they are restricted, we should ensure the query.storeDepartmentId matches their scope.
+        // If not implemented fully in schema yet, we might fallback or skip deep check if complexity is too high for this step.
+        // Let's stick to the prompt: "related to that department".
+
+        // If strict:
+        // const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: currentUser._id }).select('_id');
+        // const ledGlobalDeptIds = ledGlobalDepts.map(d => d._id);
+        // const allowedStoreDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).select('_id');
+        // query.storeDepartmentId = { $in: allowedStoreDepts }; 
+
+        // Given current robust implementation needs, I might simplify or use existing `storeDepartmentId` on user if that tracks it.
+        // Let's assume for now they pass explicit params and we trust them IF they are dept head? No, unsafe.
+
+        // Let's leave Global Head slightly open or implement strict if I see the GlobalDept model clearly. 
+        // I saw GlobalDepartment schema. It has departmentHead.
+        // I will add the lookup.
+        const { GlobalDepartment, StoreDepartment } = await import("@/lib/models");
+        const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: currentUser._id }).select('_id');
+        if (ledGlobalDepts.length > 0) {
+            const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
+            // Find all StoreDepartments linked to these GlobalDepartments
+            const allowedStoreDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).distinct('_id');
+
+            if (departmentId) {
+                // Check if requested dept is allowed
+                if (!allowedStoreDepts.find((id: any) => id.toString() === departmentId)) {
+                    return []; // Not allowed
+                }
+                query.storeDepartmentId = departmentId;
+            } else {
+                // Force filter
+                query.storeDepartmentId = { $in: allowedStoreDepts };
+            }
+        } else {
+            // Role says Head but no department assigned?
+            return [];
+        }
+
+    } else if (isStoreManager) {
+        // Can access ONLY their store
+        const userStoreId = currentUser.storeId?._id?.toString() || currentUser.storeId?.toString();
+
+        if (storeId && storeId !== userStoreId) {
+            return []; // Trying to access another store
+        }
+        query.storeId = userStoreId;
+
+        // Access all departments within that store (no extra filter needed)
+
+    } else if (isStoreDeptHead) {
+        // Can access ONLY their store AND their department
+        const userStoreId = currentUser.storeId?._id?.toString() || currentUser.storeId?.toString();
+        const userDeptId = currentUser.storeDepartmentId?._id?.toString() || currentUser.storeDepartmentId?.toString();
+
+        if (storeId && storeId !== userStoreId) return [];
+        if (departmentId && departmentId !== userDeptId) return [];
+
+        query.storeId = userStoreId;
+        query.storeDepartmentId = userDeptId;
+    } else {
+        // Employee or unknown
+        return [];
+    }
+
+    if (departmentId && !query.storeDepartmentId) query.storeDepartmentId = departmentId; // Apply param if not already scoped
     if (year) query.year = year;
     if (week) query.weekNumber = week;
 

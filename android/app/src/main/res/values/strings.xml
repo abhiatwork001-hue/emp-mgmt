@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ChickMain</string>
+    <string name="title_activity_main">ChickMain</string>
+    <string name="package_name">com.tempapp.app</string>
+    <string name="custom_url_scheme">com.tempapp.app</string>
+</resources>

@@ -60,6 +60,12 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
         phone: employee?.phone || "",
         address: employee?.address || "",
         nif: employee?.nif || "",
+        emergencyContact: {
+            name: employee?.emergencyContact?.name || "",
+            relationship: employee?.emergencyContact?.relationship || "",
+            phoneNumber: employee?.emergencyContact?.phoneNumber || "",
+            email: employee?.emergencyContact?.email || ""
+        },
         dob: employee?.dob ? new Date(employee.dob) : undefined,
         contract: {
             weeklyHours: employee?.contract?.weeklyHours || 40,
@@ -131,6 +137,16 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
             ...prev,
             vacationTracker: {
                 ...prev.vacationTracker,
+                [field]: value
+            }
+        }));
+    };
+
+    const handleEmergencyContactChange = (field: string, value: string) => {
+        setFormData(prev => ({
+            ...prev,
+            emergencyContact: {
+                ...prev.emergencyContact,
                 [field]: value
             }
         }));
@@ -307,6 +323,61 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                     <Label htmlFor="address">Physical Address</Label>
                                     <Input id="address" name="address" value={formData.address} onChange={handleChange} className="h-11 transition-all focus:ring-2 focus:ring-primary/20" />
                                 </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                <Card glass className="p-0 overflow-hidden border-border/40">
+                    <div className="bg-red-500/5 px-6 py-4 border-b border-red-500/10">
+                        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                            Emergency Contact
+                        </h3>
+                    </div>
+                    <CardContent className="p-8 space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="ec-name">Contact Name</Label>
+                                <Input
+                                    id="ec-name"
+                                    value={formData.emergencyContact.name}
+                                    onChange={(e) => handleEmergencyContactChange("name", e.target.value)}
+                                    className="h-11 transition-all focus:ring-2 focus:ring-red-500/20"
+                                    placeholder="Full Name"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="ec-relation">Relationship</Label>
+                                <Input
+                                    id="ec-relation"
+                                    value={formData.emergencyContact.relationship}
+                                    onChange={(e) => handleEmergencyContactChange("relationship", e.target.value)}
+                                    className="h-11 transition-all focus:ring-2 focus:ring-red-500/20"
+                                    placeholder="e.g. Spouse, Parent"
+                                />
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="ec-phone">Phone Number</Label>
+                                <Input
+                                    id="ec-phone"
+                                    value={formData.emergencyContact.phoneNumber}
+                                    onChange={(e) => handleEmergencyContactChange("phoneNumber", e.target.value)}
+                                    className="h-11 transition-all focus:ring-2 focus:ring-red-500/20"
+                                    placeholder="+1 234 567 890"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="ec-email">Email (Optional)</Label>
+                                <Input
+                                    id="ec-email"
+                                    value={formData.emergencyContact.email}
+                                    onChange={(e) => handleEmergencyContactChange("email", e.target.value)}
+                                    className="h-11 transition-all focus:ring-2 focus:ring-red-500/20"
+                                    placeholder="contact@example.com"
+                                />
                             </div>
                         </div>
                     </CardContent>

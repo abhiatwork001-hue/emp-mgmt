@@ -32,7 +32,7 @@ export default async function StoresPage() {
                 </div>
                 <h2 className="text-3xl font-bold tracking-tight text-foreground">Stores</h2>
             </div>
-            <StoreList initialStores={stores} />
+            <StoreList initialStores={stores} currentUserRoles={roles} />
         </div>
     );
 }

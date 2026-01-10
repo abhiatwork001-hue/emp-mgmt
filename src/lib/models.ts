@@ -61,8 +61,23 @@ export interface IStore extends Document {
     managers: ObjectId[]; // employee ids
     subManagers: ObjectId[];
     employees: ObjectId[];
-    minEmployees?: number; // New field
-    maxEmployees?: number; // New field
+    minEmployees?: number;
+    maxEmployees?: number;
+
+    // Google Reviews
+    googlePlaceId?: string;
+    googleRating?: number;
+    googleUserRatingsTotal?: number;
+    googleReviews?: {
+        author_name: string;
+        rating: number;
+        text: string;
+        time: number;
+        relative_time_description: string;
+    }[];
+    ratingHistory?: { date: Date; rating: number }[];
+    lastReviewsUpdate?: Date;
+
     active: boolean;
     archivedAt?: Date;
     createdAt?: Date;
@@ -139,6 +154,12 @@ export interface IEmployee extends Document {
     phone?: string;
     address?: string; // Home address
     nif?: string; // Tax ID
+    emergencyContact?: {
+        name: string;
+        relationship: string;
+        phoneNumber: string;
+        email: string;
+    };
 
     // Banking
     bankName?: string;
@@ -417,7 +438,22 @@ const StoreSchema = new Schema<IStore>({
     subManagers: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
     employees: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
     minEmployees: { type: Number, default: 0 },
-    maxEmployees: { type: Number }, // New: Max limit
+    maxEmployees: { type: Number },
+
+    // Google Reviews Integration
+    googlePlaceId: { type: String },
+    googleRating: { type: Number, default: 0 },
+    googleUserRatingsTotal: { type: Number, default: 0 },
+    googleReviews: [{
+        author_name: String,
+        rating: Number,
+        text: String,
+        time: Number, // Unix timestamp
+        relative_time_description: String
+    }],
+    ratingHistory: [{ date: Date, rating: Number }],
+    lastReviewsUpdate: { type: Date },
+
     active: { type: Boolean, default: true },
     archivedAt: { type: Date }
 }, { timestamps: true });
@@ -474,6 +510,14 @@ const EmployeeSchema = new Schema<IEmployee>({
     phone: { type: String },
     address: { type: String }, // Home address
     nif: { type: String }, // Tax ID
+
+    // Emergency Contact
+    emergencyContact: {
+        name: { type: String },
+        relationship: { type: String },
+        phoneNumber: { type: String },
+        email: { type: String }
+    },
 
     // Banking
     bankName: { type: String },
@@ -721,9 +765,82 @@ const ProblemSchema = new Schema<IProblem>({
 
 export const Problem = mongoose.models.Problem || mongoose.model<IProblem>('Problem', ProblemSchema);
 
+// --- Supplier Models ---
 
-// Leaving legacy aliases if needed temporarily, but preferably use new imports
-// ... existing exports ...
+export interface ISupplierItem {
+    name: string;
+    sku?: string;
+    category?: string;
+    unit?: string;
+    price?: number;
+}
+
+export interface ISupplier extends Document {
+    name: string;
+    contactPerson?: string;
+    phoneNumber?: string;
+    email?: string;
+    address?: string;
+    category?: string; // e.g. "Food", "Maintenance"
+    items: ISupplierItem[];
+    createdBy: ObjectId;
+    storeId?: ObjectId; // Optional: If specific to a store
+    active: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const SupplierSchema = new Schema<ISupplier>({
+    name: { type: String, required: true },
+    contactPerson: { type: String },
+    phoneNumber: { type: String },
+    email: { type: String },
+    address: { type: String },
+    category: { type: String },
+    items: [{
+        name: { type: String, required: true },
+        sku: { type: String },
+        category: { type: String },
+        unit: { type: String },
+        price: { type: Number }
+    }],
+    createdBy: { type: Schema.Types.ObjectId, ref: 'Employee' },
+    storeId: { type: Schema.Types.ObjectId, ref: 'Store' },
+    active: { type: Boolean, default: true }
+}, { timestamps: true });
+
+export const Supplier = mongoose.models.Supplier || mongoose.model<ISupplier>('Supplier', SupplierSchema);
+
+
+// --- Store Resource Model ---
+
+export interface IStoreResource extends Document {
+    type: "IT" | "POS" | "Maintenance" | "Insurance" | "Other";
+    name: string;
+    phoneNumber?: string;
+    email?: string;
+    info?: string;
+    visibility: "global" | "store_specific";
+    storeId?: ObjectId;
+    active: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const StoreResourceSchema = new Schema<IStoreResource>({
+    type: { type: String, enum: ["IT", "POS", "Maintenance", "Insurance", "Other"], required: true },
+    name: { type: String, required: true },
+    phoneNumber: { type: String },
+    email: { type: String },
+    info: { type: String },
+    visibility: { type: String, enum: ["global", "store_specific"], default: "global" },
+    storeId: { type: Schema.Types.ObjectId, ref: 'Store' },
+    active: { type: Boolean, default: true }
+}, { timestamps: true });
+
+export const StoreResource = mongoose.models.StoreResource || mongoose.model<IStoreResource>('StoreResource', StoreResourceSchema);
+
+// Leaving legacy aliases if needed
 export const User = Employee; // Alias
 
 interface INotificationRecipient {
@@ -1096,28 +1213,7 @@ const ReminderSchema = new Schema<IReminder>({
     }]
 }, { timestamps: true });
 
-// --- Suppliers & Products ---
-export interface ISupplier extends Document {
-    name: string;
-    contactPerson?: string;
-    email?: string;
-    phone?: string;
-    deliveryDays: string[]; // e.g. ['Monday', 'Wednesday']
-    orderCutoffTime?: string; // e.g. "14:00"
-    leadTimeHours?: number;
-    createdAt: Date;
-    updatedAt: Date;
-}
 
-const SupplierSchema = new Schema<ISupplier>({
-    name: { type: String, required: true },
-    contactPerson: { type: String },
-    email: { type: String },
-    phone: { type: String },
-    deliveryDays: [{ type: String }],
-    orderCutoffTime: { type: String }, // HH:mm
-    leadTimeHours: { type: Number, default: 24 }
-}, { timestamps: true });
 
 export interface IProduct extends Document {
     name: string;
@@ -1239,6 +1335,84 @@ const StoreCredentialSchema = new Schema<IStoreCredential>({
     updatedBy: { type: Schema.Types.ObjectId, ref: 'Employee' }
 }, { timestamps: true });
 
+// --- Internal Evaluations & Surveys ---
+
+export interface IEvaluationTemplate extends Document {
+    title: string;
+    description?: string;
+    type: 'review' | 'survey';
+    questions: {
+        id: string;
+        text: string;
+        type: 'scale' | 'text' | 'boolean';
+        required: boolean;
+        options?: string[]; // For future use
+    }[];
+    createdBy: ObjectId;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const EvaluationTemplateSchema = new Schema<IEvaluationTemplate>({
+    title: { type: String, required: true },
+    description: { type: String },
+    type: { type: String, enum: ['review', 'survey'], default: 'review' },
+    questions: [{
+        id: { type: String, required: true }, // FE generated UUID
+        text: { type: String, required: true },
+        type: { type: String, enum: ['scale', 'text', 'boolean'], required: true },
+        required: { type: Boolean, default: true },
+        options: [String]
+    }],
+    createdBy: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
+    isActive: { type: Boolean, default: true }
+}, { timestamps: true });
+
+export interface IEvaluationAssignment extends Document {
+    templateId: ObjectId;
+    storeId: ObjectId;
+    assignedTo: ObjectId; // Manager who needs to perform it
+    status: 'pending' | 'completed';
+    dueDate?: Date;
+    completedAt?: Date;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const EvaluationAssignmentSchema = new Schema<IEvaluationAssignment>({
+    templateId: { type: Schema.Types.ObjectId, ref: 'EvaluationTemplate', required: true },
+    storeId: { type: Schema.Types.ObjectId, ref: 'Store', required: true },
+    assignedTo: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
+    status: { type: String, enum: ['pending', 'completed'], default: 'pending' },
+    dueDate: { type: Date },
+    completedAt: { type: Date }
+}, { timestamps: true });
+
+export interface IEvaluationResponse extends Document {
+    assignmentId: ObjectId;
+    employeeId: ObjectId; // The Subject
+    evaluatorId: ObjectId; // The Reviewer (Manager)
+    answers: {
+        questionId: string;
+        value: string | number | boolean;
+    }[];
+    isAnonymous: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+
+const EvaluationResponseSchema = new Schema<IEvaluationResponse>({
+    assignmentId: { type: Schema.Types.ObjectId, ref: 'EvaluationAssignment', required: true },
+    employeeId: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
+    evaluatorId: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
+    answers: [{
+        questionId: { type: String, required: true },
+        value: { type: Schema.Types.Mixed, required: true }
+    }],
+    isAnonymous: { type: Boolean, default: false }
+}, { timestamps: true });
+
 
 // --- Tips Distribution ---
 export interface ITipsDistribution extends Document {
@@ -1319,10 +1493,13 @@ export const OvertimeRequest = mongoose.models.OvertimeRequest || mongoose.model
 export const ExtraHourRequest = mongoose.models.ExtraHourRequest || mongoose.model<IExtraHourRequest>('ExtraHourRequest', ExtraHourRequestSchema);
 export const TipsDistribution = mongoose.models.TipsDistribution || mongoose.model<ITipsDistribution>('TipsDistribution', TipsDistributionSchema);
 export const Reminder = mongoose.models.Reminder || mongoose.model<IReminder>('Reminder', ReminderSchema);
-export const Supplier = mongoose.models.Supplier || mongoose.model<ISupplier>('Supplier', SupplierSchema);
+
 export const Product = mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
 export const Notice = mongoose.models.Notice || mongoose.model<INotice>('Notice', NoticeSchema);
 export const StoreCredential = mongoose.models.StoreCredential || mongoose.model<IStoreCredential>('StoreCredential', StoreCredentialSchema);
+export const EvaluationTemplate = mongoose.models.EvaluationTemplate || mongoose.model<IEvaluationTemplate>('EvaluationTemplate', EvaluationTemplateSchema);
+export const EvaluationAssignment = mongoose.models.EvaluationAssignment || mongoose.model<IEvaluationAssignment>('EvaluationAssignment', EvaluationAssignmentSchema);
+export const EvaluationResponse = mongoose.models.EvaluationResponse || mongoose.model<IEvaluationResponse>('EvaluationResponse', EvaluationResponseSchema);
 
 // --- Recipe / Food Management ---
 

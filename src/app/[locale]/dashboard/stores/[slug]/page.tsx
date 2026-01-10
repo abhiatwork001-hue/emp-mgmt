@@ -19,6 +19,7 @@ import { StoreDepartmentsListClient } from "@/components/stores/store-department
 import { RemoveStoreManagerButton } from "@/components/stores/remove-store-manager-button";
 import { CreateScheduleDialog } from "@/components/schedules/create-schedule-dialog";
 import { CredentialManager } from "@/components/credentials/credential-list";
+import { StoreReviewsWidget } from "@/components/stores/store-reviews-widget";
 
 
 export default async function StoreDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -187,6 +188,15 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
                             <StoreEmployeesList storeId={store._id} employees={employees} canManage={canManageEmployees} departments={storeDepartments} currentUserRoles={userRoles} />
                         </CardContent>
                     </Card>
+
+                    {/* Google Reviews Section */}
+                    <StoreReviewsWidget
+                        storeId={store._id.toString()}
+                        reviews={store.googleReviews}
+                        rating={store.googleRating}
+                        userRatingsTotal={store.googleUserRatingsTotal}
+                        lastUpdated={store.lastReviewsUpdate}
+                    />
 
                     {/* Credentials Section */}
                     <CredentialManager storeId={store._id.toString()} userId={(session.user as any).id} canEdit={canEditCredentials} />

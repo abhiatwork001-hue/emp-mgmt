@@ -10,8 +10,13 @@ export const pusherServer = new PusherServer({
 });
 
 // Enhanced Pusher Client
-export const pusherClient = new PusherClient(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-    cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+const pusherKey = process.env.NEXT_PUBLIC_PUSHER_KEY;
+const pusherCluster = process.env.NEXT_PUBLIC_PUSHER_CLUSTER;
+
+console.log('[Pusher Init] Key:', pusherKey, 'Cluster:', pusherCluster);
+
+export const pusherClient = new PusherClient(pusherKey!, {
+    cluster: pusherCluster!,
     forceTLS: true,
 });
 

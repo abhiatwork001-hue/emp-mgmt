@@ -104,6 +104,49 @@ export function ProfileView({ employee }: ProfileViewProps) {
                         </div>
                     </div>
                 </div>
+
+                {/* Emergency Contact */}
+                <div className="space-y-4 md:col-span-2">
+                    <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Emergency Contact</h4>
+                    <div className="bg-red-500/5 rounded-xl p-4 border border-red-500/10 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
+                                <Phone className="w-4 h-4 text-red-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground">Contact Name</p>
+                                <p className="text-sm font-medium text-foreground">{employee.emergencyContact?.name || "-"}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
+                                <Hash className="w-4 h-4 text-red-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground">Relationship</p>
+                                <p className="text-sm font-medium text-foreground">{employee.emergencyContact?.relationship || "-"}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
+                                <Phone className="w-4 h-4 text-red-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground">Phone Number</p>
+                                <p className="text-sm font-medium text-foreground">{employee.emergencyContact?.phoneNumber || "-"}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-red-500/10 flex items-center justify-center">
+                                <Mail className="w-4 h-4 text-red-500" />
+                            </div>
+                            <div>
+                                <p className="text-xs text-muted-foreground">Email</p>
+                                <p className="text-sm font-medium text-foreground">{employee.emergencyContact?.email || "-"}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Contract Summary (Read Only) */}

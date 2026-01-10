@@ -323,6 +323,16 @@ export async function archiveGlobalDepartment(id: string) {
  */
 export async function getAvailableGlobalDepartmentHeadCandidates(departmentId: string) {
     await dbConnect();
+
+    // Permission Check
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+    const { getEmployeeById } = await import("@/lib/actions/employee.actions");
+    const currentUser = await getEmployeeById((session.user as any).id);
+    const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const canManage = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
+    if (!canManage) throw new Error("Permission Denied");
+
     const { Employee, GlobalDepartment } = require("@/lib/models");
 
     const department = await GlobalDepartment.findById(departmentId).select("departmentHead subHead").lean();
@@ -353,6 +363,16 @@ export async function getAvailableGlobalDepartmentHeadCandidates(departmentId: s
 export async function assignGlobalDepartmentHead(departmentId: string, employeeId: string) {
     try {
         await dbConnect();
+
+        // Permission Check
+        const session = await getServerSession(authOptions);
+        if (!session?.user) throw new Error("Unauthorized");
+        const { getEmployeeById } = await import("@/lib/actions/employee.actions");
+        const currentUser = await getEmployeeById((session.user as any).id);
+        const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+        const canManage = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
+        if (!canManage) throw new Error("Permission Denied");
+
         const { Employee, GlobalDepartment } = require("@/lib/models");
 
         console.log("[assignGlobalDepartmentHead] Starting assignment:", { departmentId, employeeId });
@@ -406,7 +426,7 @@ export async function assignGlobalDepartmentHead(departmentId: string, employeeI
         revalidatePath(`/dashboard/departments/${department.slug}`);
         console.log("[assignGlobalDepartmentHead] Assignment successful");
 
-        const session = await getServerSession(authOptions);
+        // reused session variable defined at top of function
         if (session?.user) {
             await logAction({
                 action: 'ASSIGN_GLOBAL_DEPT_HEAD',
@@ -430,6 +450,16 @@ export async function assignGlobalDepartmentHead(departmentId: string, employeeI
 export async function assignGlobalDepartmentSubHead(departmentId: string, employeeId: string) {
     try {
         await dbConnect();
+
+        // Permission Check
+        const session = await getServerSession(authOptions);
+        if (!session?.user) throw new Error("Unauthorized");
+        const { getEmployeeById } = await import("@/lib/actions/employee.actions");
+        const currentUser = await getEmployeeById((session.user as any).id);
+        const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+        const canManage = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
+        if (!canManage) throw new Error("Permission Denied");
+
         const { Employee, GlobalDepartment } = require("@/lib/models");
 
         console.log("[assignGlobalDepartmentSubHead] Starting assignment:", { departmentId, employeeId });
@@ -483,7 +513,7 @@ export async function assignGlobalDepartmentSubHead(departmentId: string, employ
         revalidatePath(`/dashboard/departments/${department.slug}`);
         console.log("[assignGlobalDepartmentSubHead] Assignment successful");
 
-        const session = await getServerSession(authOptions);
+        // reused session variable defined at top of function
         if (session?.user) {
             await logAction({
                 action: 'ASSIGN_GLOBAL_DEPT_SUBHEAD',
@@ -506,6 +536,16 @@ export async function assignGlobalDepartmentSubHead(departmentId: string, employ
  */
 export async function removeGlobalDepartmentHead(departmentId: string, employeeId: string) {
     await dbConnect();
+
+    // Permission Check
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+    const { getEmployeeById } = await import("@/lib/actions/employee.actions");
+    const currentUser = await getEmployeeById((session.user as any).id);
+    const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const canManage = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
+    if (!canManage) throw new Error("Permission Denied");
+
     const { Employee, GlobalDepartment } = require("@/lib/models");
 
     const department = await GlobalDepartment.findById(departmentId);
@@ -530,7 +570,7 @@ export async function removeGlobalDepartmentHead(departmentId: string, employeeI
 
     revalidatePath(`/dashboard/departments/${department.slug}`);
 
-    const session = await getServerSession(authOptions);
+    // reused session variable defined at top of function
     if (session?.user) {
         await logAction({
             action: 'REMOVE_GLOBAL_DEPT_HEAD',
@@ -549,6 +589,16 @@ export async function removeGlobalDepartmentHead(departmentId: string, employeeI
  */
 export async function removeGlobalDepartmentSubHead(departmentId: string, employeeId: string) {
     await dbConnect();
+
+    // Permission Check
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+    const { getEmployeeById } = await import("@/lib/actions/employee.actions");
+    const currentUser = await getEmployeeById((session.user as any).id);
+    const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const canManage = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
+    if (!canManage) throw new Error("Permission Denied");
+
     const { Employee, GlobalDepartment } = require("@/lib/models");
 
     const department = await GlobalDepartment.findById(departmentId);
@@ -573,7 +623,7 @@ export async function removeGlobalDepartmentSubHead(departmentId: string, employ
 
     revalidatePath(`/dashboard/departments/${department.slug}`);
 
-    const session = await getServerSession(authOptions);
+    // reused session variable defined at top of function
     if (session?.user) {
         await logAction({
             action: 'REMOVE_GLOBAL_DEPT_SUBHEAD',

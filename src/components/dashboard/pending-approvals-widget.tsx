@@ -302,7 +302,7 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {selectedIds.size > 0 && (
+                    {canApprove && selectedIds.size > 0 && (
                         <div className="flex items-center gap-2 mr-2 animate-in fade-in slide-in-from-right-4">
                             <Button
                                 size="sm"
@@ -343,12 +343,16 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                     <>
                         <div className="flex items-center justify-between p-2 border-b border-border/10 bg-muted/5 shrink-0">
                             <div className="flex items-center gap-2 px-2">
-                                <Checkbox
-                                    checked={selectedIds.size === items.length && items.length > 0}
-                                    onCheckedChange={toggleSelectAll}
-                                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                                />
-                                <span className="text-[10px] font-bold uppercase text-muted-foreground">Select All</span>
+                                {canApprove && (
+                                    <>
+                                        <Checkbox
+                                            checked={selectedIds.size === items.length && items.length > 0}
+                                            onCheckedChange={toggleSelectAll}
+                                            className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                                        />
+                                        <span className="text-[10px] font-bold uppercase text-muted-foreground">Select All</span>
+                                    </>
+                                )}
                             </div>
 
                             <div className="flex gap-2 overflow-x-auto no-scrollbar">
@@ -373,12 +377,14 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                                                 selectedIds.has(item.id) && "bg-primary/5"
                                             )}
                                         >
-                                            <div className="pt-1">
-                                                <Checkbox
-                                                    checked={selectedIds.has(item.id)}
-                                                    onCheckedChange={() => toggleSelection(item.id)}
-                                                />
-                                            </div>
+                                            {canApprove && (
+                                                <div className="pt-1">
+                                                    <Checkbox
+                                                        checked={selectedIds.has(item.id)}
+                                                        onCheckedChange={() => toggleSelection(item.id)}
+                                                    />
+                                                </div>
+                                            )}
 
                                             <div className="flex-1 min-w-0 space-y-0.5">
                                                 <div className="flex items-baseline gap-2">

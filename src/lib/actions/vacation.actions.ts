@@ -149,7 +149,20 @@ export async function createVacationRequest(data: VacationRequestData) {
         throw new Error("Missing required fields");
     }
 
-    // Check permissions if bypassing (omitted for brevity as in original)
+    // Check permissions if bypassing validation (recording for others)
+    if (bypassValidation) {
+        const session = await getServerSession(authOptions);
+        if (!session?.user) throw new Error("Unauthorized");
+        const user = await Employee.findById((session.user as any).id).select("roles");
+        const roles = (user?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+
+        // STRICT: Store Manager CANNOT bypass validation (record for others)
+        // Only HR, Admin, Owner, Tech
+        const allowed = roles.some((r: string) => ["admin", "hr", "owner", "tech", "super_user"].includes(r));
+        if (!allowed) {
+            throw new Error("Permission Denied: You do not have permission to record vacations for others.");
+        }
+    }
 
     const start = new Date(data.requestedFrom);
     const end = new Date(data.requestedTo);

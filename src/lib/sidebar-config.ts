@@ -19,13 +19,17 @@ import {
     ShieldAlert,
     Lock,
     LifeBuoy,
-    Settings
+    Settings,
+    Star,
+    ClipboardCheck,
+    Truck,
+    BookUser
 } from "lucide-react";
 
 export const routeGroups = [
     { title: "Operations", routes: ["Home", "Schedule", "PendingActions", "Coverage"] },
-    { title: "People", routes: ["Employees", "Positions", "StaffViewer", "Vacations", "Absences", "Tips"] },
-    { title: "Structure", routes: ["Stores", "Departments", "Recipes", "Credentials"] },
+    { title: "People", routes: ["Employees", "Positions", "StaffViewer", "Vacations", "Absences", "Evaluations", "Tips"] },
+    { title: "Structure", routes: ["Stores", "Reviews", "Departments", "Recipes", "Credentials", "Suppliers", "Directory"] },
     { title: "Communication", routes: ["Messages", "Notices", "Tasks", "Notes", "Problems"] },
     { title: "Account", routes: ["Profile", "Activities", "Settings"] },
 ];
@@ -39,6 +43,7 @@ export const routes = [
     { label: "Notes", icon: StickyNote, href: "/dashboard/notes", color: "text-yellow-400" },
     { label: "Problems", icon: AlertTriangle, href: "/dashboard/problems", color: "text-red-600" },
     { label: "Stores", icon: Store, href: "/dashboard/stores", color: "text-violet-500" },
+    { label: "Reviews", icon: Star, href: "/dashboard/reviews", color: "text-yellow-500" },
     { label: "Departments", icon: Building2, href: "/dashboard/departments", color: "text-pink-700" },
     { label: "Recipes", icon: ChefHat, href: "/dashboard/recipes", color: "text-orange-700" },
     { label: "Schedule", icon: Calendar, href: "/dashboard/schedules", color: "text-amber-500" },
@@ -47,10 +52,13 @@ export const routes = [
     { label: "Employees", icon: Users, href: "/dashboard/employees", color: "text-green-700" },
     { label: "StaffViewer", icon: Users, href: "/dashboard/employee-viewer", color: "text-emerald-600" },
     { label: "Positions", icon: Briefcase, href: "/dashboard/positions", color: "text-blue-700" },
+    { label: "Evaluations", icon: ClipboardCheck, href: "/dashboard/evaluations", color: "text-teal-600" },
     { label: "Tips", icon: Coins, href: "/dashboard/tips", color: "text-yellow-600" },
     { label: "Profile", icon: User, href: "/dashboard/profile", color: "text-indigo-500" },
     { label: "Activities", icon: ShieldAlert, href: "/dashboard/activity-log", color: "text-red-700" },
     { label: "Credentials", icon: Lock, href: "/dashboard/credentials", color: "text-slate-500" },
+    { label: "Suppliers", icon: Truck, href: "/dashboard/suppliers", color: "text-blue-600" },
+    { label: "Directory", icon: BookUser, href: "/dashboard/directory", color: "text-indigo-600" },
     { label: "Coverage", icon: LifeBuoy, href: "/dashboard/coverage", color: "text-indigo-600" },
     { label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];

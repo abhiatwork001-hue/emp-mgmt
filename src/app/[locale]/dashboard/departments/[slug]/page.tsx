@@ -10,10 +10,17 @@ import { Edit, Trash, Building2, Users, Plus } from "lucide-react";
 import { RemoveGlobalDepartmentHeadButton } from "@/components/departments/remove-global-department-head-button";
 import { GlobalDepartmentLeadership } from "@/components/departments/global-department-leadership";
 import { TestNotificationButton } from "@/components/test-notification-button";
+import { GlobalDepartmentEmployeeList } from "@/components/departments/global-department-employee-list";
 
 export default async function DepartmentDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
     const session = await getServerSession(authOptions);
     if (!session) redirect("/login");
+
+    const user = session.user as any;
+    const { getEmployeeById } = await import("@/lib/actions/employee.actions");
+    const employee = await getEmployeeById(user.id);
+    const roles = (employee?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const canManage = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
 
     const { slug } = await params;
     const department = await getGlobalDepartmentBySlug(slug);
@@ -37,17 +44,20 @@ export default async function DepartmentDetailsPage({ params }: { params: Promis
                         <Badge className="bg-red-500/10 text-red-500 border-0">Inactive</Badge>
                     )}
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" asChild>
-                        <a href={`/dashboard/departments/${department.slug}/edit`}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit
-                        </a>
-                    </Button>
-                    <Button variant="destructive">
-                        <Trash className="mr-2 h-4 w-4" /> Delete
-                    </Button>
-                    <TestNotificationButton />
-                </div>
+
+                {canManage && (
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" asChild>
+                            <a href={`/dashboard/departments/${department.slug}/edit`}>
+                                <Edit className="mr-2 h-4 w-4" /> Edit
+                            </a>
+                        </Button>
+                        <Button variant="destructive">
+                            <Trash className="mr-2 h-4 w-4" /> Delete
+                        </Button>
+                        <TestNotificationButton />
+                    </div>
+                )}
             </div>
 
             {/* Info Card */}
@@ -95,6 +105,7 @@ export default async function DepartmentDetailsPage({ params }: { params: Promis
                         departmentName={department.name}
                         departmentHeads={department.departmentHead}
                         subHeads={department.subHead}
+                        canManage={canManage}
                     />
 
                     {/* Department Employees */}
@@ -106,38 +117,7 @@ export default async function DepartmentDetailsPage({ params }: { params: Promis
                             </div>
                         </div>
 
-                        <div className="grid gap-4">
-                            {department.employees && department.employees.length > 0 ? (
-                                department.employees.map((emp: any) => (
-                                    <div key={emp._id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-border hover:border-sidebar-ring transition">
-                                        <div className="flex items-center gap-4">
-                                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-muted-foreground font-bold overflow-hidden border border-border">
-                                                {emp.image ? (
-                                                    <img src={emp.image} alt={emp.firstName} className="h-full w-full object-cover" />
-                                                ) : (
-                                                    <span>{emp.firstName?.[0]}{emp.lastName?.[0]}</span>
-                                                )}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium text-foreground">{emp.firstName} {emp.lastName}</p>
-                                                <p className="text-xs text-muted-foreground">{emp.email}</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-right flex flex-col items-end gap-1">
-                                            <Badge variant="outline" className="border-border text-muted-foreground">
-                                                {emp.positionId?.name || "No Position"}
-                                            </Badge>
-                                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                <Building2 className="h-3 w-3" />
-                                                <span>{emp.storeId?.name || "Unknown Store"}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-sm text-muted-foreground italic py-4">No employees assigned to this department in any store.</p>
-                            )}
-                        </div>
+                        <GlobalDepartmentEmployeeList employees={department.employees || []} />
                     </div>
                 </CardContent>
             </Card>
