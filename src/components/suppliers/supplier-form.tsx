@@ -76,7 +76,7 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
             deliverySchedule: prev.deliverySchedule.map((item: any, i: number) => {
                 if (i !== index) return item;
                 if (field === "dayOfWeek") return { ...item, dayOfWeek: parseInt(value) };
-                if (field === "leadDays") return { ...item, orderCutoff: { ...item.orderCutoff, leadDays: parseInt(value) } };
+                if (field === "leadDays") return { ...item, orderCutoff: { ...item.orderCutoff, leadDays: value === "" ? 0 : parseInt(value) } };
                 if (field === "time") return { ...item, orderCutoff: { ...item.orderCutoff, time: value } };
                 return item;
             })
@@ -143,7 +143,7 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
                             name="minimumOrderValue"
                             type="number"
                             value={formData.minimumOrderValue}
-                            onChange={(e) => setFormData(p => ({ ...p, minimumOrderValue: parseFloat(e.target.value) }))}
+                            onChange={(e) => setFormData(p => ({ ...p, minimumOrderValue: e.target.value === "" ? 0 : parseFloat(e.target.value) }))}
                             placeholder="0.00"
                         />
                     </div>
@@ -271,7 +271,7 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
                                 </div>
                                 <div className="col-span-3 space-y-1">
                                     <Label className="text-[10px] uppercase text-muted-foreground">Price (€)</Label>
-                                    <Input type="number" value={item.price} onChange={(e) => handleItemChange(index, "price", parseFloat(e.target.value))} placeholder="0.00" className="h-8 text-sm" />
+                                    <Input type="number" value={item.price} onChange={(e) => handleItemChange(index, "price", e.target.value === "" ? 0 : parseFloat(e.target.value))} placeholder="0.00" className="h-8 text-sm" />
                                 </div>
                                 <div className="col-span-1">
                                     <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(index)} className="h-8 w-8 text-destructive hover:bg-destructive/10">

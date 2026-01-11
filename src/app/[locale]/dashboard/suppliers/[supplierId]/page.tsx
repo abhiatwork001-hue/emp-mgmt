@@ -1,4 +1,5 @@
 import { getSupplierById } from "@/lib/actions/supplier.actions";
+import { EditSupplierDialog } from "@/components/suppliers/edit-supplier-dialog";
 import { notFound } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +53,7 @@ export default async function SupplierDetailPage(props: Props) {
                         </Badge>
                     </div>
                 </div>
-                {/* Actions placeholder - Edit could go here */}
+                <EditSupplierDialog supplier={supplier} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

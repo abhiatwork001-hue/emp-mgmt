@@ -84,6 +84,16 @@ export async function createSwapRequest(data: {
         return { success: false, error: "Identical shifts cannot be swapped." };
     }
 
+    // Check if requestor shift has already started
+    const now = new Date();
+    const reqShiftStart = new Date(data.requestorShift.dayDate);
+    const [h, m] = data.requestorShift.startTime.split(':').map(Number);
+    reqShiftStart.setHours(h, m, 0, 0);
+
+    if (reqShiftStart <= now) {
+        return { success: false, error: "Cannot swap a shift that has already started or passed." };
+    }
+
     const request = await ShiftSwapRequest.create({
         requestorId: data.requestorId,
         targetUserId: data.targetUserId,

@@ -132,92 +132,98 @@ export default function SuppliersPage() {
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
                             >
-                                <Card className="h-full hover:shadow-lg transition-all border-border/50 bg-background/50 backdrop-blur-sm group overflow-hidden">
-                                    <div className="h-2 bg-gradient-to-r from-primary/50 to-purple-500/50 w-full" />
-                                    <CardContent className="p-6 space-y-4">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <Link href={`/dashboard/suppliers/${supplier._id}`} className="hover:underline">
-                                                    <h3 className="font-bold text-lg">{supplier.name}</h3>
-                                                </Link>
-                                                {supplier.category && (
-                                                    <Badge variant="secondary" className="mt-1 text-xs font-medium">
-                                                        {supplier.category}
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                            {canManage && (
-                                                <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
-                                                        onClick={() => {
-                                                            setEditingSupplier(supplier);
-                                                            setIsDialogOpen(true);
-                                                        }}
-                                                    >
-                                                        <Edit2 className="w-3.5 h-3.5" />
-                                                    </Button>
-                                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                                                        onClick={() => handleDelete(supplier._id, supplier.name)}
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-2 text-sm text-muted-foreground">
-                                            {supplier.contactPerson && (
-                                                <div className="flex items-center gap-2">
-                                                    <User className="w-3.5 h-3.5" />
-                                                    <span>{supplier.contactPerson}</span>
-                                                </div>
-                                            )}
-                                            {supplier.phoneNumber && (
-                                                <div className="flex items-center gap-2">
-                                                    <Phone className="w-3.5 h-3.5" />
-                                                    <span>{supplier.phoneNumber}</span>
-                                                </div>
-                                            )}
-                                            {supplier.email && (
-                                                <div className="flex items-center gap-2">
-                                                    <Mail className="w-3.5 h-3.5" />
-                                                    <span>{supplier.email}</span>
-                                                </div>
-                                            )}
-                                            {supplier.address && (
-                                                <div className="flex items-center gap-2">
-                                                    <MapPin className="w-3.5 h-3.5" />
-                                                    <span className="truncate">{supplier.address}</span>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Min Order Badge */}
-                                        {supplier.minimumOrderValue > 0 && (
-                                            <div className="flex justify-end">
-                                                <div className="font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded text-xs">
-                                                    Min: €{supplier.minimumOrderValue}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {supplier.items?.length > 0 && (
-                                            <div className="pt-4 border-t border-border/40">
-                                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Top Items</p>
-                                                <div className="flex flex-wrap gap-2">
-                                                    {supplier.items.slice(0, 3).map((item: any, idx: number) => (
-                                                        <Badge key={idx} variant="outline" className="bg-muted/30 font-normal">
-                                                            {item.name}
+                                <Link href={`/dashboard/suppliers/${supplier._id}`} className="block h-full cursor-pointer">
+                                    <Card className="h-full hover:shadow-lg transition-all border-border/50 bg-background/50 backdrop-blur-sm group overflow-hidden hover:border-primary/50">
+                                        <div className="h-2 bg-gradient-to-r from-primary/50 to-purple-500/50 w-full" />
+                                        <CardContent className="p-6 space-y-4">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <h3 className="font-bold text-lg group-hover:text-primary transition-colors">{supplier.name}</h3>
+                                                    {supplier.category && (
+                                                        <Badge variant="secondary" className="mt-1 text-xs font-medium">
+                                                            {supplier.category}
                                                         </Badge>
-                                                    ))}
-                                                    {supplier.items.length > 3 && (
-                                                        <span className="text-xs text-muted-foreground self-center">+{supplier.items.length - 3} more</span>
                                                     )}
                                                 </div>
+                                                {canManage && (
+                                                    <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10 z-10 relative"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                setEditingSupplier(supplier);
+                                                                setIsDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <Edit2 className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 z-10 relative"
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                handleDelete(supplier._id, supplier.name);
+                                                            }}
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
-                                    </CardContent>
-                                </Card>
+
+                                            <div className="space-y-2 text-sm text-muted-foreground">
+                                                {supplier.contactPerson && (
+                                                    <div className="flex items-center gap-2">
+                                                        <User className="w-3.5 h-3.5" />
+                                                        <span>{supplier.contactPerson}</span>
+                                                    </div>
+                                                )}
+                                                {supplier.phoneNumber && (
+                                                    <div className="flex items-center gap-2">
+                                                        <Phone className="w-3.5 h-3.5" />
+                                                        <span>{supplier.phoneNumber}</span>
+                                                    </div>
+                                                )}
+                                                {supplier.email && (
+                                                    <div className="flex items-center gap-2">
+                                                        <Mail className="w-3.5 h-3.5" />
+                                                        <span>{supplier.email}</span>
+                                                    </div>
+                                                )}
+                                                {supplier.address && (
+                                                    <div className="flex items-center gap-2">
+                                                        <MapPin className="w-3.5 h-3.5" />
+                                                        <span className="truncate">{supplier.address}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Min Order Badge */}
+                                            {supplier.minimumOrderValue > 0 && (
+                                                <div className="flex justify-end">
+                                                    <div className="font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded text-xs">
+                                                        Min: €{supplier.minimumOrderValue}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {supplier.items?.length > 0 && (
+                                                <div className="pt-4 border-t border-border/40">
+                                                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Top Items</p>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {supplier.items.slice(0, 3).map((item: any, idx: number) => (
+                                                            <Badge key={idx} variant="outline" className="bg-muted/30 font-normal">
+                                                                {item.name}
+                                                            </Badge>
+                                                        ))}
+                                                        {supplier.items.length > 3 && (
+                                                            <span className="text-xs text-muted-foreground self-center">+{supplier.items.length - 3} more</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                </Link>
                             </motion.div>
                         ))}
                     </AnimatePresence>
