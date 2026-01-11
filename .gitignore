@@ -10,6 +10,8 @@
 !.yarn/releases
 !.yarn/versions
 /service-account.json
+android/app/google-services.json
+android/google-services.json
 
 # testing
 /coverage

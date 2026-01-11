@@ -11,6 +11,7 @@ import { triggerNotification } from "@/lib/actions/notification.actions";
 import { getEmployeeById } from "@/lib/actions/employee.actions"; // Import employee fetcher
 import { logAction } from "./log.actions";
 import { slugify, getISOWeekNumber } from "@/lib/utils";
+import crypto from "crypto";
 const MANAGE_SCHEDULE_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr", "tech"];
 
 // Strict Write Access Validation

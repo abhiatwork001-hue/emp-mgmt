@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'ChickMain',
   webDir: 'public',
   server: {
-    url: 'https://localhost:3000', // CHANGE THIS TO YOUR LIVE URL IN PRODUCTION
+    url: 'http://10.0.2.2:3000', // Android Emulator Localhost
     cleartext: true
   },
   plugins: {
