@@ -134,13 +134,13 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                 type: 'vacation',
                 status: r.status,
                 employee: {
-                    firstName: r.employeeId?.firstName || 'Unknown',
+                    firstName: r.employeeId?.firstName || tc('unknown'),
                     lastName: r.employeeId?.lastName || '',
                     image: r.employeeId?.image
                 },
                 start: new Date(r.requestedFrom),
                 end: new Date(r.requestedTo),
-                title: `${name} (Vacation)`,
+                title: `${name} (${t('list.approvedVacation')})`,
                 storeName: store,
                 deptName: dept
             });
@@ -168,13 +168,13 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                 type: 'absence',
                 status: 'absence',
                 employee: {
-                    firstName: a.employeeId?.firstName || 'Unknown',
+                    firstName: a.employeeId?.firstName || tc('unknown'),
                     lastName: a.employeeId?.lastName || '',
                     image: a.employeeId?.image
                 },
                 start: start,
                 end: end,
-                title: `${name} (Absence)`
+                title: `${name} (${t('list.absenceRecord')})`
             });
         });
 
@@ -325,10 +325,10 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                     {stores.length > 0 && (
                         <Select value={filterStore} onValueChange={setFilterStore}>
                             <SelectTrigger className="w-[140px] h-9 bg-muted/50 text-xs">
-                                <SelectValue placeholder="All Stores" />
+                                <SelectValue placeholder={tc('allStores')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Stores</SelectItem>
+                                <SelectItem value="all">{tc('allStores')}</SelectItem>
                                 {stores.map(s => <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
@@ -337,10 +337,10 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                     {departments.length > 0 && (
                         <Select value={filterDept} onValueChange={setFilterDept}>
                             <SelectTrigger className="w-[140px] h-9 bg-muted/50 text-xs">
-                                <SelectValue placeholder="All Departments" />
+                                <SelectValue placeholder={tc('allDepts')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Departments</SelectItem>
+                                <SelectItem value="all">{tc('allDepts')}</SelectItem>
                                 {departments.map(d => <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
@@ -349,10 +349,10 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                     {uniquePositions.length > 0 && (
                         <Select value={filterPosition} onValueChange={setFilterPosition}>
                             <SelectTrigger className="w-[140px] h-9 bg-muted/50 text-xs">
-                                <SelectValue placeholder="All Positions" />
+                                <SelectValue placeholder={tc('allPositions')} />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Positions</SelectItem>
+                                <SelectItem value="all">{tc('allPositions')}</SelectItem>
                                 {uniquePositions.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                             </SelectContent>
                         </Select>
@@ -360,14 +360,14 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
 
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
                         <SelectTrigger className="w-[140px] h-9 bg-muted/50 text-xs">
-                            <SelectValue placeholder="All Statuses" />
+                            <SelectValue placeholder={`${t('list.filterAll')} ${t('status')}`} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="approved">Approved</SelectItem>
-                            <SelectItem value="rejected">Rejected</SelectItem>
-                            <SelectItem value="absence">Absence</SelectItem>
+                            <SelectItem value="all">{t('list.filterAll')} {t('status')}</SelectItem>
+                            <SelectItem value="pending">{tc('pending')}</SelectItem>
+                            <SelectItem value="approved">{tc('approved')}</SelectItem>
+                            <SelectItem value="rejected">{tc('rejected')}</SelectItem>
+                            <SelectItem value="absence">{tc('absences')}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -395,7 +395,7 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                         </TabsTrigger>
                         <TabsTrigger value="upcoming" className="px-6 gap-2">
                             <span className="h-2 w-2 rounded-full bg-blue-500" />
-                            Upcoming
+                            {t('list.upcoming')}
                             <Badge variant="secondary" className="ml-2 h-5 min-w-5 px-1">{upcomingRequests.length}</Badge>
                         </TabsTrigger>
                         <TabsTrigger value="history" className="px-6 gap-2">
@@ -423,7 +423,7 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                     </TabsContent>
                     <TabsContent value="upcoming" className="mt-6 space-y-4">
                         {upcomingRequests.length === 0 ? (
-                            <EmptyState message="No upcoming approved vacations." />
+                            <EmptyState message={t('list.noUpcoming')} />
                         ) : (
                             <div className="grid grid-cols-1 gap-4">
                                 {upcomingRequests.map((req: any) => (
@@ -540,13 +540,13 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                     </CardContent>
                     <div className="bg-muted/30 p-4 border-t border-border/50 flex gap-8 text-xs justify-center font-medium text-muted-foreground">
                         <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 rounded bg-emerald-500 shadow-sm"></span> Approved Vacation
+                            <span className="w-3 h-3 rounded bg-emerald-500 shadow-sm"></span> {t('list.approvedVacation')}
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 rounded bg-amber-500 shadow-sm"></span> Pending Request
+                            <span className="w-3 h-3 rounded bg-amber-500 shadow-sm"></span> {t('list.pendingRequest')}
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 rounded bg-red-500 shadow-sm"></span> Absence Record
+                            <span className="w-3 h-3 rounded bg-red-500 shadow-sm"></span> {t('list.absenceRecord')}
                         </div>
                     </div>
                 </Card>
@@ -630,19 +630,19 @@ function VacationRequestCard({ req, onAction, loading, isHistory, canManage }: {
                                     {format(new Date(req.requestedFrom), "MMM d")} - {format(new Date(req.requestedTo), "MMM d, yyyy")}
                                 </Badge>
                                 <span className={cn("text-xs font-bold", req.totalDays > 5 ? "text-amber-500" : "text-emerald-500")}>
-                                    {req.totalDays} Days
+                                    {req.totalDays} {t('list.days')}
                                 </span>
                             </div>
                             <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-1.5 opacity-80 font-medium">
                                 <span className="flex items-center gap-1 bg-muted/30 px-1.5 py-0.5 rounded-md border border-border/30">
-                                    <span className="opacity-70">Store:</span>
-                                    <span className="text-foreground/80">{req.storeId?.name || (typeof req.storeId === 'string' ? "Store " + req.storeId.substring(0, 4) : "Unknown")}</span>
+                                    <span className="opacity-70">{t('list.store')}:</span>
+                                    <span className="text-foreground/80">{req.storeId?.name || (typeof req.storeId === 'string' ? t('list.store') + " " + req.storeId.substring(0, 4) : tc('unknown'))}</span>
                                 </span>
                                 {(req.employeeId?.storeDepartmentId || req.employeeId?.departmentId) && (
                                     <span className="flex items-center gap-1 bg-muted/30 px-1.5 py-0.5 rounded-md border border-border/30">
-                                        <span className="opacity-70">Dept:</span>
+                                        <span className="opacity-70">{t('list.dept')}:</span>
                                         <span className="text-foreground/80">
-                                            {req.employeeId?.storeDepartmentId?.name || req.employeeId?.departmentId?.name || "Unknown"}
+                                            {req.employeeId?.storeDepartmentId?.name || req.employeeId?.departmentId?.name || tc('unknown')}
                                         </span>
                                     </span>
                                 )}
@@ -681,14 +681,14 @@ function VacationRequestCard({ req, onAction, loading, isHistory, canManage }: {
                             </div>
                         ) : (
                             <Badge variant="secondary" className="px-3 py-1 bg-muted text-muted-foreground">
-                                Pending Review
+                                {t('list.pendingReview')}
                             </Badge>
                         )}
                     </div>
                 </div>
                 {req.comments && (
                     <div className="mt-4 bg-muted/40 p-3 rounded-md text-sm text-foreground/80 border border-border/50 italic flex gap-2 items-start">
-                        <span className="font-bold text-muted-foreground not-italic text-xs uppercase tracking-wider mt-0.5">Note</span>
+                        <span className="font-bold text-muted-foreground not-italic text-xs uppercase tracking-wider mt-0.5">{t('list.note')}</span>
                         {req.comments}
                     </div>
                 )}

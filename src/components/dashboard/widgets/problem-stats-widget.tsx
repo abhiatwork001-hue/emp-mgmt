@@ -7,6 +7,9 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { getProblems } from "@/lib/actions/problem.actions";
 
+// ... (imports remain)
+import { useTranslations } from "next-intl";
+
 interface ProblemStatsWidgetProps {
     userId: string;
     role: string;
@@ -21,6 +24,7 @@ export function ProblemStatsWidget({ userId, role, storeId, className }: Problem
         resolvedRecently: 0
     });
     const [loading, setLoading] = useState(true);
+    const t = useTranslations("Dashboard.widgets.problemStatsWidget");
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -57,7 +61,7 @@ export function ProblemStatsWidget({ userId, role, storeId, className }: Problem
             )}>
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-medium text-muted-foreground flex items-center justify-between">
-                        <span>Reported Issues</span>
+                        <span>{t('title')}</span>
                         {stats.highPriority > 0 && <AlertCircle className="h-4 w-4 text-red-500 animate-pulse" />}
                     </CardTitle>
                 </CardHeader>
@@ -65,19 +69,19 @@ export function ProblemStatsWidget({ userId, role, storeId, className }: Problem
                     <div className="flex items-center gap-4">
                         <div className="flex flex-col">
                             <span className="text-2xl font-bold">{stats.totalOpen}</span>
-                            <span className="text-xs text-muted-foreground">Pending</span>
+                            <span className="text-xs text-muted-foreground">{t('pending')}</span>
                         </div>
                         <div className="w-px h-8 bg-border" />
                         <div className="flex flex-col">
                             <span className={cn("text-2xl font-bold", stats.highPriority > 0 ? "text-red-500" : "text-foreground")}>
                                 {stats.highPriority}
                             </span>
-                            <span className="text-xs text-muted-foreground">Critical/High</span>
+                            <span className="text-xs text-muted-foreground">{t('criticalHigh')}</span>
                         </div>
                         <div className="w-px h-8 bg-border" />
                         <div className="flex flex-col">
                             <span className="text-2xl font-bold text-emerald-600">{stats.resolvedRecently}</span>
-                            <span className="text-xs text-muted-foreground">Resolved</span>
+                            <span className="text-xs text-muted-foreground">{t('resolved')}</span>
                         </div>
                     </div>
                 </CardContent>

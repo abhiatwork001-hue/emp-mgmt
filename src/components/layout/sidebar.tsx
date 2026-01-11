@@ -152,7 +152,7 @@ export function Sidebar({
                                     onClick={() => toggleGroup(group.title)}
                                     className="flex items-center justify-between w-full px-3 mb-3 text-[10px] font-black tracking-[0.15em] text-muted-foreground/40 uppercase hover:text-primary transition-all group/title"
                                 >
-                                    <span>{group.title}</span>
+                                    <span>{translations[`group.${group.title.toLowerCase()}`] || group.title}</span>
                                     <div className="h-[1px] flex-1 bg-border/20 mx-3 group-hover/title:bg-primary/20 transition-all" />
                                 </button>
                             )}

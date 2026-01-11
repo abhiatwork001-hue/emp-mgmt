@@ -6,14 +6,23 @@
         "departments": "Departamentos",
         "recipes": "Receitas",
         "schedule": "Escalas",
+        "schedules": "Escalas",
         "vacations": "Férias",
         "absences": "Ausências",
         "employees": "Funcionários",
         "staffviewer": "Visualizador de Staff",
         "positions": "Cargos",
         "profile": "Perfil",
+        "tasks": "Tarefas",
+        "messages": "Mensagens",
+        "credentials": "Credenciais",
+        "coverage": "Cobertura",
+        "offers": "Ofertas",
         "problems": "Problemas",
         "settings": "Configurações",
+        "reviews": "Avaliações",
+        "activities": "Atividades",
+        "activity-log": "Registo de Atividades",
         "logout": "Sair",
         "search": "Procurar",
         "active": "Ativo",
@@ -30,6 +39,7 @@
         "published": "Publicado",
         "history": "Histórico",
         "note": "Nota",
+        "unknown": "Desconhecido",
         "searchEmployee": "Pesquisar funcionário...",
         "approve": "Aprovar",
         "reject": "Rejeitar",
@@ -63,11 +73,516 @@
         "translations": "Traduções",
         "name": "Nome",
         "suppliers": "Fornecedores",
-        "directory": "Diretório"
+        "directory": "Diretório",
+        "evaluations": "Avaliações",
+        "documents": "Documentos",
+        "roleTypes": {
+            "super_user": "Super Utilizador",
+            "owner": "Proprietário (Super Admin)",
+            "admin": "Admin",
+            "hr": "Gestor de RH",
+            "store_manager": "Gerente de Loja",
+            "department_head": "Chefe de Dep. Global",
+            "store_department_head": "Chefe de Dep. Loja",
+            "employee": "Funcionário"
+        }
+    },
+    "RoleSwitcher": {
+        "testView": "Vista de Teste:",
+        "selectRole": "Selecionar função",
+        "testingMode": "Modo de Teste"
+    },
+    "PendingActions": {
+        "vacationRequest": "Pedido de Férias",
+        "absenceReport": "Relatório de Ausência",
+        "overtimeRequest": "Pedido de Horas Extras",
+        "draftSchedule": "Rascunho de Escala",
+        "coverageOffer": "Oferta de Cobertura",
+        "days": "{count} Dias",
+        "hours": "{count} Horas",
+        "covering": "A cobrir: {name}",
+        "workingWith": "A trabalhar com: {names}",
+        "reason": "Razão do funcionário: {reason}",
+        "hrMessage": "RH: {message}",
+        "noComments": "Sem comentários fornecidos.",
+        "viewAttachment": "Ver Anexo {index}",
+        "finalize": "Finalizar",
+        "accept": "Aceitar",
+        "decline": "Recusar",
+        "title": "Ações Pendentes",
+        "description": "Gira os seus pedidos e analise os itens que requerem a sua aprovação.",
+        "myRequests": "Os Meus Pedidos Pendentes",
+        "toApprove": "A aguardar a minha aprovação",
+        "noPersonal": "Não tem pedidos pendentes.",
+        "noApprovals": "Nenhum item requer a sua aprovação agora.",
+        "tabs": {
+            "all": "Todos",
+            "vacations": "Férias",
+            "absences": "Ausências",
+            "overtime": "Horas Extra",
+            "schedules": "Escalas",
+            "coverage": "Cobertura"
+        },
+        "item": {
+            "requestedBy": "Pedido por {name}",
+            "review": "Rever",
+            "reject": "Rejeitar",
+            "approve": "Aprovar",
+            "edit": "Editar",
+            "cancel": "Cancelar"
+        }
     },
     "Dashboard": {
         "title": "Painel de Controlo",
-        "welcome": "Bem-vindo de volta, {name}"
+        "welcome": "Bem-vindo de volta, {name}",
+        "greetings": {
+            "morning": "Bom Dia",
+            "afternoon": "Boa Tarde",
+            "evening": "Boa Noite"
+        },
+        "workspaceWelcome": "Bem-vindo de volta ao seu espaço de trabalho",
+        "storeFallback": "Loja",
+        "userFallback": "Utilizador",
+        "widgets": {
+            "personalWorkspace": "Espaço Pessoal",
+            "vacationsRemaining": "Férias Restantes",
+            "daysLeft": "dias restantes",
+            "nextVacation": "Próximas Férias",
+            "inDays": "Em {days} dias",
+            "nonePlanned": "Nenhuma Planeada",
+            "scheduleNow": "Agendar agora",
+            "nextDayOff": "Próxima Folga",
+            "daysAway": "dias",
+            "restDay": "Dia de Descanso",
+            "myWeeklySchedule": "O Meu Horário Semanal",
+            "workingWithYou": "A trabalhar consigo hoje",
+            "workingToday": "A Trabalhar Hoje",
+            "viewSchedule": "Ver Horário",
+            "itsJustYou": "É apenas você hoje!",
+            "holdingFort": "Você está a segurar o forte. Tenha um ótimo turno!",
+            "officialNotices": "Avisos Oficiais da Empresa",
+            "timeOff": "Folga",
+            "requestVacation": "Solicitar Férias",
+            "sickReport": "Baixa Médica",
+            "reportAbsence": "Reportar Ausência",
+            "birthdays": "Aniversários",
+            "publicHolidays": "Feriados Públicos",
+            "managementActions": "Ações de Gestão",
+            "manageSchedules": "Gerir Horários",
+            "manageTeam": "Gerir Equipa",
+            "myStore": "A Minha Loja",
+            "networkDashboard": "Painel de Rede",
+            "storeDashboard": "Painel de Loja",
+            "departmentView": "Vista de Departamento",
+            "complianceWarning": "Aviso de Conformidade: Horários em Falta",
+            "overdue": "Em Atraso",
+            "reviewBreakdown": "Rever Detalhes e Alerta",
+            "departmentOverview": "Visão Geral do Departamento",
+            "headTitle": "Chefe",
+            "overviewText": "Visão geral para {department} em {store}",
+            "teamToday": "Equipa Hoje",
+            "membersOnShift": "membros no turno",
+            "teamVacation": "Férias da Equipa",
+            "membersAway": "membros ausentes",
+            "pendingRequests": "pedidos pendentes",
+            "approvals": "Aprovações",
+            "allCaughtUp": "Tudo em Dia",
+            "noPendingRequestsDept": "Sem pedidos pendentes para o seu departamento.",
+            "departmentTools": "Ferramentas do Departamento",
+            "createSchedule": "Criar Horário",
+            "inventoryCheck": "Verificação de Inventário",
+            "assignedTasks": "Tarefas Atribuídas",
+            "fullDeptView": "VISTA COMPLETA DEP.",
+            "pendingTeamTasks": "Tarefas de Equipa Pendentes",
+            "storeDepartmentOverview": "Visão Geral do Departamento da Loja",
+            "onShiftIn": "no turno em {department}",
+            "onVacationTitle": "De Férias",
+            "managementTools": "Ferramentas de Gestão",
+            "myScheduleOverview": "Visão Geral do Meu Horário",
+            "teamTasks": "Tarefas da Equipa",
+            "birthdayWidget": {
+                "title": "Próximos Aniversários",
+                "comingUp": "{count} em breve",
+                "emptyTitle": "Sem aniversários próximos",
+                "emptyDesc": "A equipa não tem aniversários nos próximos 30 dias.",
+                "today": "Hoje!",
+                "happyBirthday": "Feliz Aniversário!",
+                "inDays": "Em {days} dias",
+                "defaultMessage": "Feliz Aniversário {name}! 🎉🎂 Espero que tenhas um dia fantástico!"
+            },
+            "holidays": {
+                "newYearsEve": {
+                    "name": "Véspera de Ano Novo",
+                    "message": "🎊 Desejo-te uma fantástica Véspera de Ano Novo! Prepara-te para celebrar! 🥳"
+                },
+                "newYearsDay": {
+                    "name": "Dia de Ano Novo",
+                    "message": "🎉 Feliz Ano Novo! Desejo-te sucesso e felicidade no ano que vem! ✨"
+                },
+                "christmasEve": {
+                    "name": "Véspera de Natal",
+                    "message": "🎄 Feliz Véspera de Natal! Que as tuas festas sejam cheias de alegria e calor! 🎅"
+                },
+                "christmasDay": {
+                    "name": "Dia de Natal",
+                    "message": "🎅 Feliz Natal! Desejo-te a ti e aos teus entes queridos um dia maravilhoso! 🎁"
+                },
+                "valentinesDay": {
+                    "name": "Dia dos Namorados",
+                    "message": "💝 Feliz Dia dos Namorados! Espalha amor e bondade hoje! 💕"
+                },
+                "easter": {
+                    "name": "Páscoa",
+                    "message": "🐰 Feliz Páscoa! Desejo-te uma celebração alegre! 🥚"
+                },
+                "halloween": {
+                    "name": "Halloween",
+                    "message": "🎃 Feliz Halloween! Tem um dia assustador e divertido! 👻"
+                }
+            },
+            "publicHolidayWidget": {
+                "title": "Feriados Públicos",
+                "empty": "Nenhum feriado próximo encontrado.",
+                "today": "Hoje",
+                "days": "{days} dias"
+            },
+            "orderingWidget": {
+                "title": "Encomendas de Hoje",
+                "empty": "Nenhuma encomenda para hoje.",
+                "mainTitle": "Encomendar Hoje",
+                "due": "{count} Pendentes",
+                "delivers": "Entrega: {date}",
+                "cutoff": "Hora Limite: {time}",
+                "orderBtn": "Encomendar"
+            },
+            "problemStatsWidget": {
+                "title": "Problemas Reportados",
+                "pending": "Pendente",
+                "criticalHigh": "Crítico/Alto",
+                "resolved": "Resolvido"
+            },
+            "statsCards": {
+                "totalEmployees": "Total de Funcionários",
+                "activeEmployees": "Funcionários Ativos",
+                "onVacation": "De Férias",
+                "absentToday": "Ausentes Hoje",
+                "pendingApprovals": "Aprovações Pendentes",
+                "totalHours": "Total de Horas"
+            },
+            "activeActions": {
+                "title": "Ações em Curso",
+                "confirmCancel": "Tem a certeza que deseja cancelar este pedido?",
+                "cancelSuccess": "Pedido cancelado com sucesso",
+                "cancelError": "Falha ao cancelar pedido",
+                "confirmAccept": "Tem a certeza que deseja aceitar este turno?",
+                "acceptSuccess": "Turno aceite! Os RH irão finalizar em breve.",
+                "acceptError": "Falha ao aceitar turno",
+                "genericError": "Algo correu mal",
+                "vacationRequest": "Pedido de Férias",
+                "absenceReport": "Relatório de Ausência",
+                "shiftCoverage": "Cobertura de Turno",
+                "live": "Ao Vivo",
+                "seeking": "Procurando",
+                "pending": "Pendente",
+                "availableOffers": "Ofertas de Cobertura Disponíveis",
+                "coverShiftRequest": "Pedido de Cobertura de Turno",
+                "with": "Com: {names}",
+                "hrMessage": "RH: {message}",
+                "acceptBtn": "Aceitar"
+            },
+            "pendingApprovalsWidget": {
+                "unauthorized": "Não tem autorização para realizar esta ação.",
+                "rejectedFromDashboard": "Rejeitado pelo Painel",
+                "approvedSuccess": "Aprovado com sucesso",
+                "rejectedSuccess": "Rejeitado com sucesso",
+                "actionFailed": "Ação falhou",
+                "bulkApproving": "A aprovar em massa {count} itens...",
+                "bulkRejecting": "A rejeitar em massa {count} itens...",
+                "bulkApproveSuccess": "Aprovação em massa concluída!",
+                "bulkRejectSuccess": "Rejeição em massa concluída!",
+                "bulkError": "Processado com erros. Falhou: {names}",
+                "actionCenter": "Centro de Ação",
+                "efficiency": "Eficiência Operacional: 100%",
+                "allProcessed": "Todos os pedidos processados",
+                "criticalApprovals": "APROVAÇÕES CRÍTICAS",
+                "actionRequired": "Ação Necessária",
+                "rejectBtn": "Rejeitar ({count})",
+                "approveBtn": "Aprovar ({count})",
+                "allHandledTitle": "Todas as aprovações tratadas 🎉",
+                "allHandledDesc": "Bom trabalho! Está tudo em dia.",
+                "selectAll": "Selecionar Tudo",
+                "viewAll": "VER TODOS OS {count} PEDIDOS",
+                "viewCommandCenter": "VER CENTRO DE COMANDO",
+                "items": {
+                    "unknown": "Desconhecido",
+                    "overtime": "{hours}h Horas Extras",
+                    "vacation": "{days} Dias de Férias",
+                    "absence": "Ausência",
+                    "schedule": "Escala Semana {week}",
+                    "finalizeCoverage": "Finalizar Cobertura: {status}",
+                    "foundReplacement": "Substituto Encontrado",
+                    "seeking": "Procurando"
+                },
+                "bulkRejectReason": "Rejeição em Massa"
+            },
+            "swapRequestsWidget": {
+                "title": "Pedidos de Troca de Turno",
+                "description": "Colegas querem trocar turnos consigo.",
+                "offers": "Oferece:",
+                "yours": "O seu:",
+                "for": "por",
+                "decline": "Recusar",
+                "accept": "Aceitar",
+                "toast": {
+                    "success": "Pedido de troca {action}",
+                    "failed": "Falha ao processar pedido",
+                    "error": "Ocorreu um erro"
+                }
+            },
+            "scheduleOverview": {
+                "title": "Visão Geral da Escala",
+                "approved": "Aprovado",
+                "pending": "Aprovação Pendente",
+                "inProgress": "Em Progresso",
+                "recentTitle": "Escalas Recentes",
+                "empty": "Nenhuma escala recente.",
+                "weekOf": "Semana de {date}",
+                "createdBy": "Criado por {name}",
+                "viewSchedule": "Ver Escala"
+            },
+            "operationsRadar": {
+                "title": "Radar de Operações",
+                "liveMetrics": "Métricas ao Vivo",
+                "scheduleHealth": "Estado da Escala",
+                "nextWeek": "Próxima Semana:",
+                "published": "Publicado",
+                "overdue": "Em Atraso",
+                "daysLeft": "{count} Dias Restantes",
+                "staffingLevels": "Níveis de Pessoal",
+                "target": "{count} Alvo",
+                "noTarget": "Sem Alvo Definido",
+                "underMin": "Abaixo do requisito mínimo de {min}",
+                "allSystemsGo": "Todos os sistemas operacionais",
+                "view": "Ver"
+            },
+            "insights": {
+                "title": "Informações"
+            },
+            "employeePendingActions": {
+                "title": "Ações Pendentes",
+                "viewAll": "Ver Tudo",
+                "swap": {
+                    "title": "{name} quer trocar",
+                    "subtitle": "Pedido de Troca de Turno",
+                    "pending": "Pendente",
+                    "accept": "Aceitar",
+                    "reject": "Rejeitar",
+                    "alert": {
+                        "title": "Aceitar Troca de Turno?",
+                        "description": "Isto irá modificar a sua escala. Ficará responsável por este turno.",
+                        "confirmReject": "Rejeitar este pedido de troca?"
+                    },
+                    "toast": {
+                        "success": "Pedido de troca {action}",
+                        "error": "Falha ao processar pedido"
+                    }
+                },
+                "coverageOffer": {
+                    "title": "Cobertura de Turno Disponível",
+                    "subtitle": "Turno {dept}",
+                    "open": "Aberto",
+                    "needsCover": "precisa de cobertura",
+                    "accept": "Aceitar Turno",
+                    "decline": "Recusar",
+                    "alert": {
+                        "title": "Aceitar Turno Extra?",
+                        "description": "Está a concordar em cobrir este turno. Será adicionado à sua escala imediatamente.",
+                        "confirmDecline": "Recusar esta oferta de cobertura?"
+                    },
+                    "toast": {
+                        "success": "Oferta de cobertura {action}",
+                        "error": "Falha ao processar pedido"
+                    }
+                },
+                "vacation": {
+                    "title": "Pedido de Férias",
+                    "subtitle": "A aguardar aprovação",
+                    "inReview": "Em Revisão",
+                    "requested": "Solicitado",
+                    "days": "({days} dias)",
+                    "cancel": "Cancelar Pedido"
+                },
+                "absence": {
+                    "title": "Ausência Reportada",
+                    "subtitle": "Revisão pendente",
+                    "pending": "Pendente",
+                    "date": "Data",
+                    "cancel": "Cancelar Pedido"
+                },
+                "coverageRequest": {
+                    "title": "A Procurar Cobertura",
+                    "subtitle": "A verificar candidatos...",
+                    "broadcasting": "A transmitir",
+                    "shift": "Turno",
+                    "cancel": "Cancelar Pedido"
+                },
+                "common": {
+                    "cancelConfirm": "Tem a certeza que quer cancelar este pedido?",
+                    "cancelled": "Pedido cancelado",
+                    "error": "Ocorreu um erro",
+                    "confirm": "Confirmar",
+                    "cancel": "Cancelar"
+                }
+            },
+            "personalTodo": {
+                "title": "Fluxo de Trabalho Pessoal",
+                "new": "Novo",
+                "tabs": {
+                    "all": "Tudo",
+                    "tasks": "Tarefas",
+                    "notes": "Notas"
+                },
+                "empty": "Nenhum item encontrado. Crie a sua primeira nota ou tarefa!",
+                "created": "Criado",
+                "today": "Hoje",
+                "uncheck": "Desmarcar",
+                "completed": "Concluído",
+                "completedAt": "Concluído",
+                "recent": "Recente",
+                "viewFull": "Ver Página Completa",
+                "dialog": {
+                    "titleCreate": "Criar Nova Nota / Tarefa",
+                    "titleEdit": "Editar Item",
+                    "isTask": "Marcar como Tarefa Acionável?",
+                    "itemTitle": "Título (Opcional)",
+                    "titlePlaceholder": "ex: Ideias para Menu",
+                    "content": "Conteúdo",
+                    "contentPlaceholderTask": "O que precisa de ser feito?",
+                    "contentPlaceholderNote": "Escreva os seus pensamentos...",
+                    "deadline": "Prazo",
+                    "deadlinePlaceholder": "Selecionar prazo",
+                    "save": "Guardar Alterações",
+                    "createTask": "Criar Tarefa",
+                    "createNote": "Criar Nota"
+                },
+                "toast": {
+                    "updateError": "Falha ao atualizar",
+                    "createError": "Falha ao criar"
+                },
+                "untitled": "Nota Sem Título"
+            },
+            "upcomingVacations": {
+                "title": "Próximas Férias",
+                "thisWeek": "Esta Semana",
+                "thisMonth": "Este Mês",
+                "total": "Total",
+                "scheduleTitle": "Escala de Férias dos Funcionários",
+                "empty": "Nenhuma féria próxima encontrada.",
+                "tomorrow": "Amanhã",
+                "days": "{count} dias",
+                "viewDetails": "Ver Detalhes",
+                "contact": "Contactar",
+                "warning": "{count} féria(s) a começar dentro de 3 dias"
+            },
+            "recentActivity": {
+                "title": "Atividade Recente",
+                "viewLog": "Ver Registo",
+                "empty": "Nenhuma atividade recente registada",
+                "system": "Sistema"
+            }
+        },
+        "notices": {
+            "title": "Quadro de Avisos",
+            "noActive": "Nenhum aviso ativo neste momento.",
+            "openArchive": "ABRIR ARQUIVO",
+            "broadcasts": "TRANSMISSÕES DO ECOSSISTEMA",
+            "of": "DE",
+            "urgent": "URGENTE",
+            "global": "GLOBAL",
+            "store": "LOJA",
+            "engage": "VER",
+            "sync": "A Sincronizar Avisos"
+        },
+        "vacations": {
+            "title": "Férias",
+            "subtitle": "Gerir e rever pedidos de férias dos funcionários.",
+            "pendingRequests": "Pedidos Pendentes",
+            "approvedThisYear": "Aprovado Este Ano"
+        }
+    },
+    "Notices": {
+        "postNotice": "Publicar Aviso",
+        "editNotice": "Editar Aviso",
+        "postNewNotice": "Publicar Novo Aviso",
+        "editDescription": "Atualize o seu anúncio.",
+        "createDescription": "Anuncie atualizações, políticas ou notícias à sua equipa.",
+        "title": "Título",
+        "titlePlaceholder": "ex: Alterações no Horário de Feriados",
+        "targetAudience": "Público-Alvo",
+        "selectAudience": "Selecione quem vê isto...",
+        "allCompany": "Toda a Empresa (Global)",
+        "specificStore": "Loja Específica",
+        "specificGlobalDept": "Departamento Global Específico",
+        "specificRoleGroup": "Grupo de Funções Específico",
+        "myStore": "Minha Loja (Todos os Funcionários)",
+        "roleGroupInStore": "Grupo de Funções Específico (Na Minha Loja)",
+        "deptInStore": "Departamento Específico (Na Minha Loja)",
+        "myDeptGlobal": "Meu Departamento (Tudo Global)",
+        "myDeptStore": "Meu Departamento (Nível de Loja)",
+        "selectDepartment": "Selecionar Departamento",
+        "pickDepartment": "Escolher um departamento",
+        "noDeptsFound": "Nenhum departamento encontrado",
+        "filterContent": "Filtrar por Conteúdo (Opcional)",
+        "allEmployeesInDept": "Todos os Funcionários no Dep.",
+        "allEmployees": "Todos os Funcionários",
+        "deptHeadOnly": "Apenas Chefe de Dep.",
+        "staffOnly": "Apenas Pessoal",
+        "selectStore": "Selecionar Loja",
+        "pickStore": "Escolher uma loja",
+        "selectRole": "Selecionar Função",
+        "pickRole": "Escolher uma função",
+        "storeManagers": "Gerentes de Loja",
+        "departmentHeads": "Chefes de Departamento",
+        "storeDeptHeads": "Chefes de Dep. de Loja",
+        "employees": "Funcionários",
+        "expirationDate": "Data de Expiração (Opcional)",
+        "pickExpiration": "Escolher data de expiração",
+        "expirationHelp": "O aviso desaparece após esta data.",
+        "publishToAdmin": "Publicar também para o Administrador",
+        "contentMarkdown": "Conteúdo (Markdown)",
+        "contentPlaceholder": "Digite o seu aviso aqui...",
+        "cancel": "Cancelar",
+        "saveChanges": "Guardar Alterações",
+        "noticeUpdated": "Aviso Atualizado",
+        "noticePosted": "Aviso Publicado",
+        "failedToSave": "Falha ao guardar aviso"
+    },
+    "Reminders": {
+        "reminderCreated": "Lembrete Criado",
+        "failedCreate": "Falha ao criar lembrete",
+        "errorCreate": "Erro ao criar lembrete",
+        "newReminder": "Novo Lembrete",
+        "createReminder": "Criar Lembrete",
+        "createDescription": "Envie um alerta ou lembrete de reunião para a equipa.",
+        "title": "Título",
+        "titlePlaceholder": "ex: Reunião Geral",
+        "description": "Descrição",
+        "type": "Tipo",
+        "general": "Geral",
+        "meeting": "Reunião",
+        "order": "Verificação de Pedido",
+        "priority": "Prioridade",
+        "low": "Baixa",
+        "medium": "Média",
+        "high": "Alta",
+        "dueDate": "Data e Hora de Vencimento",
+        "pickDate": "Escolher uma data",
+        "targetAudience": "Público-Alvo",
+        "everyone": "Todos",
+        "storeManagers": "Gerentes de Loja",
+        "employees": "Funcionários",
+        "admins": "Administradores",
+        "create": "Criar"
     },
     "Vacation": {
         "title": "Férias",
@@ -98,7 +613,22 @@
         "pickDate": "Escolha uma data",
         "remainingBalance": "Saldo Restante",
         "submitting": "A enviar...",
-        "submit": "Enviar"
+        "submit": "Enviar",
+        "list": {
+            "upcoming": "Próximos",
+            "noUpcoming": "Sem férias aprovadas próximas.",
+            "pendingRequest": "Pedido Pendente",
+            "approvedVacation": "Férias Aprovadas",
+            "absenceRecord": "Registo de Ausência",
+            "pendingReview": "Revisão Pendente",
+            "days": "Dias",
+            "store": "Loja",
+            "dept": "Dept",
+            "note": "Nota",
+            "filterAll": "Todos",
+            "noPending": "Sem pedidos pendentes.",
+            "noHistory": "Nenhum histórico encontrado."
+        }
     },
     "Absence": {
         "title": "Ausências",
@@ -155,7 +685,13 @@
         "rejectPlaceholder": "Por favor explique por que a escala está a ser rejeitada...",
         "noShifts": "Nenhum turno atribuído.",
         "underHours": "{hours} / {contract}h",
-        "underDays": "{days} / {contract} Dias"
+        "underDays": "{days} / {contract} Dias",
+        "scheduleActions": "Ações",
+        "cancelEdit": "Cancelar Edição",
+        "discardChangesConfirm": "Tem alterações não guardadas. Deseja descartá-las?",
+        "editCancelled": "Edição cancelada, escala republicada",
+        "cancelEditFailed": "Falha ao cancelar edição",
+        "shiftDetails": "Detalhes do Turno"
     },
     "Profile": {
         "personal": "Pessoal",
@@ -199,27 +735,115 @@
         "title": "Visualizador de Horários de Staff",
         "description": "Examine horários históricos e planeados para os membros da sua equipa."
     },
-    "PendingActions": {
-        "title": "Ações Pendentes",
-        "description": "Gira os seus pedidos e reveja itens que aguardam a sua aprovação.",
-        "myRequests": "Meus Pedidos Pendentes",
-        "toApprove": "Aguardando Minha Aprovação",
-        "noPersonal": "Não tem pedidos pendentes.",
-        "noApprovals": "Nenhum item requer a sua aprovação no momento.",
-        "tabs": {
-            "all": "Todos",
-            "vacations": "Férias",
-            "absences": "Ausências",
-            "overtime": "Horas Extra",
-            "schedules": "Horários"
+    "Documents": {
+        "title": "Central de Documentos",
+        "subtitle": "Repositório central de todos os ficheiros submetidos pelos funcionários (Tarefas, Baixas Médicas, Problemas).",
+        "searchPlaceholder": "Pesquisar por nome, título do documento, contexto...",
+        "filterByType": "Filtrar por Tipo",
+        "allTypes": "Todos os Tipos",
+        "sickLeaves": "Baixas Médicas / Ausência",
+        "taskSubmissions": "Submissões de Tarefas",
+        "problemReports": "Relatórios de Problemas",
+        "table": {
+            "type": "Tipo",
+            "document": "Documento",
+            "submittedBy": "Submetido Por",
+            "context": "Contexto / Razão",
+            "date": "Data",
+            "action": "Ação",
+            "view": "Ver",
+            "loading": "A carregar...",
+            "noDocuments": "Nenhum documento encontrado.",
+            "showing": "A mostrar {count} de {total} documentos"
         },
-        "item": {
-            "requestedBy": "Pedido por {name}",
-            "review": "Rever",
-            "edit": "Editar",
-            "cancel": "Cancelar Pedido",
-            "approve": "Aprovar",
-            "reject": "Rejeitar"
+        "types": {
+            "task": "Submissão de Tarefa",
+            "problem": "Anexo de Problema",
+            "absence": "Nota de Doença/Ausência",
+            "employee_profile": "Ficha de Funcionário",
+            "document": "Documento"
+        }
+    },
+    "ReportProblem": {
+        "title": "Reportar um Problema",
+        "description": "Reporte um problema à equipa de gestão. Por favor, forneça o máximo de detalhes possível.",
+        "fields": {
+            "recipient": {
+                "label": "Enviar Para",
+                "placeholder": "Selecionar Destinatário",
+                "options": {
+                    "store_manager": "Gerente de Loja",
+                    "store_department_head": "Chefe de Departamento",
+                    "head_of_department": "Chefe Global de Dept",
+                    "chef": "Chef / Cozinha",
+                    "hr": "Recursos Humanos (RH)",
+                    "owner": "Proprietário / Admin"
+                }
+            },
+            "priority": {
+                "label": "Prioridade",
+                "placeholder": "Selecionar Prioridade",
+                "options": {
+                    "low": "Baixa - Problema menor",
+                    "medium": "Média - Requer atenção",
+                    "high": "Alta - Urgente!"
+                }
+            },
+            "type": {
+                "label": "Tipo",
+                "placeholder": "Selecionar Tipo",
+                "options": {
+                    "equipment": "Falha de Equipamento",
+                    "personnel": "Problema de Pessoal",
+                    "maintenance": "Manutenção",
+                    "safety": "Risco de Segurança",
+                    "stock": "Stock / Inventário",
+                    "other": "Outro"
+                }
+            },
+            "title": {
+                "label": "Título do Problema",
+                "placeholder": "Breve título do problema"
+            },
+            "problemDescription": {
+                "label": "Descrição",
+                "placeholder": "Descreva o problema em detalhe..."
+            }
+        },
+        "buttons": {
+            "cancel": "Cancelar",
+            "submit": "Reportar Problema",
+            "submitting": "A reportar..."
+        },
+        "validation": {
+            "recipientRequired": "Destinatário é obrigatório",
+            "typeRequired": "Tipo é obrigatório",
+            "titleLength": "O título deve ter pelo menos 5 caracteres",
+            "descriptionLength": "A descrição deve ter pelo menos 10 caracteres"
+        },
+        "toast": {
+            "success": "Problema reportado com sucesso",
+            "successDesc": "A equipa relevante foi notificada.",
+            "error": "Falha ao reportar problema",
+            "genericError": "Ocorreu um erro"
+        }
+    },
+    "Sidebar": {
+        "groups": {
+            "operations": "Operações",
+            "people": "Pessoas",
+            "structure": "Estrutura",
+            "communication": "Comunicação",
+            "account": "Conta"
+        }
+    },
+    "Tasks": {
+        "comments": {
+            "title": "Comentários",
+            "noComments": "Ainda sem comentários. Inicie a conversa!",
+            "post": "Publicar Comentário",
+            "posting": "A publicar...",
+            "placeholder": "Escreva um comentário..."
         }
     }
 }

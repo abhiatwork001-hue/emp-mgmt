@@ -15,6 +15,9 @@ import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import { PersonalTodoWidget } from "@/components/dashboard/personal-todo-widget";
 import { ReminderWidget } from "@/components/reminders/reminder-widget";
 
+// ... (imports remain)
+import { useTranslations } from "next-intl";
+
 interface DepartmentHeadDashboardProps {
     employee: any;
     pendingRequests: any[];
@@ -33,6 +36,7 @@ interface DepartmentHeadDashboardProps {
 }
 
 export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats, activeActions, personalTodos }: DepartmentHeadDashboardProps) {
+    const t = useTranslations("Dashboard");
     const sidebarContent = {
         todo: <PersonalTodoWidget initialTodos={personalTodos} userId={employee._id} />,
         notifications: (
@@ -50,17 +54,17 @@ export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats, 
                     animate={{ opacity: 1, x: 0 }}
                 >
                     <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest bg-muted/30 border-border/20 px-3 py-1 text-muted-foreground">
-                        Department Overview
+                        {t('widgets.departmentOverview')}
                     </Badge>
                 </motion.div>
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight text-foreground">
-                            Head {employee.firstName}
+                            {t('widgets.headTitle')} {employee.firstName}
                         </h2>
                         <p className="text-muted-foreground">
-                            Overview for {employee.storeDepartmentId?.name || "Your Department"} at {employee.storeId?.name || "Store"}.
+                            {t('widgets.overviewText', { department: employee.storeDepartmentId?.name || "Your Department", store: employee.storeId?.name || "Store" })}
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -75,41 +79,41 @@ export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats, 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <Card className="bg-card border-border">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">Team Today</CardTitle>
+                            <CardTitle className="text-sm font-medium text-muted-foreground">{t('widgets.teamToday')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold">{deptStats.todayShifts} / {deptStats.totalEmployees}</div>
-                            <p className="text-xs text-muted-foreground mt-1">members on shift</p>
+                            <p className="text-xs text-muted-foreground mt-1">{t('widgets.membersOnShift')}</p>
                         </CardContent>
                     </Card>
 
                     <Card className="bg-card border-border">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">Team Vacation</CardTitle>
+                            <CardTitle className="text-sm font-medium text-muted-foreground">{t('widgets.teamVacation')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-2xl font-bold flex items-center gap-2">
                                 {deptStats.onVacation}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">members away</p>
+                            <p className="text-xs text-muted-foreground mt-1">{t('widgets.membersAway')}</p>
                         </CardContent>
                     </Card>
 
                     <Card className="bg-card border-border">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">Approvals</CardTitle>
+                            <CardTitle className="text-sm font-medium text-muted-foreground">{t('widgets.approvals')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className={`text-2xl font-bold ${pendingRequests.length > 0 ? "text-amber-400" : "text-emerald-400"}`}>
                                 {pendingRequests.length}
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">pending requests</p>
+                            <p className="text-xs text-muted-foreground mt-1">{t('widgets.pendingRequests')}</p>
                         </CardContent>
                     </Card>
 
                     <Card className="bg-card border-border">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-sm font-medium text-muted-foreground">Next Meeting</CardTitle>
+                            <CardTitle className="text-sm font-medium text-muted-foreground">{t('widgets.nextMeeting')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="text-lg font-bold">14:00 Today</div>
@@ -136,8 +140,8 @@ export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats, 
                             ) : (
                                 <Card className="bg-card border-border h-full flex flex-col justify-center items-center py-12">
                                     <CheckCircle2 className="h-12 w-12 text-emerald-400 mb-4 opacity-50" />
-                                    <CardTitle className="text-emerald-400">All Caught Up</CardTitle>
-                                    <p className="text-muted-foreground mt-2">No pending requests for your department.</p>
+                                    <CardTitle className="text-emerald-400">{t('widgets.allCaughtUp')}</CardTitle>
+                                    <p className="text-muted-foreground mt-2">{t('widgets.noPendingRequestsDept')}</p>
                                 </Card>
                             )}
                         </div>
@@ -146,13 +150,13 @@ export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats, 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Card className="bg-card border-border">
                                 <CardHeader>
-                                    <CardTitle className="text-sm font-bold uppercase tracking-wider">Department Tools</CardTitle>
+                                    <CardTitle className="text-sm font-bold uppercase tracking-wider">{t('widgets.departmentTools')}</CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-2">
                                     {[
-                                        { icon: Calendar, label: "Create Schedule" },
-                                        { icon: Package, label: "Inventory Check" },
-                                        { icon: ClipboardList, label: "Assigned Tasks" },
+                                        { icon: Calendar, label: t('widgets.createSchedule') },
+                                        { icon: Package, label: t('widgets.inventoryCheck') },
+                                        { icon: ClipboardList, label: t('widgets.assignedTasks') },
                                     ].map((tool, i) => (
                                         <Button key={i} variant="outline" className="w-full justify-start h-11 rounded-xl hover:bg-muted/50 transition-all">
                                             <tool.icon className="mr-3 h-4 w-4 text-muted-foreground" />
@@ -176,9 +180,9 @@ export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats, 
                         {/* Schedule Preview */}
                         <Card className="bg-card border-border h-full">
                             <CardHeader className="flex flex-row items-center justify-between bg-muted/20 border-b border-border/10 py-4">
-                                <CardTitle className="text-sm font-bold uppercase tracking-wider">My Schedule</CardTitle>
+                                <CardTitle className="text-sm font-bold uppercase tracking-wider">{t('widgets.mySchedule')}</CardTitle>
                                 <Button variant="ghost" size="sm" className="text-[10px] font-bold text-primary px-3">
-                                    FULL DEPT VIEW &rarr;
+                                    {t('widgets.fullDeptView')} &rarr;
                                 </Button>
                             </CardHeader>
                             <CardContent className="p-6">
@@ -189,7 +193,7 @@ export function DepartmentHeadDashboard({ employee, pendingRequests, deptStats, 
                         {/* Tasks */}
                         <Card className="bg-card border-border">
                             <CardHeader className="bg-muted/20 border-b border-border/10 py-4">
-                                <CardTitle className="text-sm font-bold uppercase tracking-wider">Pending Team Tasks</CardTitle>
+                                <CardTitle className="text-sm font-bold uppercase tracking-wider">{t('widgets.pendingTeamTasks')}</CardTitle>
                             </CardHeader>
                             <CardContent className="p-6">
                                 <div className="grid grid-cols-1 gap-4">

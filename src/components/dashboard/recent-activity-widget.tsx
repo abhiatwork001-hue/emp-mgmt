@@ -10,7 +10,10 @@ import { Activity, ArrowRight, UserPlus, FileText, Calendar, CheckCircle2 } from
 import Link from "next/link";
 import { EmployeeLink } from "../common/employee-link";
 
+import { useTranslations } from "next-intl";
+
 export function RecentActivityWidget({ userId, userRoles }: { userId?: string, userRoles?: string[] }) {
+    const t = useTranslations("Dashboard.widgets.recentActivity");
     const [logs, setLogs] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -37,11 +40,11 @@ export function RecentActivityWidget({ userId, userRoles }: { userId?: string, u
                     <div className="relative">
                         <Activity className="h-5 w-5 animate-pulse" />
                     </div>
-                    RECENT ACTIVITY
+                    {t('title').toUpperCase()}
                 </CardTitle>
                 <Link href="/dashboard/activity-log">
                     <Button variant="ghost" size="sm" className="text-[10px] font-bold uppercase tracking-widest h-7 px-3 bg-background/50 hover:bg-primary/10 hover:text-primary">
-                        View Log
+                        {t('viewLog')}
                         <ArrowRight className="ml-2 h-3 w-3" />
                     </Button>
                 </Link>
@@ -62,7 +65,7 @@ export function RecentActivityWidget({ userId, userRoles }: { userId?: string, u
                 ) : logs.length === 0 ? (
                     <div className="py-16 text-center text-muted-foreground text-xs font-medium uppercase tracking-widest flex flex-col items-center gap-3">
                         <Activity className="h-8 w-8 opacity-20" />
-                        No recent activity recorded
+                        {t('empty')}
                     </div>
                 ) : (
                     <div className="divide-y divide-border/10">
@@ -84,7 +87,7 @@ export function RecentActivityWidget({ userId, userRoles }: { userId?: string, u
                                         <EmployeeLink
                                             employeeId={log.performedBy?._id}
                                             slug={log.performedBy?.slug}
-                                            name={log.performedBy ? `${log.performedBy.firstName} ${log.performedBy.lastName}` : "System"}
+                                            name={log.performedBy ? `${log.performedBy.firstName} ${log.performedBy.lastName}` : t('system')}
                                             currentUserRoles={userRoles || []}
                                             className="font-bold text-foreground"
                                         />

@@ -27,6 +27,9 @@ import { EmployeePendingActionsWidget } from "@/components/dashboard/employee-pe
 import { OvertimeRequestDialog } from "@/components/schedules/overtime-request-dialog";
 import { OrderingWidget } from "@/components/dashboard/widgets/ordering-widget";
 
+// ... (imports remain)
+import { useTranslations } from "next-intl";
+
 export function EmployeeDashboard({
     employee,
     todaysCoworkers = [],
@@ -39,6 +42,7 @@ export function EmployeeDashboard({
     isWorkingToday = false
 }: any) {
     const router = useRouter();
+    const t = useTranslations("Dashboard");
 
     // Vacation Stats
     const vacationTracker = employee.vacationTracker || { usedDays: 0, defaultDays: 22, remainingDays: 22 };
@@ -72,65 +76,41 @@ export function EmployeeDashboard({
                 {/* Visual Role Indicator */}
                 <div className="flex items-center gap-3">
                     <Badge variant="outline" className="px-3 py-1 bg-primary/5 text-primary border-primary/20 font-bold uppercase tracking-wider text-[10px]">
-                        Personal Workspace
+                        {t('widgets.personalWorkspace')}
                     </Badge>
                     <div className="h-[1px] flex-1 bg-gradient-to-r from-border/50 via-border to-transparent" />
                 </div>
-
-                {/* 0. No Schedule Warning (High Visibility) */}
-                {/* 0. No Schedule Warning - Removed to rely on Widget's internal state */
-                    /*
-                                    {!hasSchedule && (
-                                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                                            <Card className="border-l-4 border-l-destructive bg-destructive/5 overflow-hidden">
-                                                <CardContent className="p-6 flex items-center gap-6">
-                                                    <div className="h-16 w-16 rounded-3xl bg-destructive/10 flex items-center justify-center shrink-0">
-                                                        <AlertCircle className="h-8 w-8 text-destructive" />
-                                                    </div>
-                                                    <div className="flex flex-col gap-1">
-                                                        <h2 className="text-xl font-black text-foreground">No Schedule Available</h2>
-                                                        <p className="text-sm text-muted-foreground leading-relaxed">
-                                                            Your manager hasn't published the schedule for this week yet.
-                                                            Please check back later or contact your supervisor for confirmation.
-                                                        </p>
-                                                    </div>
-                                                </CardContent>
-                                            </Card>
-                                        </motion.div>
-                                    )}
-                    */
-                }
 
                 {/* 1. Quick Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
                     <Card className="border-l-4 border-l-emerald-500 overflow-hidden h-full">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                                <Palmtree className="h-3 w-3" /> Vacations Remaining
+                                <Palmtree className="h-3 w-3" /> {t('widgets.vacationsRemaining')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-baseline gap-1">
                                 <span className="text-4xl font-black italic">{vacationTracker.remainingDays}</span>
-                                <span className="text-xs font-bold text-muted-foreground uppercase">days left</span>
+                                <span className="text-xs font-bold text-muted-foreground uppercase">{t('widgets.daysLeft')}</span>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="border-l-4 border-l-violet-500 overflow-hidden h-full">
                         <CardHeader className="pb-2">
-                            <CardTitle className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">Next Vacation</CardTitle>
+                            <CardTitle className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">{t('widgets.nextVacation')}</CardTitle>
                         </CardHeader>
                         <CardContent>
                             {nextVacation ? (
                                 <div className="space-y-1">
                                     <div className="text-xl font-bold tracking-tight">{format(new Date(nextVacation.from), "MMM dd, yyyy")}</div>
-                                    <Badge variant="secondary" className="text-[9px] py-0 px-2 font-bold uppercase">In {Math.ceil((new Date(nextVacation.from).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days</Badge>
+                                    <Badge variant="secondary" className="text-[9px] py-0 px-2 font-bold uppercase">{t('widgets.inDays', { days: Math.ceil((new Date(nextVacation.from).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) })}</Badge>
                                 </div>
                             ) : (
                                 <div className="flex flex-col gap-1 items-start">
-                                    <div className="text-lg font-bold text-muted-foreground/40 italic">None Planned</div>
-                                    <Link href="/dashboard/vacations" className="text-[9px] font-black text-primary hover:underline uppercase">Schedule it now &rarr;</Link>
+                                    <div className="text-lg font-bold text-muted-foreground/40 italic">{t('widgets.nonePlanned')}</div>
+                                    <Link href="/dashboard/vacations" className="text-[9px] font-black text-primary hover:underline uppercase">{t('widgets.scheduleNow')} &rarr;</Link>
                                 </div>
                             )}
                         </CardContent>
@@ -139,25 +119,24 @@ export function EmployeeDashboard({
                     <Card className="border-l-4 border-l-amber-500 overflow-hidden h-full">
                         <CardHeader className="pb-2">
                             <CardTitle className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase flex items-center gap-2">
-                                <Clock className="h-3 w-3" /> Next Day Off
+                                <Clock className="h-3 w-3" /> {t('widgets.nextDayOff')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-baseline gap-1">
-                                <span className="text-4xl font-black italic">{daysUntilNextDayOff === 0 || daysUntilNextDayOff === -1 ? "Rest Day" : daysUntilNextDayOff}</span>
-                                {daysUntilNextDayOff > 0 && <span className="text-xs font-bold text-muted-foreground uppercase">days away</span>}
+                                <span className="text-4xl font-black italic">{daysUntilNextDayOff === 0 || daysUntilNextDayOff === -1 ? t('widgets.restDay') : daysUntilNextDayOff}</span>
+                                {daysUntilNextDayOff > 0 && <span className="text-xs font-bold text-muted-foreground uppercase">{t('widgets.daysAway')}</span>}
                             </div>
                         </CardContent>
                     </Card>
                 </div>
 
                 {/* 2. Main Schedule - Full Width */}
-                {/* 2. Main Schedule - Full Width */}
                 <div className="w-full animate-in zoom-in-95 duration-500">
                     <Card className="border shadow-sm overflow-hidden flex flex-col bg-card/50 backdrop-blur-sm">
                         <CardHeader className="py-3 px-4 bg-muted/5 border-b shrink-0">
                             <CardTitle className="text-md font-black italic flex items-center gap-2 text-primary uppercase tracking-tight">
-                                <Calendar className="h-4 w-4" /> My Weekly Schedule
+                                <Calendar className="h-4 w-4" /> {t('widgets.myWeeklySchedule')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0">
@@ -180,8 +159,8 @@ export function EmployeeDashboard({
                                             <Calendar className="h-5 w-5 text-primary" />
                                         </div>
                                         <div className="flex flex-col items-start min-w-0">
-                                            <span className="text-md font-black italic">Time Off</span>
-                                            <span className="text-[9px] text-muted-foreground uppercase font-black">Request Vacation</span>
+                                            <span className="text-md font-black italic">{t('widgets.timeOff')}</span>
+                                            <span className="text-[9px] text-muted-foreground uppercase font-black">{t('widgets.requestVacation')}</span>
                                         </div>
                                     </Button>
                                 }
@@ -195,15 +174,13 @@ export function EmployeeDashboard({
                                             <AlertCircle className="h-5 w-5 text-destructive" />
                                         </div>
                                         <div className="flex flex-col items-start min-w-0">
-                                            <span className="text-md font-black italic">Sick Report</span>
-                                            <span className="text-[9px] text-muted-foreground uppercase font-black">Report Absence</span>
+                                            <span className="text-md font-black italic">{t('widgets.sickReport')}</span>
+                                            <span className="text-[9px] text-muted-foreground uppercase font-black">{t('widgets.reportAbsence')}</span>
                                         </div>
                                     </Button>
                                 }
                             />
                         </div>
-
-
 
                         <div className="h-[1px] bg-border/50" />
 
@@ -211,13 +188,13 @@ export function EmployeeDashboard({
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-4">
                                 <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
-                                    <Sun className="h-3 w-3 text-amber-500" /> Public Holidays
+                                    <Sun className="h-3 w-3 text-amber-500" /> {t('widgets.publicHolidays')}
                                 </h3>
                                 <HolidayWidget storeId={employee.storeId?._id || employee.storeId} />
                             </div>
                             <div className="space-y-4">
                                 <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 px-1">
-                                    <Star className="h-3 w-3 text-primary" /> Birthdays
+                                    <Star className="h-3 w-3 text-primary" /> {t('widgets.birthdays')}
                                 </h3>
                                 <BirthdayWidget storeId={employee.storeId?._id || employee.storeId} currentUserId={employee._id} />
                             </div>
@@ -230,7 +207,7 @@ export function EmployeeDashboard({
                             <Card className="border-l-4 border-l-blue-500 shadow-sm overflow-hidden flex flex-col">
                                 <CardHeader className="py-3 px-4 bg-muted/5 min-h-[50px] flex justify-center shrink-0 border-b">
                                     <CardTitle className="text-md font-black italic flex items-center gap-2 text-foreground uppercase tracking-tight">
-                                        <Users className="h-4 w-4 text-blue-600" /> Working with you today
+                                        <Users className="h-4 w-4 text-blue-600" /> {t('widgets.workingWithYou')}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-4">
@@ -254,8 +231,8 @@ export function EmployeeDashboard({
                                             <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                                                 <Users className="h-5 w-5 text-blue-600" />
                                             </div>
-                                            <p className="text-sm font-medium text-foreground">It&apos;s just you today!</p>
-                                            <p className="text-xs text-muted-foreground">You&apos;re holding down the fort. Have a great shift!</p>
+                                            <p className="text-sm font-medium text-foreground">{t('widgets.itsJustYou')}</p>
+                                            <p className="text-xs text-muted-foreground">{t('widgets.holdingFort')}</p>
                                         </div>
                                     )}
                                 </CardContent>
@@ -271,7 +248,7 @@ export function EmployeeDashboard({
                     <Card className="border shadow-sm h-full flex flex-col min-h-[500px]">
                         <CardHeader className="py-3 px-4 bg-muted/5 border-b shrink-0">
                             <CardTitle className="text-sm font-bold uppercase tracking-wider flex items-center gap-2">
-                                <MessageSquare className="h-4 w-4 text-primary" /> Official Company Notices
+                                <MessageSquare className="h-4 w-4 text-primary" /> {t('widgets.officialNotices')}
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0 flex-1 overflow-hidden">

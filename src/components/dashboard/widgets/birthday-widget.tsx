@@ -13,6 +13,9 @@ import { QuickMessageDialog } from "@/components/messages/quick-message-dialog";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 
+// ... (imports remain)
+import { useTranslations } from "next-intl";
+
 interface BirthdayWidgetProps {
     storeId?: string;
     currentUserId: string;
@@ -22,6 +25,7 @@ interface BirthdayWidgetProps {
 export function BirthdayWidget({ storeId, currentUserId, className }: BirthdayWidgetProps) {
     const [birthdays, setBirthdays] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const t = useTranslations("Dashboard.widgets.birthdayWidget");
 
     useEffect(() => {
         getUpcomingBirthdays(storeId).then(data => {
@@ -38,11 +42,11 @@ export function BirthdayWidget({ storeId, currentUserId, className }: BirthdayWi
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-base font-bold flex items-center gap-2 text-pink-700">
                         <Gift className="h-5 w-5 text-pink-500 animate-pulse" />
-                        Upcoming Birthdays
+                        {t('title')}
                     </CardTitle>
                     {birthdays.length > 0 && (
                         <Badge variant="secondary" className="bg-pink-500/10 text-pink-600 border-pink-200 font-bold">
-                            {birthdays.length} Coming Up
+                            {t('comingUp', { count: birthdays.length })}
                         </Badge>
                     )}
                 </div>
@@ -54,8 +58,8 @@ export function BirthdayWidget({ storeId, currentUserId, className }: BirthdayWi
                             <Sparkles className="h-6 w-6 text-pink-400" />
                         </div>
                         <div>
-                            <p className="font-semibold text-foreground">No upcoming birthdays</p>
-                            <p className="text-xs text-muted-foreground">The team has no birthdays in the next 30 days.</p>
+                            <p className="font-semibold text-foreground">{t('emptyTitle')}</p>
+                            <p className="text-xs text-muted-foreground">{t('emptyDesc')}</p>
                         </div>
                     </div>
                 ) : (
@@ -84,13 +88,13 @@ export function BirthdayWidget({ storeId, currentUserId, className }: BirthdayWi
                                     <div className="flex flex-col min-w-0 flex-1">
                                         <span className="text-sm font-bold truncate text-foreground flex items-center gap-2">
                                             {emp.firstName} {emp.lastName}
-                                            {emp.daysUntil === 0 && <span className="text-[10px] bg-pink-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider animate-pulse">Today!</span>}
+                                            {emp.daysUntil === 0 && <span className="text-[10px] bg-pink-500 text-white px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider animate-pulse">{t('today')}</span>}
                                         </span>
                                         <span className="text-xs text-muted-foreground flex items-center gap-1">
                                             <Cake className="h-3 w-3" />
                                             {format(new Date(emp.nextBirthday), "MMMM do")}
                                             <span className="text-muted-foreground/50">•</span>
-                                            {emp.daysUntil === 0 ? "Happy Birthday!" : `In ${emp.daysUntil} days`}
+                                            {emp.daysUntil === 0 ? t('happyBirthday') : t('inDays', { days: emp.daysUntil })}
                                         </span>
                                     </div>
 
@@ -100,7 +104,7 @@ export function BirthdayWidget({ storeId, currentUserId, className }: BirthdayWi
                                             recipientName={`${emp.firstName} ${emp.lastName}`}
                                             recipientImage={emp.image}
                                             currentUser={{ id: currentUserId }}
-                                            defaultMessage={`Happy Birthday ${emp.firstName}! 🎉🎂 Hope you have a fantastic day!`}
+                                            defaultMessage={t('defaultMessage', { name: emp.firstName })}
                                             trigger={
                                                 <Button
                                                     size="icon"

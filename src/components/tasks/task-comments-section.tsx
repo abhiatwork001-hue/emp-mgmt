@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { addTaskComment } from "@/lib/actions/task.actions";
 import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
 
 interface TaskCommentsSectionProps {
     taskId: string;
@@ -19,6 +20,7 @@ export function TaskCommentsSection({ taskId, currentUserId, comments }: TaskCom
     const [commentText, setCommentText] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
+    const t = useTranslations("Tasks.comments");
 
     const handleComment = async () => {
         if (!commentText.trim()) return;
@@ -32,13 +34,13 @@ export function TaskCommentsSection({ taskId, currentUserId, comments }: TaskCom
     return (
         <Card className="h-full flex flex-col">
             <CardHeader>
-                <CardTitle>Comments ({comments.length})</CardTitle>
+                <CardTitle>{t('title')} ({comments.length})</CardTitle>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col">
                 <div className="flex-1 overflow-y-auto space-y-4 pr-2 mb-4 max-h-[500px]">
                     {comments.length === 0 ? (
                         <div className="text-center py-8 text-muted-foreground text-sm">
-                            No comments yet. Start the conversation!
+                            {t('noComments')}
                         </div>
                     ) : (
                         comments.map((comment: any, idx: number) => (
@@ -62,14 +64,14 @@ export function TaskCommentsSection({ taskId, currentUserId, comments }: TaskCom
 
                 <div className="space-y-2 pt-2 border-t mt-auto">
                     <Textarea
-                        placeholder="Write a comment..."
+                        placeholder={t('placeholder')}
                         value={commentText}
                         onChange={(e) => setCommentText(e.target.value)}
                         className="min-h-[100px] resize-none"
                     />
                     <div className="flex justify-end">
                         <Button onClick={handleComment} disabled={!commentText.trim() || isSubmitting}>
-                            {isSubmitting ? "Posting..." : "Post Comment"}
+                            {isSubmitting ? t('posting') : t('post')}
                         </Button>
                     </div>
                 </div>

@@ -80,6 +80,8 @@ interface StoreManagerDashboardProps {
 
 import { ScheduleAlertModal } from "@/components/dashboard/schedule-alert-modal";
 
+// ... (imports remain)
+
 export function StoreManagerDashboard({
     employee,
     pendingRequests = [],
@@ -100,6 +102,7 @@ export function StoreManagerDashboard({
     activeActions = { vacations: [], absences: [], coverageRequests: [], coverageOffers: [] }
 }: StoreManagerDashboardProps) {
     const [showScheduleAlert, setShowScheduleAlert] = useState(false);
+    const t = useTranslations("Dashboard");
 
     // Helper: Compute Extended Stats for StatsCards
     const extendedStats = {
@@ -134,11 +137,11 @@ export function StoreManagerDashboard({
                 <CardTitle className="text-md font-semibold flex items-center justify-between">
                     <span className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-emerald-600" />
-                        Working Today
+                        {t('widgets.workingToday')}
                     </span>
                     {(currentScheduleSlug || currentScheduleId) && (
                         <Link href={`/dashboard/schedules/${currentScheduleSlug || currentScheduleId}`} className="text-[10px] font-bold text-primary hover:underline">
-                            View Schedule
+                            {t('widgets.viewSchedule')}
                         </Link>
                     )}
                 </CardTitle>
@@ -218,7 +221,7 @@ export function StoreManagerDashboard({
                 <CardHeader className="py-3 px-4 bg-muted/5 min-h-[50px] flex justify-center shrink-0">
                     <CardTitle className="text-md font-semibold flex items-center gap-2">
                         <Package className="h-4 w-4 text-primary" />
-                        Management Actions
+                        {t('widgets.managementActions')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto">
@@ -227,7 +230,7 @@ export function StoreManagerDashboard({
                             <Calendar className="h-5 w-5" />
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-sm font-black italic text-foreground truncate">Manage Schedules</span>
+                            <span className="text-sm font-black italic text-foreground truncate">{t('widgets.manageSchedules')}</span>
                             <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">System rotas</span>
                         </div>
                     </Link>
@@ -237,7 +240,7 @@ export function StoreManagerDashboard({
                             <Users className="h-5 w-5" />
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
-                            <span className="text-sm font-black italic text-foreground truncate">Manage Team</span>
+                            <span className="text-sm font-black italic text-foreground truncate">{t('widgets.manageTeam')}</span>
                             <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">Staff directory</span>
                         </div>
                     </Link>
@@ -248,7 +251,7 @@ export function StoreManagerDashboard({
                                 <Store className="h-5 w-5" />
                             </div>
                             <div className="flex flex-col min-w-0 flex-1">
-                                <span className="text-sm font-black italic text-foreground truncate">My Store</span>
+                                <span className="text-sm font-black italic text-foreground truncate">{t('widgets.myStore')}</span>
                                 <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">Settings & Details</span>
                             </div>
                         </Link>
@@ -318,7 +321,7 @@ export function StoreManagerDashboard({
                 {/* Visual Role Indicator */}
                 <div className="flex items-center gap-3">
                     <Badge variant="outline" className="px-3 py-1 bg-primary/5 text-primary border-primary/20 font-bold uppercase tracking-wider text-[10px]">
-                        {isHighLevel ? "Network Dashboard" : isDeptLevel ? "Department View" : "Store Dashboard"}
+                        {isHighLevel ? t('widgets.networkDashboard') : isDeptLevel ? t('widgets.departmentView') : t('widgets.storeDashboard')}
                     </Badge>
                     <div className="h-[1px] flex-1 bg-gradient-to-r from-border/50 via-border to-transparent" />
                 </div>
@@ -337,8 +340,8 @@ export function StoreManagerDashboard({
                                 </div>
                                 <div className="flex-1 space-y-2">
                                     <div className="flex items-center gap-3">
-                                        <h2 className="text-xl font-black text-red-700 tracking-tight uppercase italic">Compliance Warning: Missing Schedules</h2>
-                                        <Badge variant="destructive" className="font-bold uppercase tracking-widest text-[10px]">Overdue</Badge>
+                                        <h2 className="text-xl font-black text-red-700 tracking-tight uppercase italic">{t('widgets.complianceWarning')}</h2>
+                                        <Badge variant="destructive" className="font-bold uppercase tracking-widest text-[10px]">{t('widgets.overdue')}</Badge>
                                     </div>
                                     <p className="text-sm text-red-600/80 font-medium leading-relaxed max-w-2xl">
                                         The deadline for next week's schedule submission has passed. The following
@@ -356,7 +359,7 @@ export function StoreManagerDashboard({
                                         className="font-bold italic uppercase tracking-tight"
                                         onClick={() => setShowScheduleAlert(true)}
                                     >
-                                        Review Breakdown & Alert
+                                        {t('widgets.reviewBreakdown')}
                                     </Button>
                                 </div>
                             </CardContent>

@@ -30,7 +30,10 @@ interface PersonalTodoWidgetProps {
     userId: string;
 }
 
+import { useTranslations } from "next-intl";
+
 export function PersonalTodoWidget({ initialTodos, userId }: PersonalTodoWidgetProps) {
+    const t = useTranslations("Dashboard.widgets.personalTodo");
     const [notes, setNotes] = useState(initialTodos);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [activeTab, setActiveTab] = useState("all");
@@ -78,12 +81,12 @@ export function PersonalTodoWidget({ initialTodos, userId }: PersonalTodoWidgetP
 
             setIsDialogOpen(false);
             const res = await updateNote(editId, { title, content, isTask, deadline });
-            if (!res.success) toast.error("Failed to update");
+            if (!res.success) toast.error(t('toast.updateError'));
         } else {
             // Create
             const optimisticId = Math.random().toString();
             const newNote = {
-                _id: optimisticId, userId, title: title || "Note", content, isTask,
+                _id: optimisticId, userId, title: title || t('untitled'), content, isTask,
                 deadline: deadline ? new Date(deadline).toISOString() : undefined,
                 completed: false, createdAt: new Date().toISOString()
             };
@@ -95,7 +98,7 @@ export function PersonalTodoWidget({ initialTodos, userId }: PersonalTodoWidgetP
                 setNotes(prev => prev.map(n => n._id === optimisticId ? res.note : n));
             } else {
                 setNotes(prev => prev.filter(n => n._id !== optimisticId));
-                toast.error("Failed to create");
+                toast.error(t('toast.createError'));
             }
         }
         resetForm();
@@ -156,7 +159,7 @@ export function PersonalTodoWidget({ initialTodos, userId }: PersonalTodoWidgetP
                     <div className="space-y-1 min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                             <h4 className={cn("font-semibold text-sm truncate", note.completed && "line-through text-muted-foreground")}>
-                                {note.title || "Untitled Note"}
+                                {note.title || t('untitled')}
                             </h4>
                             {note.isTask && note.deadline && (
                                 <Badge variant={new Date(note.deadline) < new Date() && !note.completed ? "destructive" : "outline"} className="h-5 px-1.5 text-[10px] gap-1 font-normal ml-auto shrink-0">
@@ -183,11 +186,11 @@ export function PersonalTodoWidget({ initialTodos, userId }: PersonalTodoWidgetP
 
             <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t mt-auto text-[10px] text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                    <Clock className="h-3 w-3" /> Created {note.createdAt ? format(new Date(note.createdAt), "MMM d") : 'Today'}
+                    <Clock className="h-3 w-3" /> {t('created')} {note.createdAt ? format(new Date(note.createdAt), "MMM d") : t('today')}
                 </span>
                 {note.completedAt && (
                     <span className="flex items-center gap-1 text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full">
-                        <CheckCircle2 className="h-3 w-3" /> Uncheck
+                        <CheckCircle2 className="h-3 w-3" /> {t('uncheck')}
                     </span>
                 )}
             </div>
@@ -200,45 +203,45 @@ export function PersonalTodoWidget({ initialTodos, userId }: PersonalTodoWidgetP
                 <div className="space-y-1">
                     <CardTitle className="text-md font-semibold flex items-center gap-2">
                         <StickyNote className="h-4 w-4 text-primary" />
-                        Personal Workflow
+                        {t('title')}
                     </CardTitle>
                 </div>
 
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>
                         <Button size="sm" variant="outline" className="h-8 gap-1" onClick={handleOpenCreate}>
-                            <Plus className="h-3.5 w-3.5" /> New
+                            <Plus className="h-3.5 w-3.5" /> {t('new')}
                         </Button>
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader>
-                            <DialogTitle>{isEditMode ? "Edit Item" : "Create New Note / Task"}</DialogTitle>
+                            <DialogTitle>{isEditMode ? t('dialog.titleEdit') : t('dialog.titleCreate')}</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 py-2">
                             <div className="flex items-center space-x-2">
                                 <Switch id="is-task" checked={isTask} onCheckedChange={setIsTask} />
-                                <Label htmlFor="is-task">Mark as Actionable Task?</Label>
+                                <Label htmlFor="is-task">{t('dialog.isTask')}</Label>
                             </div>
                             <div className="space-y-2">
-                                <Label>Title (Optional)</Label>
-                                <Input placeholder="e.g. Ideas for Menu" value={title} onChange={e => setTitle(e.target.value)} />
+                                <Label>{t('dialog.itemTitle')}</Label>
+                                <Input placeholder={t('dialog.titlePlaceholder')} value={title} onChange={e => setTitle(e.target.value)} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Content</Label>
-                                <Textarea placeholder={isTask ? "What needs to be done?" : "Write your thoughts..."} className="resize-none" rows={4} value={content} onChange={e => setContent(e.target.value)} />
+                                <Label>{t('dialog.content')}</Label>
+                                <Textarea placeholder={isTask ? t('dialog.contentPlaceholderTask') : t('dialog.contentPlaceholderNote')} className="resize-none" rows={4} value={content} onChange={e => setContent(e.target.value)} />
                             </div>
                             {isTask && (
                                 <div className="space-y-2">
-                                    <Label>Deadline</Label>
+                                    <Label>{t('dialog.deadline')}</Label>
                                     <DatePicker
                                         date={deadline}
                                         setDate={(d) => setDeadline(d ? d.toISOString().split('T')[0] : "")}
-                                        placeholder="Select deadline"
+                                        placeholder={t('dialog.deadlinePlaceholder')}
                                     />
                                 </div>
                             )}
                             <Button onClick={handleSave} className="w-full" disabled={!content.trim()}>
-                                {isEditMode ? "Save Changes" : (isTask ? "Create Task" : "Create Note")}
+                                {isEditMode ? t('dialog.save') : (isTask ? t('dialog.createTask') : t('dialog.createNote'))}
                             </Button>
                         </div>
                     </DialogContent>
@@ -249,9 +252,9 @@ export function PersonalTodoWidget({ initialTodos, userId }: PersonalTodoWidgetP
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
                     <div className="px-4 pt-2 border-b w-full overflow-x-auto scrollbar-hide">
                         <TabsList className="w-max justify-start h-9 bg-transparent p-0">
-                            <TabsTrigger value="all" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 text-xs">All</TabsTrigger>
-                            <TabsTrigger value="tasks" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 text-xs">Tasks</TabsTrigger>
-                            <TabsTrigger value="notes" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 text-xs">Notes</TabsTrigger>
+                            <TabsTrigger value="all" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 text-xs">{t('tabs.all')}</TabsTrigger>
+                            <TabsTrigger value="tasks" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 text-xs">{t('tabs.tasks')}</TabsTrigger>
+                            <TabsTrigger value="notes" className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 text-xs">{t('tabs.notes')}</TabsTrigger>
                         </TabsList>
                     </div>
 
@@ -259,7 +262,7 @@ export function PersonalTodoWidget({ initialTodos, userId }: PersonalTodoWidgetP
                         <div className="flex flex-col gap-3 p-4">
                             {displayItems.length === 0 && activeTab !== 'tasks' && (
                                 <div className="text-center py-10 text-muted-foreground text-sm w-full border border-dashed rounded-lg bg-muted/20">
-                                    No items found. Create your first note or task!
+                                    {t('empty')}
                                 </div>
                             )}
 
@@ -269,7 +272,7 @@ export function PersonalTodoWidget({ initialTodos, userId }: PersonalTodoWidgetP
                             {activeTab === 'tasks' && completedTasks.length > 0 && (
                                 <div className="mt-8">
                                     <div className="flex items-center gap-2 mb-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                        <CheckCircle2 className="h-3 w-3" /> Completed
+                                        <CheckCircle2 className="h-3 w-3" /> {t('completed')}
                                         <div className="h-px bg-border flex-1" />
                                     </div>
                                     <div className="flex flex-col gap-3 opacity-60 hover:opacity-100 transition-opacity">
@@ -279,9 +282,9 @@ export function PersonalTodoWidget({ initialTodos, userId }: PersonalTodoWidgetP
                                                 <div className="flex-1 min-w-0">
                                                     <h4 className="text-sm font-medium line-through text-muted-foreground">{note.title}</h4>
                                                     <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground">
-                                                        <span>Created: {format(new Date(note.createdAt), "MMM d")}</span>
+                                                        <span>{t('created')} {format(new Date(note.createdAt), "MMM d")}</span>
                                                         <span>•</span>
-                                                        <span>Completed: {note.completedAt ? format(new Date(note.completedAt), "MMM d") : 'Recent'}</span>
+                                                        <span>{t('completedAt', { date: note.completedAt ? format(new Date(note.completedAt), "MMM d") : t('recent') })}</span>
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100">
@@ -301,7 +304,7 @@ export function PersonalTodoWidget({ initialTodos, userId }: PersonalTodoWidgetP
             <div className="p-2 border-t bg-muted/5 flex justify-center">
                 <Button variant="ghost" size="sm" className="h-7 text-xs w-full text-muted-foreground hover:text-primary" asChild>
                     <Link href="/dashboard/notes">
-                        View Full Page <ArrowRight className="ml-1 h-3 w-3" />
+                        {t('viewFull')} <ArrowRight className="ml-1 h-3 w-3" />
                     </Link>
                 </Button>
             </div>

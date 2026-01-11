@@ -145,13 +145,39 @@
 @media print {
 
     /* STRICT HIDING: Hide known layout elements completely to remove whitespace */
+    /* STRICT HIDING: Hide known layout elements completely to remove whitespace */
     .print-hidden,
     nav,
     aside,
     header,
     .sidebar,
-    .bg-sidebar {
+    .bg-sidebar,
+    .side-panel {
         display: none !important;
+    }
+
+    /* NEUTRALIZE LAYOUTS */
+
+    /* Root Dashboard Layout: Remove flex constraints */
+    .flex.h-screen {
+        display: block !important;
+        height: auto !important;
+    }
+
+    /* Dashboard Widget Layout: Remove grid columns */
+    .grid,
+    .xl\:grid-cols-\[1fr_280px\] {
+        display: block !important;
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Force main content full width */
+    main,
+    .min-w-0 {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: none !important;
+        overflow: visible !important;
     }
 
     /* FALLBACK: Hide everything else by visibility logic */
@@ -176,6 +202,15 @@
         padding: 0 !important;
         background: white !important;
         z-index: 9999;
+    }
+
+    /* FIX: Force scrollable containers to expand fully */
+    .overflow-x-auto,
+    .overflow-hidden,
+    .overflow-y-auto {
+        overflow: visible !important;
+        height: auto !important;
+        width: auto !important;
     }
 
     /* Reset Body/HTML to allow full page print */

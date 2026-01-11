@@ -909,6 +909,17 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
 
                 <Separator orientation="vertical" className="h-6 mx-2 hidden sm:block" />
 
+                {/* Print Button - Moved to Top Level */}
+                <Button
+                    variant="outline"
+                    className="gap-2 print:hidden hidden sm:flex bg-background"
+                    onClick={handlePrint}
+                    title="Print Schedule or Save as PDF"
+                >
+                    <Printer className="h-4 w-4" />
+                    <span className="hidden lg:inline">{t('printPdf') || "Print PDF"}</span>
+                </Button>
+
                 {/* Consolidated Settings Menu */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -958,12 +969,10 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel>Export</DropdownMenuLabel>
 
-                        <DropdownMenuItem onClick={handlePrint} className="gap-2 cursor-pointer">
-                            <Printer className="h-4 w-4" /> Print / Save PDF
-                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleExportCSV} className="gap-2 cursor-pointer">
                             <FileText className="h-4 w-4" /> Export CSV
                         </DropdownMenuItem>
+
 
                         {canApproveSchedule() && (
                             <>

@@ -25,7 +25,10 @@ export function LanguageSwitcher() {
     const currentLocale = useLocale();
 
     const onSelect = (value: string) => {
-        router.replace(pathname, { locale: value });
+        // Use startTransition for smoother updates
+        React.startTransition(() => {
+            router.replace(pathname, { locale: value as any });
+        });
     };
 
     const currentLang = languages.find((lang) => lang.value === currentLocale);

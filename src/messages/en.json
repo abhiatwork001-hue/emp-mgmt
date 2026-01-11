@@ -46,6 +46,7 @@
         "loading": "Loading...",
         "history": "History",
         "note": "Note",
+        "unknown": "Unknown",
         "searchEmployee": "Search employee...",
         "approve": "Approve",
         "reject": "Reject",
@@ -75,11 +76,515 @@
         "translations": "Translations",
         "name": "Name",
         "suppliers": "Suppliers",
-        "directory": "Directory"
+        "directory": "Directory",
+        "documents": "Documents",
+        "roleTypes": {
+            "super_user": "Super User",
+            "owner": "Owner (Super Admin)",
+            "admin": "Admin",
+            "hr": "HR Manager",
+            "store_manager": "Store Manager",
+            "department_head": "Global Dept Head",
+            "store_department_head": "Store Dept Head",
+            "employee": "Employee"
+        }
+    },
+    "RoleSwitcher": {
+        "testView": "Test View:",
+        "selectRole": "Select role",
+        "testingMode": "Testing Mode"
+    },
+    "PendingActions": {
+        "vacationRequest": "Vacation Request",
+        "absenceReport": "Absence Report",
+        "overtimeRequest": "Overtime Request",
+        "draftSchedule": "Draft Schedule",
+        "coverageOffer": "Coverage Offer",
+        "days": "{count} Days",
+        "hours": "{count} Hours",
+        "covering": "Covering: {name}",
+        "workingWith": "Working with: {names}",
+        "reason": "Employee's reason: {reason}",
+        "hrMessage": "HR: {message}",
+        "noComments": "No comments provided.",
+        "viewAttachment": "View Attachment {index}",
+        "finalize": "Finalize",
+        "accept": "Accept",
+        "decline": "Decline",
+        "title": "Pending Actions",
+        "description": "Manage your requests and review items requiring your approval.",
+        "myRequests": "My Pending Requests",
+        "toApprove": "Awaiting My Approval",
+        "noPersonal": "You have no pending requests.",
+        "noApprovals": "No items require your approval right now.",
+        "tabs": {
+            "all": "All",
+            "vacations": "Vacations",
+            "absences": "Absences",
+            "overtime": "Overtime",
+            "schedules": "Schedules",
+            "coverage": "Coverage"
+        },
+        "item": {
+            "requestedBy": "Requested by {name}",
+            "review": "Review",
+            "reject": "Reject",
+            "approve": "Approve",
+            "edit": "Edit",
+            "cancel": "Cancel"
+        }
     },
     "Dashboard": {
         "title": "Dashboard",
-        "welcome": "Welcome back, {name}"
+        "welcome": "Welcome back, {name}",
+        "greetings": {
+            "morning": "Good Morning",
+            "afternoon": "Good Afternoon",
+            "evening": "Good Evening"
+        },
+        "workspaceWelcome": "Welcome back to your workspace",
+        "storeFallback": "Store",
+        "userFallback": "User",
+        "widgets": {
+            "personalWorkspace": "Personal Workspace",
+            "vacationsRemaining": "Vacations Remaining",
+            "daysLeft": "days left",
+            "nextVacation": "Next Vacation",
+            "inDays": "In {days} days",
+            "nonePlanned": "None Planned",
+            "scheduleNow": "Schedule it now",
+            "nextDayOff": "Next Day Off",
+            "daysAway": "days away",
+            "restDay": "Rest Day",
+            "myWeeklySchedule": "My Weekly Schedule",
+            "workingWithYou": "Working with you today",
+            "workingToday": "Working Today",
+            "viewSchedule": "View Schedule",
+            "itsJustYou": "It's just you today!",
+            "holdingFort": "You're holding down the fort. Have a great shift!",
+            "officialNotices": "Official Company Notices",
+            "timeOff": "Time Off",
+            "requestVacation": "Request Vacation",
+            "sickReport": "Sick Report",
+            "reportAbsence": "Report Absence",
+            "birthdays": "Birthdays",
+            "publicHolidays": "Public Holidays",
+            "managementActions": "Management Actions",
+            "manageSchedules": "Manage Schedules",
+            "manageTeam": "Manage Team",
+            "myStore": "My Store",
+            "networkDashboard": "Network Dashboard",
+            "storeDashboard": "Store Dashboard",
+            "departmentView": "Department View",
+            "complianceWarning": "Compliance Warning: Missing Schedules",
+            "overdue": "Overdue",
+            "reviewBreakdown": "Review Breakdown & Alert",
+            "departmentOverview": "Department Overview",
+            "headTitle": "Head",
+            "overviewText": "Overview for {department} at {store}",
+            "teamToday": "Team Today",
+            "membersOnShift": "members on shift",
+            "teamVacation": "Team Vacation",
+            "membersAway": "members away",
+            "pendingRequests": "pending requests",
+            "approvals": "Approvals",
+            "allCaughtUp": "All Caught Up",
+            "noPendingRequestsDept": "No pending requests for your department.",
+            "departmentTools": "Department Tools",
+            "createSchedule": "Create Schedule",
+            "inventoryCheck": "Inventory Check",
+            "assignedTasks": "Assigned Tasks",
+            "fullDeptView": "FULL DEPT VIEW",
+            "pendingTeamTasks": "Pending Team Tasks",
+            "storeDepartmentOverview": "Store Department Overview",
+            "onShiftIn": "on shift in {department}",
+            "onVacationTitle": "On Vacation",
+            "managementTools": "Management Tools",
+            "myScheduleOverview": "My Schedule Overview",
+            "teamTasks": "Team Tasks",
+            "birthdayWidget": {
+                "title": "Upcoming Birthdays",
+                "comingUp": "{count} Coming Up",
+                "emptyTitle": "No upcoming birthdays",
+                "emptyDesc": "The team has no birthdays in the next 30 days.",
+                "today": "Today!",
+                "happyBirthday": "Happy Birthday!",
+                "inDays": "In {days} days",
+                "defaultMessage": "Happy Birthday {name}! 🎉🎂 Hope you have a fantastic day!"
+            },
+            "holidays": {
+                "newYearsEve": {
+                    "name": "New Year's Eve",
+                    "message": "🎊 Wishing you a fantastic New Year's Eve! Get ready to celebrate! 🥳"
+                },
+                "newYearsDay": {
+                    "name": "New Year's Day",
+                    "message": "🎉 Happy New Year! Wishing you success and happiness in the year ahead! ✨"
+                },
+                "christmasEve": {
+                    "name": "Christmas Eve",
+                    "message": "🎄 Merry Christmas Eve! May your holidays be filled with joy and warmth! 🎅"
+                },
+                "christmasDay": {
+                    "name": "Christmas Day",
+                    "message": "🎅 Merry Christmas! Wishing you and your loved ones a wonderful day! 🎁"
+                },
+                "valentinesDay": {
+                    "name": "Valentine's Day",
+                    "message": "💝 Happy Valentine's Day! Spread love and kindness today! 💕"
+                },
+                "easter": {
+                    "name": "Easter",
+                    "message": "🐰 Happy Easter! Wishing you a joyful celebration! 🥚"
+                },
+                "halloween": {
+                    "name": "Halloween",
+                    "message": "🎃 Happy Halloween! Have a spooky and fun day! 👻"
+                }
+            },
+            "publicHolidayWidget": {
+                "title": "Public Holidays",
+                "empty": "No upcoming holidays found.",
+                "today": "Today",
+                "days": "{days} days"
+            },
+            "orderingWidget": {
+                "title": "Today's Orders",
+                "empty": "No orders due today.",
+                "mainTitle": "Order Today",
+                "due": "{count} Due",
+                "delivers": "Delivers: {date}",
+                "cutoff": "Cutoff: {time}",
+                "orderBtn": "Order"
+            },
+            "problemStatsWidget": {
+                "title": "Reported Issues",
+                "pending": "Pending",
+                "criticalHigh": "Critical/High",
+                "resolved": "Resolved"
+            },
+            "statsCards": {
+                "totalEmployees": "Total Employees",
+                "activeEmployees": "Active Employees",
+                "onVacation": "On Vacation",
+                "absentToday": "Absent Today",
+                "pendingApprovals": "Pending Approvals",
+                "totalHours": "Total Hours"
+            },
+            "activeActions": {
+                "title": "Ongoing Actions",
+                "confirmCancel": "Are you sure you want to cancel this request?",
+                "cancelSuccess": "Request cancelled successfully",
+                "cancelError": "Failed to cancel request",
+                "confirmAccept": "Are you sure you want to accept this shift?",
+                "acceptSuccess": "Shift accepted! HR will finalize soon.",
+                "acceptError": "Failed to accept shift",
+                "genericError": "Something went wrong",
+                "vacationRequest": "Vacation Request",
+                "absenceReport": "Absence Report",
+                "shiftCoverage": "Shift Coverage",
+                "live": "Live",
+                "seeking": "Seeking",
+                "pending": "Pending",
+                "availableOffers": "Available Coverage Offers",
+                "coverShiftRequest": "Cover Shift Request",
+                "with": "With: {names}",
+                "hrMessage": "HR: {message}",
+                "acceptBtn": "Accept"
+            },
+            "pendingApprovalsWidget": {
+                "unauthorized": "You are not authorized to perform this action.",
+                "rejectedFromDashboard": "Rejected from Dashboard",
+                "approvedSuccess": "Approved successfully",
+                "rejectedSuccess": "Rejected successfully",
+                "actionFailed": "Action failed",
+                "bulkApproving": "Bulk approving {count} items...",
+                "bulkRejecting": "Bulk rejecting {count} items...",
+                "bulkApproveSuccess": "Bulk approval completed!",
+                "bulkRejectSuccess": "Bulk rejection completed!",
+                "bulkError": "Processed with errors. Failed: {names}",
+                "actionCenter": "Action Center",
+                "efficiency": "Operational Efficiency: 100%",
+                "allProcessed": "All requests processed",
+                "criticalApprovals": "CRITICAL APPROVALS",
+                "actionRequired": "Action Required",
+                "rejectBtn": "Reject ({count})",
+                "approveBtn": "Approve ({count})",
+                "allHandledTitle": "All approvals handled 🎉",
+                "allHandledDesc": "Great job! You're all caught up.",
+                "selectAll": "Select All",
+                "viewAll": "VIEW ALL {count} REQUESTS",
+                "viewCommandCenter": "VIEW COMMAND CENTER",
+                "items": {
+                    "unknown": "Unknown",
+                    "overtime": "{hours}h Overtime",
+                    "vacation": "{days} Day Vacation",
+                    "absence": "Absence",
+                    "schedule": "Schedule Week {week}",
+                    "finalizeCoverage": "Finalize Coverage: {status}",
+                    "foundReplacement": "Found Replacement",
+                    "seeking": "Seeking"
+                },
+                "bulkRejectReason": "Bulk Reject"
+            },
+            "swapRequestsWidget": {
+                "title": "Shift Swap Requests",
+                "description": "Colleagues want to swap shifts with you.",
+                "offers": "Offers:",
+                "yours": "Yours:",
+                "for": "for",
+                "decline": "Decline",
+                "accept": "Accept",
+                "toast": {
+                    "success": "Swap request {action}",
+                    "failed": "Failed to process request",
+                    "error": "An error occurred"
+                }
+            },
+            "scheduleOverview": {
+                "title": "Schedule Overview",
+                "approved": "Approved",
+                "pending": "Pending Approval",
+                "inProgress": "In Progress",
+                "recentTitle": "Recent Schedules",
+                "empty": "No recent schedules.",
+                "weekOf": "Week of {date}",
+                "createdBy": "Created by {name}",
+                "viewSchedule": "View Schedule"
+            },
+            "operationsRadar": {
+                "title": "Operations Radar",
+                "liveMetrics": "Live Metrics",
+                "scheduleHealth": "Schedule Health",
+                "nextWeek": "Next Week:",
+                "published": "Published",
+                "overdue": "Overdue",
+                "daysLeft": "{count} Days Left",
+                "staffingLevels": "Staffing Levels",
+                "target": "{count} Target",
+                "noTarget": "No Target Set",
+                "underMin": "Under minimum requirement of {min}",
+                "allSystemsGo": "All systems operational",
+                "view": "View"
+            },
+            "insights": {
+                "title": "Insights"
+            },
+            "employeePendingActions": {
+                "title": "Pending Actions",
+                "viewAll": "View All",
+                "swap": {
+                    "title": "{name} wants to swap",
+                    "subtitle": "Shift Swap Request",
+                    "pending": "Pending",
+                    "accept": "Accept",
+                    "reject": "Reject",
+                    "alert": {
+                        "title": "Accept Shift Swap?",
+                        "description": "This will modify your schedule. You will be responsible for this shift.",
+                        "confirmReject": "Reject this swap request?"
+                    },
+                    "toast": {
+                        "success": "Swap request {action}",
+                        "error": "Failed to process request"
+                    }
+                },
+                "coverageOffer": {
+                    "title": "Shift Coverage Available",
+                    "subtitle": "{dept} Shift",
+                    "open": "Open",
+                    "needsCover": "needs cover",
+                    "accept": "Accept Shift",
+                    "decline": "Decline",
+                    "alert": {
+                        "title": "Accept Extra Shift?",
+                        "description": "You are agreeing to cover this shift. It will be added to your schedule immediately.",
+                        "confirmDecline": "Decline this coverage offer?"
+                    },
+                    "toast": {
+                        "success": "Coverage offer {action}ed",
+                        "error": "Failed to process request"
+                    }
+                },
+                "vacation": {
+                    "title": "Vacation Request",
+                    "subtitle": "Waiting for approval",
+                    "inReview": "In Review",
+                    "requested": "Requested",
+                    "days": "({days} days)",
+                    "cancel": "Cancel Request"
+                },
+                "absence": {
+                    "title": "Absence Reported",
+                    "subtitle": "Pending review",
+                    "pending": "Pending",
+                    "date": "Date",
+                    "cancel": "Cancel Request"
+                },
+                "coverageRequest": {
+                    "title": "Seeking Coverage",
+                    "subtitle": "Checking for candidates...",
+                    "broadcasting": "Broadcasting",
+                    "shift": "Shift",
+                    "cancel": "Cancel Request"
+                },
+                "common": {
+                    "cancelConfirm": "Are you sure you want to cancel this request?",
+                    "cancelled": "Request cancelled",
+                    "error": "An error occurred",
+                    "confirm": "Confirm",
+                    "cancel": "Cancel"
+                }
+            },
+            "personalTodo": {
+                "title": "Personal Workflow",
+                "new": "New",
+                "tabs": {
+                    "all": "All",
+                    "tasks": "Tasks",
+                    "notes": "Notes"
+                },
+                "empty": "No items found. Create your first note or task!",
+                "created": "Created",
+                "today": "Today",
+                "uncheck": "Uncheck",
+                "completed": "Completed",
+                "completedAt": "Completed",
+                "recent": "Recent",
+                "viewFull": "View Full Page",
+                "dialog": {
+                    "titleCreate": "Create New Note / Task",
+                    "titleEdit": "Edit Item",
+                    "isTask": "Mark as Actionable Task?",
+                    "itemTitle": "Title (Optional)",
+                    "titlePlaceholder": "e.g. Ideas for Menu",
+                    "content": "Content",
+                    "contentPlaceholderTask": "What needs to be done?",
+                    "contentPlaceholderNote": "Write your thoughts...",
+                    "deadline": "Deadline",
+                    "deadlinePlaceholder": "Select deadline",
+                    "save": "Save Changes",
+                    "createTask": "Create Task",
+                    "createNote": "Create Note"
+                },
+                "toast": {
+                    "updateError": "Failed to update",
+                    "createError": "Failed to create"
+                },
+                "untitled": "Untitled Note"
+            },
+            "upcomingVacations": {
+                "title": "Upcoming Vacations",
+                "thisWeek": "This Week",
+                "thisMonth": "This Month",
+                "total": "Total",
+                "scheduleTitle": "Employee Vacation Schedule",
+                "empty": "No upcoming vacations found.",
+                "tomorrow": "Tomorrow",
+                "days": "{count} days",
+                "viewDetails": "View Details",
+                "contact": "Contact",
+                "warning": "{count} vacation(s) starting within 3 days"
+            },
+            "recentActivity": {
+                "title": "Recent Activity",
+                "viewLog": "View Log",
+                "empty": "No recent activity recorded",
+                "system": "System"
+            }
+        },
+        "notices": {
+            "title": "Notice Board",
+            "noActive": "No active announcements at this time.",
+            "openArchive": "OPEN ARCHIVE",
+            "broadcasts": "ECOSYSTEM BROADCASTS",
+            "of": "OF",
+            "urgent": "URGENT",
+            "global": "GLOBAL",
+            "store": "STORE",
+            "engage": "ENGAGE",
+            "sync": "Synchronizing Announcements"
+        },
+        "vacations": {
+            "title": "Vacations",
+            "subtitle": "Manage and review employee vacation requests.",
+            "pendingRequests": "Pending Requests",
+            "approvedThisYear": "Approved This Year"
+        }
+    },
+    "Notices": {
+        "postNotice": "Post Notice",
+        "editNotice": "Edit Notice",
+        "postNewNotice": "Post New Notice",
+        "editDescription": "Update your announcement.",
+        "createDescription": "Announce updates, policies, or news to your team.",
+        "title": "Title",
+        "titlePlaceholder": "e.g. Holiday Schedule Changes",
+        "targetAudience": "Target Audience",
+        "selectAudience": "Select who sees this...",
+        "allCompany": "All Company (Global)",
+        "specificStore": "Specific Store",
+        "specificGlobalDept": "Specific Global Department",
+        "specificRoleGroup": "Specific Role Group",
+        "myStore": "My Store (All Employees)",
+        "roleGroupInStore": "Specific Role Group (In My Store)",
+        "deptInStore": "Specific Department (In My Store)",
+        "myDeptGlobal": "My Department (All Global)",
+        "myDeptStore": "My Department (Store Level)",
+        "selectDepartment": "Select Department",
+        "pickDepartment": "Pick a department",
+        "noDeptsFound": "No departments found",
+        "filterContent": "Filter by Content (Optional)",
+        "allEmployeesInDept": "All Employees in Dept",
+        "allEmployees": "All Employees",
+        "deptHeadOnly": "Dept Head Only",
+        "staffOnly": "Staff Only",
+        "selectStore": "Select Store",
+        "pickStore": "Pick a store",
+        "selectRole": "Select Role",
+        "pickRole": "Pick a role",
+        "storeManagers": "Store Managers",
+        "departmentHeads": "Department Heads",
+        "storeDeptHeads": "Store Dept Heads",
+        "employees": "Employees",
+        "expirationDate": "Expiration Date (Optional)",
+        "pickExpiration": "Pick expiration date",
+        "expirationHelp": "Notice disappears after this date.",
+        "publishToAdmin": "Publish to Administrator as well",
+        "contentMarkdown": "Content (Markdown)",
+        "contentPlaceholder": "Type your notice here...",
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes",
+        "noticeUpdated": "Notice Updated",
+        "noticePosted": "Notice Posted",
+        "failedToSave": "Failed to save notice"
+    },
+    "Reminders": {
+        "reminderCreated": "Reminder Created",
+        "failedCreate": "Failed to create reminder",
+        "errorCreate": "Error creating reminder",
+        "newReminder": "New Reminder",
+        "createReminder": "Create Reminder",
+        "createDescription": "Send an alert or meeting reminder to staff.",
+        "title": "Title",
+        "titlePlaceholder": "e.g. Staff Meeting",
+        "description": "Description",
+        "type": "Type",
+        "general": "General",
+        "meeting": "Meeting",
+        "order": "Order Check",
+        "priority": "Priority",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "dueDate": "Due Date & Time",
+        "pickDate": "Pick a date",
+        "targetAudience": "Target Audience",
+        "everyone": "Everyone",
+        "storeManagers": "Store Managers",
+        "employees": "Employees",
+        "admins": "Admins",
+        "create": "Create"
     },
     "Vacation": {
         "title": "Vacations",
@@ -111,7 +616,22 @@
         "pickDate": "Pick a date",
         "remainingBalance": "Remaining Balance",
         "submitting": "Submitting...",
-        "submit": "Submit"
+        "submit": "Submit",
+        "list": {
+            "upcoming": "Upcoming",
+            "noUpcoming": "No upcoming approved vacations.",
+            "pendingRequest": "Pending Request",
+            "approvedVacation": "Approved Vacation",
+            "absenceRecord": "Absence Record",
+            "pendingReview": "Pending Review",
+            "days": "Days",
+            "store": "Store",
+            "dept": "Dept",
+            "note": "Note",
+            "filterAll": "All",
+            "noPending": "No pending requests.",
+            "noHistory": "No history found."
+        }
     },
     "Absence": {
         "title": "Absences",
@@ -218,28 +738,115 @@
         "title": "Staff Schedule Viewer",
         "description": "Examine historical and planned schedules for your team members."
     },
-    "PendingActions": {
-        "title": "Pending Actions",
-        "description": "Manage your requests and review items requiring your approval.",
-        "myRequests": "My Pending Requests",
-        "toApprove": "Awaiting My Approval",
-        "noPersonal": "You have no pending requests.",
-        "noApprovals": "No items require your approval right now.",
-        "tabs": {
-            "all": "All",
-            "vacations": "Vacations",
-            "absences": "Absences",
-            "overtime": "Overtime",
-            "schedules": "Schedules",
-            "coverage": "Coverage"
+    "Documents": {
+        "title": "Documents Central",
+        "subtitle": "Central repository of all files submitted by employees (Tasks, Sick Leaves, Problems).",
+        "searchPlaceholder": "Search by name, document title, context...",
+        "filterByType": "Filter by Type",
+        "allTypes": "All Types",
+        "sickLeaves": "Sick Leaves / Absence",
+        "taskSubmissions": "Task Submissions",
+        "problemReports": "Problem Reports",
+        "table": {
+            "type": "Type",
+            "document": "Document",
+            "submittedBy": "Submitted By",
+            "context": "Context / Reason",
+            "date": "Date",
+            "action": "Action",
+            "view": "View",
+            "loading": "Loading...",
+            "noDocuments": "No documents found.",
+            "showing": "Showing {count} of {total} documents"
         },
-        "item": {
-            "requestedBy": "Requested by {name}",
-            "review": "Review",
-            "edit": "Edit",
-            "cancel": "Cancel Request",
-            "approve": "Approve",
-            "reject": "Reject"
+        "types": {
+            "task": "Task Submission",
+            "problem": "Problem Attachment",
+            "absence": "Sick/Absence Note",
+            "employee_profile": "Employee File",
+            "document": "Document"
+        }
+    },
+    "ReportProblem": {
+        "title": "Report a Problem",
+        "description": "Report an issue to the management team. Please provide as much detail as possible.",
+        "fields": {
+            "recipient": {
+                "label": "Send To",
+                "placeholder": "Select Recipient",
+                "options": {
+                    "store_manager": "Store Manager",
+                    "store_department_head": "Department Head",
+                    "head_of_department": "Global Head of Dept",
+                    "chef": "Chef / Kitchen",
+                    "hr": "Human Resources (HR)",
+                    "owner": "Owner / Admin"
+                }
+            },
+            "priority": {
+                "label": "Priority",
+                "placeholder": "Select Priority",
+                "options": {
+                    "low": "Low - Minor issue",
+                    "medium": "Medium - Needs attention",
+                    "high": "High - Urgent!"
+                }
+            },
+            "type": {
+                "label": "Type",
+                "placeholder": "Select Type",
+                "options": {
+                    "equipment": "Equipment Failure",
+                    "personnel": "Personnel Issue",
+                    "maintenance": "Maintenance",
+                    "safety": "Safety Hazard",
+                    "stock": "Stock / Inventory",
+                    "other": "Other"
+                }
+            },
+            "title": {
+                "label": "Problem Title",
+                "placeholder": "Brief title of the issue"
+            },
+            "problemDescription": {
+                "label": "Description",
+                "placeholder": "Describe the problem in detail..."
+            }
+        },
+        "buttons": {
+            "cancel": "Cancel",
+            "submit": "Report Problem",
+            "submitting": "Reporting..."
+        },
+        "validation": {
+            "recipientRequired": "Recipient is required",
+            "typeRequired": "Type is required",
+            "titleLength": "Title must be at least 5 characters",
+            "descriptionLength": "Description must be at least 10 characters"
+        },
+        "toast": {
+            "success": "Problem reported successfully",
+            "successDesc": "The relevant team has been notified.",
+            "error": "Failed to report problem",
+            "genericError": "An error occurred"
+        }
+    },
+    "Sidebar": {
+        "groups": {
+            "operations": "Operations",
+            "people": "People",
+            "structure": "Structure",
+            "communication": "Communication",
+            "account": "Account"
+        }
+    },
+    "Tasks": {
+        "comments": {
+            "title": "Comments",
+            "noComments": "No comments yet. Start the conversation!",
+            "post": "Post Comment",
+            "posting": "Posting...",
+            "placeholder": "Write a comment..."
         }
     }
 }

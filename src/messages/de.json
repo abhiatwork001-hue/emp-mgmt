@@ -6,15 +6,26 @@
         "departments": "Abteilungen",
         "recipes": "Rezepte",
         "schedule": "Dienstplan",
+        "schedules": "Dienstpläne",
         "vacations": "Urlaub",
         "absences": "Abwesenheiten",
         "employees": "Mitarbeiter",
         "staffviewer": "Personal-Viewer",
         "positions": "Positionen",
         "profile": "Profil",
+        "notes": "Notizen",
+        "notices": "Bekanntmachungen",
+        "tips": "Tipps",
+        "tasks": "Aufgaben",
+        "messages": "Nachrichten",
+        "credentials": "Anmeldedaten",
+        "coverage": "Abdeckung",
+        "offers": "Angebote",
         "problems": "Probleme",
         "settings": "Einstellungen",
         "reviews": "Bewertungen",
+        "activities": "Aktivitäten",
+        "activity-log": "Aktivitätsprotokoll",
         "logout": "Abmelden",
         "search": "Suchen",
         "active": "Aktiv",
@@ -33,6 +44,7 @@
         "published": "Veröffentlicht",
         "history": "Verlauf",
         "note": "Notiz",
+        "unknown": "Unbekannt",
         "searchEmployee": "Mitarbeiter suchen...",
         "approve": "Genehmigen",
         "reject": "Ablehnen",
@@ -60,11 +72,517 @@
         "storeSpecific": "Filialspezifisch",
         "viewOnly": "Nur Lesezugriff",
         "translations": "Übersetzungen",
-        "name": "Name"
+        "name": "Name",
+        "suppliers": "Lieferanten",
+        "directory": "Verzeichnis",
+        "documents": "Dokumente",
+        "roleTypes": {
+            "super_user": "Super-User",
+            "owner": "Eigentümer (Super Admin)",
+            "admin": "Admin",
+            "hr": "HR-Manager",
+            "store_manager": "Filialleiter",
+            "department_head": "Globaler Abt.-Leiter",
+            "store_department_head": "Filial-Abt.-Leiter",
+            "employee": "Mitarbeiter"
+        }
+    },
+    "RoleSwitcher": {
+        "testView": "Test-Ansicht:",
+        "selectRole": "Rolle wählen",
+        "testingMode": "Testmodus"
+    },
+    "PendingActions": {
+        "vacationRequest": "Urlaubsantrag",
+        "absenceReport": "Abwesenheitsmeldung",
+        "overtimeRequest": "Überstundenantrag",
+        "draftSchedule": "Planentwurf",
+        "coverageOffer": "Vertretungsangebot",
+        "days": "{count} Tage",
+        "hours": "{count} Stunden",
+        "covering": "Vertretung für: {name}",
+        "workingWith": "Arbeitet mit: {names}",
+        "reason": "Begründung des Mitarbeiters: {reason}",
+        "hrMessage": "HR: {message}",
+        "noComments": "Keine Kommentare angegeben.",
+        "viewAttachment": "Anhang {index} ansehen",
+        "finalize": "Abschließen",
+        "accept": "Akzeptieren",
+        "decline": "Ablehnen",
+        "title": "Ausstehende Aktionen",
+        "description": "Verwalten Sie Ihre Anfragen und überprüfen Sie genehmigungspflichtige Elemente.",
+        "myRequests": "Meine ausstehenden Anfragen",
+        "toApprove": "Wartet auf meine Genehmigung",
+        "noPersonal": "Sie haben keine ausstehenden Anfragen.",
+        "noApprovals": "Keine Elemente erfordern derzeit Ihre Genehmigung.",
+        "tabs": {
+            "all": "Alle",
+            "vacations": "Urlaub",
+            "absences": "Abwesenheiten",
+            "overtime": "Überstunden",
+            "schedules": "Dienstpläne",
+            "coverage": "Vertretung"
+        },
+        "item": {
+            "requestedBy": "Angefordert von {name}",
+            "review": "Bewerten",
+            "reject": "Ablehnen",
+            "approve": "Genehmigen",
+            "edit": "Bearbeiten",
+            "cancel": "Abbrechen"
+        }
     },
     "Dashboard": {
         "title": "Dashboard",
-        "welcome": "Willkommen zurück, {name}"
+        "welcome": "Willkommen zurück, {name}",
+        "greetings": {
+            "morning": "Guten Morgen",
+            "afternoon": "Guten Tag",
+            "evening": "Guten Abend"
+        },
+        "workspaceWelcome": "Willkommen zurück in Ihrem Arbeitsbereich",
+        "storeFallback": "Filiale",
+        "userFallback": "Benutzer",
+        "widgets": {
+            "personalWorkspace": "Persönlicher Arbeitsbereich",
+            "vacationsRemaining": "Verbleibende Urlaubstage",
+            "daysLeft": "Tage übrig",
+            "nextVacation": "Nächster Urlaub",
+            "inDays": "In {days} Tagen",
+            "nonePlanned": "Keiner geplant",
+            "scheduleNow": "Jetzt planen",
+            "nextDayOff": "Nächster freier Tag",
+            "daysAway": "Tage entfernt",
+            "restDay": "Ruhetag",
+            "myWeeklySchedule": "Mein Wochenplan",
+            "workingWithYou": "Wer arbeitet heute mit Ihnen",
+            "workingToday": "Heute arbeitend",
+            "viewSchedule": "Plan ansehen",
+            "itsJustYou": "Heute nur Sie!",
+            "holdingFort": "Sie halten die Stellung. Haben Sie eine tolle Schicht!",
+            "officialNotices": "Offizielle Firmenmitteilungen",
+            "timeOff": "Auszeit",
+            "requestVacation": "Urlaub beantragen",
+            "sickReport": "Krankmeldung",
+            "reportAbsence": "Abwesenheit melden",
+            "birthdays": "Geburtstage",
+            "publicHolidays": "Feiertage",
+            "managementActions": "Verwaltungsaktionen",
+            "manageSchedules": "Pläne verwalten",
+            "manageTeam": "Team verwalten",
+            "myStore": "Meine Filiale",
+            "networkDashboard": "Netzwerk-Dashboard",
+            "storeDashboard": "Filial-Dashboard",
+            "departmentView": "Abteilungsansicht",
+            "complianceWarning": "Compliance-Warnung: Fehlende Pläne",
+            "overdue": "Überfällig",
+            "reviewBreakdown": "Aufschlüsselung & Warnung überprüfen",
+            "departmentOverview": "Abteilungsübersicht",
+            "headTitle": "Leiter",
+            "overviewText": "Übersicht für {department} in {store}",
+            "teamToday": "Team Heute",
+            "membersOnShift": "Mitglieder im Dienst",
+            "teamVacation": "Team-Urlaub",
+            "membersAway": "Mitglieder abwesend",
+            "pendingRequests": "ausstehende Anfragen",
+            "approvals": "Genehmigungen",
+            "allCaughtUp": "Alles erledigt",
+            "noPendingRequestsDept": "Keine ausstehenden Anfragen für Ihre Abteilung.",
+            "departmentTools": "Abteilungs-Tools",
+            "createSchedule": "Plan erstellen",
+            "inventoryCheck": "Bestandsprüfung",
+            "assignedTasks": "Zugewiesene Aufgaben",
+            "fullDeptView": "GANZE ABT. ANSICHT",
+            "pendingTeamTasks": "Ausstehende Team-Aufgaben",
+            "storeDepartmentOverview": "Filialabteilungsübersicht",
+            "onShiftIn": "im Dienst in {department}",
+            "onVacationTitle": "Im Urlaub",
+            "managementTools": "Management-Tools",
+            "myScheduleOverview": "Meine Planübersicht",
+            "teamTasks": "Team-Aufgaben",
+            "birthdayWidget": {
+                "title": "Anstehende Geburtstage",
+                "comingUp": "{count} demnächst",
+                "emptyTitle": "Keine anstehenden Geburtstage",
+                "emptyDesc": "Das Team hat keine Geburtstage in den nächsten 30 Tagen.",
+                "today": "Heute!",
+                "happyBirthday": "Alles Gute zum Geburtstag!",
+                "inDays": "In {days} Tagen",
+                "defaultMessage": "Alles Gute zum Geburtstag {name}! 🎉🎂 Hab einen fantastischen Tag!"
+            },
+            "holidays": {
+                "newYearsEve": {
+                    "name": "Silvester",
+                    "message": "🎊 Ich wünsche dir einen fantastischen Silvesterabend! Mach dich bereit zum Feiern! 🥳"
+                },
+                "newYearsDay": {
+                    "name": "Neujahr",
+                    "message": "🎉 Frohes neues Jahr! Viel Erfolg und Glück im kommenden Jahr! ✨"
+                },
+                "christmasEve": {
+                    "name": "Heiligabend",
+                    "message": "🎄 Fröhliche Weihnachten! Mögen deine Feiertage voller Freude und Wärme sein! 🎅"
+                },
+                "christmasDay": {
+                    "name": "Weihnachtstag",
+                    "message": "🎅 Frohe Weihnachten! Ich wünsche dir und deinen Liebsten einen wunderbaren Tag! 🎁"
+                },
+                "valentinesDay": {
+                    "name": "Valentinstag",
+                    "message": "💝 Alles Liebe zum Valentinstag! Verbreite heute Liebe und Freundlichkeit! 💕"
+                },
+                "easter": {
+                    "name": "Ostern",
+                    "message": "🐰 Frohe Ostern! Ich wünsche dir ein fröhliches Fest! 🥚"
+                },
+                "halloween": {
+                    "name": "Halloween",
+                    "message": "🎃 Happy Halloween! Hab einen gruseligen und lustigen Tag! 👻"
+                }
+            },
+            "publicHolidayWidget": {
+                "title": "Feiertage",
+                "empty": "Keine anstehenden Feiertage gefunden.",
+                "today": "Heute",
+                "days": "{days} Tage"
+            },
+            "orderingWidget": {
+                "title": "Heutige Bestellungen",
+                "empty": "Keine Bestellungen heute fällig.",
+                "mainTitle": "Heute bestellen",
+                "due": "{count} Fällig",
+                "delivers": "Lieferung: {date}",
+                "cutoff": "Bestellschluss: {time}",
+                "orderBtn": "Bestellen"
+            },
+            "problemStatsWidget": {
+                "title": "Gemeldete Probleme",
+                "pending": "Ausstehend",
+                "criticalHigh": "Kritisch/Hoch",
+                "resolved": "Gelöst"
+            },
+            "statsCards": {
+                "totalEmployees": "Mitarbeiter Gesamt",
+                "activeEmployees": "Aktive Mitarbeiter",
+                "onVacation": "Im Urlaub",
+                "absentToday": "Heute abwesend",
+                "pendingApprovals": "Ausstehende Genehmigungen",
+                "totalHours": "Gesamtstunden"
+            },
+            "activeActions": {
+                "title": "Laufende Aktionen",
+                "confirmCancel": "Möchten Sie diese Anfrage wirklich stornieren?",
+                "cancelSuccess": "Anfrage erfolgreich storniert",
+                "cancelError": "Anfrage konnte nicht storniert werden",
+                "confirmAccept": "Möchten Sie diese Schicht wirklich übernehmen?",
+                "acceptSuccess": "Schicht akzeptiert! HR wird dies bald bestätigen.",
+                "acceptError": "Schicht konnte nicht akzeptiert werden",
+                "genericError": "Etwas ist schiefgelaufen",
+                "vacationRequest": "Urlaubsantrag",
+                "absenceReport": "Abwesenheitsmeldung",
+                "shiftCoverage": "Schichtvertretung",
+                "live": "Live",
+                "seeking": "Suchend",
+                "pending": "Ausstehend",
+                "availableOffers": "Verfügbare Vertretungsangebote",
+                "coverShiftRequest": "Schichtvertretungsanfrage",
+                "with": "Mit: {names}",
+                "hrMessage": "HR: {message}",
+                "acceptBtn": "Akzeptieren"
+            },
+            "pendingApprovalsWidget": {
+                "unauthorized": "Sie sind nicht berechtigt, diese Aktion durchzuführen.",
+                "rejectedFromDashboard": "Vom Dashboard abgelehnt",
+                "approvedSuccess": "Erfolgreich genehmigt",
+                "rejectedSuccess": "Erfolgreich abgelehnt",
+                "actionFailed": "Aktion fehlgeschlagen",
+                "bulkApproving": "Genehmige {count} Elemente...",
+                "bulkRejecting": "Lehne {count} Elemente ab...",
+                "bulkApproveSuccess": "Massengenehmigung abgeschlossen!",
+                "bulkRejectSuccess": "Massenablehnung abgeschlossen!",
+                "bulkError": "Mit Fehlern verarbeitet. Fehlgeschlagen: {names}",
+                "actionCenter": "Aktionszentrum",
+                "efficiency": "Betriebseffizienz: 100%",
+                "allProcessed": "Alle Anfragen bearbeitet",
+                "criticalApprovals": "KRITISCHE GENEHMIGUNGEN",
+                "actionRequired": "Handlungsbedarf",
+                "rejectBtn": "Ablehnen ({count})",
+                "approveBtn": "Genehmigen ({count})",
+                "allHandledTitle": "Alle Genehmigungen erledigt 🎉",
+                "allHandledDesc": "Gut gemacht! Du bist auf dem neuesten Stand.",
+                "selectAll": "Alles auswählen",
+                "viewAll": "ALLE {count} ANFRAGEN ANZEIGEN",
+                "viewCommandCenter": "KOMMANDOZENTRALE ANZEIGEN",
+                "items": {
+                    "unknown": "Unbekannt",
+                    "overtime": "{hours}h Überstunden",
+                    "vacation": "{days} Tage Urlaub",
+                    "absence": "Abwesenheit",
+                    "schedule": "Dienstplan Woche {week}",
+                    "finalizeCoverage": "Vertretung abschließen: {status}",
+                    "foundReplacement": "Ersatz gefunden",
+                    "seeking": "Suchend"
+                },
+                "bulkRejectReason": "Grobablehnung"
+            },
+            "swapRequestsWidget": {
+                "title": "Schichttauschanfragen",
+                "description": "Kollegen möchten Schichten mit Ihnen tauschen.",
+                "offers": "Bietet:",
+                "yours": "Ihre:",
+                "for": "gegen",
+                "decline": "Ablehnen",
+                "accept": "Akzeptieren",
+                "toast": {
+                    "success": "Tauschanfrage {action}",
+                    "failed": "Anfrage konnte nicht bearbeitet werden",
+                    "error": "Ein Fehler ist aufgetreten"
+                }
+            },
+            "scheduleOverview": {
+                "title": "Dienstplanübersicht",
+                "approved": "Genehmigt",
+                "pending": "Ausstehende Genehmigung",
+                "inProgress": "In Bearbeitung",
+                "recentTitle": "Aktuelle Pläne",
+                "empty": "Keine aktuellen Pläne.",
+                "weekOf": "Woche vom {date}",
+                "createdBy": "Erstellt von {name}",
+                "viewSchedule": "Plan ansehen"
+            },
+            "operationsRadar": {
+                "title": "Betriebsradar",
+                "liveMetrics": "Live-Metriken",
+                "scheduleHealth": "Dienstplanstatus",
+                "nextWeek": "Nächste Woche:",
+                "published": "Veröffentlicht",
+                "overdue": "Überfällig",
+                "daysLeft": "{count} Tage übrig",
+                "staffingLevels": "Personalstand",
+                "target": "{count} Soll",
+                "noTarget": "Kein Ziel gesetzt",
+                "underMin": "Unter Mindestanforderung von {min}",
+                "allSystemsGo": "Alle Systeme betriebsbereit",
+                "view": "Ansehen"
+            },
+            "insights": {
+                "title": "Einblicke"
+            },
+            "employeePendingActions": {
+                "title": "Ausstehende Aktionen",
+                "viewAll": "Alle ansehen",
+                "swap": {
+                    "title": "{name} möchte tauschen",
+                    "subtitle": "Schichttauschanfrage",
+                    "pending": "Ausstehend",
+                    "accept": "Akzeptieren",
+                    "reject": "Ablehnen",
+                    "alert": {
+                        "title": "Schichttausch akzeptieren?",
+                        "description": "Dies wird Ihren Dienstplan ändern. Sie sind für diese Schicht verantwortlich.",
+                        "confirmReject": "Diese Tauschanfrage ablehnen?"
+                    },
+                    "toast": {
+                        "success": "Tauschanfrage {action}",
+                        "error": "Anfrage fehlgeschlagen"
+                    }
+                },
+                "coverageOffer": {
+                    "title": "Schichtabdeckung verfügbar",
+                    "subtitle": "{dept} Schicht",
+                    "open": "Offen",
+                    "needsCover": "benötigt Abdeckung",
+                    "accept": "Schicht übernehmen",
+                    "decline": "Ablehnen",
+                    "alert": {
+                        "title": "Zusatzschicht akzeptieren?",
+                        "description": "Sie stimmen zu, diese Schicht zu übernehmen. Sie wird sofort Ihrem Dienstplan hinzugefügt.",
+                        "confirmDecline": "Dieses Abdeckungsangebot ablehnen?"
+                    },
+                    "toast": {
+                        "success": "Abdeckungsangebot {action}",
+                        "error": "Anfrage fehlgeschlagen"
+                    }
+                },
+                "vacation": {
+                    "title": "Urlaubsantrag",
+                    "subtitle": "Wartet auf Genehmigung",
+                    "inReview": "In Prüfung",
+                    "requested": "Beantragt",
+                    "days": "({days} Tage)",
+                    "cancel": "Antrag stornieren"
+                },
+                "absence": {
+                    "title": "Abwesenheit gemeldet",
+                    "subtitle": "Prüfung ausstehend",
+                    "pending": "Ausstehend",
+                    "date": "Datum",
+                    "cancel": "Antrag stornieren"
+                },
+                "coverageRequest": {
+                    "title": "Suche Abdeckung",
+                    "subtitle": "Suche nach Kandidaten...",
+                    "broadcasting": "Übertragung",
+                    "shift": "Schicht",
+                    "cancel": "Antrag stornieren"
+                },
+                "common": {
+                    "cancelConfirm": "Sind Sie sicher, dass Sie diesen Antrag stornieren möchten?",
+                    "cancelled": "Antrag storniert",
+                    "error": "Ein Fehler ist aufgetreten",
+                    "confirm": "Bestätigen",
+                    "cancel": "Abbrechen"
+                }
+            },
+            "personalTodo": {
+                "title": "Persönlicher Arbeitsablauf",
+                "new": "Neu",
+                "tabs": {
+                    "all": "Alle",
+                    "tasks": "Aufgaben",
+                    "notes": "Notizen"
+                },
+                "empty": "Keine Elemente gefunden. Erstellen Sie Ihre erste Notiz oder Aufgabe!",
+                "created": "Erstellt",
+                "today": "Heute",
+                "uncheck": "Abhaken entfernen",
+                "completed": "Erledigt",
+                "completedAt": "Erledigt",
+                "recent": "Kürzlich",
+                "viewFull": "Vollständige Seite anzeigen",
+                "dialog": {
+                    "titleCreate": "Neue Notiz / Aufgabe erstellen",
+                    "titleEdit": "Element bearbeiten",
+                    "isTask": "Als Aufgabe markieren?",
+                    "itemTitle": "Titel (Optional)",
+                    "titlePlaceholder": "z.B. Ideen für Menü",
+                    "content": "Inhalt",
+                    "contentPlaceholderTask": "Was muss erledigt werden?",
+                    "contentPlaceholderNote": "Schreiben Sie Ihre Gedanken...",
+                    "deadline": "Frist",
+                    "deadlinePlaceholder": "Frist wählen",
+                    "save": "Änderungen speichern",
+                    "createTask": "Aufgabe erstellen",
+                    "createNote": "Notiz erstellen"
+                },
+                "toast": {
+                    "updateError": "Aktualisierung fehlgeschlagen",
+                    "createError": "Erstellung fehlgeschlagen"
+                },
+                "untitled": "Unbenannte Notiz"
+            },
+            "upcomingVacations": {
+                "title": "Anstehende Urlaube",
+                "thisWeek": "Diese Woche",
+                "thisMonth": "Diesen Monat",
+                "total": "Gesamt",
+                "scheduleTitle": "Mitarbeiterurlaubsplan",
+                "empty": "Keine anstehenden Urlaube gefunden.",
+                "tomorrow": "Morgen",
+                "days": "{count} Tage",
+                "viewDetails": "Details ansehen",
+                "contact": "Kontakt",
+                "warning": "{count} Urlaub(e) beginnen innerhalb von 3 Tagen"
+            },
+            "recentActivity": {
+                "title": "Kürzliche Aktivität",
+                "viewLog": "Protokoll ansehen",
+                "empty": "Keine kürzliche Aktivität aufgezeichnet",
+                "system": "System"
+            }
+        },
+        "notices": {
+            "title": "Bekanntmachungen",
+            "noActive": "Keine aktiven Bekanntmachungen zur Zeit.",
+            "openArchive": "ARCHIV ÖFFNEN",
+            "broadcasts": "ECOSYSTEM RUNDFUNK",
+            "of": "VON",
+            "urgent": "DRINGEND",
+            "global": "GLOBAL",
+            "store": "FILIALE",
+            "engage": "ANSEHEN",
+            "sync": "Synchronisiere Bekanntmachungen"
+        },
+        "vacations": {
+            "title": "Urlaube",
+            "subtitle": "Urlaubsanträge verwalten und überprüfen.",
+            "pendingRequests": "Ausstehende Anträge",
+            "approvedThisYear": "Dieses Jahr genehmigt"
+        }
+    },
+    "Notices": {
+        "postNotice": "Nachricht posten",
+        "editNotice": "Nachricht bearbeiten",
+        "postNewNotice": "Neue Nachricht posten",
+        "editDescription": "Aktualisieren Sie Ihre Ankündigung.",
+        "createDescription": "Kündigen Sie Updates, Richtlinien oder Neuigkeiten für Ihr Team an.",
+        "title": "Titel",
+        "titlePlaceholder": "z.B. Änderungen im Feiertagsplan",
+        "targetAudience": "Zielgruppe",
+        "selectAudience": "Auswählen, wer das sieht...",
+        "allCompany": "Alle (Global)",
+        "specificStore": "Bestimmte Filiale",
+        "specificGlobalDept": "Bestimmte Globale Abteilung",
+        "specificRoleGroup": "Bestimmte Rollengruppe",
+        "myStore": "Meine Filiale (Alle Mitarbeiter)",
+        "roleGroupInStore": "Bestimmte Rollengruppe (In meiner Filiale)",
+        "deptInStore": "Bestimmte Abteilung (In meiner Filiale)",
+        "myDeptGlobal": "Meine Abteilung (Alles Global)",
+        "myDeptStore": "Meine Abteilung (Filialebene)",
+        "selectDepartment": "Abteilung auswählen",
+        "pickDepartment": "Abteilung wählen",
+        "noDeptsFound": "Keine Abteilungen gefunden",
+        "filterContent": "Nach Inhalt filtern (Optional)",
+        "allEmployeesInDept": "Alle Mitarbeiter in Abt.",
+        "allEmployees": "Alle Mitarbeiter",
+        "deptHeadOnly": "Nur Abteilungsleiter",
+        "staffOnly": "Nur Personal",
+        "selectStore": "Filiale auswählen",
+        "pickStore": "Filiale wählen",
+        "selectRole": "Rolle auswählen",
+        "pickRole": "Rolle wählen",
+        "storeManagers": "Filialleiter",
+        "departmentHeads": "Abteilungsleiter",
+        "storeDeptHeads": "Filialabteilungsleiter",
+        "employees": "Mitarbeiter",
+        "expirationDate": "Ablaufdatum (Optional)",
+        "pickExpiration": "Ablaufdatum wählen",
+        "expirationHelp": "Nachricht verschwindet nach diesem Datum.",
+        "publishToAdmin": "Auch an Administrator veröffentlichen",
+        "contentMarkdown": "Inhalt (Markdown)",
+        "contentPlaceholder": "Nachricht hier eingeben...",
+        "cancel": "Abbrechen",
+        "saveChanges": "Änderungen speichern",
+        "noticeUpdated": "Nachricht aktualisiert",
+        "noticePosted": "Nachricht gepostet",
+        "failedToSave": "Speichern fehlgeschlagen"
+    },
+    "Reminders": {
+        "reminderCreated": "Erinnerung erstellt",
+        "failedCreate": "Erinnerung konnte nicht erstellt werden",
+        "errorCreate": "Fehler beim Erstellen der Erinnerung",
+        "newReminder": "Neue Erinnerung",
+        "createReminder": "Erinnerung erstellen",
+        "createDescription": "Senden Sie eine Benachrichtigung oder Besprechungserinnerung an das Personal.",
+        "title": "Titel",
+        "titlePlaceholder": "z.B. Mitarbeiterbesprechung",
+        "description": "Beschreibung",
+        "type": "Typ",
+        "general": "Allgemein",
+        "meeting": "Besprechung",
+        "order": "Bestellprüfung",
+        "priority": "Priorität",
+        "low": "Niedrig",
+        "medium": "Mittel",
+        "high": "Hoch",
+        "dueDate": "Fälligkeitsdatum & Uhrzeit",
+        "pickDate": "Datum wählen",
+        "targetAudience": "Zielgruppe",
+        "everyone": "Jeder",
+        "storeManagers": "Filialleiter",
+        "employees": "Mitarbeiter",
+        "admins": "Administratoren",
+        "create": "Erstellen"
     },
     "Vacation": {
         "title": "Urlaube",
@@ -95,7 +613,22 @@
         "pickDate": "Datum wählen",
         "remainingBalance": "Restguthaben",
         "submitting": "Wird gesendet...",
-        "submit": "Absenden"
+        "submit": "Absenden",
+        "list": {
+            "upcoming": "Kommend",
+            "noUpcoming": "Keine kommenden genehmigten Urlaube.",
+            "pendingRequest": "Ausstehende Anfrage",
+            "approvedVacation": "Genehmigter Urlaub",
+            "absenceRecord": "Abwesenheitseintrag",
+            "pendingReview": "Ausstehende Überprüfung",
+            "days": "Tage",
+            "store": "Filiale",
+            "dept": "Abt.",
+            "note": "Notiz",
+            "filterAll": "Alle",
+            "noPending": "Keine ausstehenden Anfragen.",
+            "noHistory": "Kein Verlauf gefunden."
+        }
     },
     "Absence": {
         "title": "Abwesenheiten",
@@ -152,7 +685,13 @@
         "rejectPlaceholder": "Bitte erläutern Sie, warum der Dienstplan abgelehnt wird...",
         "noShifts": "Keine Schichten zugewiesen.",
         "underHours": "{hours} / {contract}h",
-        "underDays": "{days} / {contract} Tage"
+        "underDays": "{days} / {contract} Tage",
+        "scheduleActions": "Aktionen",
+        "cancelEdit": "Bearbeitung abbrechen",
+        "discardChangesConfirm": "Sie haben ungespeicherte Änderungen. Möchten Sie diese verwerfen?",
+        "editCancelled": "Bearbeitung abgebrochen, Dienstplan neu veröffentlicht",
+        "cancelEditFailed": "Fehler beim Abbrechen der Bearbeitung",
+        "shiftDetails": "Schichtdetails"
     },
     "Profile": {
         "personal": "Persönlich",
@@ -196,27 +735,115 @@
         "title": "Mitarbeiter-Zeitplan-Viewer",
         "description": "Untersuchen Sie historische und geplante Zeitpläne für Ihre Teammitglieder."
     },
-    "PendingActions": {
-        "title": "Ausstehende Aktionen",
-        "description": "Verwalten Sie Ihre Anfragen und überprüfen Sie Artikel, die Ihre Zustimmung erfordern.",
-        "myRequests": "Meine ausstehenden Anfragen",
-        "toApprove": "Warten auf meine Zustimmung",
-        "noPersonal": "Sie haben keine ausstehenden Anfragen.",
-        "noApprovals": "Derzeit benötigen keine Artikel Ihre Zustimmung.",
-        "tabs": {
-            "all": "Alle",
-            "vacations": "Urlaub",
-            "absences": "Abwesenheiten",
-            "overtime": "Überstunden",
-            "schedules": "Zeitpläne"
+    "Documents": {
+        "title": "Dokumentenzentrale",
+        "subtitle": "Zentrales Repository aller von Mitarbeitern eingereichten Dateien (Aufgaben, Krankmeldungen, Probleme).",
+        "searchPlaceholder": "Nach Name, Dokumenttitel, Kontext suchen...",
+        "filterByType": "Nach Typ filtern",
+        "allTypes": "Alle Typen",
+        "sickLeaves": "Krankmeldungen / Abwesenheit",
+        "taskSubmissions": "Aufgabeneinreichungen",
+        "problemReports": "Problemberichte",
+        "table": {
+            "type": "Typ",
+            "document": "Dokument",
+            "submittedBy": "Eingereicht von",
+            "context": "Kontext / Grund",
+            "date": "Datum",
+            "action": "Aktion",
+            "view": "Ansehen",
+            "loading": "Laden...",
+            "noDocuments": "Keine Dokumente gefunden.",
+            "showing": "Zeige {count} von {total} Dokumenten"
         },
-        "item": {
-            "requestedBy": "Angefordert von {name}",
-            "review": "Überprüfen",
-            "edit": "Bearbeiten",
-            "cancel": "Anfrage stornieren",
-            "approve": "Genehmigen",
-            "reject": "Ablehnen"
+        "types": {
+            "task": "Aufgabeneinreichung",
+            "problem": "Problemanhang",
+            "absence": "Krank-/Abwesenheitsnotiz",
+            "employee_profile": "Mitarbeiterakte",
+            "document": "Dokument"
+        }
+    },
+    "ReportProblem": {
+        "title": "Ein Problem melden",
+        "description": "Melden Sie ein Problem an das Management-Team. Bitte geben Sie so viele Details wie möglich an.",
+        "fields": {
+            "recipient": {
+                "label": "Senden an",
+                "placeholder": "Empfänger auswählen",
+                "options": {
+                    "store_manager": "Filialleiter",
+                    "store_department_head": "Abteilungsleiter",
+                    "head_of_department": "Globaler Abteilungsleiter",
+                    "chef": "Küchenchef / Küche",
+                    "hr": "Personalwesen (HR)",
+                    "owner": "Inhaber / Admin"
+                }
+            },
+            "priority": {
+                "label": "Priorität",
+                "placeholder": "Priorität auswählen",
+                "options": {
+                    "low": "Niedrig - Kleines Problem",
+                    "medium": "Mittel - Benötigt Aufmerksamkeit",
+                    "high": "Hoch - Dringend!"
+                }
+            },
+            "type": {
+                "label": "Typ",
+                "placeholder": "Typ auswählen",
+                "options": {
+                    "equipment": "Geräteausfall",
+                    "personnel": "Personalproblem",
+                    "maintenance": "Wartung",
+                    "safety": "Sicherheitsrisiko",
+                    "stock": "Lager / Inventar",
+                    "other": "Sonstiges"
+                }
+            },
+            "title": {
+                "label": "Problemtitel",
+                "placeholder": "Kurzer Titel des Problems"
+            },
+            "problemDescription": {
+                "label": "Beschreibung",
+                "placeholder": "Beschreiben Sie das Problem im Detail..."
+            }
+        },
+        "buttons": {
+            "cancel": "Abbrechen",
+            "submit": "Problem melden",
+            "submitting": "Melden..."
+        },
+        "validation": {
+            "recipientRequired": "Empfänger ist erforderlich",
+            "typeRequired": "Typ ist erforderlich",
+            "titleLength": "Titel muss mindestens 5 Zeichen lang sein",
+            "descriptionLength": "Beschreibung muss mindestens 10 Zeichen lang sein"
+        },
+        "toast": {
+            "success": "Problem erfolgreich gemeldet",
+            "successDesc": "Das zuständige Team wurde benachrichtigt.",
+            "error": "Problem konnte nicht gemeldet werden",
+            "genericError": "Ein Fehler ist aufgetreten"
+        }
+    },
+    "Sidebar": {
+        "groups": {
+            "operations": "Betrieb",
+            "people": "Personal",
+            "structure": "Struktur",
+            "communication": "Kommunikation",
+            "account": "Konto"
+        }
+    },
+    "Tasks": {
+        "comments": {
+            "title": "Kommentare",
+            "noComments": "Noch keine Kommentare. Starten Sie das Gespräch!",
+            "post": "Kommentar posten",
+            "posting": "Poste...",
+            "placeholder": "Einen Kommentar schreiben..."
         }
     }
 }

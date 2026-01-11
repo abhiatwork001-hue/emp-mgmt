@@ -20,13 +20,14 @@ export function DashboardHeader({
     localStoreDepartments,
     canSwitchRoles
 }: any) {
-    const [greeting, setGreeting] = useState("");
+    const t = useTranslations("Dashboard");
+    const [greetingKey, setGreetingKey] = useState("morning");
 
     useEffect(() => {
         const hour = new Date().getHours();
-        if (hour < 12) setGreeting("Good Morning");
-        else if (hour < 18) setGreeting("Good Afternoon");
-        else setGreeting("Good Evening");
+        if (hour < 12) setGreetingKey("morning");
+        else if (hour < 18) setGreetingKey("afternoon");
+        else setGreetingKey("evening");
     }, []);
 
     return (
@@ -37,26 +38,26 @@ export function DashboardHeader({
         >
             <div className="space-y-0.5">
                 <h1 className="text-3xl font-black tracking-tight text-foreground italic flex items-center gap-2">
-                    {greeting}, <span className="bg-gradient-to-r from-primary via-violet-500 to-primary bg-clip-text text-transparent animate-gradient-x">
+                    {t(`greetings.${greetingKey}`)}, <span className="bg-gradient-to-r from-primary via-violet-500 to-primary bg-clip-text text-transparent animate-gradient-x">
                         {(() => {
                             const sessionName = session?.user?.name;
                             if (sessionName && sessionName !== "undefined undefined" && !sessionName.includes("undefined")) {
                                 return sessionName.split(' ')[0];
                             }
-                            return employee?.firstName || "User";
+                            return employee?.firstName || t('userFallback');
                         })()}
                     </span>
                 </h1>
                 <div className="flex flex-col gap-0.5">
                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-2">
                         <span className="w-1 h-1 rounded-full bg-primary/40" />
-                        Welcome back to your workspace
+                        {t('workspaceWelcome')}
                     </p>
                     {(employee.storeId && ["employee", "store_manager", "store_department_head"].includes(viewRole)) && (
                         <div className="flex items-center gap-1.5 ml-3 text-emerald-600/80">
                             <Store className="w-3 h-3" />
                             <span className="text-[10px] font-bold uppercase tracking-wider">
-                                {employee.storeId.name || stores?.find((s: any) => s._id === employee.storeId || s._id === employee.storeId?._id)?.name || "Store"}
+                                {employee.storeId.name || stores?.find((s: any) => s._id === employee.storeId || s._id === employee.storeId?._id)?.name || t('storeFallback')}
                             </span>
                         </div>
                     )}

@@ -23,11 +23,12 @@ import {
     Star,
     ClipboardCheck,
     Truck,
-    BookUser
+    BookUser,
+    FileText
 } from "lucide-react";
 
 export const routeGroups = [
-    { title: "Operations", routes: ["Home", "Schedule", "PendingActions", "Coverage"] },
+    { title: "Operations", routes: ["Home", "Schedule", "PendingActions", "Coverage", "Documents"] },
     { title: "People", routes: ["Employees", "Positions", "StaffViewer", "Vacations", "Absences", "Evaluations", "Tips"] },
     { title: "Structure", routes: ["Stores", "Reviews", "Departments", "Recipes", "Credentials", "Suppliers", "Directory"] },
     { title: "Communication", routes: ["Messages", "Notices", "Tasks", "Notes", "Problems"] },
@@ -60,5 +61,6 @@ export const routes = [
     { label: "Suppliers", icon: Truck, href: "/dashboard/suppliers", color: "text-blue-600" },
     { label: "Directory", icon: BookUser, href: "/dashboard/directory", color: "text-indigo-600" },
     { label: "Coverage", icon: LifeBuoy, href: "/dashboard/coverage", color: "text-indigo-600" },
+    { label: "Documents", icon: FileText, href: "/dashboard/documents", color: "text-blue-600" },
     { label: "Settings", icon: Settings, href: "/dashboard/settings" },
 ];

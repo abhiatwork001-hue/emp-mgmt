@@ -18,7 +18,10 @@ interface NoticeBoardProps {
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+import { useTranslations } from "next-intl";
+
 export function NoticeBoard({ userId }: NoticeBoardProps) {
+    const t = useTranslations("Dashboard.notices");
     const [notices, setNotices] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
@@ -48,7 +51,7 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
         <Card glass className="h-[400px] flex items-center justify-center border-border/40">
             <div className="flex flex-col items-center gap-4">
                 <div className="h-10 w-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">Synchronizing Announcements</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground animate-pulse">{t('sync')}</p>
             </div>
         </Card>
     );
@@ -60,12 +63,12 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
                     <Megaphone className="h-8 w-8 text-muted-foreground/40" />
                 </div>
                 <div>
-                    <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Notice Board</CardTitle>
-                    <p className="text-xs text-muted-foreground/60 mt-1 italic">No active announcements at this time.</p>
+                    <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">{t('title')}</CardTitle>
+                    <p className="text-xs text-muted-foreground/60 mt-1 italic">{t('noActive')}</p>
                 </div>
                 <Link href="/dashboard/notices">
                     <Button variant="ghost" size="sm" className="text-[10px] font-black uppercase tracking-widest hover:bg-primary/5">
-                        OPEN ARCHIVE
+                        {t('openArchive')}
                     </Button>
                 </Link>
             </div>
@@ -79,13 +82,13 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
                     <div className="flex flex-col">
                         <h2 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground/60 group-hover/title:text-primary transition-colors flex items-center gap-2">
                             <Megaphone className="h-4 w-4" />
-                            ECOSYSTEM BROADCASTS
+                            {t('broadcasts')}
                         </h2>
                         <div className="h-0.5 w-8 bg-primary/20 scale-x-0 group-hover/title:scale-x-200 transition-transform origin-left mt-1" />
                     </div>
                 </Link>
                 <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black tabular-nums tracking-widest text-muted-foreground/40">{currentPage} <span className="text-muted-foreground/20 italic mx-1">OF</span> {totalPages}</span>
+                    <span className="text-[10px] font-black tabular-nums tracking-widest text-muted-foreground/40">{currentPage} <span className="text-muted-foreground/20 italic mx-1">{t('of')}</span> {totalPages}</span>
                     <div className="flex gap-1.5 p-1 bg-muted/30 rounded-xl border border-border/20">
                         <Button
                             variant="ghost"
@@ -130,13 +133,13 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
                                         <div className="flex flex-wrap gap-2">
                                             {notice.priority === 'urgent' && (
                                                 <Badge className="bg-destructive text-destructive-foreground font-black text-[10px] tracking-widest uppercase border-none px-3 py-1 shadow-lg shadow-destructive/20 animate-pulse">
-                                                    URGENT
+                                                    {t('urgent')}
                                                 </Badge>
                                             )}
                                             {notice.targetScope === 'global' ? (
-                                                <Badge variant="outline" className="font-black text-[10px] tracking-widest uppercase bg-primary/5 text-primary border-primary/20 px-3 py-1">GLOBAL</Badge>
+                                                <Badge variant="outline" className="font-black text-[10px] tracking-widest uppercase bg-primary/5 text-primary border-primary/20 px-3 py-1">{t('global')}</Badge>
                                             ) : (
-                                                <Badge variant="outline" className="font-black text-[10px] tracking-widest uppercase bg-muted/40 text-muted-foreground border-border/40 px-3 py-1">STORE</Badge>
+                                                <Badge variant="outline" className="font-black text-[10px] tracking-widest uppercase bg-muted/40 text-muted-foreground border-border/40 px-3 py-1">{t('store')}</Badge>
                                             )}
                                         </div>
                                         <Link href={`/dashboard/notices/${notice.slug}`}>
@@ -188,7 +191,7 @@ export function NoticeBoard({ userId }: NoticeBoardProps) {
                                 <div className="mt-auto pt-6 pb-6 shrink-0">
                                     <Link href={`/dashboard/notices/${notice.slug}`}>
                                         <Button className="w-full bg-foreground text-background font-black text-xs tracking-[0.2em] rounded-xl h-10 hover:bg-primary hover:text-primary-foreground transition-all duration-300">
-                                            ENGAGE
+                                            {t('engage')}
                                         </Button>
                                     </Link>
                                 </div>

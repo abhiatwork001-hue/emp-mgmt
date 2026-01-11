@@ -17,44 +17,47 @@ interface ScheduleSummary {
     createdBy: { firstName: string; lastName: string };
 }
 
+import { useTranslations } from "next-intl";
+
 export function ScheduleOverview({ schedules }: { schedules: ScheduleSummary[] }) {
+    const t = useTranslations("Dashboard.widgets.scheduleOverview");
     const approvedCount = schedules.filter(s => s.status === 'published' || s.status === 'approved').length;
     const pendingCount = schedules.filter(s => s.status === 'review' || s.status === 'pending').length;
     const inProgressCount = schedules.filter(s => s.status === 'draft').length;
 
     return (
         <div className="space-y-6">
-            <h3 className="text-lg font-medium text-white">Schedule Overview</h3>
+            <h3 className="text-lg font-medium text-white">{t('title')}</h3>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex items-center gap-4 rounded-lg bg-slate-900/50 p-4 border border-zinc-800">
                     <CheckCircle2 className="h-8 w-8 text-white" />
                     <div>
                         <div className="text-2xl font-bold text-white">{approvedCount}</div>
-                        <div className="text-xs text-slate-500">Approved</div>
+                        <div className="text-xs text-slate-500">{t('approved')}</div>
                     </div>
                 </div>
                 <div className="flex items-center gap-4 rounded-lg bg-slate-900/50 p-4 border border-zinc-800">
                     <Clock className="h-8 w-8 text-white" />
                     <div>
                         <div className="text-2xl font-bold text-white">{pendingCount}</div>
-                        <div className="text-xs text-slate-500">Pending Approval</div>
+                        <div className="text-xs text-slate-500">{t('pending')}</div>
                     </div>
                 </div>
                 <div className="flex items-center gap-4 rounded-lg bg-slate-900/50 p-4 border border-zinc-800 md:col-span-2">
                     <PlayCircle className="h-8 w-8 text-white" />
                     <div>
                         <div className="text-2xl font-bold text-white">{inProgressCount}</div>
-                        <div className="text-xs text-slate-500">In Progress</div>
+                        <div className="text-xs text-slate-500">{t('inProgress')}</div>
                     </div>
                 </div>
             </div>
 
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-medium text-slate-400">Recent Schedules</h4>
+                    <h4 className="text-sm font-medium text-slate-400">{t('recentTitle')}</h4>
                 </div>
                 {schedules.length === 0 ? (
-                    <div className="p-4 text-center text-sm text-slate-500">No recent schedules.</div>
+                    <div className="p-4 text-center text-sm text-slate-500">{t('empty')}</div>
                 ) : (
                     schedules.map((schedule) => (
                         <div key={schedule._id} className="rounded-lg border border-zinc-800 bg-slate-900 p-4">
@@ -65,7 +68,7 @@ export function ScheduleOverview({ schedules }: { schedules: ScheduleSummary[] }
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-white">Week of {format(new Date(schedule.dateRange.startDate), "MMM dd, yyyy")}</span>
+                                            <span className="font-semibold text-white">{t('weekOf', { date: format(new Date(schedule.dateRange.startDate), "MMM dd, yyyy") })}</span>
                                             <Badge variant="secondary" className={`capitalize ${schedule.status === 'published' ? 'bg-emerald-500/10 text-emerald-400' :
                                                 schedule.status === 'draft' ? 'bg-slate-500/10 text-slate-400' :
                                                     'bg-amber-500/10 text-amber-400'
@@ -77,7 +80,7 @@ export function ScheduleOverview({ schedules }: { schedules: ScheduleSummary[] }
                                             {schedule.storeId?.name} • {schedule.storeDepartmentId?.name}
                                         </p>
                                         <p className="text-xs text-slate-500 mt-1">
-                                            Created by {schedule.createdBy?.firstName} {schedule.createdBy?.lastName}
+                                            {t('createdBy', { name: `${schedule.createdBy?.firstName} ${schedule.createdBy?.lastName}` })}
                                         </p>
                                     </div>
                                 </div>
@@ -88,7 +91,7 @@ export function ScheduleOverview({ schedules }: { schedules: ScheduleSummary[] }
 
                             <div className="mt-4 flex justify-end gap-2">
                                 <Button variant="outline" size="sm" className="h-8 border-zinc-700 bg-transparent text-slate-300 hover:bg-slate-800" asChild>
-                                    <Link href={`/dashboard/schedules/${schedule.slug || schedule._id}`}>View Schedule</Link>
+                                    <Link href={`/dashboard/schedules/${schedule.slug || schedule._id}`}>{t('viewSchedule')}</Link>
                                 </Button>
                             </div>
                         </div>

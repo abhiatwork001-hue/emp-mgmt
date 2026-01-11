@@ -81,11 +81,20 @@ export default async function DashboardLayout({
     const hasRecipes = await hasRecipesForUser();
 
     // 3. Translations for Sidebar
-    const t = await getTranslations("Common");
+    const tCommon = await getTranslations("Common");
+    const tSidebar = await getTranslations("Sidebar");
     const sidebarTranslations: { [key: string]: string } = {};
+
+    // Route Labels
     routes.forEach(r => {
         const key = r.label.toLowerCase();
-        sidebarTranslations[key] = t(key);
+        sidebarTranslations[key] = tCommon(key);
+    });
+
+    // Group Titles
+    const groups = ["operations", "people", "structure", "communication", "account"];
+    groups.forEach(g => {
+        sidebarTranslations[`group.${g}`] = tSidebar(`groups.${g}`);
     });
 
     return (

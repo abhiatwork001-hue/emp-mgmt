@@ -46,6 +46,8 @@ interface EmployeePendingActionsWidgetProps {
     userId: string;
 }
 
+import { useTranslations } from "next-intl";
+
 export function EmployeePendingActionsWidget({
     swapRequests = [],
     coverageOffers = [],
@@ -54,6 +56,7 @@ export function EmployeePendingActionsWidget({
     myCoverageRequests = [],
     userId
 }: EmployeePendingActionsWidgetProps) {
+    const t = useTranslations("Dashboard.widgets.employeePendingActions");
     const router = useRouter();
     const [loadingId, setLoadingId] = useState<string | null>(null);
     const [confirmState, setConfirmState] = useState<{
@@ -86,13 +89,13 @@ export function EmployeePendingActionsWidget({
         try {
             const res = await respondToSwapRequest(requestId, action, userId);
             if (res.success) {
-                toast.success(`Swap request ${action}`);
+                toast.success(t('swap.toast.success', { action: action }));
                 router.refresh();
             } else {
-                toast.error("Failed to process request");
+                toast.error(t('swap.toast.error'));
             }
         } catch (e) {
-            toast.error("An error occurred");
+            toast.error(t('common.error'));
         } finally {
             setLoadingId(null);
             setConfirmState(prev => ({ ...prev, isOpen: false }));
@@ -106,13 +109,11 @@ export function EmployeePendingActionsWidget({
                 type: 'swap',
                 id: requestId,
                 action: action,
-                title: "Accept Shift Swap?",
-                description: "This will modify your schedule. You will be responsible for this shift."
+                title: t('swap.alert.title'),
+                description: t('swap.alert.description')
             });
         } else {
-            // Reject doesn't need strict alert, or maybe it does? User asked for "accept alert". 
-            // Let's just do it directly for reject to keep it fast, or standard confirm if needed.
-            if (confirm("Reject this swap request?")) executeSwapAction(requestId, action);
+            if (confirm(t('swap.alert.confirmReject'))) executeSwapAction(requestId, action);
         }
     };
 
@@ -124,14 +125,13 @@ export function EmployeePendingActionsWidget({
             else res = await declineCoverageOffer(requestId, userId);
 
             if (res.success) {
-                toast.success(`Coverage offer ${action}ed`);
+                toast.success(t('coverageOffer.toast.success', { action: action === 'accept' ? 'accept' : 'decline' }));
                 router.refresh();
             } else {
-                // toast.error((res as any).error || "Failed");
-                toast.error("Failed to process request");
+                toast.error(t('coverageOffer.toast.error'));
             }
         } catch (e) {
-            toast.error("An error occurred");
+            toast.error(t('common.error'));
         } finally {
             setLoadingId(null);
             setConfirmState(prev => ({ ...prev, isOpen: false }));
@@ -145,16 +145,16 @@ export function EmployeePendingActionsWidget({
                 type: 'coverage',
                 id: requestId,
                 action: action,
-                title: "Accept Extra Shift?",
-                description: "You are agreeing to cover this shift. It will be added to your schedule immediately."
+                title: t('coverageOffer.alert.title'),
+                description: t('coverageOffer.alert.description')
             });
         } else {
-            if (confirm("Decline this coverage offer?")) executeCoverageAction(requestId, action);
+            if (confirm(t('coverageOffer.alert.confirmDecline'))) executeCoverageAction(requestId, action);
         }
     };
 
     const handleCancelRequest = async (id: string, type: 'vacation' | 'absence' | 'coverage') => {
-        if (!confirm("Are you sure you want to cancel this request?")) return;
+        if (!confirm(t('common.cancelConfirm'))) return;
         setLoadingId(id);
         try {
             let res;
@@ -163,11 +163,11 @@ export function EmployeePendingActionsWidget({
             else if (type === 'coverage') res = await cancelCoverageRequest(id);
 
             if (res && res.success) {
-                toast.success("Request cancelled");
+                toast.success(t('common.cancelled'));
                 router.refresh();
             }
         } catch (e) {
-            toast.error("An error occurred");
+            toast.error(t('common.error'));
         } finally {
             setLoadingId(null);
         }
@@ -181,13 +181,13 @@ export function EmployeePendingActionsWidget({
                 <CardTitle className="text-md font-black uppercase tracking-wider flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-blue-500" />
-                        Pending Actions
+                        {t('title')}
                         <Badge variant="secondary" className="ml-2 rounded-full px-2 bg-blue-100 text-blue-700 hover:bg-blue-200">
                             {allActions.length}
                         </Badge>
                     </div>
                     <Button variant="ghost" size="sm" className="h-6 text-xs text-muted-foreground hover:text-primary" onClick={() => router.push('/dashboard/pending-actions')}>
-                        View All <ChevronRight className="h-3 w-3 ml-1" />
+                        {t('viewAll')} <ChevronRight className="h-3 w-3 ml-1" />
                     </Button>
                 </CardTitle>
             </CardHeader>
@@ -209,14 +209,14 @@ export function EmployeePendingActionsWidget({
                                                 </Avatar>
                                                 <div>
                                                     <div className="text-sm font-semibold">
-                                                        {item.requestorId.firstName} wants to swap
+                                                        {t('swap.title', { name: item.requestorId.firstName })}
                                                     </div>
                                                     <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                                                        <ArrowLeftRight className="h-3 w-3" /> Shift Swap Request
+                                                        <ArrowLeftRight className="h-3 w-3" /> {t('swap.subtitle')}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Badge variant="outline" className="shrink-0 bg-blue-50 text-blue-700 border-blue-200">Pending</Badge>
+                                            <Badge variant="outline" className="shrink-0 bg-blue-50 text-blue-700 border-blue-200">{t('swap.pending')}</Badge>
                                         </div>
 
                                         <div className="bg-muted/30 rounded-lg p-2 text-xs flex items-center gap-2 border">
@@ -239,7 +239,7 @@ export function EmployeePendingActionsWidget({
                                                 disabled={!!loadingId}
                                             >
                                                 {loadingId === item._id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3 mr-1" />}
-                                                Accept
+                                                {t('swap.accept')}
                                             </Button>
                                             <Button
                                                 size="sm"
@@ -248,7 +248,7 @@ export function EmployeePendingActionsWidget({
                                                 onClick={() => handleSwapAction(item._id, 'rejected')}
                                                 disabled={!!loadingId}
                                             >
-                                                <X className="h-3 w-3 mr-1" /> Reject
+                                                <X className="h-3 w-3 mr-1" /> {t('swap.reject')}
                                             </Button>
                                         </div>
                                     </div>
@@ -264,14 +264,14 @@ export function EmployeePendingActionsWidget({
                                                 </div>
                                                 <div>
                                                     <div className="text-sm font-semibold">
-                                                        Shift Coverage Available
+                                                        {t('coverageOffer.title')}
                                                     </div>
                                                     <div className="text-xs text-muted-foreground">
-                                                        {item.originalShift.storeDepartmentId?.name || 'Department'} Shift
+                                                        {t('coverageOffer.subtitle', { dept: item.originalShift.storeDepartmentId?.name || 'Department' })}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Badge className="bg-violet-100 text-violet-700 hover:bg-violet-100 border-violet-200">Open</Badge>
+                                            <Badge className="bg-violet-100 text-violet-700 hover:bg-violet-100 border-violet-200">{t('coverageOffer.open')}</Badge>
                                         </div>
 
                                         <div className="bg-violet-50/50 rounded-lg p-3 text-xs border border-violet-100 flex items-center justify-between">
@@ -281,7 +281,7 @@ export function EmployeePendingActionsWidget({
                                             </div>
                                             <div className="text-right">
                                                 <div className="font-medium text-violet-800">{item.originalEmployeeId?.firstName}</div>
-                                                <div className="text-[10px] text-violet-600/70">needs cover</div>
+                                                <div className="text-[10px] text-violet-600/70">{t('coverageOffer.needsCover')}</div>
                                             </div>
                                         </div>
 
@@ -293,7 +293,7 @@ export function EmployeePendingActionsWidget({
                                                 disabled={!!loadingId}
                                             >
                                                 {loadingId === item._id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3 mr-1" />}
-                                                Accept Shift
+                                                {t('coverageOffer.accept')}
                                             </Button>
                                             <Button
                                                 size="sm"
@@ -302,7 +302,7 @@ export function EmployeePendingActionsWidget({
                                                 onClick={() => handleCoverageAction(item._id, 'decline')}
                                                 disabled={!!loadingId}
                                             >
-                                                Decline
+                                                {t('coverageOffer.decline')}
                                             </Button>
                                         </div>
                                     </div>
@@ -318,18 +318,18 @@ export function EmployeePendingActionsWidget({
                                                 </div>
                                                 <div>
                                                     <div className="text-sm font-semibold">
-                                                        Absence Reported
+                                                        {t('absence.title')}
                                                     </div>
                                                     <div className="text-xs text-muted-foreground">
-                                                        Pending review
+                                                        {t('absence.subtitle')}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Badge variant="outline" className="bg-rose-50 text-rose-600 border-rose-200">Pending</Badge>
+                                            <Badge variant="outline" className="bg-rose-50 text-rose-600 border-rose-200">{t('absence.pending')}</Badge>
                                         </div>
 
                                         <div className="text-xs text-muted-foreground pl-12">
-                                            Date: <span className="font-medium text-foreground">{format(new Date(item.date), 'MMM d, yyyy')}</span>
+                                            {t('absence.date')}: <span className="font-medium text-foreground">{format(new Date(item.date), 'MMM d, yyyy')}</span>
                                             <div className="mt-1 line-clamp-1 italic">"{item.reason}"</div>
                                         </div>
 
@@ -341,7 +341,7 @@ export function EmployeePendingActionsWidget({
                                                 onClick={() => handleCancelRequest(item._id, 'absence')}
                                                 disabled={!!loadingId}
                                             >
-                                                Cancel Request
+                                                {t('absence.cancel')}
                                             </Button>
                                         </div>
                                     </div>
@@ -357,19 +357,19 @@ export function EmployeePendingActionsWidget({
                                                 </div>
                                                 <div>
                                                     <div className="text-sm font-semibold">
-                                                        Vacation Request
+                                                        {t('vacation.title')}
                                                     </div>
                                                     <div className="text-xs text-muted-foreground">
-                                                        Waiting for approval
+                                                        {t('vacation.subtitle')}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">In Review</Badge>
+                                            <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">{t('vacation.inReview')}</Badge>
                                         </div>
 
                                         <div className="text-xs text-muted-foreground pl-12">
-                                            Requested: <span className="font-medium text-foreground">{format(new Date(item.requestedFrom), 'MMM d')} - {format(new Date(item.requestedTo), 'MMM d')}</span>
-                                            {item.totalDays && <span className="ml-1">({item.totalDays} days)</span>}
+                                            {t('vacation.requested')}: <span className="font-medium text-foreground">{format(new Date(item.requestedFrom), 'MMM d')} - {format(new Date(item.requestedTo), 'MMM d')}</span>
+                                            {item.totalDays && <span className="ml-1">{t('vacation.days', { days: item.totalDays })}</span>}
                                         </div>
 
                                         <div className="flex gap-2 pl-12 pt-1">
@@ -380,7 +380,7 @@ export function EmployeePendingActionsWidget({
                                                 onClick={() => handleCancelRequest(item._id, 'vacation')}
                                                 disabled={!!loadingId}
                                             >
-                                                Cancel Request
+                                                {t('vacation.cancel')}
                                             </Button>
                                         </div>
                                     </div>
@@ -396,18 +396,18 @@ export function EmployeePendingActionsWidget({
                                                 </div>
                                                 <div>
                                                     <div className="text-sm font-semibold">
-                                                        Seeking Coverage
+                                                        {t('coverageRequest.title')}
                                                     </div>
                                                     <div className="text-xs text-muted-foreground">
-                                                        Checking for candidates...
+                                                        {t('coverageRequest.subtitle')}
                                                     </div>
                                                 </div>
                                             </div>
-                                            <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Broadcasting</Badge>
+                                            <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">{t('coverageRequest.broadcasting')}</Badge>
                                         </div>
 
                                         <div className="text-xs text-muted-foreground pl-12">
-                                            Shift: <span className="font-medium text-foreground">{format(new Date(item.originalShift.dayDate), 'MMM d')} ({item.originalShift.startTime}-{item.originalShift.endTime})</span>
+                                            {t('coverageRequest.shift')}: <span className="font-medium text-foreground">{format(new Date(item.originalShift.dayDate), 'MMM d')} ({item.originalShift.startTime}-{item.originalShift.endTime})</span>
                                         </div>
 
                                         <div className="flex gap-2 pl-12 pt-1">
@@ -418,7 +418,7 @@ export function EmployeePendingActionsWidget({
                                                 onClick={() => handleCancelRequest(item._id, 'coverage')}
                                                 disabled={!!loadingId}
                                             >
-                                                Cancel Request
+                                                {t('coverageRequest.cancel')}
                                             </Button>
                                         </div>
                                     </div>
@@ -439,7 +439,7 @@ export function EmployeePendingActionsWidget({
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={() => {
                                 if (confirmState.type === 'swap') {
@@ -450,7 +450,7 @@ export function EmployeePendingActionsWidget({
                             }}
                             className="bg-blue-600 hover:bg-blue-700"
                         >
-                            Confirm
+                            {t('common.confirm')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

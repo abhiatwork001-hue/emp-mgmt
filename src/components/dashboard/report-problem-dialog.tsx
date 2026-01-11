@@ -35,12 +35,14 @@ import { toast } from "sonner";
 import { AlertTriangle, Loader2, Megaphone } from "lucide-react";
 import { reportProblem } from "@/lib/actions/problem.actions"; // We'll create this next
 
-const formSchema = z.object({
-    recipientRole: z.string().min(1, "Recipient is required"),
+import { useTranslations } from "next-intl";
+
+const createFormSchema = (t: any) => z.object({
+    recipientRole: z.string().min(1, t('validation.recipientRequired')),
     priority: z.enum(["low", "medium", "high"]),
-    type: z.string().min(1, "Type is required"),
-    title: z.string().min(5, "Title must be at least 5 characters"),
-    description: z.string().min(10, "Description must be at least 10 characters"),
+    type: z.string().min(1, t('validation.typeRequired')),
+    title: z.string().min(5, t('validation.titleLength')),
+    description: z.string().min(10, t('validation.descriptionLength')),
 });
 
 interface ReportProblemDialogProps {
@@ -50,10 +52,13 @@ interface ReportProblemDialogProps {
 }
 
 export function ReportProblemDialog({ reporterId, storeId, departmentId }: ReportProblemDialogProps) {
+    const t = useTranslations("ReportProblem");
     const [open, setOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const formSchema = createFormSchema(t);
+
+    const form = useForm<z.infer<ReturnType<typeof createFormSchema>>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             recipientRole: "",
@@ -64,7 +69,7 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
         },
     });
 
-    const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const onSubmit = async (values: z.infer<ReturnType<typeof createFormSchema>>) => {
         setIsSubmitting(true);
         try {
             const res = await reportProblem({
@@ -79,16 +84,16 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
             });
 
             if (res.success) {
-                toast.success("Problem reported successfully", {
-                    description: "The relevant team has been notified."
+                toast.success(t('toast.success'), {
+                    description: t('toast.successDesc')
                 });
                 setOpen(false);
                 form.reset();
             } else {
-                toast.error("Failed to report problem");
+                toast.error(t('toast.error'));
             }
         } catch (error) {
-            toast.error("An error occurred");
+            toast.error(t('toast.genericError'));
         } finally {
             setIsSubmitting(false);
         }
@@ -97,7 +102,7 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" title="Report a Problem">
+                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive hover:bg-destructive/10" title={t('title')}>
                     <AlertTriangle className="h-5 w-5" />
                 </Button>
             </DialogTrigger>
@@ -105,10 +110,10 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="h-5 w-5" />
-                        Report a Problem
+                        {t('title')}
                     </DialogTitle>
                     <DialogDescription>
-                        Report an issue to the management team. Please provide as much detail as possible.
+                        {t('description')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -119,20 +124,20 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
                             name="recipientRole"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Send To</FormLabel>
+                                    <FormLabel>{t('fields.recipient.label')}</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select Recipient" />
+                                                <SelectValue placeholder={t('fields.recipient.placeholder')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="store_manager">Store Manager</SelectItem>
-                                            <SelectItem value="store_department_head">Department Head</SelectItem>
-                                            <SelectItem value="head_of_department">Global Head of Dept</SelectItem>
-                                            <SelectItem value="chef">Chef / Kitchen</SelectItem>
-                                            <SelectItem value="hr">Human Resources (HR)</SelectItem>
-                                            <SelectItem value="owner">Owner / Admin</SelectItem>
+                                            <SelectItem value="store_manager">{t('fields.recipient.options.store_manager')}</SelectItem>
+                                            <SelectItem value="store_department_head">{t('fields.recipient.options.store_department_head')}</SelectItem>
+                                            <SelectItem value="head_of_department">{t('fields.recipient.options.head_of_department')}</SelectItem>
+                                            <SelectItem value="chef">{t('fields.recipient.options.chef')}</SelectItem>
+                                            <SelectItem value="hr">{t('fields.recipient.options.hr')}</SelectItem>
+                                            <SelectItem value="owner">{t('fields.recipient.options.owner')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -146,17 +151,17 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
                                 name="priority"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Priority</FormLabel>
+                                        <FormLabel>{t('fields.priority.label')}</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select Priority" />
+                                                    <SelectValue placeholder={t('fields.priority.placeholder')} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="low">Low - Minor issue</SelectItem>
-                                                <SelectItem value="medium">Medium - Needs attention</SelectItem>
-                                                <SelectItem value="high" className="text-destructive font-semibold">High - Urgent!</SelectItem>
+                                                <SelectItem value="low">{t('fields.priority.options.low')}</SelectItem>
+                                                <SelectItem value="medium">{t('fields.priority.options.medium')}</SelectItem>
+                                                <SelectItem value="high" className="text-destructive font-semibold">{t('fields.priority.options.high')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -169,20 +174,20 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
                                 name="type"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Type</FormLabel>
+                                        <FormLabel>{t('fields.type.label')}</FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select Type" />
+                                                    <SelectValue placeholder={t('fields.type.placeholder')} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="equipment">Equipment Failure</SelectItem>
-                                                <SelectItem value="personnel">Personnel Issue</SelectItem>
-                                                <SelectItem value="maintenance">Maintenance</SelectItem>
-                                                <SelectItem value="safety">Safety Hazard</SelectItem>
-                                                <SelectItem value="stock">Stock / Inventory</SelectItem>
-                                                <SelectItem value="other">Other</SelectItem>
+                                                <SelectItem value="equipment">{t('fields.type.options.equipment')}</SelectItem>
+                                                <SelectItem value="personnel">{t('fields.type.options.personnel')}</SelectItem>
+                                                <SelectItem value="maintenance">{t('fields.type.options.maintenance')}</SelectItem>
+                                                <SelectItem value="safety">{t('fields.type.options.safety')}</SelectItem>
+                                                <SelectItem value="stock">{t('fields.type.options.stock')}</SelectItem>
+                                                <SelectItem value="other">{t('fields.type.options.other')}</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -196,9 +201,9 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
                             name="title"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Problem Title</FormLabel>
+                                    <FormLabel>{t('fields.title.label')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Brief title of the issue" {...field} />
+                                        <Input placeholder={t('fields.title.placeholder')} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -210,10 +215,10 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
                             name="description"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Description</FormLabel>
+                                    <FormLabel>{t('fields.problemDescription.label')}</FormLabel>
                                     <FormControl>
                                         <Textarea
-                                            placeholder="Describe the problem in detail..."
+                                            placeholder={t('fields.problemDescription.placeholder')}
                                             className="min-h-[100px]"
                                             {...field}
                                         />
@@ -225,17 +230,17 @@ export function ReportProblemDialog({ reporterId, storeId, departmentId }: Repor
 
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                                Cancel
+                                {t('buttons.cancel')}
                             </Button>
                             <Button type="submit" variant="destructive" disabled={isSubmitting}>
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Reporting...
+                                        {t('buttons.submitting')}
                                     </>
                                 ) : (
                                     <>
-                                        Report Problem
+                                        {t('buttons.submit')}
                                     </>
                                 )}
                             </Button>

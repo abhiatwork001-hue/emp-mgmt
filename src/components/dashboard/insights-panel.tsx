@@ -1,8 +1,8 @@
-// src/components/dashboard/insights-panel.tsx
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useTranslations } from "next-intl";
 
 // Dummy data – replace with real API data later
 const data = [
@@ -15,10 +15,11 @@ const data = [
 ];
 
 export default function InsightsPanel() {
+    const t = useTranslations("Dashboard.widgets.insights");
     return (
         <Card className="bg-card/80 border-border/30 shadow-lg">
             <CardHeader>
-                <CardTitle className="text-primary">Insights</CardTitle>
+                <CardTitle className="text-primary">{t('title')}</CardTitle>
             </CardHeader>
             <CardContent className="h-64 p-4 min-w-0">
                 <div className="h-full w-full min-w-0">

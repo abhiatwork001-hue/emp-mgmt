@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export function ActiveActionsWidget({
     coverageOffers = [],
     userId
 }: ActiveActionsWidgetProps) {
+    const t = useTranslations("Dashboard.widgets.activeActions");
     const [isPending, startTransition] = useTransition();
 
     const totalActions = vacations.length + absences.length + coverageRequests.length + coverageOffers.length;
@@ -36,7 +38,7 @@ export function ActiveActionsWidget({
     if (totalActions === 0) return null;
 
     const handleCancel = async (id: string, type: 'vacation' | 'absence' | 'coverage') => {
-        if (!confirm("Are you sure you want to cancel this request?")) return;
+        if (!confirm(t('confirmCancel'))) return;
 
         startTransition(async () => {
             try {
@@ -46,30 +48,30 @@ export function ActiveActionsWidget({
                 else if (type === 'coverage') res = await cancelCoverageRequest(id);
 
                 if (res?.success) {
-                    toast.success("Request cancelled successfully");
+                    toast.success(t('cancelSuccess'));
                 } else {
-                    toast.error((res as any)?.error || "Failed to cancel request");
+                    toast.error((res as any)?.error || t('cancelError'));
                 }
             } catch (error: any) {
-                toast.error(error?.message || "Something went wrong");
+                toast.error(error?.message || t('genericError'));
             }
         });
     };
 
     const handleAccept = async (id: string) => {
         if (!userId) return;
-        if (!confirm("Are you sure you want to accept this shift?")) return;
+        if (!confirm(t('confirmAccept'))) return;
 
         startTransition(async () => {
             try {
                 const res = await acceptCoverageOffer(id, userId);
                 if (res?.success) {
-                    toast.success("Shift accepted! HR will finalize soon.");
+                    toast.success(t('acceptSuccess'));
                 } else {
-                    toast.error(res?.error || "Failed to accept shift");
+                    toast.error(res?.error || t('acceptError'));
                 }
             } catch (error: any) {
-                toast.error(error?.message || "Something went wrong");
+                toast.error(error?.message || t('genericError'));
             }
         });
     };
@@ -83,7 +85,7 @@ export function ActiveActionsWidget({
             <Card className="border shadow-sm bg-card/30 backdrop-blur-sm overflow-hidden">
                 <CardHeader className="py-3 px-4 bg-muted/5 border-b flex flex-row items-center justify-between">
                     <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
-                        <Clock className="h-3 w-3 text-primary" /> Ongoing Actions
+                        <Clock className="h-3 w-3 text-primary" /> {t('title')}
                     </CardTitle>
                     <Badge variant="secondary" className="text-[9px] font-black">{totalActions}</Badge>
                 </CardHeader>
@@ -95,14 +97,14 @@ export function ActiveActionsWidget({
                                     <Palmtree className="h-4 w-4 text-emerald-600" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[11px] font-bold">Vacation Request</span>
+                                    <span className="text-[11px] font-bold">{t('vacationRequest')}</span>
                                     <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tighter">
                                         {format(new Date(v.from), "MMM dd")} - {format(new Date(v.to), "MMM dd")}
                                     </span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-[8px] uppercase font-black bg-emerald-50 text-emerald-600 border-emerald-200">Pending</Badge>
+                                <Badge variant="outline" className="text-[8px] uppercase font-black bg-emerald-5 text-emerald-600 border-emerald-200">{t('pending')}</Badge>
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -123,14 +125,14 @@ export function ActiveActionsWidget({
                                     <AlertCircle className="h-4 w-4 text-destructive" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[11px] font-bold">Absence Report</span>
+                                    <span className="text-[11px] font-bold">{t('absenceReport')}</span>
                                     <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tighter">
                                         {format(new Date(a.date), "MMMM dd, yyyy")}
                                     </span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Badge variant="outline" className="text-[8px] uppercase font-black bg-destructive/5 text-destructive border-destructive/20">Pending</Badge>
+                                <Badge variant="outline" className="text-[8px] uppercase font-black bg-destructive/5 text-destructive border-destructive/20">{t('pending')}</Badge>
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -152,8 +154,8 @@ export function ActiveActionsWidget({
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-[11px] font-bold flex items-center gap-1">
-                                        Shift Coverage
-                                        {c.status === 'seeking_coverage' && <Badge variant="secondary" className="text-[7px] px-1 h-3 font-black bg-primary/20 text-primary">Live</Badge>}
+                                        {t('shiftCoverage')}
+                                        {c.status === 'seeking_coverage' && <Badge variant="secondary" className="text-[7px] px-1 h-3 font-black bg-primary/20 text-primary">{t('live')}</Badge>}
                                     </span>
                                     <span className="text-[9px] text-muted-foreground font-medium uppercase tracking-tighter">
                                         {format(new Date(c.originalShift.dayDate), "MMM dd")} | {c.originalShift.startTime}-{c.originalShift.endTime}
@@ -165,7 +167,7 @@ export function ActiveActionsWidget({
                                     "text-[8px] uppercase font-black",
                                     c.status === 'seeking_coverage' ? "bg-blue-50 text-blue-600 border-blue-200" : "bg-muted text-muted-foreground"
                                 )}>
-                                    {c.status === 'seeking_coverage' ? 'Seeking' : 'Pending'}
+                                    {c.status === 'seeking_coverage' ? t('seeking') : t('pending')}
                                 </Badge>
                                 <Button
                                     variant="ghost"
@@ -182,7 +184,7 @@ export function ActiveActionsWidget({
 
                     {coverageOffers.length > 0 && (
                         <div className="pt-2 border-t border-border/40">
-                            <h4 className="text-[9px] font-black uppercase text-primary tracking-widest mb-2 px-1">Available Coverage Offers</h4>
+                            <h4 className="text-[9px] font-black uppercase text-primary tracking-widest mb-2 px-1">{t('availableOffers')}</h4>
                             <div className="space-y-2">
                                 {coverageOffers.map(o => (
                                     <div key={o._id} className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/20 group hover:border-primary/40 transition-all">
@@ -191,7 +193,7 @@ export function ActiveActionsWidget({
                                                 <Briefcase className="h-4 w-4 text-primary" />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-[11px] font-bold italic">Cover Shift Request</span>
+                                                <span className="text-[11px] font-bold italic">{t('coverShiftRequest')}</span>
                                                 <span className="text-[9px] text-muted-foreground font-medium uppercase">
                                                     {format(new Date(o.originalShift.dayDate), "MMM dd")} | {o.originalShift.startTime}-{o.originalShift.endTime}
                                                 </span>
@@ -201,12 +203,12 @@ export function ActiveActionsWidget({
                                                     </span>
                                                     {o.coworkers && o.coworkers.length > 0 && (
                                                         <span className="text-[7px] text-muted-foreground">
-                                                            With: {o.coworkers.join(', ')}
+                                                            {t('with', { names: o.coworkers.join(', ') })}
                                                         </span>
                                                     )}
                                                     {o.hrMessage && (
                                                         <span className="text-[7px] text-blue-500 italic line-clamp-1">
-                                                            HR: {o.hrMessage}
+                                                            {t('hrMessage', { message: o.hrMessage })}
                                                         </span>
                                                     )}
                                                 </div>
@@ -218,7 +220,7 @@ export function ActiveActionsWidget({
                                             onClick={() => handleAccept(o._id)}
                                             disabled={isPending}
                                         >
-                                            <Check className="h-3 w-3 mr-1" /> Accept
+                                            <Check className="h-3 w-3 mr-1" /> {t('acceptBtn')}
                                         </Button>
                                     </div>
                                 ))}

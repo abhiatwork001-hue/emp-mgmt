@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Calendar, User, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 // Since we are in app directory, we can use server components but for interactivity like toast/actions 
 // strictly speaking the list usually needs client interactivity or we use server forms. 
@@ -64,6 +65,7 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
     }
 
     const currentYear = year ? parseInt(year) : new Date().getFullYear();
+    const t = await getTranslations("Dashboard.vacations");
 
     // Parallel fetch for data
     const [requests, stores, departments, absences] = await Promise.all([
@@ -82,8 +84,8 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Vacations</h1>
-                    <p className="text-muted-foreground font-medium">Manage and review employee vacation requests.</p>
+                    <h1 className="text-3xl font-bold tracking-tight">{t('title')}</h1>
+                    <p className="text-muted-foreground font-medium">{t('subtitle')}</p>
                 </div>
 
                 {isGlobal && (
@@ -98,7 +100,7 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
             <div className="grid gap-4 md:grid-cols-3">
                 <Card className="bg-[#1e293b] border-none text-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('pendingRequests')}</CardTitle>
                         <Clock className="h-4 w-4 text-yellow-500" />
                     </CardHeader>
                     <CardContent>
@@ -107,7 +109,7 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
                 </Card>
                 <Card className="bg-[#1e293b] border-none text-white">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Approved This Year</CardTitle>
+                        <CardTitle className="text-sm font-medium">{t('approvedThisYear')}</CardTitle>
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>

@@ -17,7 +17,10 @@ interface SwapRequestsWidgetProps {
     currentUserRoles: string[];
 }
 
+import { useTranslations } from "next-intl";
+
 export function SwapRequestsWidget({ incomingRequests, userId, currentUserRoles }: SwapRequestsWidgetProps) {
+    const t = useTranslations("Dashboard.widgets.swapRequestsWidget");
     const [requests, setRequests] = useState(incomingRequests);
     const [loadingId, setLoadingId] = useState<string | null>(null);
     const router = useRouter();
@@ -27,14 +30,14 @@ export function SwapRequestsWidget({ incomingRequests, userId, currentUserRoles 
         try {
             const result = await respondToSwapRequest(requestId, action, userId);
             if (result.success) {
-                toast.success(`Swap request ${action}`);
+                toast.success(t('toast.success', { action }));
                 setRequests(prev => prev.filter(r => r._id !== requestId));
                 router.refresh();
             } else {
-                toast.error((result as any).error || "Failed to process request");
+                toast.error((result as any).error || t('toast.failed'));
             }
         } catch (error) {
-            toast.error("An error occurred");
+            toast.error(t('toast.error'));
         } finally {
             setLoadingId(null);
         }
@@ -48,10 +51,10 @@ export function SwapRequestsWidget({ incomingRequests, userId, currentUserRoles 
             <CardHeader className="pb-3 shrink-0">
                 <CardTitle className="text-lg flex items-center gap-2">
                     <ArrowLeftRight className="h-5 w-5 text-blue-500" />
-                    Shift Swap Requests
+                    {t('title')}
                 </CardTitle>
                 <CardDescription>
-                    Colleagues want to swap shifts with you.
+                    {t('description')}
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 flex-1 overflow-y-auto">
@@ -72,11 +75,11 @@ export function SwapRequestsWidget({ incomingRequests, userId, currentUserRoles 
                                 />
                                 <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                                     <Badge variant="outline" className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none">
-                                        Offers: {new Date(request.requestorShift.dayDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} <span className="font-mono ml-1">{request.requestorShift.startTime}-{request.requestorShift.endTime}</span>
+                                        {t('offers')} {new Date(request.requestorShift.dayDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} <span className="font-mono ml-1">{request.requestorShift.startTime}-{request.requestorShift.endTime}</span>
                                     </Badge>
-                                    <span className="text-xs">for</span>
+                                    <span className="text-xs">{t('for')}</span>
                                     <Badge variant="outline" className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-none">
-                                        Yours: {new Date(request.targetShift.dayDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} <span className="font-mono ml-1">{request.targetShift.startTime}-{request.targetShift.endTime}</span>
+                                        {t('yours')} {new Date(request.targetShift.dayDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} <span className="font-mono ml-1">{request.targetShift.startTime}-{request.targetShift.endTime}</span>
                                     </Badge>
                                 </div>
                             </div>
@@ -91,7 +94,7 @@ export function SwapRequestsWidget({ incomingRequests, userId, currentUserRoles 
                                 disabled={loadingId === request._id}
                             >
                                 <X className="h-4 w-4 mr-1" />
-                                Decline
+                                {t('decline')}
                             </Button>
                             <Button
                                 size="sm"
@@ -100,7 +103,7 @@ export function SwapRequestsWidget({ incomingRequests, userId, currentUserRoles 
                                 disabled={loadingId === request._id}
                             >
                                 <Check className="h-4 w-4 mr-1" />
-                                Accept
+                                {t('accept')}
                             </Button>
                         </div>
                     </div>

@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { EmployeeLink } from "../common/employee-link";
 import { cancelCoverageRequest } from "@/lib/actions/coverage.actions";
 import { FinalizeCoverageDialog } from "@/components/coverage/finalize-coverage-dialog";
+import { useTranslations } from "next-intl";
 
 interface PendingItem {
     id: string;
@@ -48,8 +49,10 @@ interface PendingApprovalsWidgetProps {
 }
 
 export function PendingApprovalsWidget({ overtime, vacations, absences, schedules = [], coverage = [], compact = false, role, currentUserRoles = [] }: PendingApprovalsWidgetProps) {
+    const t = useTranslations("Dashboard.widgets.pendingApprovalsWidget");
     const totalCount = overtime.length + vacations.length + absences.length + schedules.length + (coverage?.length || 0);
     const { data: session } = useSession();
+    // ... (rest of hooks)
     const router = useRouter();
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -98,9 +101,9 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             employeeName: `${i.employeeId?.firstName} ${i.employeeId?.lastName}`,
             employeeId: i.employeeId?._id,
             employeeSlug: i.employeeId?.slug,
-            storeName: i.employeeId?.storeId?.name || "Unknown",
+            storeName: i.employeeId?.storeId?.name || t('items.unknown'),
             date: new Date(i.dayDate),
-            details: `${i.hoursRequested}h Overtime`,
+            details: t('items.overtime', { hours: i.hoursRequested }),
             createdAt: new Date(i.createdAt),
             link: `/dashboard/approvals`
         })),
@@ -110,9 +113,9 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             employeeName: `${i.employeeId?.firstName} ${i.employeeId?.lastName}`,
             employeeId: i.employeeId?._id,
             employeeSlug: i.employeeId?.slug,
-            storeName: i.employeeId?.storeId?.name || "Unknown",
+            storeName: i.employeeId?.storeId?.name || t('items.unknown'),
             date: new Date(i.requestedFrom),
-            details: `${i.totalDays} Day Vacation`,
+            details: t('items.vacation', { days: i.totalDays }),
             createdAt: new Date(i.createdAt),
             link: `/dashboard/approvals`
         })),
@@ -122,9 +125,9 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             employeeName: `${i.employeeId?.firstName} ${i.employeeId?.lastName}`,
             employeeId: i.employeeId?._id,
             employeeSlug: i.employeeId?.slug,
-            storeName: i.employeeId?.storeId?.name || "Unknown",
+            storeName: i.employeeId?.storeId?.name || t('items.unknown'),
             date: new Date(i.date),
-            details: i.type || "Absence",
+            details: i.type || t('items.absence'),
             createdAt: new Date(i.createdAt),
             link: `/dashboard/approvals`
         })),
@@ -134,26 +137,21 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             employeeName: `${i.createdBy?.firstName || "System"} ${i.createdBy?.lastName || ""}`,
             employeeId: i.createdBy?._id,
             employeeSlug: i.createdBy?.slug,
-            storeName: i.storeId?.name || "Unknown",
+            storeName: i.storeId?.name || t('items.unknown'),
             date: new Date(i.updatedAt || i.createdAt),
-            details: `Schedule Week ${i.weekNumber}`,
+            details: t('items.schedule', { week: i.weekNumber }),
             createdAt: new Date(i.createdAt),
             link: `/dashboard/schedules/${i.slug || i._id}`
         })),
         ...(coverage || []).map(i => ({
             id: i._id,
             type: 'coverage' as const,
-            employeeName: `${i.originalEmployeeId?.firstName} ${i.originalEmployeeId?.lastName}`, // The prompt implies manager is approving coverage for original employee's shift? No, manager finalizes the *replacement*.
-            // Actually the 'request' is about the original employee needing cover.
-            // Let's show: "Coverage: [Candidate Name]"?
-            // The item in `pendingRequests` for coverage (from getPendingActions) has `acceptedBy`.
-            // If it's ready for finalization, `acceptedBy` is set.
-            // Let's display the Covering Employee Name if available, or Original if not.
+            employeeName: `${i.originalEmployeeId?.firstName} ${i.originalEmployeeId?.lastName}`,
             employeeId: i.acceptedBy?._id || i.originalEmployeeId?._id,
             employeeSlug: i.acceptedBy?.slug || i.originalEmployeeId?.slug,
-            storeName: i.originalShift?.storeId?.name || "Unknown",
+            storeName: i.originalShift?.storeId?.name || t('items.unknown'),
             date: new Date(i.originalShift?.dayDate),
-            details: `Finalize Coverage: ${i.acceptedBy ? 'Found Replacement' : 'Seeking'}`,
+            details: t('items.finalizeCoverage', { status: i.acceptedBy ? t('items.foundReplacement') : t('items.seeking') }),
             createdAt: new Date(i.createdAt),
             link: `/dashboard/coverage`
         }))
@@ -166,7 +164,7 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
 
     const handleAction = async (item: PendingItem, action: 'approve' | 'reject') => {
         if (!canApprove) {
-            toast.error("You are not authorized to perform this action.");
+            toast.error(t('unauthorized'));
             return;
         }
         setProcessingId(item.id);
@@ -174,16 +172,16 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
 
         try {
             if (item.type === 'overtime') {
-                await respondToOvertimeRequest(item.id, userId, action === 'approve' ? 'approved' : 'rejected', action === 'reject' ? 'Rejected from Dashboard' : undefined);
+                await respondToOvertimeRequest(item.id, userId, action === 'approve' ? 'approved' : 'rejected', action === 'reject' ? t('rejectedFromDashboard') : undefined);
             } else if (item.type === 'vacation') {
                 if (action === 'approve') await approveVacationRequest(item.id, userId);
-                else await rejectVacationRequest(item.id, userId, "Rejected from Dashboard");
+                else await rejectVacationRequest(item.id, userId, t('rejectedFromDashboard'));
             } else if (item.type === 'absence') {
                 if (action === 'approve') await approveAbsenceRequest(item.id, userId);
-                else await rejectAbsenceRequest(item.id, userId, "Rejected from Dashboard");
+                else await rejectAbsenceRequest(item.id, userId, t('rejectedFromDashboard'));
             } else if (item.type === 'schedule') {
                 const newStatus = action === 'approve' ? 'published' : 'rejected';
-                await updateScheduleStatus(item.id, newStatus, userId, action === 'reject' ? "Rejected from Dashboard" : undefined);
+                await updateScheduleStatus(item.id, newStatus, userId, action === 'reject' ? t('rejectedFromDashboard') : undefined);
             } else if (item.type === 'coverage') {
                 if (action === 'approve') {
                     const req = coverage?.find(c => c._id === item.id);
@@ -196,7 +194,7 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                     await cancelCoverageRequest(item.id);
                 }
             }
-            toast.success(`${action === 'approve' ? 'Approved' : 'Rejected'} successfully`);
+            toast.success(action === 'approve' ? t('approvedSuccess') : t('rejectedSuccess'));
             router.refresh();
             // Remove from selection if present
             const next = new Set(selectedIds);
@@ -204,7 +202,7 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             setSelectedIds(next);
         } catch (error) {
             console.error(error);
-            toast.error("Action failed");
+            toast.error(t('actionFailed'));
         } finally {
             setProcessingId(null);
         }
@@ -232,23 +230,23 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
         const failures: string[] = [];
         const userId = (session?.user as any).id;
 
-        toast.loading(`Bulk ${action === 'approve' ? 'approving' : 'rejecting'} ${ids.length} items...`, { id: 'bulk-action' });
+        toast.loading(action === 'approve' ? t('bulkApproving', { count: ids.length }) : t('bulkRejecting', { count: ids.length }), { id: 'bulk-action' });
 
         for (const id of ids) {
             const item = items.find(i => i.id === id);
             if (!item) continue;
             try {
                 if (item.type === 'overtime') {
-                    await respondToOvertimeRequest(item.id, userId, action === 'approve' ? 'approved' : 'rejected', action === 'reject' ? 'Bulk Reject' : undefined);
+                    await respondToOvertimeRequest(item.id, userId, action === 'approve' ? 'approved' : 'rejected', action === 'reject' ? t('bulkRejectReason') : undefined);
                 } else if (item.type === 'vacation') {
                     if (action === 'approve') await approveVacationRequest(item.id, userId);
-                    else await rejectVacationRequest(item.id, userId, "Bulk Reject");
+                    else await rejectVacationRequest(item.id, userId, t('bulkRejectReason'));
                 } else if (item.type === 'absence') {
                     if (action === 'approve') await approveAbsenceRequest(item.id, userId);
-                    else await rejectAbsenceRequest(item.id, userId, "Bulk Reject");
+                    else await rejectAbsenceRequest(item.id, userId, t('bulkRejectReason'));
                 } else if (item.type === 'schedule') {
                     const newStatus = action === 'approve' ? 'published' : 'rejected';
-                    await updateScheduleStatus(item.id, newStatus, userId, action === 'reject' ? "Bulk Reject" : undefined);
+                    await updateScheduleStatus(item.id, newStatus, userId, action === 'reject' ? t('bulkRejectReason') : undefined);
                 }
             } catch (e) {
                 console.error(`Failed to ${action} ${id}`, e);
@@ -258,9 +256,9 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
 
         toast.dismiss('bulk-action');
         if (failures.length > 0) {
-            toast.warning(`Processed with errors. Failed: ${failures.join(', ')}`);
+            toast.warning(t('bulkError', { names: failures.join(', ') }));
         } else {
-            toast.success(`Bulk ${action} completed!`);
+            toast.success(action === 'approve' ? t('bulkApproveSuccess') : t('bulkRejectSuccess'));
         }
 
         setSelectedIds(new Set());
@@ -272,15 +270,15 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
         return (
             <Card glass className="border-border/40 overflow-hidden">
                 <CardHeader className="bg-muted/30 border-b border-border/20 py-4">
-                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Action Center</CardTitle>
+                    <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">{t('actionCenter')}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center justify-center py-12 text-muted-foreground gap-4">
                     <div className="h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
                         <CheckCircle2 className="h-6 w-6 text-emerald-500" />
                     </div>
                     <div className="text-center">
-                        <p className="text-sm font-bold text-foreground">Operational Efficiency: 100%</p>
-                        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground/60 mt-1">All requests processed</p>
+                        <p className="text-sm font-bold text-foreground">{t('efficiency')}</p>
+                        <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground/60 mt-1">{t('allProcessed')}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -296,8 +294,8 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                         <div className="absolute inset-0 bg-destructive/20 blur-lg rounded-full animate-ping" />
                     </div>
                     <div>
-                        <CardTitle className="text-sm font-black tracking-widest text-destructive">CRITICAL APPROVALS</CardTitle>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-70 mt-0.5">Action Required</p>
+                        <CardTitle className="text-sm font-black tracking-widest text-destructive">{t('criticalApprovals')}</CardTitle>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-70 mt-0.5">{t('actionRequired')}</p>
                     </div>
                 </div>
 
@@ -311,7 +309,7 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                                 onClick={() => handleBulkAction('reject')}
                                 disabled={isBulkProcessing}
                             >
-                                Reject ({selectedIds.size})
+                                {t('rejectBtn', { count: selectedIds.size })}
                             </Button>
                             <Button
                                 size="sm"
@@ -319,7 +317,7 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                                 onClick={() => handleBulkAction('approve')}
                                 disabled={isBulkProcessing}
                             >
-                                Approve ({selectedIds.size})
+                                {t('approveBtn', { count: selectedIds.size })}
                             </Button>
                         </div>
                     )}
@@ -335,8 +333,8 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                             <CheckCircle2 className="h-8 w-8 text-emerald-500" />
                         </div>
                         <div className="space-y-1">
-                            <h3 className="font-bold text-lg text-foreground">All approvals handled 🎉</h3>
-                            <p className="text-sm text-muted-foreground">Great job! You're all caught up.</p>
+                            <h3 className="font-bold text-lg text-foreground">{t('allHandledTitle')}</h3>
+                            <p className="text-sm text-muted-foreground">{t('allHandledDesc')}</p>
                         </div>
                     </div>
                 ) : (
@@ -350,7 +348,7 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                                             onCheckedChange={toggleSelectAll}
                                             className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                                         />
-                                        <span className="text-[10px] font-bold uppercase text-muted-foreground">Select All</span>
+                                        <span className="text-[10px] font-bold uppercase text-muted-foreground">{t('selectAll')}</span>
                                     </>
                                 )}
                             </div>
@@ -450,7 +448,7 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                         <div className="p-3 bg-muted/5 border-t border-border/10 shrink-0">
                             <Link href="/dashboard/approvals" className="block">
                                 <Button variant="ghost" className="w-full text-[10px] font-black uppercase tracking-[0.2em] group h-8 rounded-lg" size="sm">
-                                    {hasMore ? `VIEW ALL ${totalCount} REQUESTS` : "VIEW COMMAND CENTER"} <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                                    {hasMore ? t('viewAll', { count: totalCount }) : t('viewCommandCenter')} <ArrowRight className="ml-2 h-3 w-3 group-hover:translate-x-1 transition-transform" />
                                 </Button>
                             </Link>
                         </div>

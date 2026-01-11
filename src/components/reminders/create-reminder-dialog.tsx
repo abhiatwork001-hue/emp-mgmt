@@ -12,6 +12,7 @@ import { createReminder } from "@/lib/actions/reminder.actions";
 import { toast } from "sonner";
 import { DatePicker } from "@/components/ui/date-picker";
 import { format } from "date-fns";
+import { useTranslations } from "next-intl";
 
 interface CreateReminderDialogProps {
     userId: string;
@@ -21,6 +22,7 @@ interface CreateReminderDialogProps {
 export function CreateReminderDialog({ userId, onSuccess }: CreateReminderDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const t = useTranslations("Reminders");
 
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -53,17 +55,17 @@ export function CreateReminderDialog({ userId, onSuccess }: CreateReminderDialog
             });
 
             if (res.success) {
-                toast.success("Reminder Created");
+                toast.success(t('reminderCreated'));
                 setOpen(false);
                 // Reset form
                 setTitle("");
                 setDescription("");
                 if (onSuccess) onSuccess();
             } else {
-                toast.error("Failed to create reminder");
+                toast.error(t('failedCreate'));
             }
         } catch (error) {
-            toast.error("Error creating reminder");
+            toast.error(t('errorCreate'));
         } finally {
             setLoading(false);
         }
@@ -74,61 +76,61 @@ export function CreateReminderDialog({ userId, onSuccess }: CreateReminderDialog
             <DialogTrigger asChild>
                 <Button variant="outline" className="gap-2">
                     <BellPlus className="h-4 w-4" />
-                    New Reminder
+                    {t('newReminder')}
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Create Reminder</DialogTitle>
+                    <DialogTitle>{t('createReminder')}</DialogTitle>
                     <DialogDescription>
-                        Send an alert or meeting reminder to staff.
+                        {t('createDescription')}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                        <Label htmlFor="title">Title</Label>
-                        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Staff Meeting" />
+                        <Label htmlFor="title">{t('title')}</Label>
+                        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t('titlePlaceholder')} />
                     </div>
                     <div className="grid gap-2">
-                        <Label htmlFor="desc">Description</Label>
+                        <Label htmlFor="desc">{t('description')}</Label>
                         <Textarea id="desc" value={description} onChange={(e) => setDescription(e.target.value)} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                            <Label>Type</Label>
+                            <Label>{t('type')}</Label>
                             <Select value={type} onValueChange={setType}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="general">General</SelectItem>
-                                    <SelectItem value="meeting">Meeting</SelectItem>
-                                    <SelectItem value="order">Order Check</SelectItem>
+                                    <SelectItem value="general">{t('general')}</SelectItem>
+                                    <SelectItem value="meeting">{t('meeting')}</SelectItem>
+                                    <SelectItem value="order">{t('order')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                         <div className="grid gap-2">
-                            <Label>Priority</Label>
+                            <Label>{t('priority')}</Label>
                             <Select value={priority} onValueChange={setPriority}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="low">Low</SelectItem>
-                                    <SelectItem value="medium">Medium</SelectItem>
-                                    <SelectItem value="high">High</SelectItem>
+                                    <SelectItem value="low">{t('low')}</SelectItem>
+                                    <SelectItem value="medium">{t('medium')}</SelectItem>
+                                    <SelectItem value="high">{t('high')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
                     </div>
                     <div className="grid gap-2">
-                        <Label>Due Date & Time</Label>
+                        <Label>{t('dueDate')}</Label>
                         <div className="flex gap-2">
                             <DatePicker
                                 date={date}
                                 setDate={setDate}
                                 className="flex-1"
-                                placeholder="Pick a date"
+                                placeholder={t('pickDate')}
                             />
                             <div className="relative group">
                                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -142,16 +144,16 @@ export function CreateReminderDialog({ userId, onSuccess }: CreateReminderDialog
                         </div>
                     </div>
                     <div className="grid gap-2">
-                        <Label>Target Audience</Label>
+                        <Label>{t('targetAudience')}</Label>
                         <Select value={targetRole} onValueChange={setTargetRole}>
                             <SelectTrigger>
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Everyone</SelectItem>
-                                <SelectItem value="store_manager">Store Managers</SelectItem>
-                                <SelectItem value="employee">Employees</SelectItem>
-                                <SelectItem value="admin">Admins</SelectItem>
+                                <SelectItem value="all">{t('everyone')}</SelectItem>
+                                <SelectItem value="store_manager">{t('storeManagers')}</SelectItem>
+                                <SelectItem value="employee">{t('employees')}</SelectItem>
+                                <SelectItem value="admin">{t('admins')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -159,7 +161,7 @@ export function CreateReminderDialog({ userId, onSuccess }: CreateReminderDialog
                 <DialogFooter>
                     <Button onClick={handleSubmit} disabled={loading || !title || !date}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Create
+                        {t('create')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

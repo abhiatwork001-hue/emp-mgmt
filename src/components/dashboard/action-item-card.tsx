@@ -53,11 +53,11 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
 
     const getTitle = () => {
         switch (type) {
-            case 'vacation': return "Vacation Request";
-            case 'absence': return "Absence Report";
-            case 'overtime': return "Overtime Request";
-            case 'schedule': return "Draft Schedule";
-            case 'coverage': return "Coverage Offer";
+            case 'vacation': return t('vacationRequest');
+            case 'absence': return t('absenceReport');
+            case 'overtime': return t('overtimeRequest');
+            case 'schedule': return t('draftSchedule');
+            case 'coverage': return t('coverageOffer');
         }
     };
 
@@ -69,7 +69,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                     <ArrowRight className="w-3 h-3 opacity-30" />
                     <span>{format(new Date(item.requestedTo), "MMM dd")}</span>
                     <Badge variant="secondary" className="ml-2 font-black tracking-tighter text-[10px]">
-                        {item.totalDays} Days
+                        {t('days', { count: item.totalDays })}
                     </Badge>
                 </div>
             );
@@ -86,7 +86,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                 <div className="flex items-center gap-2 text-sm font-bold">
                     <span>{format(new Date(item.dayDate), "MMM dd")}</span>
                     <Badge variant="secondary" className="ml-2 font-black tracking-tighter text-[10px]">
-                        {item.hoursRequested} Hours
+                        {t('hours', { count: item.hoursRequested })}
                     </Badge>
                 </div>
             );
@@ -180,7 +180,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                             {item.originalEmployeeId && (
                                                 <div className="flex items-center gap-2">
                                                     <User className="w-3.5 h-3.5 text-primary" />
-                                                    <span className="text-xs font-bold">Covering: {item.originalEmployeeId?.firstName} {item.originalEmployeeId?.lastName}</span>
+                                                    <span className="text-xs font-bold">{t('covering', { name: `${item.originalEmployeeId?.firstName} ${item.originalEmployeeId?.lastName}` })}</span>
                                                 </div>
                                             )}
                                             {item.originalShift?.storeId?.name && (
@@ -199,25 +199,25 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                         {item.coworkers && item.coworkers.length > 0 && (
                                             <div className="flex items-start gap-2 text-muted-foreground">
                                                 <Users className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                                                <span className="text-xs">Working with: {item.coworkers.join(', ')}</span>
+                                                <span className="text-xs">{t('workingWith', { names: item.coworkers.join(', ') })}</span>
                                             </div>
                                         )}
                                         {item.reason && (
                                             <div className="flex items-start gap-2 text-muted-foreground">
                                                 <MessageSquare className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                                                <span className="text-xs italic">Employee's reason: {item.reason}</span>
+                                                <span className="text-xs italic">{t('reason', { reason: item.reason })}</span>
                                             </div>
                                         )}
                                         {item.hrMessage && (
                                             <div className="flex items-start gap-2 text-blue-600">
                                                 <MessageSquare className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                                                <span className="text-xs font-semibold italic">HR: {item.hrMessage}</span>
+                                                <span className="text-xs font-semibold italic">{t('hrMessage', { message: item.hrMessage })}</span>
                                             </div>
                                         )}
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1 italic">
-                                        {item.comments || item.reason || "No comments provided."}
+                                        {item.comments || item.reason || t('noComments')}
                                     </div>
                                 )}
 
@@ -232,7 +232,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                                 className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-[10px] text-primary hover:underline hover:bg-muted/80 transition-colors"
                                             >
                                                 <Paperclip className="w-3 h-3" />
-                                                View Attachment {idx + 1}
+                                                {t('viewAttachment', { index: idx + 1 })}
                                             </a>
                                         ))}
                                     </div>
@@ -259,7 +259,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                                 className="rounded-full bg-primary hover:bg-primary/90 font-bold px-6 h-9 transition-all shadow-lg shadow-primary/20"
                                             >
                                                 <Check className="w-3.5 h-3.5 mr-2" />
-                                                Finalize
+                                                {t('finalize')}
                                             </Button>
                                         ) : (
                                             <div className="flex gap-2 w-full md:w-auto">
@@ -294,7 +294,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                                     className="flex-1 md:flex-none rounded-full bg-violet-500 hover:bg-violet-600 font-bold h-9 px-5 transition-all shadow-lg shadow-violet-500/10"
                                                 >
                                                     <Check className="w-3.5 h-3.5 mr-2" />
-                                                    Accept
+                                                    {t('accept')}
                                                 </Button>
                                                 <Button
                                                     size="sm"
@@ -303,7 +303,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                                     className="flex-1 md:flex-none rounded-full border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white font-bold h-9 px-5 transition-all"
                                                 >
                                                     <X className="w-3.5 h-3.5 mr-2" />
-                                                    Decline
+                                                    {t('decline')}
                                                 </Button>
                                             </>
                                         )}

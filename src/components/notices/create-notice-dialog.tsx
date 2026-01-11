@@ -12,6 +12,7 @@ import { createNotice, updateNotice } from "@/lib/actions/notice.actions";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DatePicker } from "@/components/ui/date-picker";
+import { useTranslations } from "next-intl";
 
 interface CreateNoticeDialogProps {
     userId: string;
@@ -44,6 +45,7 @@ export function CreateNoticeDialog({
 }: CreateNoticeDialogProps) {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const t = useTranslations("Notices");
 
     const [title, setTitle] = useState(initialData?.title || "");
     const [content, setContent] = useState(initialData?.content || "");
@@ -86,10 +88,10 @@ export function CreateNoticeDialog({
 
             if (mode === 'edit' && initialData?._id) {
                 await updateNotice(initialData._id, userId, payload);
-                toast.success("Notice Updated");
+                toast.success(t('noticeUpdated'));
             } else {
                 await createNotice(payload);
-                toast.success("Notice Posted");
+                toast.success(t('noticePosted'));
             }
 
             setOpen(false);
@@ -104,7 +106,7 @@ export function CreateNoticeDialog({
                 setVisibleToAdmin(false);
             }
         } catch (error) {
-            toast.error("Failed to save notice");
+            toast.error(t('failedToSave'));
         } finally {
             setLoading(false);
         }
@@ -116,47 +118,47 @@ export function CreateNoticeDialog({
                 {trigger ? trigger : (
                     <Button variant="outline" className="gap-2">
                         <Megaphone className="h-4 w-4" />
-                        Post Notice
+                        {t('postNotice')}
                     </Button>
                 )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{mode === 'edit' ? 'Edit Notice' : 'Post New Notice'}</DialogTitle>
+                    <DialogTitle>{mode === 'edit' ? t('editNotice') : t('postNewNotice')}</DialogTitle>
                     <DialogDescription>
-                        {mode === 'edit' ? 'Update your announcement.' : 'Announce updates, policies, or news to your team.'}
+                        {mode === 'edit' ? t('editDescription') : t('createDescription')}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="grid gap-2">
-                        <Label>Title</Label>
-                        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Holiday Schedule Changes" />
+                        <Label>{t('title')}</Label>
+                        <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={t('titlePlaceholder')} />
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>Target Audience</Label>
+                        <Label>{t('targetAudience')}</Label>
                         <Select value={scope} onValueChange={setScope} disabled={mode === 'edit'}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select who sees this..." />
+                                <SelectValue placeholder={t('selectAudience')} />
                             </SelectTrigger>
                             <SelectContent>
                                 {isSuper && (
                                     <>
-                                        <SelectItem value="global">All Company (Global)</SelectItem>
-                                        <SelectItem value="store">Specific Store</SelectItem>
-                                        <SelectItem value="department">Specific Global Department</SelectItem>
-                                        <SelectItem value="role_group">Specific Role Group</SelectItem>
+                                        <SelectItem value="global">{t('allCompany')}</SelectItem>
+                                        <SelectItem value="store">{t('specificStore')}</SelectItem>
+                                        <SelectItem value="department">{t('specificGlobalDept')}</SelectItem>
+                                        <SelectItem value="role_group">{t('specificRoleGroup')}</SelectItem>
                                     </>
                                 )}
                                 {isStoreManager && (
                                     <>
-                                        <SelectItem value="store">My Store (All Employees)</SelectItem>
-                                        <SelectItem value="role_group">Specific Role Group (In My Store)</SelectItem>
-                                        <SelectItem value="store_department">Specific Department (In My Store)</SelectItem>
+                                        <SelectItem value="store">{t('myStore')}</SelectItem>
+                                        <SelectItem value="role_group">{t('roleGroupInStore')}</SelectItem>
+                                        <SelectItem value="store_department">{t('deptInStore')}</SelectItem>
                                     </>
                                 )}
-                                {isDeptHead && <SelectItem value="department">My Department (All Global)</SelectItem>}
-                                {isStoreDeptHead && <SelectItem value="store_department">My Department (Store Level)</SelectItem>}
+                                {isDeptHead && <SelectItem value="department">{t('myDeptGlobal')}</SelectItem>}
+                                {isStoreDeptHead && <SelectItem value="store_department">{t('myDeptStore')}</SelectItem>}
                             </SelectContent>
                         </Select>
                     </div>
@@ -166,25 +168,25 @@ export function CreateNoticeDialog({
                     {/* Store Department Selection (Store Manager) */}
                     {scope === 'store_department' && isStoreManager && (
                         <div className="grid gap-2">
-                            <Label>Select Department</Label>
+                            <Label>{t('selectDepartment')}</Label>
                             <Select value={targetId} onValueChange={setTargetId} disabled={mode === 'edit'}>
-                                <SelectTrigger><SelectValue placeholder="Pick a department" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder={t('pickDepartment')} /></SelectTrigger>
                                 <SelectContent>
                                     {storeDepartments.length > 0 ? (
                                         storeDepartments.map(d => <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>)
                                     ) : (
-                                        <SelectItem value="none" disabled>No departments found</SelectItem>
+                                        <SelectItem value="none" disabled>{t('noDeptsFound')}</SelectItem>
                                     )}
                                 </SelectContent>
                             </Select>
 
-                            <Label className="mt-2">Filter by Content (Optional)</Label>
+                            <Label className="mt-2">{t('filterContent')}</Label>
                             <Select value={targetRole} onValueChange={setTargetRole}>
-                                <SelectTrigger><SelectValue placeholder="All Employees in Dept" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder={t('allEmployeesInDept')} /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Employees</SelectItem>
-                                    <SelectItem value="Store Department Head">Dept Head Only</SelectItem>
-                                    <SelectItem value="Employee">Staff Only</SelectItem>
+                                    <SelectItem value="all">{t('allEmployees')}</SelectItem>
+                                    <SelectItem value="Store Department Head">{t('deptHeadOnly')}</SelectItem>
+                                    <SelectItem value="Employee">{t('staffOnly')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -193,9 +195,9 @@ export function CreateNoticeDialog({
                     {/* Store Selection (Super User) */}
                     {scope === 'store' && isSuper && (
                         <div className="grid gap-2">
-                            <Label>Select Store</Label>
+                            <Label>{t('selectStore')}</Label>
                             <Select value={targetId} onValueChange={setTargetId} disabled={mode === 'edit'}>
-                                <SelectTrigger><SelectValue placeholder="Pick a store" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder={t('pickStore')} /></SelectTrigger>
                                 <SelectContent>
                                     {stores.map(s => <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>)}
                                 </SelectContent>
@@ -206,9 +208,9 @@ export function CreateNoticeDialog({
                     {/* Global Dept Selection (Super User) */}
                     {scope === 'department' && isSuper && (
                         <div className="grid gap-2">
-                            <Label>Select Department</Label>
+                            <Label>{t('selectDepartment')}</Label>
                             <Select value={targetId} onValueChange={setTargetId} disabled={mode === 'edit'}>
-                                <SelectTrigger><SelectValue placeholder="Pick a department" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder={t('pickDepartment')} /></SelectTrigger>
                                 <SelectContent>
                                     {departments.map(d => <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>)}
                                 </SelectContent>
@@ -219,14 +221,14 @@ export function CreateNoticeDialog({
                     {/* Role Selection (Super User & Store Manager) */}
                     {scope === 'role_group' && (isSuper || isStoreManager) && (
                         <div className="grid gap-2">
-                            <Label>Select Role</Label>
+                            <Label>{t('selectRole')}</Label>
                             <Select value={targetRole} onValueChange={setTargetRole}>
-                                <SelectTrigger><SelectValue placeholder="Pick a role" /></SelectTrigger>
+                                <SelectTrigger><SelectValue placeholder={t('pickRole')} /></SelectTrigger>
                                 <SelectContent>
-                                    {isSuper && <SelectItem value="store_manager">Store Managers</SelectItem>}
-                                    {isSuper && <SelectItem value="department_head">Department Heads</SelectItem>}
-                                    <SelectItem value="store_department_head">Store Dept Heads</SelectItem>
-                                    <SelectItem value="employee">Employees</SelectItem>
+                                    {isSuper && <SelectItem value="store_manager">{t('storeManagers')}</SelectItem>}
+                                    {isSuper && <SelectItem value="department_head">{t('departmentHeads')}</SelectItem>}
+                                    <SelectItem value="store_department_head">{t('storeDeptHeads')}</SelectItem>
+                                    <SelectItem value="employee">{t('employees')}</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -234,13 +236,13 @@ export function CreateNoticeDialog({
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="grid gap-2">
-                            <Label>Expiration Date (Optional)</Label>
+                            <Label>{t('expirationDate')}</Label>
                             <DatePicker
                                 date={expiresAt}
                                 setDate={(d) => setExpiresAt(d ? d.toISOString().split('T')[0] : "")}
-                                placeholder="Pick expiration date"
+                                placeholder={t('pickExpiration')}
                             />
-                            <p className="text-[10px] text-muted-foreground">Notice disappears after this date.</p>
+                            <p className="text-[10px] text-muted-foreground">{t('expirationHelp')}</p>
                         </div>
                     </div>
 
@@ -251,25 +253,25 @@ export function CreateNoticeDialog({
                                 checked={visibleToAdmin}
                                 onCheckedChange={(c) => setVisibleToAdmin(c as boolean)}
                             />
-                            <Label htmlFor="adminVis" className="cursor-pointer">Publish to Administrator as well</Label>
+                            <Label htmlFor="adminVis" className="cursor-pointer">{t('publishToAdmin')}</Label>
                         </div>
                     )}
 
                     <div className="grid gap-2">
-                        <Label>Content (Markdown)</Label>
+                        <Label>{t('contentMarkdown')}</Label>
                         <Textarea
                             value={content}
                             onChange={e => setContent(e.target.value)}
-                            placeholder="Type your notice here..."
+                            placeholder={t('contentPlaceholder')}
                             className="min-h-[150px]"
                         />
                     </div>
                 </div>
                 <div className="flex justify-end gap-2">
-                    <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+                    <Button variant="ghost" onClick={() => setOpen(false)}>{t('cancel')}</Button>
                     <Button onClick={handleSubmit} disabled={loading || !title || !scope}>
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {mode === 'edit' ? "Save Changes" : "Post Notice"}
+                        {mode === 'edit' ? t('saveChanges') : t('postNotice')}
                     </Button>
                 </div>
             </DialogContent>

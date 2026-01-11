@@ -7,6 +7,9 @@ import { format } from "date-fns";
 import { Palmtree } from "lucide-react";
 import { getUpcomingHolidays } from "@/lib/actions/dashboard-widgets.actions";
 
+// ... (imports remain)
+import { useTranslations } from "next-intl";
+
 interface HolidayWidgetProps {
     storeId: string;
 }
@@ -14,6 +17,7 @@ interface HolidayWidgetProps {
 export function HolidayWidget({ storeId }: HolidayWidgetProps) {
     const [holidays, setHolidays] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const t = useTranslations("Dashboard.widgets.publicHolidayWidget");
 
     useEffect(() => {
         if (storeId) {
@@ -32,12 +36,12 @@ export function HolidayWidget({ storeId }: HolidayWidgetProps) {
             <CardHeader className="pb-3 shrink-0">
                 <CardTitle className="text-base font-medium flex items-center">
                     <Palmtree className="mr-2 h-4 w-4 text-amber-500" />
-                    Public Holidays (PT)
+                    {t('title')}
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-0 flex-1 min-h-0">
                 {holidays.length === 0 ? (
-                    <div className="p-4 text-sm text-muted-foreground text-center">No upcoming holidays found.</div>
+                    <div className="p-4 text-sm text-muted-foreground text-center">{t('empty')}</div>
                 ) : (
                     <ScrollArea className="h-full px-4">
                         <div className="space-y-3 py-4">
@@ -55,7 +59,7 @@ export function HolidayWidget({ storeId }: HolidayWidgetProps) {
                                         ? "bg-amber-100 text-amber-700 border border-amber-200"
                                         : "bg-muted text-muted-foreground"
                                         }`}>
-                                        {h.daysUntil === 0 ? "Today" : `${h.daysUntil} days`}
+                                        {h.daysUntil === 0 ? t('today') : t('days', { days: h.daysUntil })}
                                     </span>
                                 </div>
                             ))}
