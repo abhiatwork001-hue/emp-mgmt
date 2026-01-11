@@ -7,6 +7,7 @@ import { Plus, Search, Phone, Mail, MapPin, Trash2, Edit2, Package, User } from 
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import {
     Dialog,
     DialogContent,
@@ -136,7 +137,9 @@ export default function SuppliersPage() {
                                     <CardContent className="p-6 space-y-4">
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <h3 className="font-bold text-lg">{supplier.name}</h3>
+                                                <Link href={`/dashboard/suppliers/${supplier._id}`} className="hover:underline">
+                                                    <h3 className="font-bold text-lg">{supplier.name}</h3>
+                                                </Link>
                                                 {supplier.category && (
                                                     <Badge variant="secondary" className="mt-1 text-xs font-medium">
                                                         {supplier.category}

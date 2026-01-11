@@ -29,11 +29,13 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
     const isSuper = roles.some((r: string) => ["owner", "admin", "hr", "super_user", "tech"].includes(r));
     const isKitchen = roles.some((r: string) => ["chef", "head_chef", "cook", "kitchen_staff"].includes(r));
     const isManager = roles.includes("store_manager");
-    // const isStoreDeptHead = roles.includes("store_department_head");
-    // const isGlobalDeptHead = roles.includes("department_head");
+    const isStoreDeptHead = roles.includes("store_department_head");
 
     const hasFullAccess = isSuper;
     const userStoreId = currentUser.storeId;
+
+    // Permissions
+    const canSearchSuppliers = isSuper || isManager || isStoreDeptHead;
 
     if (!query || query.length < 2) return [];
 
@@ -72,7 +74,7 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             { storeId: userStoreId }
         ]
     };
-    if (!userStoreId && !isSuper) supplierFilter.storeId = "impossible_id"; // Block if no store and not super
+    if (!userStoreId && !isSuper) supplierFilter.storeId = "impossible_id"; // Block if no store and not super (logic remains similar but gated by canSearchSuppliers mostly)
 
     const resourceFilter: any = {
         name: { $regex: regex },
@@ -99,8 +101,8 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
         Employee.find(employeeFilter).select("firstName lastName email image positionId slug").populate("positionId", "name translations").limit(3).lean(),
         (isSuper || isManager) ? Store.find(storeFilter).select("name address translations slug").limit(3).lean() : Promise.resolve([]),
         Food.find(foodFilter).select("name category heroImg slug").populate("category", "name").limit(3).lean(),
-        (isSuper || isManager) ? Supplier.find(supplierFilter).select("name category").limit(3).lean() : Promise.resolve([]),
-        (isSuper || isManager) ? Supplier.find(supplierItemFilter).select("name items").limit(3).lean() : Promise.resolve([]),
+        canSearchSuppliers ? Supplier.find(supplierFilter).select("name category").limit(3).lean() : Promise.resolve([]),
+        canSearchSuppliers ? Supplier.find(supplierItemFilter).select("name items").limit(3).lean() : Promise.resolve([]),
         StoreResource.find(resourceFilter).select("name type").limit(3).lean(),
         GlobalDepartment.find({ name: { $regex: regex } }).select("name slug").limit(3).lean(),
         userStoreId ? StoreDepartment.find({ name: { $regex: regex }, storeId: userStoreId }).select("name slug").limit(3).lean() : Promise.resolve([])
