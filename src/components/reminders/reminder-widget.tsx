@@ -1,12 +1,9 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Bell, Check, Clock, AlertTriangle, Truck } from "lucide-react";
+import { Bell, Check, Clock } from "lucide-react";
 import { getRemindersForUser, markReminderRead } from "@/lib/actions/reminder.actions";
-import { getOrderReminders } from "@/lib/actions/supplier.actions";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -17,19 +14,13 @@ interface ReminderWidgetProps {
 
 export function ReminderWidget({ userId, role }: ReminderWidgetProps) {
     const [reminders, setReminders] = useState<any[]>([]);
-    const [orderAlerts, setOrderAlerts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     const fetchAll = async () => {
         setLoading(true);
         try {
-            const [rems, orders] = await Promise.all([
-                getRemindersForUser(userId),
-                // Only managers/admins need order alerts usually, but for now fetching for all relevant roles could be handled
-                (role === 'store_manager' || role === 'admin' || role === 'owner') ? getOrderReminders() : Promise.resolve([])
-            ]);
+            const rems = await getRemindersForUser(userId);
             setReminders(rems);
-            setOrderAlerts(orders);
         } catch (error) {
             console.error(error);
         } finally {
@@ -49,7 +40,7 @@ export function ReminderWidget({ userId, role }: ReminderWidgetProps) {
         }
     };
 
-    const totalCount = reminders.length + orderAlerts.length;
+    const totalCount = reminders.length;
 
     if (loading) return (
         <Card className="h-full">
@@ -83,22 +74,6 @@ export function ReminderWidget({ userId, role }: ReminderWidgetProps) {
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 overflow-y-auto space-y-3 pr-2">
-                {/* Order Alerts */}
-                {orderAlerts.map((alert, idx) => (
-                    <div key={`order-${idx}`} className={`p-3 rounded-lg border flex flex-col gap-2 ${alert.isOverdue ? 'bg-destructive/10 border-destructive/20' : (alert.isUrgent ? 'bg-amber-500/10 border-amber-500/20' : 'bg-muted/30')}`}>
-                        <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-2">
-                                <Truck className={`h-4 w-4 ${alert.isOverdue ? 'text-destructive' : 'text-blue-500'}`} />
-                                <span className="font-semibold text-sm">{alert.title}</span>
-                            </div>
-                            {alert.isUrgent && <Badge variant="outline" className="border-amber-500 text-amber-500 text-[10px]">Urgent</Badge>}
-                            {alert.isOverdue && <Badge variant="destructive" className="text-[10px]">Overdue</Badge>}
-                        </div>
-                        <p className="text-xs text-muted-foreground">{alert.description}</p>
-                        {/* Action buttons could go here (e.g. "Place Order") */}
-                    </div>
-                ))}
-
                 {/* General Reminders */}
                 {reminders.map((rem) => (
                     <div key={rem._id} className="p-3 rounded-lg border bg-card hover:bg-muted/20 transition-colors flex flex-col gap-2 shadow-sm">

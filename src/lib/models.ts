@@ -78,6 +78,13 @@ export interface IStore extends Document {
     ratingHistory?: { date: Date; rating: number }[];
     lastReviewsUpdate?: Date;
 
+    settings?: {
+        supplierAlertPreferences: {
+            defaultAlertOffset: number;
+            exceptions: { supplierId: ObjectId; alertOffset: number }[];
+        };
+    };
+
     active: boolean;
     archivedAt?: Date;
     createdAt?: Date;
@@ -455,6 +462,16 @@ const StoreSchema = new Schema<IStore>({
     ratingHistory: [{ date: Date, rating: Number }],
     lastReviewsUpdate: { type: Date },
 
+    settings: {
+        supplierAlertPreferences: {
+            defaultAlertOffset: { type: Number, default: 0 }, // 0 = Same day as deadline
+            exceptions: [{
+                supplierId: { type: Schema.Types.ObjectId, ref: 'Supplier' },
+                alertOffset: { type: Number }
+            }]
+        }
+    },
+
     active: { type: Boolean, default: true },
     archivedAt: { type: Date }
 }, { timestamps: true });
@@ -785,6 +802,25 @@ export interface ISupplier extends Document {
     address?: string;
     category?: string; // e.g. "Food", "Maintenance"
     items: ISupplierItem[];
+    deliverySchedule?: {
+        dayOfWeek: number; // 0=Sunday, 1=Monday...
+        orderCutoff: {
+            leadDays: number; // Days before delivery
+            time: string; // "17:00"
+        };
+    }[];
+    temporarySchedules?: {
+        name: string;
+        startDate: Date;
+        endDate: Date;
+        schedule: {
+            dayOfWeek: number;
+            orderCutoff: {
+                leadDays: number;
+                time: string;
+            };
+        }[];
+    }[];
     createdBy: ObjectId;
     storeId?: ObjectId; // Optional: If specific to a store
     active: boolean;
@@ -800,11 +836,30 @@ const SupplierSchema = new Schema<ISupplier>({
     address: { type: String },
     category: { type: String },
     items: [{
-        name: { type: String, required: true },
+        name: { type: String },
         sku: { type: String },
         category: { type: String },
         unit: { type: String },
         price: { type: Number }
+    }],
+    deliverySchedule: [{
+        dayOfWeek: { type: Number, required: true }, // 0-6
+        orderCutoff: {
+            leadDays: { type: Number, default: 1 },
+            time: { type: String, default: "17:00" }
+        }
+    }],
+    temporarySchedules: [{
+        name: { type: String },
+        startDate: { type: Date },
+        endDate: { type: Date },
+        schedule: [{
+            dayOfWeek: { type: Number },
+            orderCutoff: {
+                leadDays: { type: Number },
+                time: { type: String }
+            }
+        }]
     }],
     createdBy: { type: Schema.Types.ObjectId, ref: 'Employee' },
     storeId: { type: Schema.Types.ObjectId, ref: 'Store' },

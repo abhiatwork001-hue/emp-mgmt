@@ -25,6 +25,7 @@ import { NoticeBoard } from "@/components/notices/notice-board";
 import { ActiveActionsWidget } from "@/components/dashboard/active-actions-widget";
 import { EmployeePendingActionsWidget } from "@/components/dashboard/employee-pending-actions-widget";
 import { OvertimeRequestDialog } from "@/components/schedules/overtime-request-dialog";
+import { OrderingWidget } from "@/components/dashboard/widgets/ordering-widget";
 
 export function EmployeeDashboard({
     employee,
@@ -57,6 +58,9 @@ export function EmployeeDashboard({
                     myCoverageRequests={activeActions.coverageRequests}
                     userId={employee._id}
                 />
+                {(employee.roles?.includes('store_manager') || employee.roles?.includes('admin') || employee.roles?.includes('owner')) && (
+                    <OrderingWidget />
+                )}
                 <ReminderWidget userId={employee._id} role="employee" />
             </div>
         )

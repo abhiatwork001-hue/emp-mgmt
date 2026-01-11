@@ -15,15 +15,26 @@
 - **Availability:** Employee availability tracking and time-off requests.
 - **Multi-Department:** Manage shifts across "Kitchen", "Service", "Bar", etc.
 
+### 📦 Smart Supplier Management
+- **Just-in-Time Ordering:** Automated alerts for Store Managers based on supplier delivery schedules (e.g., "Order by 5 PM today for Tuesday delivery").
+- **Flexible Scheduling:** Supports temporary schedules for holidays/festivals.
+- **Ordering Dashboard:** Dedicated widget showing exactly what needs to be ordered today.
+
+### 🔍 Enhanced Global Search
+- **Unified Search:** Search across Employees, Stores, Recipes, Suppliers, Departments, and Directory Resources.
+- **Scoped Access:** Search results are context-aware and respect role-based permissions (e.g., Managers see their store's data, Global Heads see department-wide data).
+- **Rich Results:** Visual indicators for result types (Trucks for suppliers, User icons for employees).
+
 ### 💬 Real-Time Communication
 - **Instant Messaging:** Direct and Group chats with real-time delivery.
 - **Rich Media:** Send images, voice notes, and file attachments.
-- **Notifications:** Push notifications ensuring no message is missed.
+- **Notifications & Reminders:** Push notifications for messages, shift updates, and urgent ordering deadlines.
 - **Announcements:** Broadcast important updates to specific roles or stores.
 
 ### 🛡️ Role-Based Access Control (RBAC)
 - **Granular Permissions:** Custom views for Owners, HR, Managers, Dept Heads, and Staff.
-- **Audit Logs:** Track every critical action (Schedule Publish, Profile Edit, etc.) with detailed history.
+- **Recipe Control:** Strict access control for Recipe creation (restricted to Global Kitchen Head & Tech).
+- **Audit Logs:** Track every critical action (Schedule Publish, Profile Edit, Supplier Changes) with detailed history.
 - **Secure:** Middleware-protected routes and API endpoints.
 
 ### 🌍 Application Features

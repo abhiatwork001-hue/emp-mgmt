@@ -1,13 +1,13 @@
 "use server";
 
 import dbConnect from "@/lib/db";
-import { Employee, Store, Food, StoreDepartment } from "@/lib/models";
+import { Employee, Store, Food, StoreResource, Supplier, GlobalDepartment, StoreDepartment } from "@/lib/models";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 export type SearchResult = {
-    type: 'employee' | 'store' | 'recipe';
+    type: 'employee' | 'store' | 'recipe' | 'supplier' | 'resource' | 'department';
     id: string;
     name: string;
     subtext: string;
@@ -29,126 +29,76 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
     const isSuper = roles.some((r: string) => ["owner", "admin", "hr", "super_user", "tech"].includes(r));
     const isKitchen = roles.some((r: string) => ["chef", "head_chef", "cook", "kitchen_staff"].includes(r));
     const isManager = roles.includes("store_manager");
-    const isStoreDeptHead = roles.includes("store_department_head");
-    const isGlobalDeptHead = roles.includes("department_head");
+    // const isStoreDeptHead = roles.includes("store_department_head");
+    // const isGlobalDeptHead = roles.includes("department_head");
 
     const hasFullAccess = isSuper;
+    const userStoreId = currentUser.storeId;
 
     if (!query || query.length < 2) return [];
 
     const keywords = query.trim().split(/\s+/).filter(k => k.length > 0);
+    const regex = new RegExp(query, 'i');
 
-    // Filter Logic
-    const regexConditions = keywords.length > 0
-        ? {
-            $and: keywords.map(keyword => {
-                const regex = new RegExp(keyword, 'i');
-                return {
-                    $or: [
-                        { firstName: { $regex: regex } },
-                        { lastName: { $regex: regex } },
-                        { email: { $regex: regex } }
-                    ]
-                };
-            })
-        }
-        : {};
-
-    const employeeFilter: any = { ...regexConditions };
-    const storeFilter: any = { name: { $regex: new RegExp(query, 'i') } };
-    const foodFilter: any = {
-        name: { $regex: new RegExp(query, 'i') }
+    const employeeFilter: any = {
+        $or: [
+            { firstName: { $regex: regex } },
+            { lastName: { $regex: regex } },
+            { email: { $regex: regex } }
+        ]
     };
 
-    // --- SCOPE RESTRICTIONS ---
-    let skipEmployees = false;
-    let skipStores = false;
-
-    // 1. Employee Scope
+    // Employee Scope
     if (isSuper) {
-        // Can see all employees
-    } else if (isGlobalDeptHead) {
-        // Can see employees in their Global Department (across stores)
-        // Need to find which global dept they lead
-        const { GlobalDepartment, StoreDepartment } = await import("@/lib/models");
-        const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: currentUser._id }).select('_id');
-        const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
-
-        // Find Store Departments linked to these
-        const allowedStoreDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).select('_id');
-        employeeFilter.storeDepartmentId = { $in: allowedStoreDepts };
-
-    } else if (isManager && currentUser.storeId) {
-        // Can see employees in their store
-        employeeFilter.storeId = currentUser.storeId;
-    } else if (isStoreDeptHead && currentUser.storeDepartmentId && currentUser.storeId) {
-        // Can see employees in their DEPARTMENT only
-        employeeFilter.storeId = currentUser.storeId;
-        employeeFilter.storeDepartmentId = currentUser.storeDepartmentId;
+        // Can see all
+    } else if (isManager && userStoreId) {
+        employeeFilter.storeId = userStoreId;
     } else {
-        // Regular employees can only search for THEMSELVES (privacy)
-        employeeFilter._id = currentUser._id;
+        // Regular employee: See only their store? Or only themselves?
+        // Let's allow seeing store coworkers for ease of usage
+        if (userStoreId) employeeFilter.storeId = userStoreId;
+        else employeeFilter._id = currentUser._id;
     }
 
-    // 2. Store Scope
-    if (!hasFullAccess) {
-        if (currentUser.storeId) {
-            storeFilter._id = currentUser.storeId;
-        } else {
-            skipStores = true;
-        }
-    }
+    const storeFilter: any = { name: { $regex: regex }, active: true };
+    const foodFilter: any = { name: { $regex: regex }, isPublished: true, isDeleted: false };
 
-    // 3. Recipe Scope (Food)
-    // If NOT Super or Kitchen, we restrict by Department Access
-    if (!isSuper && !isKitchen) {
-        let userGlobalDeptId = null;
+    const supplierFilter: any = {
+        name: { $regex: regex },
+        active: true,
+        $or: [
+            { storeId: { $exists: false } },
+            { storeId: null },
+            { storeId: userStoreId }
+        ]
+    };
+    if (!userStoreId && !isSuper) supplierFilter.storeId = "impossible_id"; // Block if no store and not super
 
-        if (currentUser.storeDepartmentId) {
-            const sd = await StoreDepartment.findById(currentUser.storeDepartmentId).select("globalDepartmentId").lean();
-            if (sd) {
-                userGlobalDeptId = (sd as any).globalDepartmentId;
-            }
-        }
+    const resourceFilter: any = {
+        name: { $regex: regex },
+        active: true,
+        $or: [
+            { visibility: "global" },
+            { storeId: userStoreId }
+        ]
+    };
 
-        if (userGlobalDeptId) {
-            foodFilter.$or = [
-                { accessibleGlobalDepartments: { $exists: false } },
-                { accessibleGlobalDepartments: { $size: 0 } },
-                { accessibleGlobalDepartments: userGlobalDeptId }
-            ];
-        } else {
-            foodFilter.$or = [
-                { accessibleGlobalDepartments: { $exists: false } },
-                { accessibleGlobalDepartments: { $size: 0 } }
-            ];
-        }
-    }
-
-    const [employees, stores, foods] = await Promise.all([
-        skipEmployees ? Promise.resolve([]) : Employee.find(employeeFilter)
-            .select("firstName lastName email image positionId slug")
-            .populate("positionId", "name translations")
-            .limit(5)
-            .lean(),
-
-        skipStores ? Promise.resolve([]) : Store.find(storeFilter)
-            .select("name address translations slug")
-            .limit(5)
-            .lean(),
-
-        Food.find(foodFilter)
-            .select("name category heroImg slug")
-            .populate("category", "name")
-            .limit(5)
-            .lean()
+    // Parallel Fetch
+    const [employees, stores, foods, suppliers, resources, globalDepts, storeDepts] = await Promise.all([
+        Employee.find(employeeFilter).select("firstName lastName email image positionId slug").populate("positionId", "name translations").limit(3).lean(),
+        (isSuper || isManager) ? Store.find(storeFilter).select("name address translations slug").limit(3).lean() : Promise.resolve([]),
+        Food.find(foodFilter).select("name category heroImg slug").populate("category", "name").limit(3).lean(),
+        (isSuper || isManager) ? Supplier.find(supplierFilter).select("name category").limit(3).lean() : Promise.resolve([]),
+        StoreResource.find(resourceFilter).select("name type").limit(3).lean(),
+        GlobalDepartment.find({ name: { $regex: regex } }).select("name slug").limit(3).lean(),
+        userStoreId ? StoreDepartment.find({ name: { $regex: regex }, storeId: userStoreId }).select("name slug").limit(3).lean() : Promise.resolve([])
     ]);
 
     const results: SearchResult[] = [];
 
     // Map Employees
     employees.forEach((emp: any) => {
-        const positionName = emp.positionId?.translations?.[locale]?.name || emp.positionId?.name || emp.email;
+        const positionName = emp.positionId?.translations?.[locale]?.name || emp.positionId?.name || "Employee";
         results.push({
             type: 'employee',
             id: emp._id.toString(),
@@ -160,26 +110,68 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
     });
 
     // Map Stores
-    stores.forEach((store: any) => {
-        const storeName = store.translations?.[locale]?.name || store.name;
+    stores.forEach((s: any) => {
         results.push({
             type: 'store',
-            id: store._id.toString(),
-            name: storeName,
-            subtext: store.address || "Store",
-            url: `/dashboard/stores/${store.slug}`
+            id: s._id.toString(),
+            name: s.translations?.[locale]?.name || s.name,
+            subtext: s.address || "Store",
+            url: `/dashboard/stores/${s.slug}`
         });
     });
 
     // Map Recipes
-    foods.forEach((food: any) => {
+    foods.forEach((f: any) => {
         results.push({
             type: 'recipe',
-            id: food._id.toString(),
-            name: food.name,
-            subtext: (food.category as any)?.name || "Recipe",
-            url: `/dashboard/recipes/${food.slug}`,
-            image: food.heroImg
+            id: f._id.toString(),
+            name: f.name,
+            subtext: (f.category as any)?.name || "Recipe",
+            url: `/dashboard/recipes/${f.slug}`,
+            image: f.heroImg
+        });
+    });
+
+    // Map Suppliers
+    suppliers.forEach((s: any) => {
+        results.push({
+            type: 'supplier',
+            id: s._id.toString(),
+            name: s.name,
+            subtext: s.category || "Supplier",
+            url: `/dashboard/suppliers/${s._id}`, // Suppliers page usually list, maybe detail? Using ID for now.
+        });
+    });
+
+    // Map Resources
+    resources.forEach((r: any) => {
+        results.push({
+            type: 'resource',
+            id: r._id.toString(),
+            name: r.name,
+            subtext: r.type || "Directory",
+            url: `/dashboard/directory`, // Directory is a single page mostly? Or anchor?
+        });
+    });
+
+    // Map Departments
+    globalDepts.forEach((d: any) => {
+        results.push({
+            type: 'department',
+            id: d._id.toString(),
+            name: d.name,
+            subtext: "Global Department",
+            url: `/dashboard/departments/${d.slug}`
+        });
+    });
+
+    storeDepts.forEach((d: any) => {
+        results.push({
+            type: 'department',
+            id: d._id.toString(),
+            name: d.name,
+            subtext: "Store Department",
+            url: `/dashboard/departments/${d.slug}` // Assumes route exists
         });
     });
 

@@ -45,7 +45,7 @@ export default function DirectoryPage() {
     });
 
     const userRoles = (session?.user as any)?.roles || [];
-    const canManageResources = userRoles.some((r: string) => ["admin", "owner", "tech"].includes(r.toLowerCase()));
+    const canManageResources = userRoles.some((r: string) => ["admin", "owner", "tech", "store_manager"].includes(r.toLowerCase()));
 
     const fetchData = async () => {
         setIsLoading(true);

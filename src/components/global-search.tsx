@@ -1,16 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { Search, User, Store as StoreIcon, Loader2, ScrollText } from "lucide-react";
+import { Search, User, Store as StoreIcon, Loader2, ScrollText, Truck, BookUser, Layers } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { globalSearch, SearchResult } from "@/lib/actions/search.actions";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
-// import { useDebounce } from "@/hooks/use-debounce"; 
-
-// If we don't have a debounce hook, I'll just useEffect with setTimeout.
 
 export function GlobalSearch({ locale = "en" }: { locale?: string }) {
     const router = useRouter();
@@ -81,6 +78,12 @@ export function GlobalSearch({ locale = "en" }: { locale?: string }) {
                                         <User className="h-4 w-4 text-muted-foreground" />
                                     ) : result.type === 'store' ? (
                                         <StoreIcon className="h-4 w-4 text-muted-foreground" />
+                                    ) : result.type === 'supplier' ? (
+                                        <Truck className="h-4 w-4 text-muted-foreground" />
+                                    ) : result.type === 'resource' ? (
+                                        <BookUser className="h-4 w-4 text-muted-foreground" />
+                                    ) : result.type === 'department' ? (
+                                        <Layers className="h-4 w-4 text-muted-foreground" />
                                     ) : (
                                         <ScrollText className="h-4 w-4 text-muted-foreground" />
                                     )}
@@ -103,3 +106,5 @@ export function GlobalSearch({ locale = "en" }: { locale?: string }) {
         </div>
     );
 }
+
+

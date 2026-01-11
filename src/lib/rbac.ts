@@ -8,7 +8,7 @@ export const roleAccess: Record<string, string[]> = {
 
     // Store Manager - NO Employees/Positions/Approvals (Check context rules), NO Global Depts, NO Settings. HAS Tips.
     // User Update: Employees/Positions removed. Approvals removed (view context only in widgets).
-    "store_manager": ["/dashboard", "/dashboard/pending-actions", "/dashboard/notices", "/dashboard/stores", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips", "/dashboard/coverage"],
+    "store_manager": ["/dashboard", "/dashboard/pending-actions", "/dashboard/notices", "/dashboard/stores", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips", "/dashboard/coverage", "/dashboard/directory", "/dashboard/suppliers"],
 
     // Dept Head (Global) - HAS Global Departments. NO Emp/Pos/Approv.
     "department_head": ["/dashboard", "/dashboard/pending-actions", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages"],
