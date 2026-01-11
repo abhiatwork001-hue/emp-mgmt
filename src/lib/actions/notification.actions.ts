@@ -52,13 +52,18 @@ export async function triggerNotification(data: NotificationTriggerData) {
 
         // Fetch tokens for all recipients (Optimization)
         const recipientEmployees = await Employee.find({ _id: { $in: data.recipients } })
-            .select('_id pushSubscriptionNative')
+            .select('_id email pushSubscriptionNative') // added email for debug
             .lean();
+
+        console.log(`[Notification] Found ${recipientEmployees.length} recipients for notification: ${data.title}`);
 
         const recipientTokenMap = new Map();
         recipientEmployees.forEach((emp: any) => {
             if (emp.pushSubscriptionNative && emp.pushSubscriptionNative.length > 0) {
+                console.log(`[Notification] User ${emp.email} (${emp._id}) has ${emp.pushSubscriptionNative.length} native tokens:`, emp.pushSubscriptionNative);
                 recipientTokenMap.set(emp._id.toString(), emp.pushSubscriptionNative);
+            } else {
+                console.log(`[Notification] User ${emp.email} (${emp._id}) has NO native tokens.`);
             }
         });
 
@@ -85,8 +90,10 @@ export async function triggerNotification(data: NotificationTriggerData) {
                     const tokens = recipientTokenMap.get(userId);
                     if (tokens && tokens.length > 0) {
                         const { firebaseAdmin } = await import("@/lib/firebase-admin");
+                        console.log(`[Notification] Sending FCM to user ${userId} with ${tokens.length} tokens.`);
+
                         // We use sendEachForMulticast to handle multiple devices per user
-                        await firebaseAdmin.messaging().sendEachForMulticast({
+                        const response = await firebaseAdmin.messaging().sendEachForMulticast({
                             tokens: tokens,
                             notification: {
                                 title: data.title,
@@ -98,10 +105,17 @@ export async function triggerNotification(data: NotificationTriggerData) {
                                 notificationId: notification._id.toString()
                             }
                         });
+                        console.log(`[Notification] FCM Response for user ${userId}: Success=${response.successCount}, Failure=${response.failureCount}`);
+                        if (response.failureCount > 0) {
+                            response.responses.forEach((resp, idx) => {
+                                if (!resp.success) console.error(`[Notification] FCM Failure for token ${idx}:`, resp.error);
+                            });
+                        }
                     }
 
                     return; // Success
                 } catch (error) {
+                    console.error(`[Notification] Trigger failed for user ${userId}:`, error);
                     retries--;
                     if (retries > 0) {
                         await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
