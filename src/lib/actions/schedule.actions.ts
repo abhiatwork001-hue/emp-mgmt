@@ -539,7 +539,7 @@ export async function updateSchedule(id: string, data: any) {
     if (!currentSchedule) throw new Error("Schedule not found");
 
     // Validate using the Schedule's Store/Dept, not input data (safe)
-    await validateScheduleWriteAccess(
+    await checkSchedulePermission(
         (session.user as any).id,
         currentSchedule.storeId.toString(),
         currentSchedule.storeDepartmentId.toString()
@@ -658,7 +658,7 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
     if (!schedule) throw new Error("Schedule not found");
 
     // Standard write check first
-    await validateScheduleWriteAccess(userId, schedule.storeId.toString(), schedule.storeDepartmentId.toString());
+    await checkSchedulePermission(userId, schedule.storeId.toString(), schedule.storeDepartmentId.toString());
 
     // Strict Permissions for Approval/Rejection/Publishing
     if (['approved', 'rejected', 'published'].includes(status)) {
@@ -977,7 +977,7 @@ export async function copyPreviousSchedule(currentScheduleId: string, userId: st
     if (!currentSchedule) throw new Error("Schedule not found");
 
     // Validate
-    await validateScheduleWriteAccess(userId, currentSchedule.storeId.toString(), currentSchedule.storeDepartmentId.toString());
+    await checkSchedulePermission(userId, currentSchedule.storeId.toString(), currentSchedule.storeDepartmentId.toString());
 
     // 2. Calculate target start date for previous week (7 days ago)
     const currentStart = new Date(currentSchedule.dateRange.startDate);

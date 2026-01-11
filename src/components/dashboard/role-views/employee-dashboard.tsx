@@ -73,24 +73,28 @@ export function EmployeeDashboard({
                 </div>
 
                 {/* 0. No Schedule Warning (High Visibility) */}
-                {!hasSchedule && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                        <Card className="border-l-4 border-l-destructive bg-destructive/5 overflow-hidden">
-                            <CardContent className="p-6 flex items-center gap-6">
-                                <div className="h-16 w-16 rounded-3xl bg-destructive/10 flex items-center justify-center shrink-0">
-                                    <AlertCircle className="h-8 w-8 text-destructive" />
-                                </div>
-                                <div className="flex flex-col gap-1">
-                                    <h2 className="text-xl font-black text-foreground">No Schedule Available</h2>
-                                    <p className="text-sm text-muted-foreground leading-relaxed">
-                                        Your manager hasn't published the schedule for this week yet.
-                                        Please check back later or contact your supervisor for confirmation.
-                                    </p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                )}
+                {/* 0. No Schedule Warning - Removed to rely on Widget's internal state */
+                    /*
+                                    {!hasSchedule && (
+                                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                                            <Card className="border-l-4 border-l-destructive bg-destructive/5 overflow-hidden">
+                                                <CardContent className="p-6 flex items-center gap-6">
+                                                    <div className="h-16 w-16 rounded-3xl bg-destructive/10 flex items-center justify-center shrink-0">
+                                                        <AlertCircle className="h-8 w-8 text-destructive" />
+                                                    </div>
+                                                    <div className="flex flex-col gap-1">
+                                                        <h2 className="text-xl font-black text-foreground">No Schedule Available</h2>
+                                                        <p className="text-sm text-muted-foreground leading-relaxed">
+                                                            Your manager hasn't published the schedule for this week yet.
+                                                            Please check back later or contact your supervisor for confirmation.
+                                                        </p>
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
+                                        </motion.div>
+                                    )}
+                    */
+                }
 
                 {/* 1. Quick Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
@@ -143,20 +147,19 @@ export function EmployeeDashboard({
                 </div>
 
                 {/* 2. Main Schedule - Full Width */}
-                {hasSchedule && (
-                    <div className="w-full animate-in zoom-in-95 duration-500">
-                        <Card className="border shadow-sm overflow-hidden flex flex-col bg-card/50 backdrop-blur-sm">
-                            <CardHeader className="py-3 px-4 bg-muted/5 border-b shrink-0">
-                                <CardTitle className="text-md font-black italic flex items-center gap-2 text-primary uppercase tracking-tight">
-                                    <Calendar className="h-4 w-4" /> My Weekly Schedule
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                <EmployeeScheduleTab employeeId={employee._id.toString()} />
-                            </CardContent>
-                        </Card>
-                    </div>
-                )}
+                {/* 2. Main Schedule - Full Width */}
+                <div className="w-full animate-in zoom-in-95 duration-500">
+                    <Card className="border shadow-sm overflow-hidden flex flex-col bg-card/50 backdrop-blur-sm">
+                        <CardHeader className="py-3 px-4 bg-muted/5 border-b shrink-0">
+                            <CardTitle className="text-md font-black italic flex items-center gap-2 text-primary uppercase tracking-tight">
+                                <Calendar className="h-4 w-4" /> My Weekly Schedule
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <EmployeeScheduleTab employeeId={employee._id.toString()} />
+                        </CardContent>
+                    </Card>
+                </div>
 
                 <div className="w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
                     {/* Main Operations Card */}

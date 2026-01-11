@@ -27,12 +27,8 @@ export async function getDashboardOverview(userId: string, userRoles: string[] =
     }
 
     // 1. Calculate Week/Year for schedules
-    const day = now.getUTCDay() || 7;
-    const weekDate = new Date(now);
-    weekDate.setUTCDate(weekDate.getUTCDate() + 4 - day);
-    const yearStart = new Date(Date.UTC(weekDate.getUTCFullYear(), 0, 1));
-    const weekNumber = Math.ceil((((weekDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    const year = weekDate.getUTCFullYear();
+    const { getISOWeekNumber } = await import("@/lib/utils");
+    const { week: weekNumber, year } = getISOWeekNumber(now);
 
     // Query Filters
     let employeeQuery: any = {};
