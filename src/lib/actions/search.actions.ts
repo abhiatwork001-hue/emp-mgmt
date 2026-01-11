@@ -83,12 +83,24 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
         ]
     };
 
+    const supplierItemFilter: any = {
+        "items.name": { $regex: regex },
+        active: true,
+        $or: [
+            { storeId: { $exists: false } },
+            { storeId: null },
+            { storeId: userStoreId }
+        ]
+    };
+    if (!userStoreId && !isSuper) supplierItemFilter.storeId = "impossible_id";
+
     // Parallel Fetch
-    const [employees, stores, foods, suppliers, resources, globalDepts, storeDepts] = await Promise.all([
+    const [employees, stores, foods, suppliers, supplierItems, resources, globalDepts, storeDepts] = await Promise.all([
         Employee.find(employeeFilter).select("firstName lastName email image positionId slug").populate("positionId", "name translations").limit(3).lean(),
         (isSuper || isManager) ? Store.find(storeFilter).select("name address translations slug").limit(3).lean() : Promise.resolve([]),
         Food.find(foodFilter).select("name category heroImg slug").populate("category", "name").limit(3).lean(),
         (isSuper || isManager) ? Supplier.find(supplierFilter).select("name category").limit(3).lean() : Promise.resolve([]),
+        (isSuper || isManager) ? Supplier.find(supplierItemFilter).select("name items").limit(3).lean() : Promise.resolve([]),
         StoreResource.find(resourceFilter).select("name type").limit(3).lean(),
         GlobalDepartment.find({ name: { $regex: regex } }).select("name slug").limit(3).lean(),
         userStoreId ? StoreDepartment.find({ name: { $regex: regex }, storeId: userStoreId }).select("name slug").limit(3).lean() : Promise.resolve([])
@@ -139,7 +151,22 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             id: s._id.toString(),
             name: s.name,
             subtext: s.category || "Supplier",
-            url: `/dashboard/suppliers/${s._id}`, // Suppliers page usually list, maybe detail? Using ID for now.
+            url: `/dashboard/suppliers`, // Direct to list for now as detail page route is uncertain or purely modal based on current file structure
+        });
+    });
+
+    // Map Supplier Items
+    supplierItems.forEach((s: any) => {
+        // Find matching items
+        const matchingItems = s.items.filter((i: any) => new RegExp(query, 'i').test(i.name));
+        matchingItems.forEach((item: any) => {
+            results.push({
+                type: 'supplier', // Reuse supplier icon/type
+                id: `${s._id}-${item.name}`,
+                name: item.name,
+                subtext: `From ${s.name}`,
+                url: `/dashboard/suppliers`, // Ideally open detail dialog?
+            });
         });
     });
 
@@ -150,7 +177,7 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             id: r._id.toString(),
             name: r.name,
             subtext: r.type || "Directory",
-            url: `/dashboard/directory`, // Directory is a single page mostly? Or anchor?
+            url: `/dashboard/directory`,
         });
     });
 
@@ -171,7 +198,7 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             id: d._id.toString(),
             name: d.name,
             subtext: "Store Department",
-            url: `/dashboard/departments/${d.slug}` // Assumes route exists
+            url: `/dashboard/departments/${d.slug}`
         });
     });
 

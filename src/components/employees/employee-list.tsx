@@ -237,8 +237,8 @@ export function EmployeeList({ initialEmployees, pagination, stores, departments
 
             <Card glass premium className="p-0 overflow-hidden border-border/40">
                 <div className="overflow-x-auto">
-                    <div className="min-w-full sm:min-w-[1000px]">
-                        {/* Header */}
+                    <div className="w-full">
+                        {/* Header - Desktop Only */}
                         <div className="hidden md:grid md:grid-cols-12 md:gap-4 p-4 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30 border-b">
                             <div className="col-span-4 pl-4">{t("employees")}</div>
                             <div className="col-span-2">Status</div>
@@ -254,6 +254,36 @@ export function EmployeeList({ initialEmployees, pagination, stores, departments
                                     <div key={emp._id}>
                                         <Link href={`/dashboard/employees/${emp.slug}`} className="block hover:bg-primary/5 transition-colors group relative">
 
+                                            {/* Mobile View (Card Stack) */}
+                                            <div className="md:hidden p-4 flex gap-4">
+                                                <Avatar className="h-12 w-12 border border-border">
+                                                    <AvatarImage src={emp.image} alt={`${emp.firstName} ${emp.lastName}`} />
+                                                    <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold">
+                                                        {emp.firstName?.[0]}{emp.lastName?.[0]}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0 space-y-1">
+                                                    <div className="flex justify-between items-start">
+                                                        <h4 className="text-base font-semibold truncate pr-2">{emp.firstName} {emp.lastName}</h4>
+                                                        {emp.active ? (
+                                                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-0 text-[10px] uppercase font-bold">Active</Badge>
+                                                        ) : (
+                                                            <Badge variant="outline" className="bg-red-500/10 text-red-600 border-0 text-[10px] uppercase font-bold">Inactive</Badge>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground truncate">{getLocalized(emp.positionId, "name", locale) || "No Position"}</p>
+                                                    <div className="flex items-center gap-2 pt-1">
+                                                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
+                                                            <MapPin className="h-3 w-3" />
+                                                            {getLocalized(emp.storeId, "name", locale) || "-"}
+                                                        </div>
+                                                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-md">
+                                                            <Briefcase className="h-3 w-3" />
+                                                            {getLocalized(emp.storeDepartmentId, "name", locale) || "-"}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
 
                                             {/* Desktop View (Grid) */}
                                             <div className="hidden md:grid md:grid-cols-12 md:gap-4 md:p-4 md:items-center">

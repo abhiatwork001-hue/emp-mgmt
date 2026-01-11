@@ -144,7 +144,7 @@ export default function SuppliersPage() {
                                                 )}
                                             </div>
                                             {canManage && (
-                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                     <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
                                                         onClick={() => {
                                                             setEditingSupplier(supplier);
