@@ -50,17 +50,28 @@ export async function triggerNotification(data: NotificationTriggerData) {
         // Optimization: Create a lightweight payload for Pusher (exclude recipients list which can be huge)
         const { recipients, ...notificationForPusher } = plainNotification;
 
-        // 2. Trigger Pusher Events with retry logic
+        // Fetch tokens for all recipients (Optimization)
+        const recipientEmployees = await Employee.find({ _id: { $in: data.recipients } })
+            .select('_id pushSubscriptionNative')
+            .lean();
+
+        const recipientTokenMap = new Map();
+        recipientEmployees.forEach((emp: any) => {
+            if (emp.pushSubscriptionNative && emp.pushSubscriptionNative.length > 0) {
+                recipientTokenMap.set(emp._id.toString(), emp.pushSubscriptionNative);
+            }
+        });
+
+        // 2. Trigger Pusher & FCM with retry logic
         const triggerPromises = data.recipients.map(async (userId) => {
             let retries = 3;
-            let lastError;
 
             while (retries > 0) {
                 try {
                     // Real-time (Pusher)
                     await pusherServer.trigger(`user-${userId}`, "notification:new", {
                         ...notificationForPusher,
-                        read: false // Add read status for this specific user
+                        read: false
                     });
 
                     // Background (Web Push)
@@ -70,12 +81,27 @@ export async function triggerNotification(data: NotificationTriggerData) {
                         url: data.link || "/dashboard"
                     });
 
-                    // TODO: Trigger Native Push here using FCM/APNS if user has `pushSubscriptionNative`
-                    // We need a Firebase Admin SDK to do this. For now, native apps will rely on Pulsing/Polling or we implement FCM later.
+                    // Native Push (FCM)
+                    const tokens = recipientTokenMap.get(userId);
+                    if (tokens && tokens.length > 0) {
+                        const { firebaseAdmin } = await import("@/lib/firebase-admin");
+                        // We use sendEachForMulticast to handle multiple devices per user
+                        await firebaseAdmin.messaging().sendEachForMulticast({
+                            tokens: tokens,
+                            notification: {
+                                title: data.title,
+                                body: data.message,
+                            },
+                            data: {
+                                url: data.link || "/dashboard",
+                                type: data.type || "info",
+                                notificationId: notification._id.toString()
+                            }
+                        });
+                    }
 
-                    return; // Success, exit retry loop
+                    return; // Success
                 } catch (error) {
-                    lastError = error;
                     retries--;
                     if (retries > 0) {
                         await new Promise(resolve => setTimeout(resolve, 1000 * (4 - retries)));
