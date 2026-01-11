@@ -199,6 +199,31 @@ export async function getEmployeeById(id: string) {
     employeeObj.roles = roles;
     employeeObj.permissions = permissions;
 
+    // INJECTION: DB-Based Roles (Source of Truth)
+    // INJECTION: DB-Based Roles (Source of Truth)
+    // 1. Check if Store Manager
+    if (employee.storeId) {
+        const { Store } = require("@/lib/models");
+        const isStoreManagerCorrect = await Store.exists({ _id: employee.storeId._id, managers: id });
+
+        if (isStoreManagerCorrect && !employeeObj.roles.includes('store_manager')) {
+            employeeObj.roles.push('store_manager');
+        }
+    }
+
+    // 2. Check if Store Department Head (Local)
+    const isStoreDeptHead = await StoreDepartment.exists({ headOfDepartment: id, active: true });
+    if (isStoreDeptHead && !employeeObj.roles.includes('store_department_head')) {
+        employeeObj.roles.push('store_department_head');
+    }
+
+    // 3. Check if Global Department Head
+    const { GlobalDepartment } = require("@/lib/models");
+    const isGlobalDeptHead = await GlobalDepartment.exists({ departmentHead: id, active: true });
+    if (isGlobalDeptHead && !employeeObj.roles.includes('department_head')) {
+        employeeObj.roles.push('department_head');
+    }
+
     return employeeObj;
 }
 

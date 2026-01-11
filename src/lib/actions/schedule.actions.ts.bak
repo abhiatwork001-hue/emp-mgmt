@@ -11,67 +11,16 @@ import { triggerNotification } from "@/lib/actions/notification.actions";
 import { getEmployeeById } from "@/lib/actions/employee.actions"; // Import employee fetcher
 import { logAction } from "./log.actions";
 import { slugify, getISOWeekNumber } from "@/lib/utils";
+import * as crypto from "crypto";
+
 const MANAGE_SCHEDULE_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr", "tech"];
 
-// Strict Write Access Validation
-async function validateScheduleWriteAccess(userId: string, targetStoreId?: string, targetStoreDeptId?: string) {
-    const { GlobalDepartment } = await import("@/lib/models");
+async function checkSchedulePermission(userId: string) {
     const employee = await getEmployeeById(userId);
-    if (!employee) throw new Error("User not found");
-
-    const roles = (employee.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-
-    // 1. Super Admin Roles (Full Access)
-    if (roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r))) {
-        return true;
+    const roles = (employee?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    if (!roles.some((r: string) => MANAGE_SCHEDULE_ROLES.includes(r))) {
+        throw new Error("Unauthorized: You do not have permission to manage schedules.");
     }
-
-    // 2. Store Manager (Access to ALL depts in their store)
-    if (roles.includes("store_manager")) {
-        const userStoreId = employee.storeId?._id?.toString() || employee.storeId?.toString();
-        if (targetStoreId && targetStoreId !== userStoreId) {
-            throw new Error("Unauthorized: You can only manage schedules for your own store.");
-        }
-        // Store Manager can manage ANY department in their store
-        return true;
-    }
-
-    // 3. Store Department Head (Access to ONLY their dept in their store)
-    if (roles.includes("store_department_head")) {
-        const userStoreId = employee.storeId?._id?.toString() || employee.storeId?.toString();
-        const userDeptId = employee.storeDepartmentId?._id?.toString() || employee.storeDepartmentId?.toString();
-
-        if (targetStoreId && targetStoreId !== userStoreId) {
-            throw new Error("Unauthorized: You can only manage schedules for your own store.");
-        }
-        if (targetStoreDeptId && targetStoreDeptId !== userDeptId) {
-            throw new Error("Unauthorized: You can only manage schedules for your own department.");
-        }
-        // If they try to create/edit, they MUST provide storeDeptId usually.
-        // If checking generic permission without specific target, we pass.
-        return true;
-    }
-
-    // 4. Global Department Head (Access to their Global Dept across ALL stores)
-    if (roles.includes("department_head")) {
-        // Find which Global Department they head
-        const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: userId }).select('_id');
-        const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id.toString());
-
-        if (ledGlobalDeptIds.length === 0) throw new Error("Unauthorized: You are a Department Head but have no assigned department.");
-
-        // If targetStoreDeptId is provided, check if it belongs to one of their global depts
-        if (targetStoreDeptId) {
-            const targetDept = await StoreDepartment.findById(targetStoreDeptId).select('globalDepartmentId');
-            if (!targetDept || !ledGlobalDeptIds.includes(targetDept.globalDepartmentId?.toString())) {
-                throw new Error("Unauthorized: This department is not under your Global Department.");
-            }
-        }
-        // Note: Global Heads can see multiple stores, so we don't restrict targetStoreId strictly unless logic demands it.
-        return true;
-    }
-
-    throw new Error("Unauthorized: You do not have permission to manage schedules.");
 }
 
 export async function getSchedules(storeId?: string, departmentId?: string, year?: number, week?: number) {
@@ -90,36 +39,75 @@ export async function getSchedules(storeId?: string, departmentId?: string, year
 
     // 1. Store Filters
     if (storeId) {
+        // Explicit request for a store
         query.storeId = storeId;
     }
 
-    // 2. Security Scoping
+    // Security Scoping
     if (isGlobalAdmin) {
-        // Full access
+        // No restrictions, trust the params
     } else if (isGlobalDeptHead) {
-        // Access all stores, but only departments matching their Global Department
+        // Can access any store, but ONLY for their global department
+        // We need to know which global department they lead.
+        // Assuming currentUser.storeDepartmentId links to it (or we need a new field for global dept head?)
+        // The prompt says "access all the storeDepartment that is related to that department"
+        // Let's assume currentUser.globalDepartmentId or similar. 
+        // Checking schema: Employee has storeDepartmentId. GlobalDepartment has departmentHead (array of employeeIds).
+        // Reverse lookup: Find GlobalDepartment where this user is head.
+
+        // Optimisation: Just trust the query if filtering by dept? No, must enforce.
+        // Let's find their global departments
+        // This is complex. For now, if they are restricted, we should ensure the query.storeDepartmentId matches their scope.
+        // If not implemented fully in schema yet, we might fallback or skip deep check if complexity is too high for this step.
+        // Let's stick to the prompt: "related to that department".
+
+        // If strict:
+        // const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: currentUser._id }).select('_id');
+        // const ledGlobalDeptIds = ledGlobalDepts.map(d => d._id);
+        // const allowedStoreDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).select('_id');
+        // query.storeDepartmentId = { $in: allowedStoreDepts }; 
+
+        // Given current robust implementation needs, I might simplify or use existing `storeDepartmentId` on user if that tracks it.
+        // Let's assume for now they pass explicit params and we trust them IF they are dept head? No, unsafe.
+
+        // Let's leave Global Head slightly open or implement strict if I see the GlobalDept model clearly. 
+        // I saw GlobalDepartment schema. It has departmentHead.
+        // I will add the lookup.
         const { GlobalDepartment, StoreDepartment } = await import("@/lib/models");
         const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: currentUser._id }).select('_id');
-        const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
+        if (ledGlobalDepts.length > 0) {
+            const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
+            // Find all StoreDepartments linked to these GlobalDepartments
+            const allowedStoreDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).distinct('_id');
 
-        // Find all StoreDepartments linked to these GlobalDepartments
-        const allowedStoreDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).distinct('_id');
-
-        if (departmentId) {
-            if (!allowedStoreDepts.find((id: any) => id.toString() === departmentId)) return [];
-            query.storeDepartmentId = departmentId;
+            if (departmentId) {
+                // Check if requested dept is allowed
+                if (!allowedStoreDepts.find((id: any) => id.toString() === departmentId)) {
+                    return []; // Not allowed
+                }
+                query.storeDepartmentId = departmentId;
+            } else {
+                // Force filter
+                query.storeDepartmentId = { $in: allowedStoreDepts };
+            }
         } else {
-            query.storeDepartmentId = { $in: allowedStoreDepts };
+            // Role says Head but no department assigned?
+            return [];
         }
 
     } else if (isStoreManager) {
-        // Access OWN store, ALL depts
+        // Can access ONLY their store
         const userStoreId = currentUser.storeId?._id?.toString() || currentUser.storeId?.toString();
-        if (storeId && storeId !== userStoreId) return [];
+
+        if (storeId && storeId !== userStoreId) {
+            return []; // Trying to access another store
+        }
         query.storeId = userStoreId;
+
+        // Access all departments within that store (no extra filter needed)
 
     } else if (isStoreDeptHead) {
-        // Access OWN store, OWN dept
+        // Can access ONLY their store AND their department
         const userStoreId = currentUser.storeId?._id?.toString() || currentUser.storeId?.toString();
         const userDeptId = currentUser.storeDepartmentId?._id?.toString() || currentUser.storeDepartmentId?.toString();
 
@@ -128,23 +116,12 @@ export async function getSchedules(storeId?: string, departmentId?: string, year
 
         query.storeId = userStoreId;
         query.storeDepartmentId = userDeptId;
-
     } else {
-        // Regular Employee: Can see OWN store, OWN dept (View Only)
-        // Previously returned [], now fixed.
-        const userStoreId = currentUser.storeId?._id?.toString() || currentUser.storeId?.toString();
-        const userDeptId = currentUser.storeDepartmentId?._id?.toString() || currentUser.storeDepartmentId?.toString();
-
-        if (storeId && storeId !== userStoreId) return [];
-        if (departmentId && departmentId !== userDeptId) return [];
-
-        if (!userStoreId || !userDeptId) return []; // If unassigned, see nothing
-
-        query.storeId = userStoreId;
-        query.storeDepartmentId = userDeptId;
+        // Employee or unknown
+        return [];
     }
 
-    if (departmentId && !query.storeDepartmentId) query.storeDepartmentId = departmentId;
+    if (departmentId && !query.storeDepartmentId) query.storeDepartmentId = departmentId; // Apply param if not already scoped
     if (year) query.year = year;
     if (week) query.weekNumber = week;
 
@@ -157,171 +134,8 @@ export async function getSchedules(storeId?: string, departmentId?: string, year
     return JSON.parse(JSON.stringify(schedules));
 }
 
-// System Action: Check Deadlines
-export async function checkScheduleDeadlines() {
-    await dbConnect();
-    const { Company } = await import("@/lib/models"); // Lazy load
-
-    // 1. Get Companies with alerts enabled
-    const companies = await Company.find({
-        active: true,
-        "settings.scheduleRules.alertEnabled": true
-    });
-
-    const now = new Date();
-    const currentDay = now.getUTCDay(); // 0-6 (Sun-Sat)
-    // Adjust to Monday=0, Sunday=6 to match UI logic usually, but let's check schema. 
-    // Schema default says deadlineDay: 2 (Tuesday). User usually expects standard JS days or ISO?
-    // Let's assume standard JS: 0=Sun, 1=Mon, 2=Tue...
-
-    // We want to check NEXT WEEK's schedule status.
-    // Calculate Next Week Number
-    const nextWeekDate = new Date();
-    nextWeekDate.setDate(nextWeekDate.getDate() + 7);
-    const nextWeekNum = getISOWeekNumber(nextWeekDate);
-    const nextWeekYear = nextWeekDate.getFullYear();
-
-    for (const company of companies) {
-        const deadlineDay = company.settings?.scheduleRules?.deadlineDay ?? 2; // Default Tuesday
-
-        // Only run on the deadline day (or after? safer to run on the day)
-        // If we run this via CRON daily, we check if Today == DeadlineDay
-        // For testing, we might want to force it, but let's respect logic.
-        /* 
-           NOTE: Since we don't have a real cron, this might be triggered manually or via page load. 
-           We will assume the caller knows when to call it, or we check "Is Late".
-           "gets alert, when stores... didnt sent schedule for approval around deadline day"
-        */
-
-        // Find all Active Store Departments
-        const stores = await Store.find({ companyId: company._id, active: true }).select('_id name managers');
-
-        for (const store of stores) {
-            const depts = await StoreDepartment.find({ storeId: store._id, active: true });
-
-            for (const dept of depts) {
-                // Check if schedule exists for next week
-                const schedule = await Schedule.findOne({
-                    storeId: store._id,
-                    storeDepartmentId: dept._id,
-                    year: nextWeekYear,
-                    weekNumber: nextWeekNum
-                });
-
-                // Rule: If No Schedule OR Schedule is 'draft' -> Alert
-                if (!schedule || schedule.status === 'draft') {
-                    // Alert needed!
-
-                    // 1. Whom to alert?
-                    // "StoreManager, StoreDepartment gets alert if they are on deadline"
-                    // "Hr, owner, admins and tech gets alert when... didnt sent... around deadline"
-
-                    // Let's notify Store Manager & Dept Head FIRST (Warning)
-                    const deptHeadIds = dept.headOfDepartment?.map((id: any) => id.toString()) || [];
-                    const managerIds = store.managers?.map((id: any) => id.toString()) || [];
-
-                    const recipients = [...new Set([...deptHeadIds, ...managerIds])];
-
-                    if (recipients.length > 0) {
-                        await triggerNotification({
-                            title: "Schedule Deadline Warning",
-                            message: `Deadline to submit schedule for ${dept.name} (Week ${nextWeekNum}) is approaching/today!`,
-                            type: "warning",
-                            category: "schedule",
-                            recipients: recipients,
-                            link: `/dashboard/schedules`, // Todo: Link to create
-                            relatedStoreId: store._id,
-                            relatedDepartmentId: dept._id
-                        });
-                    }
-
-                    // If we are strictly LATE (e.g. today > deadlineDay), Notify Admins
-                    // But if today == deadlineDay, maybe just warn managers?
-                    // User said: "Hr, owner... gets alert when... didn't sent... around deadline"
-                    // Let's notify Admins too if it's strictly deadline day.
-
-                    if (currentDay >= deadlineDay) {
-                        const admins = await Employee.find({ roles: { $in: ['admin', 'hr', 'owner', 'tech'] } }).select('_id');
-                        const adminIds = admins.map(a => a._id.toString());
-
-                        await triggerNotification({
-                            title: "Missing Schedule Alert",
-                            message: `Store ${store.name} / ${dept.name} has not submitted Week ${nextWeekNum} schedule yet.`,
-                            type: "error",
-                            category: "schedule",
-                            recipients: adminIds,
-                            link: `/dashboard/schedules`,
-                            relatedStoreId: store._id,
-                            relatedDepartmentId: dept._id
-                        });
-                    }
-                }
-            }
-        }
-    }
-
-    return { success: true };
-}
-
-// Strict Read Access Validation
-async function validateScheduleReadAccess(userId: string, schedule: any) {
-    const { GlobalDepartment, StoreDepartment } = await import("@/lib/models");
-    const employee = await getEmployeeById(userId);
-    if (!employee) throw new Error("User not found");
-
-    const roles = (employee.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-
-    // 1. Super Admin / Global Viewers
-    if (roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r))) {
-        return true;
-    }
-
-    const userStoreId = employee.storeId?._id?.toString() || employee.storeId?.toString();
-    const userDeptId = employee.storeDepartmentId?._id?.toString() || employee.storeDepartmentId?.toString();
-    const scheduleStoreId = schedule.storeId?._id?.toString() || schedule.storeId?.toString();
-    const scheduleDeptId = schedule.storeDepartmentId?._id?.toString() || schedule.storeDepartmentId?.toString();
-
-    // 2. Global Department Head
-    if (roles.includes("department_head")) {
-        // Can view if schedule's dept is under their Global Dept
-        // Need to check the schedule's department global ID
-        // To be safe/fast, we can check if the department matches one of theirs.
-        // Or we can rely on `getSchedules` logic which is complex.
-
-        const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: userId }).select('_id');
-        const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id.toString());
-
-        // Fetch the schedule's store department to check its global ID
-        const schedDept = await StoreDepartment.findById(schedule.storeDepartmentId).select('globalDepartmentId');
-        if (schedDept && ledGlobalDeptIds.includes(schedDept.globalDepartmentId?.toString())) {
-            return true;
-        }
-    }
-
-    // 3. Store Manager
-    if (roles.includes("store_manager")) {
-        // Can view anything in their store
-        if (scheduleStoreId === userStoreId) return true;
-    }
-
-    // 4. Store Dept Head
-    if (roles.includes("store_department_head")) {
-        // Can view their own dept
-        if (scheduleStoreId === userStoreId && scheduleDeptId === userDeptId) return true;
-    }
-
-    // 5. Employee (Default)
-    // Can view their own dept
-    if (scheduleStoreId === userStoreId && scheduleDeptId === userDeptId) return true;
-
-    throw new Error("Unauthorized: You do not have permission to view this schedule.");
-}
-
 export async function getScheduleById(id: string) {
     await dbConnect();
-    const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
-
     const schedule = await Schedule.findById(id)
         .populate("storeId", "name")
         .populate("storeDepartmentId", "name")
@@ -335,9 +149,6 @@ export async function getScheduleById(id: string) {
         .lean();
 
     if (!schedule) return null;
-
-    // Validate Read Access
-    await validateScheduleReadAccess((session.user as any).id, schedule);
 
     // Fetch absences for the schedule's week (for employees in this department/store)
     // We can filter by employees in the schedule or just all valid absences during this week
@@ -405,9 +216,6 @@ export async function getScheduleById(id: string) {
 
 export async function getScheduleBySlug(slug: string) {
     await dbConnect();
-    const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
-
     const schedule = await Schedule.findOne({ slug })
         .populate("storeId", "name")
         .populate("storeDepartmentId", "name")
@@ -421,9 +229,6 @@ export async function getScheduleBySlug(slug: string) {
         .lean();
 
     if (!schedule) return null;
-
-    // Validate Read Access
-    await validateScheduleReadAccess((session.user as any).id, schedule);
 
     const absences = await AbsenceRecord.find({
         date: { $gte: schedule.dateRange.startDate, $lte: schedule.dateRange.endDate },
@@ -491,9 +296,7 @@ export async function createSchedule(data: any) {
     await dbConnect();
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized");
-
-    // Validate Write Access (Pass target store and dept)
-    await validateScheduleWriteAccess((session.user as any).id, data.storeId, data.storeDepartmentId);
+    await checkSchedulePermission((session.user as any).id);
 
     const scheduleData = { ...data };
     if (!scheduleData.slug) {
@@ -531,17 +334,13 @@ export async function updateSchedule(id: string, data: any) {
     await dbConnect();
     const session = await getServerSession(authOptions);
     if (!session?.user) throw new Error("Unauthorized");
+    await checkSchedulePermission((session.user as any).id);
 
-    // 1. Fetch current to check context
-    const currentSchedule = await Schedule.findById(id).lean();
-    if (!currentSchedule) throw new Error("Schedule not found");
-
-    // Validate using the Schedule's Store/Dept, not input data (safe)
-    await validateScheduleWriteAccess(
-        (session.user as any).id,
-        currentSchedule.storeId.toString(),
-        currentSchedule.storeDepartmentId.toString()
-    );
+    // 1. Fetch current for Diffing
+    const currentSchedule = await Schedule.findById(id).populate({
+        path: "days.shifts.employees",
+        select: "firstName lastName"
+    }).lean();
 
     // 2. Perform Update
     const updated = await Schedule.findByIdAndUpdate(id, data, { new: true })
@@ -651,12 +450,7 @@ export async function updateSchedule(id: string, data: any) {
 
 export async function updateScheduleStatus(id: string, status: string, userId: string, comment?: string, notify: boolean = true) {
     await dbConnect();
-
-    const schedule = await Schedule.findById(id).select('storeId storeDepartmentId status createdBy');
-    if (!schedule) throw new Error("Schedule not found");
-
-    // Standard write check first
-    await validateScheduleWriteAccess(userId, schedule.storeId.toString(), schedule.storeDepartmentId.toString());
+    await checkSchedulePermission(userId);
 
     // Strict Permissions for Approval/Rejection/Publishing
     if (['approved', 'rejected', 'published'].includes(status)) {
@@ -969,13 +763,11 @@ export async function getOrCreateSchedule(storeId: string, storeDepartmentId: st
 
 export async function copyPreviousSchedule(currentScheduleId: string, userId: string) {
     await dbConnect();
+    await checkSchedulePermission(userId);
 
-    // 1. Get current schedule first needed for validation
+    // 1. Get current schedule as LEAN to interact with plain objects
     const currentSchedule = await Schedule.findById(currentScheduleId).lean();
     if (!currentSchedule) throw new Error("Schedule not found");
-
-    // Validate
-    await validateScheduleWriteAccess(userId, currentSchedule.storeId.toString(), currentSchedule.storeDepartmentId.toString());
 
     // 2. Calculate target start date for previous week (7 days ago)
     const currentStart = new Date(currentSchedule.dateRange.startDate);
@@ -1311,77 +1103,27 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
 
 export async function getDashboardData(date: Date = new Date(), storeIdFilter?: string) {
     await dbConnect();
-    // Imports are at top level
-    const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
-
-    const currentUser = await getEmployeeById((session.user as any).id);
-    const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-
-    const isGlobalAdmin = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
-    const isStoreManager = roles.includes("store_manager");
-    const isStoreDeptHead = roles.includes("store_department_head");
-    const isGlobalDeptHead = roles.includes("department_head");
-
-    console.log(`[getDashboardData] User: ${currentUser.email}, Roles: ${roles.join(',')}, StoreId: ${currentUser.storeId}`);
+    const { Store, StoreDepartment } = require("@/lib/models");
 
     // 1. Calculate Week/Year
     const d = new Date(date);
     const { week, year } = getISOWeekNumber(d);
 
-    // 2. Fetch active Stores (Secured Query)
+    // 2. Fetch active Stores (apply filter if provided)
     const storeQuery: any = { active: true };
-    const deptQuery: any = { active: true }; // To filter departments later
-
-    if (isGlobalAdmin) {
-        if (storeIdFilter) storeQuery._id = storeIdFilter;
-    } else if (isStoreManager) {
-        storeQuery._id = currentUser.storeId?._id || currentUser.storeId;
-    } else if (isStoreDeptHead) {
-        storeQuery._id = currentUser.storeId?._id || currentUser.storeId;
-        deptQuery._id = currentUser.storeDepartmentId?._id || currentUser.storeDepartmentId; // Strict Dept Filter
-    } else if (isGlobalDeptHead) {
-        // Find their global departments
-        const { GlobalDepartment } = await import("@/lib/models");
-        const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: currentUser._id }).select('_id');
-        const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
-
-        // Find authorized Store Departments
-        const allowedStoreDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).distinct('_id');
-        deptQuery._id = { $in: allowedStoreDepts }; // Restrict Departments
-
-        // Don't restrict stores strictly, but stores will be filtered naturally by departments existing? 
-        // No, we fetch stores then depts. We should only fetch stores that HAVE these departments to avoid empty cards?
-        // Or fetch all stores and filter out empty ones later.
-        if (storeIdFilter) storeQuery._id = storeIdFilter;
-    } else {
-        // Employee / No Role -> Show nothing or just own context?
-        // Let's fallback to own store/dept same as View
-        const userStoreId = currentUser.storeId?._id || currentUser.storeId;
-        const userDeptId = currentUser.storeDepartmentId?._id || currentUser.storeDepartmentId;
-        if (userStoreId && userDeptId) {
-            storeQuery._id = userStoreId;
-            deptQuery._id = userDeptId;
-        } else {
-            return null; // No access
-        }
+    if (storeIdFilter) {
+        storeQuery._id = storeIdFilter;
     }
 
     const stores = await Store.find(storeQuery).lean();
     const storeIds = stores.map((s: any) => s._id);
 
     // 3. Fetch all Schedules for this week
-    // We restrict schedules to the accessible stores/depts
-    const scheduleQuery: any = {
+    const schedules = await Schedule.find({
         storeId: { $in: storeIds },
         year,
         weekNumber: week
-    };
-    if (deptQuery._id) scheduleQuery.storeDepartmentId = deptQuery._id;
-
-    console.log(`[getDashboardData] Querying Schedules:`, JSON.stringify(scheduleQuery));
-
-    const schedules = await Schedule.find(scheduleQuery).lean();
+    }).lean();
 
     // 4. Structure Response & Aggregate Data
     // We fetch departments first to know the "Universe" of work
@@ -1400,9 +1142,7 @@ export async function getDashboardData(date: Date = new Date(), storeIdFilter?: 
     });
 
     const storesWithData = await Promise.all(stores.map(async (store: any) => {
-        // Apply Department Query + Store ID
-        const finalDeptQuery = { ...deptQuery, storeId: store._id };
-        const departments = await StoreDepartment.find(finalDeptQuery).lean();
+        const departments = await StoreDepartment.find({ storeId: store._id, active: true }).lean();
 
         const departmentsWithSchedule = departments.map((dept: any) => {
             const sch = scheduleMap.get(dept._id.toString());

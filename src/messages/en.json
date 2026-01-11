@@ -73,7 +73,9 @@
         "storeSpecific": "Store Specific",
         "viewOnly": "View Only",
         "translations": "Translations",
-        "name": "Name"
+        "name": "Name",
+        "suppliers": "Suppliers",
+        "directory": "Directory"
     },
     "Dashboard": {
         "title": "Dashboard",

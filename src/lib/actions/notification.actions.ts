@@ -1,9 +1,12 @@
 "use server";
 
 import dbConnect from "@/lib/db";
-import { Notification } from "@/lib/models";
+import { Notification, Employee, IEmployee } from "@/lib/models";
 import { pusherServer } from "@/lib/pusher";
 import { sendPushNotification } from "./push.actions";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { getAllEmployees } from "./employee.actions";
 
 interface NotificationTriggerData {
     title: string;
@@ -66,6 +69,9 @@ export async function triggerNotification(data: NotificationTriggerData) {
                         body: data.message,
                         url: data.link || "/dashboard"
                     });
+
+                    // TODO: Trigger Native Push here using FCM/APNS if user has `pushSubscriptionNative`
+                    // We need a Firebase Admin SDK to do this. For now, native apps will rely on Pulsing/Polling or we implement FCM later.
 
                     return; // Success, exit retry loop
                 } catch (error) {
@@ -141,8 +147,6 @@ export async function markAllNotificationsAsRead(userId: string) {
     return { success: true };
 }
 
-import { getAllEmployees } from "./employee.actions";
-
 export async function sendTestBroadcast(message: string) {
     // 1. Get all active employees
     const { employees } = await getAllEmployees();
@@ -158,5 +162,33 @@ export async function sendTestBroadcast(message: string) {
         category: "system",
         recipients: recipientIds,
         link: "/dashboard"
+    });
+}
+
+// --- Native Push Tokens ---
+
+export async function saveNativePushToken(token: string) {
+    await dbConnect();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) return { success: false, error: "Unauthorized" };
+
+    const userId = (session.user as any).id;
+
+    // Add token to set if not exists
+    await Employee.findByIdAndUpdate(userId, {
+        $addToSet: { pushSubscriptionNative: token }
+    });
+
+    return { success: true };
+}
+
+// Helper to remove invalid tokens if needed
+export async function removeNativePushToken(token: string) {
+    await dbConnect();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) return;
+    const userId = (session.user as any).id;
+    await Employee.findByIdAndUpdate(userId, {
+        $pull: { pushSubscriptionNative: token }
     });
 }

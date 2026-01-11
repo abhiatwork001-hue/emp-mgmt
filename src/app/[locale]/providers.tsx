@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { NextIntlClientProvider, AbstractIntlMessages } from "next-intl";
+import { NativeNotificationListener } from "@/components/native-notification-listener";
 
 export function Providers({
     children,
@@ -23,6 +24,7 @@ export function Providers({
                     enableSystem={true}
                     disableTransitionOnChange
                 >
+                    <NativeNotificationListener />
                     {children}
                 </ThemeProvider>
             </SessionProvider>

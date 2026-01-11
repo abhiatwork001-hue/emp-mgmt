@@ -201,7 +201,8 @@ export interface IEmployee extends Document {
 
     isPasswordChanged?: boolean;
     passwordResetRequested?: boolean;
-    pushSubscription?: any; // New: Browser push token for PWA
+    pushSubscription?: any; // Browser push token (PWA)
+    pushSubscriptionNative?: string[]; // Native tokens (FCM/APNS)
     lastLogin?: Date;
     active?: boolean;
     terminatedOn?: Date;
@@ -572,6 +573,7 @@ const EmployeeSchema = new Schema<IEmployee>({
     isPasswordChanged: { type: Boolean, default: false },
     passwordResetRequested: { type: Boolean, default: false },
     pushSubscription: { type: Schema.Types.Mixed },
+    pushSubscriptionNative: [{ type: String }],
     lastLogin: { type: Date }
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 

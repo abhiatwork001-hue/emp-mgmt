@@ -7,6 +7,16 @@ import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 import { hasAccess } from "@/lib/rbac";
 
+// Valid keys in Common.json that represent static routes
+const KNOWN_KEYS = new Set([
+    "dashboard", "home", "approvals", "pendingactions", "stores",
+    "departments", "recipes", "schedule", "schedules", "vacations",
+    "absences", "employees", "staffviewer", "positions", "profile",
+    "notes", "notices", "tips", "tasks", "messages", "credentials",
+    "activities", "problems", "coverage", "offers", "settings",
+    "reviews", "suppliers", "directory"
+]);
+
 export function Breadcrumbs({
     userRoles = ["employee"],
     departmentName = ""
@@ -38,11 +48,8 @@ export function Breadcrumbs({
             {breadcrumbParts.slice(1).map((part, index) => {
                 const isLast = index === breadcrumbParts.length - 2;
                 // Important: reconstruct the path correctly for access check
-                // Path segments in breadcrumbParts start from "dashboard"
-                // but usually the full app path includes the locale: /[locale]/dashboard/...
-                // The rbac paths start with /dashboard/...
                 const pathToCheck = `/${breadcrumbParts.slice(0, index + 2).join("/")}`;
-                const href = pathToCheck; // i18n Link handles the locale prefix automatically if used via "@/i18n/routing"
+                const href = pathToCheck;
 
                 const canAccess = hasAccess(userRoles, pathToCheck, departmentName);
 
@@ -51,23 +58,21 @@ export function Breadcrumbs({
 
                 let label = part.charAt(0).toUpperCase() + part.slice(1);
 
+                const lowerPart = part.toLowerCase();
                 if (isId) {
                     label = "Details";
-                } else {
-                    // Skip translation for slugs (e.g. chick-city-1-781) or if it contains digits
-                    const isSlug = /[0-9]/.test(part) || part.includes("-");
-
-                    if (!isSlug) {
-                        try {
-                            const translated = t(part.toLowerCase());
-                            if (translated && translated !== part.toLowerCase()) {
-                                label = translated;
-                            }
-                        } catch (e) {
-                            // Ignore translation errors
+                } else if (KNOWN_KEYS.has(lowerPart)) {
+                    // Only try to translate if it's a known static route key
+                    try {
+                        const translated = t(lowerPart);
+                        if (translated && translated !== lowerPart) {
+                            label = translated;
                         }
+                    } catch (e) {
+                        // Should not happen with allowlist
                     }
                 }
+                // Else: dynamic segment (e.g. store slug "telheiras"), keep capitalized label without translation attempt
 
                 return (
                     <div key={href} className="flex items-center space-x-2">

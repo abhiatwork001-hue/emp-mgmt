@@ -79,10 +79,10 @@ export function Sidebar({
 
             // Custom Business Logic Overrides
             if (route.label === "Departments") {
-                // HIDE for Store Manager unless they are also Global/Admin/HR etc.
-                const isRestricted = effectiveRoles.includes("store_manager") &&
-                    !effectiveRoles.some((r: string) => ["admin", "owner", "hr", "tech", "department_head"].includes(r));
-                if (isRestricted) return null;
+                // Strict Allowlist: Admin, Owner, HR, Tech, Global Dept Head
+                const allowedRoles = ["admin", "owner", "hr", "tech", "department_head"];
+                const isAllowed = effectiveRoles.some((r: string) => allowedRoles.includes(r));
+                if (!isAllowed) return null;
             }
 
             if (route.label === "Tips") {

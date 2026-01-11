@@ -61,7 +61,9 @@
         "storeSpecific": "Específico da Loja",
         "viewOnly": "Apenas Visualização",
         "translations": "Traduções",
-        "name": "Nome"
+        "name": "Nome",
+        "suppliers": "Fornecedores",
+        "directory": "Diretório"
     },
     "Dashboard": {
         "title": "Painel de Controlo",

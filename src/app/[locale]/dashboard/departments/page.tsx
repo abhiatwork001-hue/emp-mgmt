@@ -14,9 +14,26 @@ export default async function DepartmentsPage() {
 
     const employee = await getEmployeeById(user.id);
     const roles = (employee?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-    const allowedRoles = ["owner", "admin", "hr", "super_user", "department_head"];
+    const GLOBAL_ADMIN_ROLES = ["owner", "admin", "hr", "super_user", "tech"];
 
-    if (!roles.some((r: string) => allowedRoles.includes(r))) {
+    // 1. Global Admins: View All
+    if (roles.some((r: string) => GLOBAL_ADMIN_ROLES.includes(r))) {
+        // Proceed to view list
+    }
+    // 2. Department Heads: specific redirect
+    else if (roles.includes("department_head")) {
+        const { GlobalDepartment } = await import("@/lib/models");
+        const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: user.id }).select('slug').lean();
+
+        if (ledGlobalDepts.length > 0) {
+            // Redirect to their first department
+            redirect(`/dashboard/departments/${ledGlobalDepts[0].slug}`);
+        } else {
+            // Head with no department assigned?
+            redirect("/dashboard");
+        }
+    } else {
+        // 3. Unauthorized
         redirect("/dashboard");
     }
 

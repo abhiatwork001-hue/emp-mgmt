@@ -5,8 +5,13 @@ const config: CapacitorConfig = {
   appName: 'ChickMain',
   webDir: 'public',
   server: {
-    url: 'http://localhost:3000', // CHANGE THIS TO YOUR LIVE URL IN PRODUCTION
+    url: 'https://emp-mgmt-rho.vercel.app', // CHANGE THIS TO YOUR LIVE URL IN PRODUCTION
     cleartext: true
+  },
+  plugins: {
+    PushNotifications: {
+      presentationOptions: ["badge", "sound", "alert"]
+    }
   }
 };
 
