@@ -192,6 +192,15 @@ export default function SuppliersPage() {
                                             )}
                                         </div>
 
+                                        {/* Min Order Badge */}
+                                        {supplier.minimumOrderValue > 0 && (
+                                            <div className="flex justify-end">
+                                                <div className="font-semibold text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded text-xs">
+                                                    Min: €{supplier.minimumOrderValue}
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {supplier.items?.length > 0 && (
                                             <div className="pt-4 border-t border-border/40">
                                                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">Top Items</p>

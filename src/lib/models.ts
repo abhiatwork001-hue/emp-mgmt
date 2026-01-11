@@ -823,6 +823,8 @@ export interface ISupplier extends Document {
     }[];
     createdBy: ObjectId;
     storeId?: ObjectId; // Optional: If specific to a store
+    minimumOrderValue?: number; // New: Min limit
+    minimumOrderIsTaxExclusive?: boolean; // New: Tax flag
     active: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -863,6 +865,8 @@ const SupplierSchema = new Schema<ISupplier>({
     }],
     createdBy: { type: Schema.Types.ObjectId, ref: 'Employee' },
     storeId: { type: Schema.Types.ObjectId, ref: 'Store' },
+    minimumOrderValue: { type: Number },
+    minimumOrderIsTaxExclusive: { type: Boolean, default: false },
     active: { type: Boolean, default: true }
 }, { timestamps: true });
 

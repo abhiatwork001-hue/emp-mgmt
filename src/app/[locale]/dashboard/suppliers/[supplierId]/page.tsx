@@ -12,13 +12,14 @@ import Link from "next/link";
 import { format } from "date-fns";
 
 interface Props {
-    params: {
+    params: Promise<{
         supplierId: string;
         locale: string;
-    };
+    }>;
 }
 
-export default async function SupplierDetailPage({ params }: Props) {
+export default async function SupplierDetailPage(props: Props) {
+    const params = await props.params;
     const supplier = await getSupplierById(params.supplierId);
 
     if (!supplier) {
@@ -95,6 +96,25 @@ export default async function SupplierDetailPage({ params }: Props) {
                                 <p className="text-sm text-muted-foreground">{supplier.address || "N/A"}</p>
                             </div>
                         </div>
+                        {supplier.minimumOrderValue > 0 && (
+                            <>
+                                <Separator />
+                                <div className="flex items-start gap-3">
+                                    <div className="flex items-center justify-center w-4 h-4 mt-1 rounded-full bg-emerald-100 text-emerald-600">
+                                        <span className="text-[10px] font-bold">€</span>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-medium">Minimum Order</p>
+                                        <p className="text-sm font-bold text-foreground">
+                                            €{supplier.minimumOrderValue.toFixed(2)}
+                                            <span className="text-xs font-normal text-muted-foreground ml-1">
+                                                {supplier.minimumOrderIsTaxExclusive ? "(+ Tax)" : "(Inc. Tax)"}
+                                            </span>
+                                        </p>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </CardContent>
                 </Card>
 
@@ -186,7 +206,7 @@ export default async function SupplierDetailPage({ params }: Props) {
                                                 <td className="p-4 align-middle">{item.category || "-"}</td>
                                                 <td className="p-4 align-middle text-right">{item.unit || "-"}</td>
                                                 <td className="p-4 align-middle text-right font-mono">
-                                                    {item.price ? `$${item.price.toFixed(2)}` : "-"}
+                                                    {item.price ? `€${item.price.toFixed(2)}` : "-"}
                                                 </td>
                                             </tr>
                                         ))}

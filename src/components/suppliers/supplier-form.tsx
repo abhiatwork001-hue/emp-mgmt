@@ -24,6 +24,8 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
         email: supplier?.email || "",
         address: supplier?.address || "",
         category: supplier?.category || "",
+        minimumOrderValue: supplier?.minimumOrderValue || 0,
+        minimumOrderIsTaxExclusive: supplier?.minimumOrderIsTaxExclusive || false,
         items: supplier?.items || [],
         deliverySchedule: supplier?.deliverySchedule || []
     });
@@ -130,6 +132,33 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
                 <div className="space-y-2">
                     <Label htmlFor="address">Address</Label>
                     <Input id="address" name="address" value={formData.address} onChange={handleChange} placeholder="Warehouse Location" />
+                </div>
+
+                {/* Min Order Section */}
+                <div className="md:col-span-2 grid grid-cols-2 gap-4 border-t pt-4 mt-2">
+                    <div className="space-y-2">
+                        <Label htmlFor="minimumOrderValue">Minimum Order Value (€)</Label>
+                        <Input
+                            id="minimumOrderValue"
+                            name="minimumOrderValue"
+                            type="number"
+                            value={formData.minimumOrderValue}
+                            onChange={(e) => setFormData(p => ({ ...p, minimumOrderValue: parseFloat(e.target.value) }))}
+                            placeholder="0.00"
+                        />
+                    </div>
+                    <div className="flex items-center space-x-2 pt-8">
+                        <input
+                            type="checkbox"
+                            id="minimumOrderIsTaxExclusive"
+                            checked={formData.minimumOrderIsTaxExclusive}
+                            onChange={(e) => setFormData(p => ({ ...p, minimumOrderIsTaxExclusive: e.target.checked }))}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        <Label htmlFor="minimumOrderIsTaxExclusive" className="font-normal">
+                            Values are Tax Exclusive (Add Tax later)
+                        </Label>
+                    </div>
                 </div>
             </div>
 
@@ -241,7 +270,7 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
                                     <Input value={item.unit} onChange={(e) => handleItemChange(index, "unit", e.target.value)} placeholder="Unit (kg/box)" className="h-8 text-sm" />
                                 </div>
                                 <div className="col-span-3 space-y-1">
-                                    <Label className="text-[10px] uppercase text-muted-foreground">Price</Label>
+                                    <Label className="text-[10px] uppercase text-muted-foreground">Price (€)</Label>
                                     <Input type="number" value={item.price} onChange={(e) => handleItemChange(index, "price", parseFloat(e.target.value))} placeholder="0.00" className="h-8 text-sm" />
                                 </div>
                                 <div className="col-span-1">
