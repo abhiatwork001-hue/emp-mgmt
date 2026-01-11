@@ -34,7 +34,8 @@ export function EmployeeDashboard({
     daysUntilNextDayOff = 0,
     personalTodos = [],
     activeActions = { vacations: [], absences: [], coverageRequests: [], coverageOffers: [] },
-    swapRequests = [] // New Prop
+    swapRequests = [], // New Prop
+    isWorkingToday = false
 }: any) {
     const router = useRouter();
 
@@ -218,6 +219,45 @@ export function EmployeeDashboard({
                             </div>
                         </div>
                     </Card>
+
+                    {/* 3b. Working With You Today (Conditional) */}
+                    {isWorkingToday && (
+                        <div className="w-full animate-in fade-in slide-in-from-bottom-5 duration-700 delay-200">
+                            <Card className="border-l-4 border-l-blue-500 shadow-sm overflow-hidden flex flex-col">
+                                <CardHeader className="py-3 px-4 bg-muted/5 min-h-[50px] flex justify-center shrink-0 border-b">
+                                    <CardTitle className="text-md font-black italic flex items-center gap-2 text-foreground uppercase tracking-tight">
+                                        <Users className="h-4 w-4 text-blue-600" /> Working with you today
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-4">
+                                    {todaysCoworkers.length > 0 ? (
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                            {todaysCoworkers.map((cw: any, i: number) => (
+                                                <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-card border hover:border-blue-500/30 transition-all shadow-sm">
+                                                    <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
+                                                        <AvatarImage src={cw.image} />
+                                                        <AvatarFallback className="bg-blue-100 text-blue-700 font-bold">{cw.firstName[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-xs font-black text-foreground truncate">{cw.firstName} {cw.lastName}</span>
+                                                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight truncate">{cw.position}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center p-6 text-center space-y-2 bg-muted/20 rounded-xl border border-dashed">
+                                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                                                <Users className="h-5 w-5 text-blue-600" />
+                                            </div>
+                                            <p className="text-sm font-medium text-foreground">It&apos;s just you today!</p>
+                                            <p className="text-xs text-muted-foreground">You&apos;re holding down the fort. Have a great shift!</p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
 
                     <HolidayGreetingWidget />
                 </div>

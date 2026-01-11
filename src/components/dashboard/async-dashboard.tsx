@@ -48,6 +48,7 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
     let currentScheduleId: string | null = null;
     let currentScheduleSlug: string | null = null;
     let todaysCoworkers: any[] = [];
+    let isWorkingToday = false;
     let todayShiftsCount = 0;
     let totalScheduledHours = 0;
 
@@ -363,20 +364,35 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
         currentScheduleSlug = currentSchedule.slug;
     }
 
+
     if (currentScheduleId) {
         const fullSchedule = await getScheduleById(currentScheduleId);
         if (fullSchedule) {
             const todayNode = fullSchedule.days?.find((d: any) => new Date(d.date).toISOString().split('T')[0] === todayStr);
             if (todayNode) {
-                const coworkersMap = new Map();
-                todayNode.shifts.forEach((s: any) => {
-                    s.employees?.forEach((e: any) => {
-                        if (e._id !== employee._id && !coworkersMap.has(e._id)) {
-                            coworkersMap.set(e._id, { firstName: e.firstName, lastName: e.lastName, position: e.contract?.employmentType || "Employee" });
-                        }
+                isWorkingToday = todayNode.shifts.some((s: any) =>
+                    s.employees?.some((e: any) => e._id === employee._id || e.toString() === employee._id)
+                );
+
+                if (isWorkingToday) {
+                    const coworkersMap = new Map();
+                    todayNode.shifts.forEach((s: any) => {
+                        s.employees?.forEach((e: any) => {
+                            if (e._id !== employee._id && !coworkersMap.has(e._id)) {
+                                coworkersMap.set(e._id, {
+                                    firstName: e.firstName,
+                                    lastName: e.lastName,
+                                    image: e.image,
+                                    position: e.contract?.employmentType || "Employee",
+                                    slug: e.slug || e._id
+                                });
+                            }
+                        });
                     });
-                });
-                todaysCoworkers = Array.from(coworkersMap.values()).slice(0, 3);
+                    todaysCoworkers = Array.from(coworkersMap.values());
+                } else {
+                    todaysCoworkers = []; // Reset if not working
+                }
             }
         }
     }
@@ -395,6 +411,8 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
         }
     }
 
+
+
     return <EmployeeDashboard
         employee={employee}
         todaysCoworkers={todaysCoworkers}
@@ -404,5 +422,6 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
         personalTodos={personalTodos}
         activeActions={activeActions}
         swapRequests={swapRequests}
+        isWorkingToday={isWorkingToday} // Pass new prop
     />;
 }

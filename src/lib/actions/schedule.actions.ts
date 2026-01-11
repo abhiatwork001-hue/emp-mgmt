@@ -1062,7 +1062,7 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
     // 1. Calculate Week/Year for the requested date using shared utility
     const { week: weekNumber, year } = getISOWeekNumber(date);
 
-    console.log(`[ScheduleDebug] Fetching for Employee: ${employeeId}, Date: ${date}, Week: ${weekNumber}, Year: ${year}`);
+
 
     // 2. Find ALL Schedules for this week that contain the employee
     let schedules = await Schedule.find({
@@ -1074,14 +1074,14 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
         .populate("storeDepartmentId", "name")
         .lean();
 
-    console.log(`[ScheduleDebug] Primary Query Results: ${schedules?.length || 0}`);
+
 
     // FALLBACK: If no shifts assigned, find ANY published schedule for their store
     // This allows managers/employees to see the week structure (holidays, etc.) even with 0 shifts
     if (!schedules || schedules.length === 0) {
         const employeeData = await Employee.findById(employeeId).select('storeId storeDepartmentId dob');
 
-        console.log(`[ScheduleDebug] Fallback - Employee Store ID: ${employeeData?.storeId}, Dept ID: ${employeeData?.storeDepartmentId}`);
+
 
         if (employeeData?.storeId) {
             const query: any = {
@@ -1100,9 +1100,9 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
                 .populate("storeDepartmentId", "name")
                 .lean();
 
-            console.log(`[ScheduleDebug] Fallback Query Results (Published/Approved): ${schedules?.length || 0}`);
+
             if (schedules?.length > 0) {
-                console.log(`[ScheduleDebug] Fallback Schedule Status: ${schedules[0].status}`);
+
             }
         }
     }

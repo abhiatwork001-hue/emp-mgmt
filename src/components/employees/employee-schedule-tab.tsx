@@ -246,9 +246,9 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                                                                 {isAbsent ? (
                                                                                     <span className="text-red-500 font-medium">{shift.shiftName.replace("Absent: ", "")}</span>
                                                                                 ) : isVacation ? (
-                                                                                    <span className="text-emerald-600 font-medium flex items-center gap-1.5">
+                                                                                    <span className="text-emerald-600 font-bold flex items-center gap-1.5 animate-pulse">
                                                                                         <PlaneIcon className="w-3 h-3" />
-                                                                                        On Leave
+                                                                                        Happy Vacation! 🌴
                                                                                     </span>
                                                                                 ) : (
                                                                                     <>
@@ -281,7 +281,23 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                                         })}
                                                     </div>
                                                 ) : (
-                                                    <div className="text-muted-foreground italic text-sm">No shifts scheduled</div>
+                                                    <div className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-border bg-muted/20 text-muted-foreground">
+                                                        {isToday ? (
+                                                            <>
+                                                                <div className="p-1.5 bg-muted rounded-full">
+                                                                    <ClockIcon className="h-4 w-4 opacity-50" />
+                                                                </div>
+                                                                <span className="font-medium">No Shift Today</span>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div className="p-1.5 bg-muted rounded-full">
+                                                                    <Calendar className="h-4 w-4 opacity-50" />
+                                                                </div>
+                                                                <span className="font-medium">Day Off</span>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>
