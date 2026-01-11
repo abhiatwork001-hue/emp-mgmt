@@ -244,14 +244,16 @@ export function CreateNoticeDialog({
                         </div>
                     </div>
 
-                    <div className="flex items-center space-x-2 py-2">
-                        <Checkbox
-                            id="adminVis"
-                            checked={visibleToAdmin}
-                            onCheckedChange={(c) => setVisibleToAdmin(c as boolean)}
-                        />
-                        <Label htmlFor="adminVis" className="cursor-pointer">Also visible to HR & Owners</Label>
-                    </div>
+                    {!isSuper && (
+                        <div className="flex items-center space-x-2 py-2">
+                            <Checkbox
+                                id="adminVis"
+                                checked={visibleToAdmin}
+                                onCheckedChange={(c) => setVisibleToAdmin(c as boolean)}
+                            />
+                            <Label htmlFor="adminVis" className="cursor-pointer">Publish to Administrator as well</Label>
+                        </div>
+                    )}
 
                     <div className="grid gap-2">
                         <Label>Content (Markdown)</Label>

@@ -382,9 +382,6 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                     </div>
-                    <Button size="sm" className="h-9">
-                        + New Request
-                    </Button>
                 </div>
             </div>
 

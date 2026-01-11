@@ -15,10 +15,11 @@ import crypto from "crypto";
 const MANAGE_SCHEDULE_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr", "tech"];
 
 // Strict Write Access Validation
-async function validateScheduleWriteAccess(userId: string, targetStoreId?: string, targetStoreDeptId?: string) {
+export async function checkSchedulePermission(userId: string, targetStoreId?: string, targetStoreDeptId?: string) {
     const { GlobalDepartment } = await import("@/lib/models");
     const employee = await getEmployeeById(userId);
     if (!employee) throw new Error("User not found");
+    // ... (rest of the function is expected to be the same, but since I'm renaming, I'll just change the function name line)
 
     const roles = (employee.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
 
@@ -494,7 +495,7 @@ export async function createSchedule(data: any) {
     if (!session?.user) throw new Error("Unauthorized");
 
     // Validate Write Access (Pass target store and dept)
-    await validateScheduleWriteAccess((session.user as any).id, data.storeId, data.storeDepartmentId);
+    await checkSchedulePermission((session.user as any).id, data.storeId, data.storeDepartmentId);
 
     const scheduleData = { ...data };
     if (!scheduleData.slug) {
@@ -1058,13 +1059,10 @@ export async function copyPreviousSchedule(currentScheduleId: string, userId: st
 export async function getEmployeeScheduleView(employeeId: string, date: Date) {
     await dbConnect();
 
-    // 1. Calculate Week/Year for the requested date
-    const d = new Date(date);
-    const day = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - day);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    const weekNumber = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    const year = d.getUTCFullYear();
+    // 1. Calculate Week/Year for the requested date using shared utility
+    const { week: weekNumber, year } = getISOWeekNumber(date);
+
+    console.log(`[ScheduleDebug] Fetching for Employee: ${employeeId}, Date: ${date}, Week: ${weekNumber}, Year: ${year}`);
 
     // 2. Find ALL Schedules for this week that contain the employee
     let schedules = await Schedule.find({
@@ -1076,20 +1074,36 @@ export async function getEmployeeScheduleView(employeeId: string, date: Date) {
         .populate("storeDepartmentId", "name")
         .lean();
 
+    console.log(`[ScheduleDebug] Primary Query Results: ${schedules?.length || 0}`);
+
     // FALLBACK: If no shifts assigned, find ANY published schedule for their store
     // This allows managers/employees to see the week structure (holidays, etc.) even with 0 shifts
     if (!schedules || schedules.length === 0) {
-        const employeeData = await Employee.findById(employeeId).select('storeId dob');
+        const employeeData = await Employee.findById(employeeId).select('storeId storeDepartmentId dob');
+
+        console.log(`[ScheduleDebug] Fallback - Employee Store ID: ${employeeData?.storeId}, Dept ID: ${employeeData?.storeDepartmentId}`);
+
         if (employeeData?.storeId) {
-            schedules = await Schedule.find({
+            const query: any = {
                 year,
                 weekNumber,
                 storeId: employeeData.storeId,
-                status: 'published'
-            })
+                status: { $in: ['published', 'approved'] }
+            };
+
+            if (employeeData.storeDepartmentId) {
+                query.storeDepartmentId = employeeData.storeDepartmentId;
+            }
+
+            schedules = await Schedule.find(query)
                 .populate("storeId", "name")
                 .populate("storeDepartmentId", "name")
                 .lean();
+
+            console.log(`[ScheduleDebug] Fallback Query Results (Published/Approved): ${schedules?.length || 0}`);
+            if (schedules?.length > 0) {
+                console.log(`[ScheduleDebug] Fallback Schedule Status: ${schedules[0].status}`);
+            }
         }
     }
 
@@ -1864,6 +1878,15 @@ export async function notifyScheduleReminders(entityIds: string[], type: 'store'
 
     let recipientsCount = 0;
 
+    // Calculate Next Week
+    const nextWeekDate = new Date();
+    nextWeekDate.setUTCDate(nextWeekDate.getUTCDate() + 7);
+    const day = nextWeekDate.getUTCDay() || 7;
+    nextWeekDate.setUTCDate(nextWeekDate.getUTCDate() + 4 - day);
+    const yearStart = new Date(Date.UTC(nextWeekDate.getUTCFullYear(), 0, 1));
+    const nextWeekNumber = Math.ceil((((nextWeekDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    const nextYear = nextWeekDate.getUTCFullYear();
+
     try {
         if (type === 'store') {
             const managers = await Employee.find({
@@ -1873,17 +1896,26 @@ export async function notifyScheduleReminders(entityIds: string[], type: 'store'
             }).select('_id firstName lastName storeId');
 
             for (const manager of managers) {
-                await triggerNotification({
-                    title: "Urgent: Schedule Submission Overdue",
-                    message: "Next week's schedule for your store is overdue. Please submit it immediately.",
-                    type: "warning",
-                    category: "schedule",
-                    link: "/dashboard/schedules",
-                    recipients: [manager._id.toString()],
-                    senderId: (session.user as any).id,
-
-                    relatedStoreId: manager.storeId
+                // Check if schedule is already published for NEXT week
+                const exists = await Schedule.exists({
+                    storeId: manager.storeId,
+                    year: nextYear,
+                    weekNumber: nextWeekNumber,
+                    status: 'published'
                 });
+
+                if (!exists) {
+                    await triggerNotification({
+                        title: "Urgent: Schedule Submission Overdue",
+                        message: `Schedule for Next Week (Week ${nextWeekNumber}) is overdue. Please publish it immediately.`,
+                        type: "warning",
+                        category: "schedule",
+                        link: "/dashboard/schedules",
+                        recipients: [manager._id.toString()],
+                        senderId: (session.user as any).id,
+                        relatedStoreId: manager.storeId
+                    });
+                }
             }
             recipientsCount = managers.length;
         } else {
@@ -1894,18 +1926,28 @@ export async function notifyScheduleReminders(entityIds: string[], type: 'store'
             }).select('_id firstName lastName storeDepartmentId storeId');
 
             for (const head of heads) {
-                await triggerNotification({
-                    title: "Urgent: Schedule Submission Overdue",
-                    message: "Next week's schedule for your department is overdue.",
-                    type: "warning",
-                    category: "schedule",
-                    link: "/dashboard/schedules",
-                    recipients: [head._id.toString()],
-                    senderId: (session.user as any).id,
-
-                    relatedStoreId: head.storeId,
-                    relatedDepartmentId: head.storeDepartmentId
+                // Check if schedule is already published for NEXT week for this department
+                const exists = await Schedule.exists({
+                    storeId: head.storeId,
+                    storeDepartmentId: head.storeDepartmentId,
+                    year: nextYear,
+                    weekNumber: nextWeekNumber,
+                    status: 'published'
                 });
+
+                if (!exists) {
+                    await triggerNotification({
+                        title: "Urgent: Schedule Submission Overdue",
+                        message: `Schedule for Next Week (Week ${nextWeekNumber}) for your department is overdue.`,
+                        type: "warning",
+                        category: "schedule",
+                        link: "/dashboard/schedules",
+                        recipients: [head._id.toString()],
+                        senderId: (session.user as any).id,
+                        relatedStoreId: head.storeId,
+                        relatedDepartmentId: head.storeDepartmentId
+                    });
+                }
             }
             recipientsCount = heads.length;
         }

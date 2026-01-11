@@ -20,6 +20,7 @@ export async function getUpcomingBirthdays(storeId?: string) {
         }
 
         const employees = await Employee.find(query).select('firstName lastName dob image').lean();
+        console.log(`[BirthdayDebug] StoreId: ${storeId}, Employees Found: ${employees.length}`);
 
         const today = new Date();
         const currentYear = today.getFullYear();
@@ -33,18 +34,31 @@ export async function getUpcomingBirthdays(storeId?: string) {
 
             // If birthday passed this year, check next year
             if (nextBirthday < today) {
-                nextBirthday.setFullYear(currentYear + 1);
+                // If today is actually the birthday but time made it 'less', we need to be careful.
+                // Resetting time to 00:00:00 for comparison
+                const t = new Date(today); t.setHours(0, 0, 0, 0);
+                const nb = new Date(nextBirthday); nb.setHours(0, 0, 0, 0);
+
+                if (nb < t) {
+                    nextBirthday.setFullYear(currentYear + 1);
+                }
             }
+
+            // Recalculate diff based on midnight to midnight
+            const t = new Date(today); t.setHours(0, 0, 0, 0);
+            const nb = new Date(nextBirthday); nb.setHours(0, 0, 0, 0);
 
             return {
                 ...emp,
                 nextBirthday,
-                daysUntil: Math.ceil((nextBirthday.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+                daysUntil: Math.ceil((nb.getTime() - t.getTime()) / (1000 * 60 * 60 * 24))
             };
         }).filter((emp: any) => {
             // Check if within 30 days
             return emp.daysUntil >= 0 && emp.daysUntil <= 30;
         }).sort((a: any, b: any) => a.daysUntil - b.daysUntil);
+
+        console.log(`[BirthdayDebug] Upcoming Birthdays: ${upcoming.length}`);
 
         return JSON.parse(JSON.stringify(upcoming));
 

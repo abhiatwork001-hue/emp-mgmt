@@ -56,9 +56,14 @@ export function NativeNotificationListener() {
             // User tapped notification
             await PushNotifications.addListener('pushNotificationActionPerformed', notification => {
                 console.log('Push action performed: ', notification);
-                // Navigate to specific page if needed
-                // const data = notification.notification.data;
-                // if (data.url) router.push(data.url); 
+                const data = notification.notification.data;
+                const url = data.url || (data.conversationId ? `/dashboard/messages/${data.conversationId}` : null);
+
+                if (url) {
+                    // Navigate to the chat
+                    window.location.href = url; // Hard navigation to ensure fresh state
+                    // OR: router.push(url); router.refresh();
+                }
             });
         };
 

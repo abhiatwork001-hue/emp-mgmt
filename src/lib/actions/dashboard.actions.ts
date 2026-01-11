@@ -56,7 +56,12 @@ export async function getDashboardOverview(userId: string, userRoles: string[] =
 
         // Let's filter schedules to their store/department
         const emp = await Employee.findById(userId).select("storeId storeDepartmentId").lean();
-        if (emp?.storeId) scheduleQuery.storeId = emp.storeId;
+
+        // Fix: Scope employee list to STORE, not global
+        if (emp?.storeId) {
+            scheduleQuery.storeId = emp.storeId;
+            employeeQuery.storeId = emp.storeId;
+        }
         // if (emp?.storeDepartmentId) scheduleQuery.storeDepartmentId = emp.storeDepartmentId; // Show whole store schedule or just dept? Usually store.
 
         // No Pending Approvals for employee to act on
@@ -70,17 +75,38 @@ export async function getDashboardOverview(userId: string, userRoles: string[] =
             const deptId = userDetails.storeDepartmentId;
             const storeId = userDetails.storeId;
 
-            // Employees in their department
-            employeeQuery = { storeDepartmentId: deptId };
+            // Revised: Show WHOLE STORE employees as per user request
+            // Was: employeeQuery = { storeDepartmentId: deptId };
+            if (storeId) {
+                employeeQuery = { storeId: storeId };
+            } else {
+                employeeQuery = { storeDepartmentId: deptId }; // Fallback
+            }
 
-            // Vacations/Absences for employees in their department
-            // This requires a join or two-step. 
-            // Step 1: Get IDs of employees in dept
+            // Vacations/Absences for employees in their department (Keep managing Dept only?)
+            // Or view store status? "Who is working".
+            // Let's keep management queries (vacation/absence pending) scoped to Dept if they only manage Dept.
+
+            // Step 1: Get IDs of employees in dept for PENDING requests
             const deptEmpIds = await Employee.find({ storeDepartmentId: deptId }).distinct('_id');
 
-            vacationQuery.employeeId = { $in: deptEmpIds };
-            absenceQuery.employeeId = { $in: deptEmpIds };
+            // View: Scoped to Store (for "Who is working")
+            // Action: Scoped to Dept (for "Pending Approvals")
 
+            // vacationQuery (Approved/Active) -> Maybe show all store?
+            // Let's keep active vacations scoped to Dept for now to match "Who is working" if we want, 
+            // BUT "Who is working" comes from `activeEmployees` and `employeeList`.
+            // employeeList uses `employeeQuery`.
+
+            // So `employeeQuery` = STORE.
+
+            // But `vacationQuery` relates to Stats "On Vacation".
+            // If we show Store employees, we should probably show Store stats.
+
+            // Let's scope stats to Store for Head too?
+            // If I change employeeQuery to Store, `totalEmployees` etc becomes Store count.
+
+            // Pending requests MUST remain Dept specific because they only MANAGE the dept.
             pendingVacationQuery.employeeId = { $in: deptEmpIds };
             pendingAbsenceQuery.employeeId = { $in: deptEmpIds };
 

@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'ChickMain',
   webDir: 'public',
   server: {
-    url: 'http://10.0.2.2:3000', // Android Emulator Localhost
+    url: 'http://192.168.139.54:3000', // LAN IP - Works on Emulator & Physical Device
     cleartext: true
   },
   plugins: {

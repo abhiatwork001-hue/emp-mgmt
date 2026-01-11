@@ -30,21 +30,60 @@ export async function saveSubscription(subscription: any) {
 
 export async function sendPushNotification(userId: string, payload: { title: string; body: string; url?: string }) {
     await dbConnect();
-    const employee = await Employee.findById(userId).select('pushSubscription');
+    const employee = await Employee.findById(userId).select('pushSubscription pushSubscriptionNative email');
 
-    if (!employee?.pushSubscription) return { success: false, error: "No subscription found" };
+    const results = { web: false, native: false, errors: [] as string[] };
 
-    try {
-        await webpush.sendNotification(
-            employee.pushSubscription,
-            JSON.stringify(payload)
-        );
-        return { success: true };
-    } catch (error: any) {
-        if (error.statusCode === 410 || error.statusCode === 404) {
-            // Subscription expired or no longer valid
-            await Employee.findByIdAndUpdate(userId, { $unset: { pushSubscription: 1 } });
+    // 1. Web Push
+    if (employee?.pushSubscription) {
+        try {
+            await webpush.sendNotification(
+                employee.pushSubscription,
+                JSON.stringify(payload)
+            );
+            results.web = true;
+        } catch (error: any) {
+            if (error.statusCode === 410 || error.statusCode === 404) {
+                await Employee.findByIdAndUpdate(userId, { $unset: { pushSubscription: 1 } });
+            }
+            results.errors.push(`Web: ${error.message}`);
         }
-        return { success: false, error: error.message };
     }
+
+    // 2. Native Push (FCM)
+    if (employee?.pushSubscriptionNative && employee.pushSubscriptionNative.length > 0) {
+        try {
+            const { firebaseAdmin } = await import("@/lib/firebase-admin");
+
+            console.log(`[PushAction] Sending FCM to user ${employee.email} (${userId}) - Tokens: ${employee.pushSubscriptionNative.length}`);
+
+            const response = await firebaseAdmin.messaging().sendEachForMulticast({
+                tokens: employee.pushSubscriptionNative,
+                notification: {
+                    title: payload.title,
+                    body: payload.body,
+                },
+                data: {
+                    url: payload.url || "/dashboard",
+                    // Add extra data if needed for smart routing
+                }
+            });
+
+            if (response.successCount > 0) results.native = true;
+
+            if (response.failureCount > 0) {
+                console.warn(`[PushAction] FCM partial failure: ${response.failureCount} failed out of ${response.responses.length}`);
+                // Optional: Remove invalid tokens here if error code matches 'messaging/registration-token-not-registered'
+                // But let's keep it simple for now to avoid accidental deletion
+            }
+
+        } catch (error: any) {
+            console.error("[PushAction] FCM Error:", error);
+            results.errors.push(`Native: ${error.message}`);
+        }
+    } else {
+        console.log(`[PushAction] No native tokens for user ${userId}`);
+    }
+
+    return { success: results.web || results.native, details: results };
 }
