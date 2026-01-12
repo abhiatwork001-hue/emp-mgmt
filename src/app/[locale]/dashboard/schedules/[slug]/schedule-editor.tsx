@@ -52,12 +52,41 @@ import { Switch } from "@/components/ui/switch";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
 
+import { pusherClient } from "@/lib/pusher-client";
+import { useEffect } from "react";
+
 export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [], userStoreId, userDepartmentId }: { initialSchedule: any, userId: string, canEdit: boolean, userRoles: string[], userStoreId?: string, userDepartmentId?: string }) {
     const router = useRouter();
     const t = useTranslations("Schedule");
     const tc = useTranslations("Common");
     const [schedule, setSchedule] = useState(initialSchedule);
     const [weekDays, setWeekDays] = useState<any[]>(initialSchedule.days || []);
+
+    // Sync state when props change (e.g. after router.refresh())
+    useEffect(() => {
+        setSchedule(initialSchedule);
+        setWeekDays(initialSchedule.days || []);
+    }, [initialSchedule]);
+
+    // Pusher Subscription
+    useEffect(() => {
+        if (!schedule.storeId) return;
+        const storeId = typeof schedule.storeId === 'object' ? schedule.storeId._id : schedule.storeId;
+        const channelName = `store-${storeId}`;
+        const channel = pusherClient.subscribe(channelName);
+
+        channel.bind("schedule:updated", (data: any) => {
+            if (data.scheduleId === schedule._id) {
+                toast.info("Schedule updated externally. Refreshing...", { duration: 2000 });
+                router.refresh();
+            }
+        });
+
+        return () => {
+            pusherClient.unsubscribe(channelName);
+        };
+    }, [schedule._id, schedule.storeId, router]);
+
     const [viewMode, setViewMode] = useState<'employees' | 'shifts'>('employees');
     const [actionLoading, setActionLoading] = useState(false);
 
@@ -1818,6 +1847,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                 employeeId={targetAbsenceShift?.employeeId}
                 preselectedDate={targetAbsenceShift ? new Date(targetAbsenceShift.date) : undefined}
                 preselectedShiftId={targetAbsenceShift?.shiftId}
+                trigger={<span className="hidden"></span>}
             />
 
             <ShiftDetailsDialog
@@ -1841,6 +1871,16 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                         employeeName: targetDetailsShift.employeeName
                     });
                     setSwapDialogOpen(true);
+                }}
+                onReportAbsence={() => {
+                    setDetailsDialogOpen(false);
+                    // Pass current shift details to absence dialog
+                    // We need shiftId, date (string), employeeId
+                    handleAbsenceRequest(
+                        targetDetailsShift.shift,
+                        targetDetailsShift.date,
+                        targetDetailsShift.targetEmployeeId
+                    );
                 }}
             />
 

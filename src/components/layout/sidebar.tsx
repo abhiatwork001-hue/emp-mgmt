@@ -19,6 +19,7 @@ export function Sidebar({
     userRoles = ["employee"],
     departmentName = "",
     storeSlug = "",
+    deptSlug = "",
     isMobile: propsIsMobile = false,
     onNavItemClick,
     hasRecipes = true,
@@ -28,6 +29,7 @@ export function Sidebar({
     userRoles?: string[],
     departmentName?: string,
     storeSlug?: string,
+    deptSlug?: string,
     isMobile?: boolean,
     onNavItemClick?: () => void,
     hasRecipes?: boolean,
@@ -74,15 +76,23 @@ export function Sidebar({
                 return null;
             }
 
+
             const isAccessible = hasAccess(effectiveRoles, route.href, departmentName, permissions);
+
             if (!isAccessible) return null;
 
             // Custom Business Logic Overrides
             if (route.label === "Departments") {
-                // Strict Allowlist: Admin, Owner, HR, Tech, Global Dept Head
+                // Allow: Admin, Owner, HR, Tech, Global Dept Head
                 const allowedRoles = ["admin", "owner", "hr", "tech", "department_head"];
                 const isAllowed = effectiveRoles.some((r: string) => allowedRoles.includes(r));
                 if (!isAllowed) return null;
+
+                // For Global Dept Head, redirect to their specific department
+                const isGlobalHeadOnly = effectiveRoles.includes("department_head") && !["admin", "owner", "hr", "tech"].some(r => effectiveRoles.includes(r));
+                if (isGlobalHeadOnly && deptSlug) {
+                    return { ...route, label: "My Department", href: `/dashboard/departments/${deptSlug}` };
+                }
             }
 
             if (route.label === "Tips") {
@@ -213,6 +223,7 @@ export function MobileSidebar({
     userRoles = ["employee"],
     departmentName = "",
     storeSlug = "",
+    deptSlug = "",
     hasRecipes = true,
     hasCoverage = false,
     translations = {}
@@ -220,6 +231,7 @@ export function MobileSidebar({
     userRoles?: string[],
     departmentName?: string,
     storeSlug?: string,
+    deptSlug?: string,
     hasRecipes?: boolean,
     hasCoverage?: boolean,
     translations?: { [key: string]: string }
@@ -236,6 +248,7 @@ export function MobileSidebar({
                     userRoles={userRoles}
                     departmentName={departmentName}
                     storeSlug={storeSlug}
+                    deptSlug={deptSlug}
                     isMobile={true}
                     onNavItemClick={() => setOpen(false)}
                     hasRecipes={hasRecipes}

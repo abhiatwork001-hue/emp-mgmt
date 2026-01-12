@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Calendar, User, Search } from "lucide-react";
+import { CheckCircle2, XCircle, Calendar, User, Search, Paperclip } from "lucide-react";
 import { approveAbsenceRequest, rejectAbsenceRequest } from "@/lib/actions/absence.actions";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -244,6 +244,27 @@ function AbsenceRequestCard({ req, onAction, loading, isHistory }: { req: any, o
                     </div>
                 )}
             </CardContent>
+            {req.attachments && req.attachments.length > 0 && (
+                <div className="px-6 pb-6 pt-0">
+                    <div className="space-y-2">
+                        <Label className="text-xs font-medium text-muted-foreground">Attachments:</Label>
+                        <div className="flex flex-wrap gap-2">
+                            {req.attachments.map((url: string, idx: number) => (
+                                <a
+                                    key={idx}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1 text-xs text-primary hover:underline bg-muted/50 px-2 py-1 rounded border border-border"
+                                >
+                                    <Paperclip className="h-3 w-3" />
+                                    <span>Attachment {idx + 1}</span>
+                                </a>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </Card>
     );
 }

@@ -78,7 +78,7 @@ export function AssignEmployeeDialog({ storeId }: AssignEmployeeDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="default" className="bg-primary text-primary-foreground shadow hover:bg-primary/90">
                     <Plus className="mr-2 h-4 w-4" /> Add Employee
                 </Button>
             </DialogTrigger>

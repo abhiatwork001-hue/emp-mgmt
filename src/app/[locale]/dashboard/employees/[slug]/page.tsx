@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Edit, Mail, Phone, MapPin, Building2, Calendar, FileText, Clock, CreditCard } from "lucide-react";
+import { Edit, Mail, Phone, MapPin, Building2, Calendar, FileText, Clock, CreditCard, Paperclip } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmployeeScheduleTab } from "@/components/employees/employee-schedule-tab";
 import { Link } from "@/i18n/routing";
@@ -350,6 +350,22 @@ export default async function EmployeeDetailsPage({ params }: { params: Promise<
                                                             <div className="mt-2 text-sm text-muted-foreground">
                                                                 <span className="block text-muted-foreground/60 text-[10px] uppercase font-bold mb-0.5">Shift:</span>
                                                                 {abs.shiftRef.shiftName || "Unknown Shift"}
+                                                            </div>
+                                                        )}
+                                                        {abs.attachments && abs.attachments.length > 0 && (
+                                                            <div className="mt-2 flex flex-wrap gap-2">
+                                                                {abs.attachments.map((url: string, idx: number) => (
+                                                                    <a
+                                                                        key={idx}
+                                                                        href={url}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="flex items-center gap-1 text-xs text-primary hover:underline bg-background/50 px-2 py-1 rounded border border-border/50"
+                                                                    >
+                                                                        <Paperclip className="h-3 w-3" />
+                                                                        <span>Attachment {idx + 1}</span>
+                                                                    </a>
+                                                                ))}
                                                             </div>
                                                         )}
                                                     </div>

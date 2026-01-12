@@ -11,7 +11,7 @@ import { getUpcomingHolidays } from "@/lib/actions/dashboard-widgets.actions";
 import { useTranslations } from "next-intl";
 
 interface HolidayWidgetProps {
-    storeId: string;
+    storeId?: string;
 }
 
 export function HolidayWidget({ storeId }: HolidayWidgetProps) {

@@ -644,6 +644,11 @@ export async function finalizeCoverage(
             }
         }
         await schedule.save();
+
+        await pusherServer.trigger(`store-${schedule.storeId}`, "schedule:updated", {
+            scheduleId: schedule._id,
+            type: "coverage_finalized"
+        });
     }
 
     // 3. Create Absence Record for Original Employee (Official Record)

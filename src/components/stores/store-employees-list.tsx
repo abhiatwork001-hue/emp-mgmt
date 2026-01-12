@@ -85,7 +85,7 @@ export function StoreEmployeesList({
     return (
         <div className="space-y-4">
             {/* Controls */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between flex-wrap">
                 <div className="flex flex-1 items-center gap-2">
                     <div className="relative flex-1 max-w-sm">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />

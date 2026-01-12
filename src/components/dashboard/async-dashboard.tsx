@@ -13,7 +13,7 @@ import { DepartmentHeadDashboard } from "@/components/dashboard/role-views/depar
 import { StoreDepartmentHeadDashboard } from "@/components/dashboard/role-views/store-department-head-dashboard";
 import { EmployeeDashboard } from "@/components/dashboard/role-views/employee-dashboard";
 import { getISOWeekNumber } from "@/lib/utils";
-import { Schedule } from "@/lib/models";
+import { Schedule, Company } from "@/lib/models"; // Import Company
 import { getSchedules as getSchedulesLib } from "@/lib/actions/schedule.actions";
 
 // Helper to merge requests sort by date
@@ -36,6 +36,8 @@ function mergeRequests(vacations: any[], absences: any[], overtime: any[], sched
 }
 
 export async function AsyncDashboard({ employee, viewRole, stores, depts, managers, allRoles }: any) {
+    const { GlobalDepartment, StoreDepartment } = require("@/lib/models");
+
     // --- Task System Data Fetching ---
     // Parallelize these fetches
     const [tasks, personalTodos, swapRequests, activeActions] = await Promise.all([
@@ -52,30 +54,88 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
     let todayShiftsCount = 0;
     let totalScheduledHours = 0;
 
-    if (["owner", "admin", "hr", "super_user", "store_manager", "tech"].includes(viewRole)) {
-        const isStoreLevelRole = viewRole === "store_manager" || viewRole === "store_department_head";
+    if (["owner", "admin", "hr", "super_user", "store_manager", "tech", "department_head", "store_department_head"].includes(viewRole)) {
+        const isStoreLevelRole = ["store_manager", "store_department_head"].includes(viewRole);
+        const isGlobalDeptHead = viewRole === "department_head";
+        const isStoreDeptHead = viewRole === "store_department_head";
+
         const rawStoreId = employee.storeId?._id || employee.storeId;
         const storeId = isStoreLevelRole ? rawStoreId : undefined;
         const sid = storeId ? storeId.toString() : undefined;
 
-        // Parallelize Pending Requests
+        // Scoping Logic for Departments
+        let did: any = undefined;
+        let deptId: any = undefined;
+
+        if (isStoreDeptHead) {
+            deptId = employee.storeDepartmentId?._id || employee.storeDepartmentId;
+            did = deptId ? deptId.toString() : undefined;
+        } else if (isGlobalDeptHead) {
+            // Find ALL store departments for ALL global departments this user heads
+
+            const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: employee._id }).select('_id');
+            const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
+
+
+            const storeDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).select('_id');
+            const storeDeptIds = storeDepts.map((sd: any) => sd._id.toString());
+
+
+            if (storeDeptIds.length > 0) {
+                did = { $in: storeDeptIds };
+                deptId = storeDeptIds[0]; // For legacy/single-id uses, use first one or keep as array if possible
+
+            }
+        }
+
+        // Parallelize Pending Requests with appropriate scoping
+        const results = await Promise.all([
+            getAllVacationRequests({ status: 'pending', storeId: sid, storeDepartmentId: did }),
+            getAllAbsenceRequests({ status: 'pending', storeId: sid, storeDepartmentId: did }),
+            getPendingOvertimeRequests({ storeId: sid }), // Overtime might be store-wide or dept-specific depending on business logic, keeping it store-scaped for now
+            getPendingSchedules(sid, did),
+            getPendingCoverageApprovals(sid),
+            // Stats scoping
+            did ? getAllEmployees({ storeDepartmentId: did }, 1, 10000) : (storeId ? getEmployeesByStore(storeId) : getEmployeeStats({})),
+            Company.findOne({ active: true }).select('settings.scheduleRules'),
+            getEmployeeScheduleView(employee._id, new Date()), // Personal stats for the head
+            did ? getEmployeeStats({ storeDepartmentId: did }) : null // Explicit stats for global head scope
+        ]);
+
         const [
             pendingVacations,
             pendingAbsences,
             pendingOvertime,
             pendingSchedules,
             pendingCoverage,
-            storeEmployeesOrStats
-        ] = await Promise.all([
-            getAllVacationRequests({ status: 'pending', storeId: sid }),
-            getAllAbsenceRequests({ status: 'pending', storeId: sid }),
-            getPendingOvertimeRequests({ storeId: sid }),
-            getPendingSchedules(sid),
-            getPendingCoverageApprovals(sid),
-            // STRICT SECURITY: If sid (storeId) is missing for a store manager, we MUST NOT return stats?
-            // Actually for Admin/Tech/Global Owner, we WANT global stats.
-            storeId ? getEmployeesByStore(storeId) : getEmployeeStats({})
-        ]);
+            storeEmployeesOrStats,
+            companyDoc,
+            personalScheduleData,
+            globalHeadStats
+        ] = results;
+
+        // Personal Stats for Global Head (as employee)
+        if (personalScheduleData && personalScheduleData.days && personalScheduleData.days.length > 0) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dayOff = personalScheduleData.days.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()).find((d: any) => {
+                const dDate = new Date(d.date);
+                dDate.setHours(0, 0, 0, 0);
+                return dDate >= today && (!d.shifts || d.shifts.length === 0);
+            });
+            if (dayOff) {
+                (employee as any).daysUntilNextDayOff = Math.ceil(Math.abs(new Date(dayOff.date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+            } else {
+                // No day off found in schedule, check if they have any shifts at all
+                const hasAnyShifts = personalScheduleData.days.some((d: any) => d.shifts && d.shifts.length > 0);
+                (employee as any).daysUntilNextDayOff = hasAnyShifts ? -1 : null; // -1 = no day off scheduled, null = no schedule
+            }
+        } else {
+            // No schedule data available
+            (employee as any).daysUntilNextDayOff = null;
+        }
+
+        const deadlineDay = (companyDoc as any)?.settings?.scheduleRules?.deadlineDay ?? 2;
 
         // Schedule Calculation
         if (storeId) {
@@ -99,11 +159,24 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
                     new Date(d.date).toISOString().split('T')[0] === todayStr
                 );
                 if (todayNode) {
-                    todayShiftsCount = todayNode.shifts?.reduce((acc: number, s: any) => acc + (s.employees?.length || 0), 0) || 0;
+                    // Filter shifts by department if applicable
+                    const relevantShifts = did ? todayNode.shifts?.filter((s: any) => {
+                        const sId = (s.storeDepartmentId?._id || s.storeDepartmentId)?.toString();
+                        if (typeof did === 'string') return sId === did;
+                        if (did.$in) return did.$in.includes(sId);
+                        return false;
+                    }) : todayNode.shifts;
+                    todayShiftsCount = relevantShifts?.reduce((acc: number, s: any) => acc + (s.employees?.length || 0), 0) || 0;
                 }
 
                 currentSchedule.days?.forEach((day: any) => {
-                    day.shifts?.forEach((shift: any) => {
+                    const shiftsToCalculate = did ? day.shifts?.filter((s: any) => {
+                        const sId = (s.storeDepartmentId?._id || s.storeDepartmentId)?.toString();
+                        if (typeof did === 'string') return sId === did;
+                        if (did.$in) return did.$in.includes(sId);
+                        return false;
+                    }) : day.shifts;
+                    shiftsToCalculate?.forEach((shift: any) => {
                         if (!shift.startTime || !shift.endTime) return;
                         const [sh, sm] = shift.startTime.split(':').map(Number);
                         const [eh, em] = shift.endTime.split(':').map(Number);
@@ -115,16 +188,24 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
                     });
                 });
 
-                if (todayNode && viewRole === "store_manager" && currentScheduleId) {
+                if (todayNode && ["store_manager", "store_department_head"].includes(viewRole) && currentScheduleId) {
                     const fullSchedule = await getScheduleById(currentScheduleId);
                     if (fullSchedule) {
                         const fullTodayNode = fullSchedule.days?.find((d: any) => new Date(d.date).toISOString().split('T')[0] === todayStr);
                         if (fullTodayNode) {
                             const coworkersMap = new Map();
-                            fullTodayNode.shifts.forEach((s: any) => {
+                            const shiftsToMap = did ? fullTodayNode.shifts?.filter((s: any) => {
+                                const sId = (s.storeDepartmentId?._id || s.storeDepartmentId)?.toString();
+                                if (typeof did === 'string') return sId === did;
+                                if (did.$in) return did.$in.includes(sId);
+                                return false;
+                            }) : fullTodayNode.shifts;
+                            shiftsToMap?.forEach((s: any) => {
                                 s.employees?.forEach((e: any) => {
                                     if (e._id?.toString() !== employee._id?.toString() && !coworkersMap.has(e._id?.toString())) {
                                         coworkersMap.set(e._id?.toString(), {
+                                            _id: e._id,
+                                            slug: e.slug,
                                             firstName: e.firstName,
                                             lastName: e.lastName,
                                             image: e.image,
@@ -139,16 +220,17 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
                 }
             }
         } else {
-            // Global View
+            // Global View (Admin/Tech/Owner/Global Dept Head)
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
             const allSchedulesArrays = await Promise.all(stores.map((s: any) => getSchedulesLib(s._id.toString())));
+            const coworkersMap = new Map();
 
             allSchedulesArrays.forEach((storeSchedules: any[]) => {
                 const currentSchedule = storeSchedules.find((s: any) => {
                     const start = new Date(s.dateRange.startDate);
                     const end = new Date(s.dateRange.endDate);
-                    start.setHours(0, 0, 0, 0); // Optimization: Reuse Aggregations?
+                    start.setHours(0, 0, 0, 0);
                     end.setHours(23, 59, 59, 999);
                     return today >= start && today <= end;
                 });
@@ -157,27 +239,66 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
                     const todayNode = currentSchedule.days?.find((d: any) =>
                         new Date(d.date).toISOString().split('T')[0] === todayStr
                     );
-                    todayShiftsCount += todayNode?.shifts?.reduce((acc: number, s: any) => acc + (s.employees?.length || 0), 0) || 0;
+
+                    const isMatch = (sDeptId: string) => {
+                        if (!did) return true;
+                        if (typeof did === 'string') return sDeptId === did;
+                        if (did.$in) return did.$in.includes(sDeptId);
+                        return false;
+                    };
+
+                    const relevantShifts = todayNode?.shifts?.filter((s: any) => isMatch((s.storeDepartmentId?._id || s.storeDepartmentId)?.toString()));
+                    todayShiftsCount += relevantShifts?.reduce((acc: number, s: any) => acc + (s.employees?.length || 0), 0) || 0;
+
+                    // Populate Global Coworkers
+                    relevantShifts?.forEach((s: any) => {
+                        s.employees?.forEach((e: any) => {
+                            if (e._id?.toString() !== employee._id?.toString() && !coworkersMap.has(e._id?.toString())) {
+                                coworkersMap.set(e._id?.toString(), {
+                                    _id: e._id,
+                                    slug: e.slug,
+                                    firstName: e.firstName,
+                                    lastName: e.lastName,
+                                    image: e.image,
+                                    position: e.contract?.employmentType || "Employee",
+                                    storeName: currentSchedule.storeId?.name || "Global" // Add store context
+                                });
+                            }
+                        });
+                    });
 
                     currentSchedule.days?.forEach((day: any) => {
-                        day.shifts?.forEach((shift: any) => {
-                            if (!shift.startTime || !shift.endTime) return;
-                            const [sh, sm] = shift.startTime.split(':').map(Number);
-                            const [eh, em] = shift.endTime.split(':').map(Number);
+                        const shiftsToCalc = day.shifts?.filter((s: any) => isMatch((s.storeDepartmentId?._id || s.storeDepartmentId)?.toString()));
+                        totalScheduledHours += shiftsToCalc?.reduce((acc: number, s: any) => {
+                            if (!s.startTime || !s.endTime) return acc;
+                            const [sh, sm] = s.startTime.split(':').map(Number);
+                            const [eh, em] = s.endTime.split(':').map(Number);
                             let mins = (eh * 60 + em) - (sh * 60 + sm);
-                            if (mins < 0) mins += 24 * 60;
-                            mins -= (shift.breakMinutes || 0);
+                            if (mins < 0) mins += 24 * 60; // Handle overnight shifts
+                            mins -= (s.breakMinutes || 0);
                             const hours = Math.max(0, mins) / 60;
-                            totalScheduledHours += hours * (shift.employees?.length || 0);
-                        });
+                            return acc + (hours * (s.employees?.length || 0));
+                        }, 0) || 0;
                     });
                 }
             });
+            todaysCoworkers = Array.from(coworkersMap.values());
         }
 
-        const statsTotal = Array.isArray(storeEmployeesOrStats) ? storeEmployeesOrStats.length : (storeEmployeesOrStats as any).totalEmployees || 0;
-        const statsVacation = Array.isArray(storeEmployeesOrStats) ? storeEmployeesOrStats.filter((e: any) => e.status === 'vacation').length : (storeEmployeesOrStats as any).onVacation || 0;
-        const statsCurrentActive = Array.isArray(storeEmployeesOrStats) ? storeEmployeesOrStats.filter((e: any) => e.active !== false).length : statsTotal; // Approx for stats obj
+        let statsTotal = 0;
+        let statsVacation = 0;
+        let statsCurrentActive = 0;
+
+        if ((isGlobalDeptHead || isStoreDeptHead) && storeEmployeesOrStats && (storeEmployeesOrStats as any).employees) {
+            const employees = (storeEmployeesOrStats as any).employees;
+            statsTotal = globalHeadStats?.totalEmployees || employees.length;
+            statsVacation = globalHeadStats?.onVacation || employees.filter((e: any) => e.status === 'vacation').length;
+            statsCurrentActive = employees.filter((e: any) => e.active !== false).length;
+        } else {
+            statsTotal = globalHeadStats?.totalEmployees || (Array.isArray(storeEmployeesOrStats) ? storeEmployeesOrStats.length : (storeEmployeesOrStats as any).totalEmployees || 0);
+            statsVacation = globalHeadStats?.onVacation || (Array.isArray(storeEmployeesOrStats) ? storeEmployeesOrStats.filter((e: any) => e.status === 'vacation').length : (storeEmployeesOrStats as any).onVacation || 0);
+            statsCurrentActive = Array.isArray(storeEmployeesOrStats) ? storeEmployeesOrStats.filter((e: any) => e.active !== false).length : statsTotal;
+        }
 
         const storeStats = {
             totalEmployees: statsTotal,
@@ -203,7 +324,7 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
         }
 
         const staffingMetric = {
-            label: storeId ? "Store Staffing" : "Network Staffing",
+            label: (isGlobalDeptHead || isStoreDeptHead) ? "Dept Staffing" : (storeId ? "Store Staffing" : "Network Staffing"),
             current: statsCurrentActive,
             target: targetStaffing,
             min: targetStaffing,
@@ -235,7 +356,7 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             nextWeekSchedules.forEach((s: any) => {
                 if (s.status === 'published' || s.status === 'approved') deptStatusMap.set(s.storeDepartmentId?._id?.toString() || s.storeDepartmentId?.toString(), true);
             });
-            const missingDepts = storeDepts.filter((d: any) => d.active !== false && !deptStatusMap.has(d._id.toString()));
+            const missingDepts = storeDepts.filter((d: any) => d.active !== false && (!did || d._id.toString() === did) && !deptStatusMap.has(d._id.toString()));
             missingEntityObjects = missingDepts.map((d: any) => ({ id: d._id.toString(), name: d.name }));
             missingEntityNames = missingEntityObjects.map((d: any) => d.name);
             nextWeekPublished = missingEntityNames.length === 0;
@@ -248,13 +369,22 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             nextWeekPublished = missingEntityNames.length === 0;
         }
 
-        const scheduleHealth = { nextWeekPublished, daysUntilDeadline: 2, overdue: !nextWeekPublished && new Date().getDay() > 2, missingEntities: missingEntityNames, missingEntityObjects };
+        const currentDay = new Date().getDay(); // 0=Sun, 1=Mon...
+        // Calculate Days Until Deadline
+        // If today is Monday (1) and deadline is Tuesday (2), remaining = 1.
+        // If today is Tuesday (2) and deadline is Tuesday (2), remaining = 0 (Today).
+        // If today is Wednesday (3) and deadline is Tuesday (2), remaining = -1 (Overdue).
 
-        if (!nextWeekPublished && new Date().getDay() > 2) {
+        const daysUntilDeadline = deadlineDay - currentDay;
+        const isOverdue = !nextWeekPublished && currentDay > deadlineDay;
+
+        const scheduleHealth = { nextWeekPublished, daysUntilDeadline, overdue: isOverdue, missingEntities: missingEntityNames, missingEntityObjects };
+
+        if (!nextWeekPublished && isOverdue) {
             operationsScore -= 15;
             radarStatus = radarStatus === "optimal" ? "warning" : radarStatus;
             const isManager = ["store_manager", "department_head", "store_department_head"].includes(viewRole);
-            const entityLabel = storeId ? "Departments" : "Stores";
+            const entityLabel = did ? "Department" : (storeId ? "Departments" : "Stores");
             const listStr = missingEntityNames.slice(0, 3).join(", ") + (missingEntityNames.length > 3 ? ` +${missingEntityNames.length - 3} more` : "");
             alerts.push({ id: "sched-overdue", type: "warning", title: "Missing Schedules", message: `Next week's schedule missing for ${entityLabel}: ${listStr || "All"}.`, actionLabel: isManager ? "Create" : undefined, actionUrl: isManager ? "/dashboard/schedules" : undefined, meta: { missingEntities: missingEntityNames } });
         }
@@ -267,78 +397,37 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
 
         const operationsData = { score: Math.max(0, operationsScore), status: radarStatus, alerts, staffing: staffingMetric, scheduleHealth };
 
-        return <StoreManagerDashboard
-            employee={employee}
-            pendingRequests={pendingRequests}
-            requests={{ vacations: pendingVacations, absences: pendingAbsences, overtime: pendingOvertime, schedules: pendingSchedules, coverage: pendingCoverage }}
-            storeStats={storeStats}
-            todaysCoworkers={todaysCoworkers}
-            currentScheduleId={currentScheduleId}
-            currentScheduleSlug={currentScheduleSlug}
-            currentUserRole={viewRole}
-            operationsData={operationsData}
-            tasks={JSON.parse(JSON.stringify(tasks || []))}
-            activeActions={activeActions}
-            personalTodos={personalTodos}
-            swapRequests={swapRequests}
-            currentUserRoles={allRoles}
-            stores={JSON.parse(JSON.stringify(stores))}
-            departments={JSON.parse(JSON.stringify(depts))}
-            managers={JSON.parse(JSON.stringify(managers))}
-        />;
-    }
+        const commonProps = {
+            employee,
+            pendingRequests,
+            requests: { vacations: pendingVacations, absences: pendingAbsences, overtime: pendingOvertime, schedules: pendingSchedules, coverage: pendingCoverage },
+            storeStats,
+            todaysCoworkers,
+            currentScheduleId,
+            currentScheduleSlug,
+            currentUserRole: viewRole,
+            operationsData,
+            tasks: JSON.parse(JSON.stringify(tasks || [])),
+            activeActions,
+            personalTodos,
+            swapRequests,
+            currentUserRoles: allRoles,
+            stores: JSON.parse(JSON.stringify(stores)),
+            departments: JSON.parse(JSON.stringify(depts)),
+            managers: JSON.parse(JSON.stringify(managers)),
+            daysUntilNextDayOff: (employee as any).daysUntilNextDayOff,
+            allEmployees: (storeEmployeesOrStats as any)?.employees || [], // Pass full list for global overview
+        };
 
-    if (viewRole === "department_head") {
-        // Security Patch: If they have a StoreDepartmentId, they are likely a Store Dept Head misclassified or with dual roles.
-        // We must restrict them if they are not truly global.
-        const effectiveDeptId = employee.storeDepartmentId?._id || employee.storeDepartmentId;
-
-        let pendingVacations, pendingAbsences, allEmployees;
-
-        if (effectiveDeptId) {
-            const queryId = effectiveDeptId.toString();
-            [pendingVacations, pendingAbsences, { employees: allEmployees }] = await Promise.all([
-                getAllVacationRequests({ status: 'pending', storeDepartmentId: queryId }),
-                getAllAbsenceRequests({ status: 'pending', storeDepartmentId: queryId }),
-                getAllEmployees({ storeDepartmentId: queryId }, 1, 10000)
-            ]);
-        } else {
-            // Truly global Department Head (or unassigned)
-            [pendingVacations, pendingAbsences, { employees: allEmployees }] = await Promise.all([
-                getAllVacationRequests({ status: 'pending' }),
-                getAllAbsenceRequests({ status: 'pending' }),
-                getAllEmployees({}, 1, 10000)
-            ]);
+        if (viewRole === "store_department_head") {
+            return <StoreDepartmentHeadDashboard {...commonProps} />;
         }
 
-        const pendingRequests = mergeRequests(pendingVacations, pendingAbsences, [], []);
-        const deptStats = {
-            totalEmployees: allEmployees.length,
-            onVacation: allEmployees.filter((e: any) => e.status === 'vacation').length,
-            todayShifts: 0
-        };
-        return <DepartmentHeadDashboard employee={employee} pendingRequests={pendingRequests} deptStats={deptStats} activeActions={activeActions} personalTodos={personalTodos} />;
-    }
+        if (viewRole === "department_head") {
+            return <DepartmentHeadDashboard {...commonProps} />;
+        }
 
-    if (viewRole === "store_department_head") {
-        const deptId = employee.storeDepartmentId?._id || employee.storeDepartmentId;
-        // Secure: Filter at DB level. If no deptId, prevent fetching (pass dummy or empty).
-        const queryDeptId = deptId ? deptId.toString() : "000000000000000000000000";
-
-        // Pass storeDepartmentId to actions
-        const [pendingVacations, pendingAbsences] = await Promise.all([
-            getAllVacationRequests({ status: 'pending', storeDepartmentId: queryDeptId }),
-            getAllAbsenceRequests({ status: 'pending', storeDepartmentId: queryDeptId })
-        ]);
-
-        const pendingRequests = mergeRequests(pendingVacations, pendingAbsences, [], []);
-        const { employees: deptEmployees } = await getAllEmployees({ storeDepartmentId: deptId }, 1, 10000);
-        const deptStats = {
-            totalEmployees: deptEmployees.length,
-            onVacation: deptEmployees.filter((e: any) => e.status === 'vacation').length,
-            todayShifts: 0
-        };
-        return <StoreDepartmentHeadDashboard employee={employee} pendingRequests={pendingRequests} deptStats={deptStats} activeActions={activeActions} personalTodos={personalTodos} />;
+        return <StoreManagerDashboard {...commonProps} />;
     }
 
     // Employee View

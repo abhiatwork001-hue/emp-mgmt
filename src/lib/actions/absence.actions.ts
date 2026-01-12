@@ -20,6 +20,7 @@ type AbsenceRequestData = {
     reason: string;
     type?: string;
     shiftId?: string;
+    attachments?: string[];
 }
 
 export async function createAbsenceRequest(data: AbsenceRequestData) {
@@ -152,12 +153,22 @@ export async function approveAbsenceRequest(requestId: string, approverId: strin
         type: absenceType,
         justification: justification,
         shiftRef: request.shiftId ? { scheduleId: request.shiftId } : undefined,
-        approvedBy: approverId // Use the approverId passed to the function
+        approvedBy: approverId, // Use the approverId passed to the function
+        attachments: request.attachments || [] // Transfer attachments
     });
 
     // 2. Link to Employee
     await Employee.findByIdAndUpdate(request.employeeId, {
-        $push: { absences: record._id }
+        $push: {
+            absences: record._id,
+            documents: {
+                $each: (record.attachments || []).map((url: string) => ({
+                    type: "Absence Proof",
+                    value: url,
+                    validity: request.date // Validity defaults to absence date
+                }))
+            }
+        }
     });
 
     // 3. Update Request Status

@@ -13,7 +13,8 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
-export function InviteCandidatesForm({ request }: { request: any }) {
+export function InviteCandidatesForm({ request, onSuccess }: { request: any, onSuccess?: () => void }) {
+    const props = { request, onSuccess };
     const [eligible, setEligible] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [searched, setSearched] = useState(false);
@@ -41,6 +42,9 @@ export function InviteCandidatesForm({ request }: { request: any }) {
         try {
             await inviteCandidatesForCoverage(request._id, selected, customMessage);
             toast.success(`Invited ${selected.length} employees`);
+            setSelected([]);
+            setSearched(false); // Reset search view
+            if (props.onSuccess) props.onSuccess();
         } catch (error) {
             toast.error("Failed to send invitations");
         } finally {

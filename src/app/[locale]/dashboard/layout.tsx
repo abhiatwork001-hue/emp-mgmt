@@ -71,6 +71,16 @@ export default async function DashboardLayout({
     else if (normalizedRoles.includes("department_head")) primaryRole = "department_head";
     else if (normalizedRoles.includes("store_department_head")) primaryRole = "store_department_head";
 
+    // For Global Dept Heads, fetch their department slug for direct redirect
+    let deptSlug = "";
+    if (primaryRole === "department_head") {
+        const { getGlobalDepartmentsByHead } = await import("@/lib/actions/department.actions");
+        const ledDepts = await getGlobalDepartmentsByHead(userId);
+        if (ledDepts.length > 0) {
+            deptSlug = ledDepts[0].slug;
+        }
+    }
+
     // --- Visibility Checks for Sidebar ---
     const isPrivileged = ["admin", "hr", "owner", "super_user", "tech"].includes(primaryRole);
 
@@ -78,7 +88,46 @@ export default async function DashboardLayout({
     const hasCoverageActions = await hasPendingCoverageActions(userId, isPrivileged);
 
     // 2. Recipe Visibility
-    const hasRecipes = await hasRecipesForUser();
+    // Kitchen staff should ALWAYS see the recipes link even if empty
+    const kitchenRoles = ["chef", "head_chef", "cook", "kitchen_staff"];
+    const isKitchenStaff = normalizedRoles.some((role: string) => kitchenRoles.includes(role));
+    const isAdmin = normalizedRoles.some((role: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(role));
+
+    // Check if user is in Kitchen global department or is a Kitchen department head
+    let isInKitchenDepartment = false;
+    const isDepartmentHead = normalizedRoles.includes("department_head") || primaryRole === "department_head";
+
+    try {
+        if (isDepartmentHead) {
+            const { getGlobalDepartmentsByHead } = await import("@/lib/actions/department.actions");
+            const ledDepts = await getGlobalDepartmentsByHead(userId);
+            isInKitchenDepartment = ledDepts.some((dept: any) =>
+                dept.name?.toLowerCase().includes("kitchen") ||
+                dept.slug?.toLowerCase().includes("kitchen")
+            );
+        } else {
+            // Check if employee's store department is linked to Kitchen global department
+            const { getEmployeeById } = await import("@/lib/actions/employee.actions");
+            const emp = await getEmployeeById(userId);
+
+            if (emp?.storeDepartmentId) {
+                const { StoreDepartment } = await import("@/lib/models");
+                const storeDept = await StoreDepartment.findById(emp.storeDepartmentId).populate("globalDepartmentId", "name slug").lean();
+
+                if (storeDept?.globalDepartmentId) {
+                    const globalDept = storeDept.globalDepartmentId as any;
+                    isInKitchenDepartment = globalDept.name?.toLowerCase().includes("kitchen") ||
+                        globalDept.slug?.toLowerCase().includes("kitchen");
+                }
+            }
+        }
+    } catch (error) {
+        console.error("[DashboardLayout] Error checking kitchen department:", error);
+    }
+
+    const shouldAlwaysSeeRecipes = isAdmin || isKitchenStaff || isInKitchenDepartment;
+    const hasRecipes = shouldAlwaysSeeRecipes || (await hasRecipesForUser());
+
 
     // 3. Translations for Sidebar
     const tCommon = await getTranslations("Common");
@@ -108,6 +157,7 @@ export default async function DashboardLayout({
                             userRoles={normalizedRoles}
                             departmentName={deptName}
                             storeSlug={storeSlug}
+                            deptSlug={deptSlug}
                             hasRecipes={hasRecipes}
                             hasCoverage={hasCoverageActions}
                             translations={sidebarTranslations}

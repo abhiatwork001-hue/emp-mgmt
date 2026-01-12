@@ -178,6 +178,7 @@ export interface IEmployee extends Document {
     storeId?: ObjectId;
     storeDepartmentId?: ObjectId;
     positionId?: ObjectId;
+    positions?: ObjectId[]; // Support for multiple positions
 
     roles?: string[]; // Admin, HR, Manager, Employee
 
@@ -347,6 +348,7 @@ export interface IAbsenceRequest extends Document {
     type?: string; // "sick", "late", "personal"
     reason?: string;
     justification?: "Justified" | "Unjustified"; // New (assigned during approval)
+    attachments?: string[]; // New: URLs to proof files
     status: RequestStatus;
     approvedBy?: ObjectId;
     createdAt?: Date;
@@ -474,7 +476,17 @@ const StoreSchema = new Schema<IStore>({
 
     active: { type: Boolean, default: true },
     archivedAt: { type: Date }
-}, { timestamps: true });
+}, {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+StoreSchema.virtual('departments', {
+    ref: 'StoreDepartment',
+    localField: '_id',
+    foreignField: 'storeId'
+});
 
 const StoreDepartmentSchema = new Schema<IStoreDepartment>({
     storeId: { type: Schema.Types.ObjectId, ref: 'Store', required: true },
@@ -546,6 +558,7 @@ const EmployeeSchema = new Schema<IEmployee>({
     storeId: { type: Schema.Types.ObjectId, ref: 'Store' },
     storeDepartmentId: { type: Schema.Types.ObjectId, ref: 'StoreDepartment' },
     positionId: { type: Schema.Types.ObjectId, ref: 'Position' },
+    positions: [{ type: Schema.Types.ObjectId, ref: 'Position' }], // Support for multiple positions
 
     roles: [{ type: String }], // Replaced single role with array
 
@@ -693,7 +706,8 @@ const AbsenceRequestSchema = new Schema<IAbsenceRequest>({
     shiftId: { type: Schema.Types.ObjectId, ref: 'Schedule' }, // or ShiftDefinition if needed
     type: { type: String },
     reason: { type: String },
-    justification: { type: String, enum: ["Justified", "Unjustified"] }, // Added field
+    justification: { type: String, enum: ["Justified", "Unjustified"] },
+    attachments: [String], // New field
     status: { type: String, enum: ['pending', 'approved', 'rejected', 'cancelled'], default: 'pending' },
     approvedBy: { type: Schema.Types.ObjectId, ref: 'Employee' }
 }, { timestamps: true });

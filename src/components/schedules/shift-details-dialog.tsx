@@ -24,11 +24,20 @@ export function ShiftDetailsDialog({
     employeeName,
     storeName,
     canSwap,
-    onSwapRequest
-}: ShiftDetailsDialogProps) {
+    onSwapRequest,
+    onReportAbsence
+}: ShiftDetailsDialogProps & { onReportAbsence?: () => void }) {
     const t = useTranslations("Schedule");
 
     if (!shift) return null;
+
+    // Helper to check if shift is in the future (allow reporting absence for today/future)
+    const isFutureOrToday = () => {
+        const now = new Date();
+        const shiftDate = new Date(date);
+        shiftDate.setHours(parseInt(shift.endTime.split(':')[0]), 0, 0, 0); // Approx end time checking
+        return shiftDate >= now || new Date().toDateString() === date.toDateString();
+    };
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -77,15 +86,22 @@ export function ShiftDetailsDialog({
                         )}
                     </div>
 
-                    {canSwap && (
-                        <div className="mt-6">
+                    <div className="flex flex-col gap-2 mt-6">
+                        {canSwap && (
                             <Button className="w-full" onClick={onSwapRequest}>
                                 Request Shift Swap
                             </Button>
-                        </div>
-                    )}
+                        )}
 
-                    {!canSwap && (
+                        {/* Absence Reporting - Only for future/today shifts */}
+                        {isFutureOrToday() && onReportAbsence && (
+                            <Button variant="destructive" className="w-full border-red-200 text-white hover:bg-red-600" onClick={onReportAbsence}>
+                                Report Absence
+                            </Button>
+                        )}
+                    </div>
+
+                    {!canSwap && !onReportAbsence && (
                         <div className="mt-4 bg-muted/50 text-muted-foreground p-3 rounded-md text-[10px] leading-relaxed">
                             <p className="font-semibold mb-1 opacity-70 uppercase tracking-wider">Shift Actions Unavailable</p>
                             <p>You cannot swap or modify this shift because it has either already started, passed, or belongs to another location.</p>

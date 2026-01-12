@@ -43,23 +43,26 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
 
     let storeIdFilter = undefined;
     let deptIdFilter = undefined;
+    const isDeptHeadGlobal = roles.includes("department_head");
     const isStoreLevel = roles.some((r: string) => ["store_manager", "store_department_head"].includes(r));
-    // department_head removed from global level to prevent leak. 
-    // Only true Admins/HR/Tech see everything.
     const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "tech"].includes(r));
 
     if (!isGlobalLevel) {
-        // Enforce filters for non-global users
-        if (isStoreLevel) {
+        if (isDeptHeadGlobal) {
+            const { GlobalDepartment, StoreDepartment } = await import("@/lib/models");
+            const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: employee._id }).select('_id');
+            const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
+            const storeDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).select('_id');
+            deptIdFilter = { $in: storeDepts.map((sd: any) => sd._id.toString()) };
+        } else if (isStoreLevel) {
             storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
-            if (!storeIdFilter) storeIdFilter = "000000000000000000000000"; // Block if no store
+            if (!storeIdFilter) storeIdFilter = "000000000000000000000000";
 
             if (roles.includes("store_department_head")) {
                 deptIdFilter = (employee.storeDepartmentId?._id || employee.storeDepartmentId)?.toString();
-                if (!deptIdFilter) deptIdFilter = "000000000000000000000000"; // Block if no dept
+                if (!deptIdFilter) deptIdFilter = "000000000000000000000000";
             }
         } else {
-            // If not Global AND not Store Level (e.g. some other weird role), block everything.
             storeIdFilter = "000000000000000000000000";
         }
     }

@@ -18,6 +18,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { logAction } from "./log.actions";
 import { calculateWorkingDays } from "@/lib/holidays";
+import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
 
 const dbConnect = connectToDB;
 
@@ -29,14 +31,17 @@ export async function updateVacationTracker(
     const session = await getServerSession(authOptions);
     const user = session?.user as any;
 
-    if (!user) throw new Error("Unauthorized");
+    if (!user) redirect("/login");
 
     // Role Check
     const isPrivileged = user.roles?.some((r: string) =>
         ['owner', 'hr', 'tech', 'admin', 'super_user'].includes(r.toLowerCase())
     );
 
-    if (!isPrivileged) throw new Error("Insufficient Permissions");
+    if (!isPrivileged) {
+        const locale = await getLocale();
+        redirect(`/${locale}/access-denied`);
+    }
 
     const employee = await Employee.findById(employeeId);
     if (!employee) throw new Error("Employee not found");
@@ -152,7 +157,7 @@ export async function createVacationRequest(data: VacationRequestData) {
     // Check permissions if bypassing validation (recording for others)
     if (bypassValidation) {
         const session = await getServerSession(authOptions);
-        if (!session?.user) throw new Error("Unauthorized");
+        if (!session?.user) redirect("/login");
         const user = await Employee.findById((session.user as any).id).select("roles");
         const roles = (user?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
 
@@ -160,7 +165,8 @@ export async function createVacationRequest(data: VacationRequestData) {
         // Only HR, Admin, Owner, Tech
         const allowed = roles.some((r: string) => ["admin", "hr", "owner", "tech", "super_user"].includes(r));
         if (!allowed) {
-            throw new Error("Permission Denied: You do not have permission to record vacations for others.");
+            const locale = await getLocale();
+            redirect(`/${locale}/access-denied`);
         }
     }
 
@@ -382,7 +388,8 @@ async function checkApprovalPermission(userId: string) {
     const roles = (user?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
     const allowed = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech'].includes(r));
     if (!allowed) {
-        throw new Error("Permission Denied: Only HR, Owners, Admin, or Tech can approve/reject vacations.");
+        const locale = await getLocale();
+        redirect(`/${locale}/access-denied`);
     }
 }
 
@@ -634,7 +641,10 @@ export async function updateVacationRequest(requestId: string, employeeId: strin
     await dbConnect();
     const request = await VacationRequest.findById(requestId);
     if (!request) throw new Error("Request not found");
-    if (request.employeeId.toString() !== employeeId) throw new Error("Unauthorized");
+    if (request.employeeId.toString() !== employeeId) {
+        const locale = await getLocale();
+        redirect(`/${locale}/access-denied`);
+    }
     if (request.status !== 'pending') throw new Error("Only pending requests can be updated");
 
     const start = data.requestedFrom ? new Date(data.requestedFrom) : new Date(request.requestedFrom);
@@ -662,7 +672,10 @@ export async function cancelVacationRequest(requestId: string, employeeId: strin
     await dbConnect();
     const request = await VacationRequest.findById(requestId);
     if (!request) throw new Error("Request not found");
-    if (request.employeeId.toString() !== employeeId) throw new Error("Unauthorized");
+    if (request.employeeId.toString() !== employeeId) {
+        const locale = await getLocale();
+        redirect(`/${locale}/access-denied`);
+    }
     if (request.status !== 'pending') throw new Error("Only pending requests can be cancelled");
 
     await VacationRequest.findByIdAndDelete(requestId);

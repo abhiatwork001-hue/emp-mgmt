@@ -9,7 +9,11 @@ import { Input } from "@/components/ui/input";
 import { assignEvaluationToStore, getEvaluationTemplates } from "@/lib/actions/evaluation.actions";
 import { getAllStores } from "@/lib/actions/store.actions";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export function EvaluationAssignmentDialog({ onSuccess }: { onSuccess?: () => void }) {
     const [open, setOpen] = useState(false);
@@ -22,7 +26,7 @@ export function EvaluationAssignmentDialog({ onSuccess }: { onSuccess?: () => vo
     // Form
     const [selectedTemplate, setSelectedTemplate] = useState("");
     const [selectedStore, setSelectedStore] = useState("");
-    const [dueDate, setDueDate] = useState("");
+    const [dueDate, setDueDate] = useState<Date>();
 
     useEffect(() => {
         if (open) {
@@ -54,7 +58,7 @@ export function EvaluationAssignmentDialog({ onSuccess }: { onSuccess?: () => vo
 
         setLoading(true);
         try {
-            await assignEvaluationToStore(selectedTemplate, selectedStore, managerId, new Date(dueDate));
+            await assignEvaluationToStore(selectedTemplate, selectedStore, managerId, dueDate);
             toast.success("Success", { description: "Evaluation assigned successfully" });
             setOpen(false);
             onSuccess?.();
@@ -103,9 +107,33 @@ export function EvaluationAssignmentDialog({ onSuccess }: { onSuccess?: () => vo
                         </Select>
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-2 flex flex-col">
                         <Label>Due Date</Label>
-                        <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full pl-3 text-left font-normal",
+                                        !dueDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={dueDate}
+                                    onSelect={setDueDate}
+                                    disabled={(date) =>
+                                        date < new Date()
+                                    }
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
 
                     <div className="flex justify-end gap-2 pt-4">

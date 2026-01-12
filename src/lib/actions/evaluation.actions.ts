@@ -121,18 +121,38 @@ export async function getEvaluationResults(assignmentId: string) {
 
 // Admin / HR Dashboard Data
 export async function getAllAssignments() {
-    await dbConnect();
-    const assignments = await EvaluationAssignment.find({})
-        .populate('templateId', 'title')
-        .populate('storeId', 'name')
-        .populate('assignedTo', 'firstName lastName')
-        .sort({ createdAt: -1 });
+    try {
+        await dbConnect();
 
-    // Enhance with completion count
-    const enhanced = await Promise.all(assignments.map(async (a: any) => {
-        const count = await EvaluationResponse.countDocuments({ assignmentId: a._id });
-        return { ...a.toObject(), responseCount: count };
-    }));
+        // Use lean() for performance and safety? 
+        // Populate might fail if references don't exist? No, usually returns null.
+        const assignments = await EvaluationAssignment.find({})
+            .populate('templateId', 'title')
+            .populate('storeId', 'name')
+            .populate('assignedTo', 'firstName lastName')
+            .sort({ createdAt: -1 });
 
-    return JSON.parse(JSON.stringify(enhanced));
+        // Enhance with completion count
+        const enhanced = await Promise.all(assignments.map(async (a: any) => {
+            if (!a) return null;
+            // Robust check for missing refs
+            const safeObj = {
+                _id: a._id.toString(),
+                templateTitle: a.templateId?.title || "Unknown Template",
+                storeName: a.storeId?.name || "Unknown Store",
+                assignedToName: a.assignedTo ? `${a.assignedTo.firstName} ${a.assignedTo.lastName}` : "Unassigned",
+                status: a.status,
+                dueDate: a.dueDate,
+                createdAt: a.createdAt
+            };
+
+            const count = await EvaluationResponse.countDocuments({ assignmentId: a._id });
+            return { ...a.toObject(), ...safeObj, responseCount: count };
+        }));
+
+        return JSON.parse(JSON.stringify(enhanced.filter(Boolean)));
+    } catch (error) {
+        console.error("Error in getAllAssignments:", error);
+        return [];
+    }
 }

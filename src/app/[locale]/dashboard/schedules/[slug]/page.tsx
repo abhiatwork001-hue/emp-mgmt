@@ -17,7 +17,8 @@ export default async function SchedulePage({ params }: { params: Promise<{ slug:
 
     try {
         schedule = await getScheduleBySlug(slug);
-    } catch (e) {
+    } catch (e: any) {
+        if (e?.digest?.startsWith?.('NEXT_REDIRECT')) throw e;
         // Likely unauthorized or not found
         error = e;
     }

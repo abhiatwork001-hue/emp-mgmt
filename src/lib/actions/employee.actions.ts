@@ -13,6 +13,8 @@ import { authOptions } from "@/lib/auth";
 import { getAugmentedRolesAndPermissions } from "../auth-utils";
 import { pusherServer } from "../pusher";
 import { cache } from "react";
+import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
 
 type EmployeeData = Partial<IEmployee>;
 
@@ -20,7 +22,7 @@ export interface EmployeeFilterOptions {
     search?: string;
     storeId?: string;
     departmentId?: string; // Global Department ID
-    storeDepartmentId?: string; // Specific Store Department ID
+    storeDepartmentId?: string | { $in: string[] }; // Specific Store Department ID
     positionId?: string;
     sort?: string;
 }
@@ -35,8 +37,12 @@ export async function getAllEmployees(options: EmployeeFilterOptions = {}, page 
         query.storeId = storeId;
     }
 
-    if (storeDepartmentId && storeDepartmentId !== "all") {
-        query.storeDepartmentId = storeDepartmentId;
+    if (storeDepartmentId) {
+        if (typeof storeDepartmentId === 'string' && storeDepartmentId !== "all") {
+            query.storeDepartmentId = storeDepartmentId;
+        } else if (typeof storeDepartmentId === 'object') {
+            query.storeDepartmentId = storeDepartmentId;
+        }
     }
 
     if (positionId && positionId !== "all") {
@@ -167,6 +173,12 @@ export async function getEmployeeById(id: string) {
             select: "name level roles",
             populate: { path: "roles", select: "name permissions" }
         })
+        .populate({
+            path: "positions",
+            select: "name level roles",
+            populate: { path: "roles", select: "name permissions" },
+            options: { strictPopulate: false } // Avoid error if schema hasn't fully synced in dev
+        })
         .populate("storeDepartmentId", "name")
         .populate({
             path: "positionHistory.positionId",
@@ -188,14 +200,13 @@ export async function getEmployeeById(id: string) {
             path: "absences",
             options: { sort: { date: -1 } }
         })
-        .select("-password")
         .select("-password");
     if (!employee) return null;
 
     const employeeObj = JSON.parse(JSON.stringify(employee));
 
-    // Augment with roles/permissions
-    const { roles, permissions } = getAugmentedRolesAndPermissions(employeeObj, employee.positionId);
+    // Augment with roles/permissions (from all positions)
+    const { roles, permissions } = getAugmentedRolesAndPermissions(employeeObj, employee.positionId, employee.positions);
     employeeObj.roles = roles;
     employeeObj.permissions = permissions;
 
@@ -753,7 +764,7 @@ export async function getStoreEmployeesWithTodayStatus(storeId: string) {
 }
 export async function getViewerData() {
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) redirect("/login");
 
     await dbConnect();
 
@@ -872,7 +883,7 @@ export const getEmployeeByIdCached = cache(async (id: string) => {
     return getEmployeeById(id);
 });
 
-export async function getEmployeeStats(filters: { storeId?: string, departmentId?: string, storeDepartmentId?: string } = {}) {
+export async function getEmployeeStats(filters: { storeId?: string, departmentId?: string, storeDepartmentId?: string | { $in: string[] } } = {}) {
     await dbConnect();
     const { VacationRecord, Employee } = require("@/lib/models");
     const { Types } = require("mongoose");
@@ -909,7 +920,12 @@ export async function getEmployeeStats(filters: { storeId?: string, departmentId
         {
             $match: {
                 'emp.active': true,
-                ...(filters.storeId ? { 'emp.storeId': new Types.ObjectId(filters.storeId) } : {})
+                ...(filters.storeId ? { 'emp.storeId': new Types.ObjectId(filters.storeId) } : {}),
+                ...(filters.storeDepartmentId ? {
+                    'emp.storeDepartmentId': typeof filters.storeDepartmentId === 'string'
+                        ? new Types.ObjectId(filters.storeDepartmentId)
+                        : (filters.storeDepartmentId.$in ? { $in: filters.storeDepartmentId.$in.map((id: string) => new Types.ObjectId(id)) } : filters.storeDepartmentId)
+                } : {})
             }
         },
         { $count: 'count' }
@@ -918,5 +934,149 @@ export async function getEmployeeStats(filters: { storeId?: string, departmentId
     return {
         totalEmployees,
         onVacation: vacationCount[0]?.count || 0
+    };
+}
+
+export async function getEmployeeWorkStatistics(
+    employeeId: string,
+    from: Date, // Inclusive
+    to: Date    // Inclusive
+) {
+    await dbConnect();
+    const { Schedule, AbsenceRecord } = require("@/lib/models");
+
+    // Fix dates
+    const startDate = new Date(from);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(to);
+    endDate.setHours(23, 59, 59, 999);
+
+    // 1. Fetch Schedules in Range for this Employee
+    const schedulesRaw = await Schedule.find({
+        status: "published",
+        "days.shifts.employees": employeeId,
+        $and: [
+            { "dateRange.endDate": { $gte: startDate } },
+            { "dateRange.startDate": { $lte: endDate } }
+        ]
+    }).lean();
+
+    // 2. Fetch Absences in Range
+    const absencesRaw = await AbsenceRecord.find({
+        employeeId: employeeId,
+        status: "approved",
+        date: { $gte: startDate, $lte: endDate }
+    }).lean();
+
+    // Statistics Accumulators
+    let totalMinutes = 0;
+
+    let publicHolidayMinutes = 0;
+    let publicHolidayShifts = 0;
+    let publicHolidayNames: string[] = [];
+
+    // Process Schedules to find exact days/shifts for this employee
+    schedulesRaw.forEach((sched: any) => {
+        sched.days.forEach((day: any) => {
+            const dayDate = new Date(day.date);
+            // Check if day is within our request range
+            if (dayDate < startDate || dayDate > endDate) return;
+
+            // Check for shifts for this employee
+            const empShifts = day.shifts.filter((s: any) =>
+                s.employees.some((e: any) => e.toString() === employeeId.toString())
+            );
+
+            if (empShifts.length > 0) {
+                empShifts.forEach((shift: any) => {
+                    // Calculate duration
+                    try {
+                        const [h1, m1] = shift.startTime.split(':').map(Number);
+                        const [h2, m2] = shift.endTime.split(':').map(Number);
+                        let durationMins = (h2 * 60 + m2) - (h1 * 60 + m1);
+                        if (durationMins < 0) durationMins += 24 * 60; // Overnight
+                        if (shift.breakMinutes) durationMins -= shift.breakMinutes;
+
+                        totalMinutes += durationMins;
+
+                        // Holiday Logic
+                        if (day.isHoliday) {
+                            publicHolidayMinutes += durationMins;
+                            if (!publicHolidayNames.includes(day.holidayName)) {
+                                publicHolidayNames.push(day.holidayName);
+                            }
+                        }
+                    } catch (e) {
+                        // Skip invalid time formats
+                    }
+                });
+
+                if (day.isHoliday && empShifts.length > 0) {
+                    publicHolidayShifts += 1;
+                }
+            }
+        });
+    });
+
+    // Process Absences
+    const absenceBreakdown: Record<string, number> = {};
+    let totalAbsenceDays = 0;
+    let justifiedCount = 0;
+    let unjustifiedCount = 0;
+
+    absencesRaw.forEach((abs: any) => {
+        totalAbsenceDays++;
+
+        const type = abs.type || "Unknown";
+        absenceBreakdown[type] = (absenceBreakdown[type] || 0) + 1;
+
+        if (abs.justification === "Justified") justifiedCount++;
+        if (abs.justification === "Unjustified") unjustifiedCount++;
+    });
+
+    // Total Days in Range (Calendar days)
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    const totalCalendarDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) || 1;
+
+    // Re-calc unique Working Days
+    const workingDates = new Set();
+    schedulesRaw.forEach((sched: any) => {
+        sched.days.forEach((day: any) => {
+            const dayDate = new Date(day.date);
+            if (dayDate < startDate || dayDate > endDate) return;
+            const empShifts = day.shifts.filter((s: any) =>
+                s.employees.some((e: any) => e.toString() === employeeId.toString())
+            );
+            if (empShifts.length > 0) {
+                workingDates.add(dayDate.toISOString().split('T')[0]);
+            }
+        });
+    });
+    const totalWorkingDays = workingDates.size;
+    const totalDaysOff = Math.max(0, totalCalendarDays - totalWorkingDays - totalAbsenceDays);
+
+    return {
+        period: {
+            from: startDate,
+            to: endDate,
+            totalCalendarDays
+        },
+        work: {
+            totalMinutes,
+            totalHours: Math.round((totalMinutes / 60) * 10) / 10,
+            totalWorkingDays
+        },
+        holidays: {
+            daysWorked: publicHolidayShifts,
+            hoursWorked: Math.round((publicHolidayMinutes / 60) * 10) / 10,
+            names: publicHolidayNames
+        },
+        absences: {
+            totalDays: totalAbsenceDays,
+            breakdown: absenceBreakdown,
+            justified: justifiedCount,
+            unjustified: unjustifiedCount
+        },
+        daysOff: totalDaysOff
     };
 }

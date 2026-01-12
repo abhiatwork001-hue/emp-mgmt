@@ -12,7 +12,11 @@ import { Calendar as CalendarIcon, Search, User, Store, Briefcase, ChevronRight,
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import { DateRange } from "react-day-picker";
+
 import { getEmployeeSchedulesInRange } from "@/lib/actions/schedule.actions";
+import { getEmployeeWorkStatistics } from "@/lib/actions/employee.actions";
+import { WorkStatisticsCard } from "@/components/statistics/work-statistics-card";
+import { DatePickerWithRange } from "@/components/statistics/date-range-picker";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
@@ -31,6 +35,7 @@ export function ViewerClient({ initialEmployees, stores, departments, role }: Vi
         to: endOfWeek(new Date(), { weekStartsOn: 1 })
     });
     const [shifts, setShifts] = useState<any[]>([]);
+    const [stats, setStats] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
@@ -50,9 +55,13 @@ export function ViewerClient({ initialEmployees, stores, departments, role }: Vi
         if (!selectedEmployee || !dateRange?.from || !dateRange?.to) return;
         setLoading(true);
         try {
-            const data = await getEmployeeSchedulesInRange(selectedEmployee._id, dateRange.from, dateRange.to);
-            console.log("Fetched Shifts Data:", data);
-            setShifts(data);
+            const [shiftsData, statsData] = await Promise.all([
+                getEmployeeSchedulesInRange(selectedEmployee._id, dateRange.from, dateRange.to),
+                getEmployeeWorkStatistics(selectedEmployee._id, dateRange.from, dateRange.to)
+            ]);
+            console.log("Fetched Shifts Data:", shiftsData);
+            setShifts(shiftsData);
+            setStats(statsData);
         } catch (error) {
             console.error("Failed to fetch shifts", error);
         } finally {
@@ -194,45 +203,10 @@ export function ViewerClient({ initialEmployees, stores, departments, role }: Vi
                                 Current Month
                             </Button>
 
-                            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className={cn(
-                                            "rounded-full h-8 px-4 text-xs font-bold border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary transition-all",
-                                            !dateRange && "text-muted-foreground"
-                                        )}
-                                    >
-                                        <CalendarIcon className="mr-2 h-3 w-3" />
-                                        {dateRange?.from ? (
-                                            dateRange.to ? (
-                                                <>{format(dateRange.from, "LLL dd")} - {format(dateRange.to, "LLL dd, y")}</>
-                                            ) : (
-                                                format(dateRange.from, "LLL dd, y")
-                                            )
-                                        ) : (
-                                            <span>Select Range</span>
-                                        )}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 rounded-2xl border-border/40 shadow-2xl" align="end">
-                                    <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={dateRange?.from}
-                                        selected={dateRange}
-                                        onSelect={(range) => {
-                                            setDateRange(range);
-                                            // Only close if we have a complete range (from AND to)
-                                            if (range?.from && range?.to) {
-                                                setIsCalendarOpen(false);
-                                            }
-                                        }}
-                                        numberOfMonths={2}
-                                    />
-                                </PopoverContent>
-                            </Popover>
+                            <DatePickerWithRange
+                                date={dateRange}
+                                setDate={setDateRange}
+                            />
                         </div>
                     </CardHeader>
 
@@ -277,7 +251,15 @@ export function ViewerClient({ initialEmployees, stores, departments, role }: Vi
                                     </div>
 
                                     {/* Shifts List */}
-                                    <div className="p-6">
+                                    <div className="p-6 space-y-6">
+                                        {/* Statistics Section */}
+                                        {stats && !loading && (
+                                            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+                                                <WorkStatisticsCard stats={stats} />
+                                            </div>
+                                        )}
+
+
                                         {loading ? (
                                             <div className="flex flex-col items-center justify-center py-20">
                                                 <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />

@@ -10,8 +10,8 @@ export const roleAccess: Record<string, string[]> = {
     // User Update: Employees/Positions removed. Approvals removed (view context only in widgets).
     "store_manager": ["/dashboard", "/dashboard/pending-actions", "/dashboard/notices", "/dashboard/stores", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/tips", "/dashboard/coverage", "/dashboard/directory", "/dashboard/suppliers"],
 
-    // Dept Head (Global) - HAS Global Departments. NO Emp/Pos/Approv.
-    "department_head": ["/dashboard", "/dashboard/pending-actions", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages"],
+    // Dept Head (Global) - HAS Global Departments. Can manage suppliers, directory, and recipes (if Kitchen dept).
+    "department_head": ["/dashboard", "/dashboard/pending-actions", "/dashboard/notices", "/dashboard/stores", "/dashboard/departments", "/dashboard/recipes", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages", "/dashboard/suppliers", "/dashboard/directory", "/dashboard/employees"],
 
     // Store Dept Head - NO Emp/Pos/Approv. Stores via context only.
     "store_department_head": ["/dashboard", "/dashboard/pending-actions", "/dashboard/notices", "/dashboard/stores", "/dashboard/schedules", "/dashboard/vacations", "/dashboard/absences", "/dashboard/profile", "/dashboard/notes", "/dashboard/tasks", "/dashboard/messages"],
@@ -35,14 +35,17 @@ export const hasAccess = (roles: string | string[], path: string, deptName: stri
         // Super users and High Level Roles have access to everything
         if (["super_user", "tech", "owner", "admin", "hr"].includes(normalizedRole)) return true;
 
-        // 1. Special Logic: Recipes (Kitchen Dept Only)
+        // 1. Special Logic: Recipes (Kitchen Dept Only + Department Heads)
         if (path === "/dashboard/recipes") {
+            const kitchenRoles = ["chef", "head_chef", "cook", "kitchen_staff"];
             const isKitchen = deptName.toLowerCase().includes("kitchen") ||
                 deptName.toLowerCase().includes("cocina") ||
                 deptName.toLowerCase().includes("cozinha") ||
+                kitchenRoles.includes(normalizedRole) ||
                 permissions.includes("view_recipes");
             const isAdminOrHR = ["admin", "hr", "tech", "owner", "super_user"].includes(normalizedRole);
-            return isKitchen || isAdminOrHR;
+            const isDepartmentHead = normalizedRole === "department_head";
+            return isKitchen || isAdminOrHR || isDepartmentHead;
         }
 
         // 2. Special Logic: Settings (HR/Owner/Tech Only - Admin is EXCLUDED)
@@ -56,7 +59,7 @@ export const hasAccess = (roles: string | string[], path: string, deptName: stri
         }
 
         // 4. Special Logic: Global Departments (Admin, HR, DeptHead Global Only)
-        if (path === "/dashboard/departments") {
+        if (path === "/dashboard/departments" || path.startsWith("/dashboard/departments/")) {
             return ["admin", "hr", "department_head", "tech", "super_user"].includes(normalizedRole);
         }
 

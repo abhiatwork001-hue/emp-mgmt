@@ -35,17 +35,30 @@ export default async function RecipesPage({ searchParams }: { searchParams: Prom
     const sessionRoleNormalized = session.role?.toLowerCase().replace(/ /g, '_');
 
     // Define Permissions
-    const adminRoles = ['owner', 'admin', 'super_user'];
+    const adminRoles = ['owner', 'admin', 'super_user', 'hr', 'tech'];
+
+    // Check if user is a Kitchen department head
+    let isKitchenDepartmentHead = false;
+    if (normalizedRoles.includes('department_head')) {
+        const { getGlobalDepartmentsByHead } = await import("@/lib/actions/department.actions");
+        const ledDepts = await getGlobalDepartmentsByHead(session.userId);
+        isKitchenDepartmentHead = ledDepts.some((dept: any) =>
+            dept.name.toLowerCase().includes("kitchen") ||
+            dept.slug.toLowerCase().includes("kitchen")
+        );
+    }
+
     const creatorRoles = [
         ...adminRoles,
-        'department_head',
         'store_department_head',
         'store_manager',
         'chef',
         'head_chef'
     ];
 
-    const canCreate = normalizedRoles.some((r: string) => creatorRoles.includes(r)) || creatorRoles.includes(sessionRoleNormalized);
+    const canCreate = normalizedRoles.some((r: string) => creatorRoles.includes(r)) ||
+        creatorRoles.includes(sessionRoleNormalized) ||
+        isKitchenDepartmentHead;
     const isAdmin = normalizedRoles.some((r: string) => adminRoles.includes(r)) || adminRoles.includes(sessionRoleNormalized);
 
     console.log("RecipesPage Debug:", {
@@ -53,7 +66,8 @@ export default async function RecipesPage({ searchParams }: { searchParams: Prom
         employeeRoles: employee?.roles,
         normalizedRoles,
         isAdmin,
-        canCreate
+        canCreate,
+        isKitchenDepartmentHead
     });
 
     let userGlobalDepartmentId = undefined;

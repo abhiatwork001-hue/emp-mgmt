@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Clock, Palmtree, AlertCircle, ArrowRight, CheckCircle2, CalendarDays, Check, X, Eye, Square, CheckSquare } from "lucide-react";
 import { Link } from "@/i18n/routing";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
@@ -155,7 +155,16 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
             createdAt: new Date(i.createdAt),
             link: `/dashboard/coverage`
         }))
-    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    ].sort((a, b) => {
+        const timeA = isValid(a.createdAt) ? a.createdAt.getTime() : 0;
+        const timeB = isValid(b.createdAt) ? b.createdAt.getTime() : 0;
+        return timeB - timeA;
+    });
+
+    const safeFormat = (date: any, formatStr: string) => {
+        if (!date || !isValid(new Date(date))) return "---";
+        return format(new Date(date), formatStr);
+    };
 
     // Limit to items for widget
     const limit = 5; // User requested limit
@@ -413,7 +422,7 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
                                             </div>
 
                                             <div className="text-right flex flex-col items-end gap-0.5 shrink-0">
-                                                <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/40">{format(item.date, "MMM d")}</p>
+                                                <p className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground/40">{safeFormat(item.date, "MMM d")}</p>
                                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity h-6">
                                                     {canApprove && (
                                                         <>

@@ -106,8 +106,22 @@ export async function getStoreDepartmentById(id: string) {
 
 export async function getStoreDepartmentBySlug(storeId: string, slug: string) {
     await dbConnect();
-    const deptDoc = await StoreDepartment.findOne({ storeId, slug }).select("_id").lean();
-    if (!deptDoc) return null;
+    const { Types } = await import("mongoose");
+
+    let query: any = { storeId, slug };
+
+    // If slug is a valid ObjectId, allow finding by ID as well (fallback)
+    if (Types.ObjectId.isValid(slug)) {
+        query = {
+            storeId,
+            $or: [{ slug }, { _id: slug }]
+        };
+    }
+
+    const deptDoc = await StoreDepartment.findOne(query).select("_id").lean();
+    if (!deptDoc) {
+        return null;
+    }
     return getStoreDepartmentById(deptDoc._id.toString());
 }
 

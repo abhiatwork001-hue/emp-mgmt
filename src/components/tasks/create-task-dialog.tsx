@@ -85,13 +85,13 @@ export function CreateTaskDialog({
     const isGlobalHead = roles.includes("department_head"); // Global Dept Head
 
     // Filter available entities based on role
-    const availableStores = isGlobalAdmin ? safeStores : (
+    const availableStores = (isGlobalAdmin || isGlobalHead) ? safeStores : (
         (isStoreManager || isStoreDeptHead) && currentUser.storeId
             ? safeStores.filter(s => s._id === (currentUser.storeId._id || currentUser.storeId))
             : []
     );
 
-    const availableDepts = isGlobalAdmin ? safeDepts : (
+    const availableDepts = (isGlobalAdmin || isGlobalHead) ? safeDepts : (
         isStoreManager && currentUser.storeId
             ? safeDepts.filter(d => d.storeId === (currentUser.storeId._id || currentUser.storeId))
             : isStoreDeptHead && currentUser.storeDepartmentId
@@ -99,7 +99,7 @@ export function CreateTaskDialog({
                 : []
     );
 
-    const availableEmployees = isGlobalAdmin ? safeEmployees : (
+    const availableEmployees = (isGlobalAdmin || isGlobalHead) ? safeEmployees : (
         (isStoreManager || isStoreDeptHead) && currentUser.storeId
             ? safeEmployees.filter(e => e.storeId === (currentUser.storeId._id || currentUser.storeId))
             : []

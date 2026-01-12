@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
                     await dbConnect();
 
                     const employee = await Employee.findOne({ email: credentials.email })
-                        .select("firstName lastName email password roles positionId isPasswordChanged")
+                        .select("firstName lastName email password roles positionId positions isPasswordChanged")
                         .lean();
 
                     if (!employee) {
@@ -47,7 +47,16 @@ export const authOptions: NextAuthOptions = {
                             .select('name permissions roles')
                             .lean()
                         : null;
-                    const { roles: uniqueRoles, permissions } = getAugmentedRolesAndPermissions(employee, position);
+
+                    const multiPositions = employee.positions && employee.positions.length > 0
+                        ? await Position.find({ _id: { $in: employee.positions } })
+                            .populate({ path: 'roles', select: 'name permissions' })
+                            .select('name permissions roles')
+                            .setOptions({ strictPopulate: false }) // Avoid error in dev environment
+                            .lean()
+                        : [];
+
+                    const { roles: uniqueRoles, permissions } = getAugmentedRolesAndPermissions(employee, position, multiPositions);
 
                     // Aggressive Sanitization
                     const sanitizedRoles = uniqueRoles.map(r => String(r)).filter(r => r.length < 100);

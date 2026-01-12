@@ -14,6 +14,9 @@ import { DateRange } from "react-day-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { getEmployeeWorkStatistics } from "@/lib/actions/employee.actions";
+import { WorkStatisticsCard } from "@/components/statistics/work-statistics-card";
+import { DatePickerWithRange } from "@/components/statistics/date-range-picker";
 
 interface ProfileWorkTabProps {
     employee: any;
@@ -43,6 +46,21 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
     const [calculatedHours, setCalculatedHours] = useState(0);
     const [billableAmount, setBillableAmount] = useState(0);
 
+    const [detailedStats, setDetailedStats] = useState<any>(null);
+
+    // Fetch Detailed Stats when range changes
+    useEffect(() => {
+        const fetchDetailedStats = async () => {
+            if (!calcRange?.from || !calcRange?.to) return;
+            try {
+                const stats = await getEmployeeWorkStatistics(employee._id, calcRange.from, calcRange.to);
+                setDetailedStats(stats);
+            } catch (error) {
+                console.error("Failed to fetch detailed stats", error);
+            }
+        };
+        fetchDetailedStats();
+    }, [employee._id, calcRange]);
 
 
     // Initial Fetch (Stats + Full History Cache)
@@ -124,6 +142,19 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                 <StatsCard title="This Year" value={stats.year} unit="h" icon={CalendarIcon} color="text-amber-500" bg="bg-amber-500/10" />
             </div>
 
+            {/* Detailed Statistics Card */}
+            {detailedStats && (
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold tracking-tight">Period Analysis</h3>
+                        <div className="w-auto">
+                            <DatePickerWithRange date={calcRange} setDate={setCalcRange} />
+                        </div>
+                    </div>
+                    <WorkStatisticsCard stats={detailedStats} />
+                </div>
+            )}
+
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
 
                 {/* 2. Billable Calculator (Left Column - Smaller) */}
@@ -143,7 +174,9 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                                 <div className="space-y-5">
                                     <div className="space-y-2">
                                         <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Period</Label>
-                                        <DatePickerWithRange date={calcRange} setDate={setCalcRange} />
+                                        <div className="text-sm text-muted-foreground px-3 py-2 border rounded-md bg-muted/50 font-medium">
+                                            See Period Analysis
+                                        </div>
                                     </div>
 
                                     <div className="space-y-2">
@@ -389,47 +422,4 @@ function StatsCard({ title, value, unit, icon: Icon, color, bg }: any) {
     );
 }
 
-function DatePickerWithRange({ date, setDate }: any) {
-    return (
-        <div className="grid gap-2">
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button
-                        id="date"
-                        variant={"outline"}
-                        className={cn(
-                            "w-full justify-start text-left font-normal px-3 h-10 border-input/60 hover:bg-muted/50",
-                            !date && "text-muted-foreground"
-                        )}
-                    >
-                        <CalendarIcon className="mr-2 h-4 w-4 shrink-0 opacity-70" />
-                        <span className="truncate text-sm">
-                            {date?.from ? (
-                                date.to ? (
-                                    <>
-                                        {format(date.from, "MMM dd, y")} -{" "}
-                                        {format(date.to, "MMM dd, y")}
-                                    </>
-                                ) : (
-                                    format(date.from, "MMM dd, y")
-                                )
-                            ) : (
-                                <span>Pick period</span>
-                            )}
-                        </span>
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                        initialFocus
-                        mode="range"
-                        defaultMonth={date?.from}
-                        selected={date}
-                        onSelect={setDate}
-                        numberOfMonths={2}
-                    />
-                </PopoverContent>
-            </Popover>
-        </div>
-    )
-}
+

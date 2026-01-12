@@ -28,12 +28,18 @@ export default async function AbsencesPage({ searchParams }: { searchParams: Pro
 
     let storeIdFilter = undefined;
     let deptIdFilter = undefined;
+    const isDeptHeadGlobal = roles.includes("department_head");
     const isStoreLevel = roles.some((r: string) => ["store_manager", "store_department_head"].includes(r));
-    // department_head removed from global level
     const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr"].includes(r));
 
     if (!isGlobalLevel) {
-        if (isStoreLevel) {
+        if (isDeptHeadGlobal) {
+            const { GlobalDepartment, StoreDepartment } = await import("@/lib/models");
+            const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: employee._id }).select('_id');
+            const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
+            const storeDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).select('_id');
+            deptIdFilter = { $in: storeDepts.map((sd: any) => sd._id.toString()) };
+        } else if (isStoreLevel) {
             storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
             if (!storeIdFilter) storeIdFilter = "000000000000000000000000";
 
@@ -42,7 +48,6 @@ export default async function AbsencesPage({ searchParams }: { searchParams: Pro
                 if (!deptIdFilter) deptIdFilter = "000000000000000000000000";
             }
         } else {
-            // Block access if no relevant roles
             storeIdFilter = "000000000000000000000000";
         }
     }

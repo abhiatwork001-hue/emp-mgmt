@@ -10,6 +10,7 @@ import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { AsyncDashboard } from "@/components/dashboard/async-dashboard";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { Suspense } from "react";
+import { getHighestAccessRole } from "@/lib/auth-utils";
 
 interface DashboardPageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -26,20 +27,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
     }
 
     // Determine Role & Dashboard Type
-    const directRoles = employee.roles || [];
-    const positionRoles = employee.positionId?.roles?.map((r: any) => r.name) || [];
-    const allRolesRaw = [...new Set([...directRoles, ...positionRoles])];
+    const allRoles = employee.roles || [];
 
-    const normalize = (r: any) => {
-        if (!r) return "";
-        if (typeof r === "object" && r.name) return r.name.toLowerCase().replace(/ /g, "_");
-        if (typeof r === "string") return r.toLowerCase().replace(/ /g, "_");
-        return String(r).toLowerCase();
-    };
-    const allRoles = allRolesRaw.map(normalize).filter(Boolean);
-
-    const isOwner = allRoles.includes("owner");
-    const isAdmin = allRoles.includes("admin");
     const canSwitchRoles = allRoles.includes("tech");
 
     // Check for role override
@@ -49,19 +38,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
         : null;
 
     // Determine effective role for rendering
-    let viewRole = "employee";
-    if (testRole) {
-        viewRole = testRole;
-    } else {
-        if (allRoles.includes("super_user")) viewRole = "super_user";
-        else if (allRoles.includes("tech")) viewRole = "tech";
-        else if (isOwner) viewRole = "owner";
-        else if (isAdmin) viewRole = "admin";
-        else if (allRoles.includes("hr")) viewRole = "hr";
-        else if (allRoles.includes("store_manager")) viewRole = "store_manager";
-        else if (allRoles.includes("department_head")) viewRole = "department_head";
-        else if (allRoles.includes("store_department_head")) viewRole = "store_department_head";
-    }
+    const viewRole = testRole || getHighestAccessRole(allRoles);
 
     // Lightweight Fetches for Header
     // We assume these are relatively fast compared to the full dashboard aggregation

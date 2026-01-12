@@ -12,6 +12,8 @@ import { getEmployeeById } from "@/lib/actions/employee.actions"; // Import empl
 import { logAction } from "./log.actions";
 import { slugify, getISOWeekNumber } from "@/lib/utils";
 import crypto from "crypto";
+import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
 const MANAGE_SCHEDULE_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr", "tech"];
 
 // Strict Write Access Validation
@@ -32,7 +34,8 @@ export async function checkSchedulePermission(userId: string, targetStoreId?: st
     if (roles.includes("store_manager")) {
         const userStoreId = employee.storeId?._id?.toString() || employee.storeId?.toString();
         if (targetStoreId && targetStoreId !== userStoreId) {
-            throw new Error("Unauthorized: You can only manage schedules for your own store.");
+            const locale = await getLocale();
+            redirect(`/${locale}/access-denied`);
         }
         // Store Manager can manage ANY department in their store
         return true;
@@ -44,10 +47,12 @@ export async function checkSchedulePermission(userId: string, targetStoreId?: st
         const userDeptId = employee.storeDepartmentId?._id?.toString() || employee.storeDepartmentId?.toString();
 
         if (targetStoreId && targetStoreId !== userStoreId) {
-            throw new Error("Unauthorized: You can only manage schedules for your own store.");
+            const locale = await getLocale();
+            redirect(`/${locale}/access-denied`);
         }
         if (targetStoreDeptId && targetStoreDeptId !== userDeptId) {
-            throw new Error("Unauthorized: You can only manage schedules for your own department.");
+            const locale = await getLocale();
+            redirect(`/${locale}/access-denied`);
         }
         // If they try to create/edit, they MUST provide storeDeptId usually.
         // If checking generic permission without specific target, we pass.
@@ -60,26 +65,34 @@ export async function checkSchedulePermission(userId: string, targetStoreId?: st
         const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: userId }).select('_id');
         const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id.toString());
 
-        if (ledGlobalDeptIds.length === 0) throw new Error("Unauthorized: You are a Department Head but have no assigned department.");
+        if (ledGlobalDeptIds.length === 0) {
+            const locale = await getLocale();
+            redirect(`/${locale}/access-denied`);
+        }
 
         // If targetStoreDeptId is provided, check if it belongs to one of their global depts
         if (targetStoreDeptId) {
             const targetDept = await StoreDepartment.findById(targetStoreDeptId).select('globalDepartmentId');
             if (!targetDept || !ledGlobalDeptIds.includes(targetDept.globalDepartmentId?.toString())) {
-                throw new Error("Unauthorized: This department is not under your Global Department.");
+                const locale = await getLocale();
+                redirect(`/${locale}/access-denied`);
             }
         }
         // Note: Global Heads can see multiple stores, so we don't restrict targetStoreId strictly unless logic demands it.
         return true;
     }
 
-    throw new Error("Unauthorized: You do not have permission to manage schedules.");
+    const locale = await getLocale();
+    redirect(`/${locale}/access-denied`);
 }
 
 export async function getSchedules(storeId?: string, departmentId?: string, year?: number, week?: number) {
     await dbConnect();
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) {
+        // Not logged in -> Login
+        redirect("/login");
+    }
 
     const currentUser = await getEmployeeById((session.user as any).id);
     const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
@@ -316,13 +329,14 @@ async function validateScheduleReadAccess(userId: string, schedule: any) {
     // Can view their own dept
     if (scheduleStoreId === userStoreId && scheduleDeptId === userDeptId) return true;
 
-    throw new Error("Unauthorized: You do not have permission to view this schedule.");
+    const locale = await getLocale();
+    redirect(`/${locale}/access-denied`);
 }
 
 export async function getScheduleById(id: string) {
     await dbConnect();
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) redirect("/login");
 
     const schedule = await Schedule.findById(id)
         .populate("storeId", "name")
@@ -408,7 +422,7 @@ export async function getScheduleById(id: string) {
 export async function getScheduleBySlug(slug: string) {
     await dbConnect();
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) redirect("/login");
 
     const schedule = await Schedule.findOne({ slug })
         .populate("storeId", "name")
@@ -492,7 +506,7 @@ export async function getScheduleBySlug(slug: string) {
 export async function createSchedule(data: any) {
     await dbConnect();
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) redirect("/login");
 
     // Validate Write Access (Pass target store and dept)
     await checkSchedulePermission((session.user as any).id, data.storeId, data.storeDepartmentId);
@@ -526,13 +540,14 @@ export async function createSchedule(data: any) {
 
     revalidatePath(`/dashboard/schedules/${newSchedule.slug}`);
     revalidatePath("/dashboard/schedules");
+    revalidatePath("/[locale]/dashboard"); // Refresh main dashboard for real-time health updates
     return JSON.parse(JSON.stringify(newSchedule));
 }
 
 export async function updateSchedule(id: string, data: any) {
     await dbConnect();
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) redirect("/login");
 
     // 1. Fetch current to check context
     const currentSchedule = await Schedule.findById(id).lean();
@@ -614,6 +629,7 @@ export async function updateSchedule(id: string, data: any) {
 
     revalidatePath(`/dashboard/schedules/${updated.slug}`);
     revalidatePath("/dashboard/schedules");
+    revalidatePath("/[locale]/dashboard"); // Refresh main dashboard for real-time health updates
 
     // Notification: If updating a pending schedule, notify Approvers
     if (updated.status === 'pending' || updated.status === 'review') {
@@ -677,7 +693,8 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
         const isCreator = currentSchedule?.createdBy?.toString() === userId;
 
         if (!hasAuthority && !(isRevertingDraft && (isManager || isCreator))) {
-            throw new Error(`Permission Denied: Only HR, Owners, Admin, or Tech can ${status} schedules.`);
+            const locale = await getLocale();
+            redirect(`/${locale}/access-denied`);
         }
 
         // Feature: Prevent Approving/Publishing Empty Schedules
@@ -765,6 +782,7 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
     });
 
     revalidatePath(`/dashboard/schedules/${updated.slug}`);
+    revalidatePath("/[locale]/dashboard"); // Refresh main dashboard for real-time health updates
 
     // Notification Logic
     // Notification Logic
@@ -1490,10 +1508,11 @@ export async function getDashboardData(date: Date = new Date(), storeIdFilter?: 
     }));
 }
 
-export async function getPendingSchedules(storeId?: string) {
+export async function getPendingSchedules(storeId?: string, storeDepartmentId?: any) {
     await dbConnect();
     const query: any = { status: 'pending' };
     if (storeId) query.storeId = storeId;
+    if (storeDepartmentId) query.storeDepartmentId = storeDepartmentId;
 
     const schedules = await Schedule.find(query)
         .populate("storeId", "name")

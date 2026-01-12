@@ -1,21 +1,58 @@
 import { IPosition } from "./models";
 
-export function getAugmentedRolesAndPermissions(employee: any, position?: any) {
+/**
+ * Priority ranking for dashboard views.
+ * Lower index = Higher priority (more power).
+ */
+export const ROLE_PRIORITY = [
+    "tech",
+    "super_user",
+    "owner",
+    "hr",
+    "admin",
+    "department_head",
+    "store_manager",
+    "store_department_head",
+    "employee"
+];
+
+/**
+ * Determines the highest-access role from a list of roles based on the defined priority.
+ */
+export function getHighestAccessRole(roles: string[]): string {
+    const normalizedRoles = roles.map(r => r.toLowerCase().trim());
+
+    for (const priorityRole of ROLE_PRIORITY) {
+        if (normalizedRoles.includes(priorityRole)) {
+            return priorityRole;
+        }
+    }
+
+    return "employee";
+}
+
+export function getAugmentedRolesAndPermissions(employee: any, singlePosition?: any, multiPositions?: any[]) {
     let roles: string[] = [];
+    let permissions: string[] = [];
 
     // 1. Direct roles from employee document
     if (employee.roles && employee.roles.length > 0) {
         roles = [...employee.roles];
-    } else if (employee.role) { // Legacy fallback
+    } else if (employee.role) {
         roles.push(employee.role);
     }
 
-    // 2. Position-based role and permissions
-    let permissions: string[] = [];
-    if (position) {
+    // 2. Aggregate from multiple positions (if available) or fallback to single position
+    const positionsToProcess = multiPositions && multiPositions.length > 0
+        ? multiPositions
+        : (singlePosition ? [singlePosition] : []);
+
+    positionsToProcess.forEach(position => {
+        if (!position) return;
+
         const posName = (position.name || "").toLowerCase();
 
-        // Hardcoded title-to-role mappings (matching existing auth.ts logic)
+        // Title-to-role mappings
         if (posName.includes('owner') || posName.includes('partner')) roles.push('owner');
         if (posName.includes('hr')) roles.push('hr');
         if (posName.includes('store manager')) roles.push('store_manager');
@@ -24,28 +61,26 @@ export function getAugmentedRolesAndPermissions(employee: any, position?: any) {
 
         // Functional Permissions from Position
         if (position.permissions && position.permissions.length > 0) {
-            permissions = [...position.permissions];
+            position.permissions.forEach((p: any) => {
+                permissions.push(typeof p === 'string' ? p : (p as any).type || String(p));
+            });
         }
 
-        // Also check if position has Roles linked directly (IPosition.roles)
-        // If they were populated, we could add them.
+        // Roles linked directly (IPosition.roles)
         if (position.roles && Array.isArray(position.roles)) {
             position.roles.forEach((r: any) => {
                 if (typeof r === 'string') roles.push(r);
                 else if (r.name) roles.push(r.name);
             });
         }
-    }
+    });
 
     // Deduplicate and Normalize
     const uniqueRoles = Array.from(new Set(roles.map(r => String(r).toLowerCase().trim())));
     if (uniqueRoles.length === 0) uniqueRoles.push('employee');
 
-    // Ensure permissions are strings (sometimes Mongoose returns { type: '...' } objects if schema is weirdly defined)
-    const normalizedPermissions = permissions.map(p => typeof p === 'string' ? p : (p as any).type || String(p));
-
     return {
         roles: uniqueRoles,
-        permissions: Array.from(new Set(normalizedPermissions))
+        permissions: Array.from(new Set(permissions))
     };
 }

@@ -163,6 +163,21 @@ export async function respondToSwapRequest(requestId: string, status: 'approved'
 
         // 2. Give target user's shift to requestor
         await performUpdate(request.targetShift, request.targetUserId.toString(), request.requestorId.toString());
+
+        // Notify Store Channel for Real-time Update
+        // We assume swap is valid only within same store usually, or we update both if different.
+        const scheduleIds = [request.requestorShift.scheduleId, request.targetShift.scheduleId];
+        const uniqueScheduleIds = [...new Set(scheduleIds.map((id: any) => id.toString()))];
+
+        for (const sId of uniqueScheduleIds) {
+            const sch = await Schedule.findById(sId).select('storeId');
+            if (sch) {
+                await pusherServer.trigger(`store-${sch.storeId}`, "schedule:updated", {
+                    scheduleId: sId,
+                    type: "swap_approved"
+                });
+            }
+        }
     }
 
     // Notify Requestor

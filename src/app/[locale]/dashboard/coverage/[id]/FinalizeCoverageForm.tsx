@@ -11,8 +11,16 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+
 export function FinalizeCoverageForm({ request }: { request: any }) {
     const [compensation, setCompensation] = useState<"extra_hour" | "vacation_day">("extra_hour");
+    const [absenceSettings, setAbsenceSettings] = useState({
+        type: 'sickness',
+        justificationStatus: 'Justified',
+        justification: request?.reason || ''
+    });
     const [submitting, setSubmitting] = useState(false);
 
     const handleFinalize = async () => {
@@ -21,7 +29,11 @@ export function FinalizeCoverageForm({ request }: { request: any }) {
             await finalizeCoverage(
                 request._id,
                 { type: compensation },
-                { type: 'absence', justification: 'Covered Shift', justificationStatus: 'Justified' }
+                {
+                    type: absenceSettings.type,
+                    justification: absenceSettings.justification,
+                    justificationStatus: absenceSettings.justificationStatus as 'Justified' | 'Unjustified'
+                }
             );
             toast.success("Coverage finalized and schedule updated.");
         } catch (error) {
@@ -55,7 +67,7 @@ export function FinalizeCoverageForm({ request }: { request: any }) {
                 </div>
 
                 <div className="space-y-3">
-                    <Label className="text-base">Select Compensation Method</Label>
+                    <Label className="text-base">Compensation Method for {request.acceptedBy.firstName}</Label>
                     <RadioGroup value={compensation} onValueChange={(v) => setCompensation(v as any)} className="grid grid-cols-2 gap-4">
                         <div className={`flex flex-col items-center justify-between rounded-md border-2 p-4 hover:bg-muted/50 cursor-pointer transition-all ${compensation === 'extra_hour' ? 'border-primary bg-primary/5' : 'border-muted'}`}>
                             <RadioGroupItem value="extra_hour" id="extra_hour" className="sr-only" />
@@ -74,6 +86,43 @@ export function FinalizeCoverageForm({ request }: { request: any }) {
                             </Label>
                         </div>
                     </RadioGroup>
+                </div>
+
+                <div className="space-y-4 pt-4 border-t border-border">
+                    <Label className="text-base">Absence Record for {request.originalEmployeeId.firstName}</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Absence Type</Label>
+                            {/* Simple Select for now, mirror Absence Types */}
+                            <Select value={absenceSettings.type} onValueChange={(v) => setAbsenceSettings({ ...absenceSettings, type: v })}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="sickness">Sickness</SelectItem>
+                                    <SelectItem value="personal">Personal</SelectItem>
+                                    <SelectItem value="unplanned">Unplanned</SelectItem>
+                                    <SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Status</Label>
+                            <Select value={absenceSettings.justificationStatus} onValueChange={(v: any) => setAbsenceSettings({ ...absenceSettings, justificationStatus: v })}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Justified">Justified</SelectItem>
+                                    <SelectItem value="Unjustified">Unjustified</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Reason / Note</Label>
+                        <Textarea
+                            value={absenceSettings.justification}
+                            onChange={(e) => setAbsenceSettings({ ...absenceSettings, justification: e.target.value })}
+                            placeholder="Reason for absence..."
+                        />
+                    </div>
                 </div>
 
                 <div className="bg-yellow-500/10 border border-yellow-500/20 p-3 rounded-lg text-sm text-yellow-500 flex gap-2">

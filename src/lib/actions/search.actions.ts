@@ -28,7 +28,7 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
     const roles = (currentUser.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
     const isSuper = roles.some((r: string) => ["owner", "admin", "hr", "super_user", "tech"].includes(r));
     const isKitchen = roles.some((r: string) => ["chef", "head_chef", "cook", "kitchen_staff"].includes(r));
-    const isManager = roles.includes("store_manager");
+    const isManager = roles.includes("store_manager") || roles.includes("manager");
     const isStoreDeptHead = roles.includes("store_department_head");
 
     const hasFullAccess = isSuper;
@@ -74,7 +74,7 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             { storeId: userStoreId }
         ]
     };
-    if (!userStoreId && !isSuper) supplierFilter.storeId = "impossible_id"; // Block if no store and not super (logic remains similar but gated by canSearchSuppliers mostly)
+    if (!userStoreId && !isSuper && !isManager) supplierFilter.storeId = "impossible_id"; // Block if no store and not super (logic remains similar but gated by canSearchSuppliers mostly)
 
     const resourceFilter: any = {
         name: { $regex: regex },
@@ -94,7 +94,7 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             { storeId: userStoreId }
         ]
     };
-    if (!userStoreId && !isSuper) supplierItemFilter.storeId = "impossible_id";
+    if (!userStoreId && !isSuper && !isManager) supplierItemFilter.storeId = "impossible_id";
 
     // Parallel Fetch
     const [employees, stores, foods, suppliers, supplierItems, resources, globalDepts, storeDepts] = await Promise.all([

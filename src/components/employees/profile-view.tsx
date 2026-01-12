@@ -2,16 +2,19 @@
 
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Edit2, Building2, CreditCard, Mail, Phone, MapPin, Hash } from "lucide-react";
+import { Edit2, Building2, CreditCard, Mail, Phone, MapPin, Hash, FileText } from "lucide-react";
 import { EditProfileDialog } from "./edit-profile-dialog";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+
+import { useSession } from "next-auth/react";
 
 interface ProfileViewProps {
     employee: any;
 }
 
 export function ProfileView({ employee }: ProfileViewProps) {
+    const { data: session } = useSession();
     const [editOpen, setEditOpen] = useState(false);
     const t = useTranslations("Profile");
     const tc = useTranslations("Common");

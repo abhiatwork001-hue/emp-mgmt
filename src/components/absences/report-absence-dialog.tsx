@@ -174,9 +174,7 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                     date: new Date(formData.date),
                     type: formData.type,
                     reason: formData.reason,
-                    // Note: CreateAbsenceRequest might need update to support attachments if we want them there too, 
-                    // but user specifically asked for "coverage shift thing" flow. 
-                    // For now, standard flow just logs text.
+                    attachments: files // Pass attachments
                 });
                 toast.success("Absence reported successfully.");
             }

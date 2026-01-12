@@ -165,6 +165,10 @@ export async function getStoreBySlug(slug: string) {
             select: "firstName lastName email image positionId",
             populate: { path: "positionId", select: "name" }
         })
+        .populate({
+            path: "departments",
+            select: "name _id"
+        })
         .lean();
 
     if (!store) return null;
@@ -506,4 +510,131 @@ export async function removeStoreManager(storeId: string, employeeId: string, is
     revalidatePath(`/dashboard/stores/${storeId}`);
     revalidatePath(`/dashboard/employees/${employeeId}`);
     return { success: true };
+}
+
+/**
+ * Remove a StoreDepartment from a Store
+ * This will:
+ * - Unassign all employees from the department (set storeDepartmentId to null)
+ * - Cancel pending coverage requests for the department
+ * - Remove department from store's departments array
+ * - Delete the StoreDepartment document
+ */
+export async function removeStoreDepartment(
+    storeId: string,
+    storeDepartmentId: string
+) {
+    await dbConnect();
+
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+        throw new Error("Unauthorized");
+    }
+
+    // 1. Verify department exists and belongs to this store
+    const { StoreDepartment } = await import("@/lib/models");
+    const storeDept = await StoreDepartment.findById(storeDepartmentId).lean();
+
+    if (!storeDept) {
+        throw new Error("Department not found");
+    }
+
+    if (storeDept.storeId.toString() !== storeId) {
+        throw new Error("Department does not belong to this store");
+    }
+
+    // 2. Get affected employees count
+    const { Employee } = await import("@/lib/models");
+    const affectedEmployees = await Employee.find({
+        storeDepartmentId
+    }).select("_id firstName lastName").lean();
+
+    // 3. Update employees - set storeDepartmentId to null
+    await Employee.updateMany(
+        { storeDepartmentId },
+        { $set: { storeDepartmentId: null } }
+    );
+
+    // 4. Cancel pending coverage requests (if coverage model exists)
+    try {
+        const { ShiftCoverageRequest } = await import("@/lib/models");
+        await ShiftCoverageRequest.updateMany(
+            {
+                storeDepartmentId,
+                status: "pending"
+            },
+            { $set: { status: "cancelled", cancelledAt: new Date() } }
+        );
+    } catch (error) {
+        // Coverage model might not exist, continue
+        console.log("Coverage requests not updated:", error);
+    }
+
+    // 5. Remove department from store's departments array
+    // Virtual field, no need to pull.
+
+    // 6. Delete the StoreDepartment
+    await StoreDepartment.findByIdAndDelete(storeDepartmentId);
+
+    // 7. Log the action
+    await logAction({
+        performedBy: session.user.id,
+        action: "delete_store_department",
+        targetModel: "store_department",
+        targetId: storeDepartmentId,
+        details: {
+            storeId,
+            departmentName: storeDept.name,
+            affectedEmployeesCount: affectedEmployees.length
+        }
+    });
+
+    // 8. Get store for revalidation
+    const store = await Store.findById(storeId).select("slug").lean();
+
+    // 9. Revalidate paths
+    revalidatePath("/dashboard/stores");
+    if (store?.slug) {
+        revalidatePath(`/dashboard/stores/${store.slug}`);
+        revalidatePath(`/dashboard/stores/${store.slug}/edit`);
+    }
+
+    return {
+        success: true,
+        affectedEmployees: affectedEmployees.length,
+        employeeNames: affectedEmployees.map((e: any) => `${e.firstName} ${e.lastName}`),
+        message: `Department "${storeDept.name}" removed successfully. ${affectedEmployees.length} employees unassigned.`
+    };
+}
+
+/**
+ * Get count of employees and pending coverage requests for a department
+ * Used before deletion to show confirmation dialog
+ */
+export async function getStoreDepartmentImpact(storeDepartmentId: string) {
+    await dbConnect();
+
+    const { Employee, StoreDepartment } = await import("@/lib/models");
+
+    const [employeeCount, department] = await Promise.all([
+        Employee.countDocuments({ storeDepartmentId }),
+        StoreDepartment.findById(storeDepartmentId).select("name").lean()
+    ]);
+
+    let pendingCoverageCount = 0;
+    try {
+        const { ShiftCoverageRequest } = await import("@/lib/models");
+        pendingCoverageCount = await ShiftCoverageRequest.countDocuments({
+            storeDepartmentId,
+            status: "pending"
+        });
+    } catch (error) {
+        // Coverage model might not exist
+    }
+
+    return {
+        departmentName: department?.name || "Unknown",
+        employeeCount,
+        pendingCoverageCount
+    };
 }

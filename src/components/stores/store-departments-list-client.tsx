@@ -2,11 +2,22 @@
 
 import { useState } from "react";
 import { Link } from "@/i18n/routing";
-import { Building2 } from "lucide-react";
+import { Building2, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AddDepartmentDialog } from "@/components/stores/add-department-dialog";
 import { EditStoreDepartmentDialog } from "@/components/stores/edit-store-department-dialog";
+import { toast } from "sonner";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface StoreDepartmentsListClientProps {
     storeDepartments: any[];
@@ -16,7 +27,16 @@ interface StoreDepartmentsListClientProps {
 }
 
 export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeId, canManage }: StoreDepartmentsListClientProps) {
+    // Removal State
+    const [deptToRemove, setDeptToRemove] = useState<{ id: string; name: string } | null>(null);
+    const [isRemoving, setIsRemoving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
+    const { removeStoreDepartment } = require("@/lib/actions/store.actions"); // Dynamic import to avoid server action in client boundary if not direct
+    // Actually we can import server actions directly in client components in Next.js 14+ specific setups but usually safer to pass as prop or import top level if marked "use server"
+    // store.actions.ts starts with 'use server', so we can import.
+
+    // For simplicity, we'll assume we can import removeStoreDepartment from top.
+    // Let's add imports first.
 
     return (
         <Card className="bg-[#1e293b] border-none text-white">
@@ -89,6 +109,14 @@ export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeI
                                 {isEditing && (
                                     <div className="ml-4 flex items-center gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
                                         <EditStoreDepartmentDialog department={dept} />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 text-zinc-400 hover:text-red-400 hover:bg-red-500/10"
+                                            onClick={() => setDeptToRemove({ id: dept._id, name: dept.name })}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
                                     </div>
                                 )}
                             </div>
@@ -96,6 +124,53 @@ export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeI
                     </div>
                 )}
             </CardContent>
+
+            <AlertDialog open={!!deptToRemove} onOpenChange={(open) => !open && setDeptToRemove(null)}>
+                <AlertDialogContent className="bg-[#1e293b] text-white border-zinc-700">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Remove {deptToRemove?.name}?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-zinc-400">
+                            This will remove the department from this store.
+                            Employees will be unassigned and pending coverage requests cancelled.
+                            This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel className="bg-transparent border-zinc-700 hover:bg-zinc-800 text-white">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            disabled={isRemoving}
+                            onClick={async (e) => {
+                                e.preventDefault();
+                                if (!deptToRemove) return;
+                                setIsRemoving(true);
+                                try {
+                                    // Use imported action
+                                    const { removeStoreDepartment } = await import("@/lib/actions/store.actions");
+                                    const res = await removeStoreDepartment(storeId, deptToRemove.id);
+                                    if (res.success) {
+                                        toast.success("Department removed");
+                                        // window.location.reload(); // Simple refresh or router.refresh() 
+                                        // Since we are client, better to stick to props update or router refresh
+                                        // imports from next/navigation needed
+                                    } else {
+                                        toast.error("Failed to remove");
+                                    }
+                                } catch (err) {
+                                    toast.error("Error occurred");
+                                } finally {
+                                    setIsRemoving(false);
+                                    setDeptToRemove(null);
+                                    // Trigger refresh
+                                    window.location.reload();
+                                }
+                            }}
+                        >
+                            {isRemoving ? <Loader2 className="h-4 w-4 animate-spin" /> : "Remove"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card>
     );
 }

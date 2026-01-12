@@ -7,6 +7,8 @@ import { logAction } from "./log.actions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
+import { redirect } from "next/navigation";
+import { getLocale } from "next-intl/server";
 
 // --- Types ---
 type DepartmentData = Partial<IGlobalDepartment>;
@@ -72,7 +74,19 @@ export async function getAllGlobalDepartmentsWithStats() {
  */
 export async function getAllGlobalDepartments() {
     await dbConnect();
-    const departments = await GlobalDepartment.find({ active: true }).select("name translations").lean();
+    const departments = await GlobalDepartment.find({ active: true }).select("name translations slug").lean();
+    return JSON.parse(JSON.stringify(departments));
+}
+
+/**
+ * Get all global departments where employee is a head
+ */
+export async function getGlobalDepartmentsByHead(employeeId: string) {
+    await dbConnect();
+    const departments = await GlobalDepartment.find({
+        departmentHead: employeeId,
+        active: true
+    }).select("name slug translations").lean();
     return JSON.parse(JSON.stringify(departments));
 }
 
@@ -92,6 +106,17 @@ export async function getGlobalDepartmentById(id: string) {
                 from: "storedepartments",
                 localField: "_id",
                 foreignField: "globalDepartmentId",
+                pipeline: [
+                    {
+                        $lookup: {
+                            from: "stores",
+                            localField: "storeId",
+                            foreignField: "_id",
+                            as: "storeInfo"
+                        }
+                    },
+                    { $unwind: "$storeInfo" }
+                ],
                 as: "storeDepts"
             }
         },
@@ -331,7 +356,10 @@ export async function getAvailableGlobalDepartmentHeadCandidates(departmentId: s
     const currentUser = await getEmployeeById((session.user as any).id);
     const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
     const canManage = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
-    if (!canManage) throw new Error("Permission Denied");
+    if (!canManage) {
+        const locale = await getLocale();
+        redirect(`/${locale}/access-denied`);
+    }
 
     const { Employee, GlobalDepartment } = require("@/lib/models");
 
@@ -366,12 +394,15 @@ export async function assignGlobalDepartmentHead(departmentId: string, employeeI
 
         // Permission Check
         const session = await getServerSession(authOptions);
-        if (!session?.user) throw new Error("Unauthorized");
+        if (!session?.user) redirect("/login");
         const { getEmployeeById } = await import("@/lib/actions/employee.actions");
         const currentUser = await getEmployeeById((session.user as any).id);
         const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
         const canManage = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
-        if (!canManage) throw new Error("Permission Denied");
+        if (!canManage) {
+            const locale = await getLocale();
+            redirect(`/${locale}/access-denied`);
+        }
 
         const { Employee, GlobalDepartment } = require("@/lib/models");
 
@@ -453,12 +484,15 @@ export async function assignGlobalDepartmentSubHead(departmentId: string, employ
 
         // Permission Check
         const session = await getServerSession(authOptions);
-        if (!session?.user) throw new Error("Unauthorized");
+        if (!session?.user) redirect("/login");
         const { getEmployeeById } = await import("@/lib/actions/employee.actions");
         const currentUser = await getEmployeeById((session.user as any).id);
         const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
         const canManage = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
-        if (!canManage) throw new Error("Permission Denied");
+        if (!canManage) {
+            const locale = await getLocale();
+            redirect(`/${locale}/access-denied`);
+        }
 
         const { Employee, GlobalDepartment } = require("@/lib/models");
 
@@ -539,12 +573,15 @@ export async function removeGlobalDepartmentHead(departmentId: string, employeeI
 
     // Permission Check
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) redirect("/login");
     const { getEmployeeById } = await import("@/lib/actions/employee.actions");
     const currentUser = await getEmployeeById((session.user as any).id);
     const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
     const canManage = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
-    if (!canManage) throw new Error("Permission Denied");
+    if (!canManage) {
+        const locale = await getLocale();
+        redirect(`/${locale}/access-denied`);
+    }
 
     const { Employee, GlobalDepartment } = require("@/lib/models");
 
@@ -592,12 +629,15 @@ export async function removeGlobalDepartmentSubHead(departmentId: string, employ
 
     // Permission Check
     const session = await getServerSession(authOptions);
-    if (!session?.user) throw new Error("Unauthorized");
+    if (!session?.user) redirect("/login");
     const { getEmployeeById } = await import("@/lib/actions/employee.actions");
     const currentUser = await getEmployeeById((session.user as any).id);
     const roles = (currentUser?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
     const canManage = roles.some((r: string) => ["admin", "owner", "hr", "tech", "super_user"].includes(r));
-    if (!canManage) throw new Error("Permission Denied");
+    if (!canManage) {
+        const locale = await getLocale();
+        redirect(`/${locale}/access-denied`);
+    }
 
     const { Employee, GlobalDepartment } = require("@/lib/models");
 

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getAllGlobalDepartmentsWithStats } from "@/lib/actions/department.actions";
+import { getLocale } from "next-intl/server";
 import { DepartmentList } from "@/components/departments/department-list";
 import { getEmployeeById } from "@/lib/actions/employee.actions";
 
@@ -34,7 +35,8 @@ export default async function DepartmentsPage() {
         }
     } else {
         // 3. Unauthorized
-        redirect("/dashboard");
+        const locale = await getLocale();
+        redirect(`/${locale}/access-denied`);
     }
 
     const departments = await getAllGlobalDepartmentsWithStats();
