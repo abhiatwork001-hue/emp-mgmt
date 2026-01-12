@@ -34,9 +34,7 @@ export async function calculateTipsDistribution(
 ) {
     try {
         await connectToDB();
-        console.log(`[TipsCalc] Starting for Store: ${storeId}`);
-        console.log(`[TipsCalc] Periods:`, periods);
-        console.log(`[TipsCalc] Depts:`, departmentIds);
+
 
         // 1. Prepare Data Structures
         // Map<EmployeeID, { name, totalShares, totalAmount, periodDetails: [] }>
@@ -56,7 +54,7 @@ export async function calculateTipsDistribution(
             // End of day adjustment
             end.setHours(23, 59, 59, 999);
 
-            console.log(`[TipsCalc] Querying Period ${i}: ${start.toISOString()} - ${end.toISOString()}`);
+
 
             // Fetch Schedules - Diagnostic Query first
             // We'll perform a broad query to diagnose WHY we find nothing
@@ -69,7 +67,6 @@ export async function calculateTipsDistribution(
             const allInPeriod = await Schedule.find(broadQuery).select('status storeDepartmentId').lean();
 
             if (allInPeriod.length === 0) {
-                console.log(`[TipsCalc] No schedules found at all for period ${i}`);
                 continue;
             }
 
@@ -80,7 +77,6 @@ export async function calculateTipsDistribution(
             }
 
             if (relevantSchedules.length === 0) {
-                console.log(`[TipsCalc] Schedules exist, but none match selected departments: ${departmentIds.join(', ')}`);
                 continue;
             }
 
@@ -88,7 +84,6 @@ export async function calculateTipsDistribution(
             const publishedSchedules = relevantSchedules.filter(s => s.status === 'published');
 
             if (publishedSchedules.length === 0) {
-                console.log(`[TipsCalc] Found ${relevantSchedules.length} relevant schedules, but NONE are 'published'. (Statuses: ${relevantSchedules.map(s => s.status).join(', ')})`);
                 continue;
             }
 
@@ -97,13 +92,13 @@ export async function calculateTipsDistribution(
                 _id: { $in: publishedSchedules.map(s => s._id) }
             };
 
-            console.log(`[TipsCalc] Fetching ${publishedSchedules.length} full published schedules...`);
+
 
             const schedules = await Schedule.find(query)
                 .lean()
                 .populate('days.shifts.employees', 'firstName lastName _id');
 
-            console.log(`[TipsCalc] Successfully loaded ${schedules.length} schedules.`);
+
 
             // Calculate Shares for this period
             const periodEmployeeWeights = new Map<string, { weight: number, name: string }>();
@@ -156,7 +151,7 @@ export async function calculateTipsDistribution(
                 totalPeriodWeight += val.weight;
             });
 
-            console.log(`[TipsCalc] Period ${i} Total Shares: ${totalPeriodWeight}`);
+
 
             // Calculate Period Rate
             const periodRate = totalPeriodWeight > 0 ? period.amount / totalPeriodWeight : 0;
@@ -204,7 +199,7 @@ export async function calculateTipsDistribution(
             };
         });
 
-        console.log(`[TipsCalc] Final Records: ${records.length}`);
+
 
         if (records.length === 0) {
             return { success: false, error: "No eligible shifts found in the selected period(s). Check published schedules." };
@@ -213,7 +208,7 @@ export async function calculateTipsDistribution(
         return { success: true, records };
 
     } catch (error) {
-        console.error("Error calculating tips:", error);
+
         return { success: false, error: "Failed to calculate tips distribution." };
     }
 }
@@ -246,7 +241,7 @@ export async function saveTipsDistribution(data: any) {
         revalidatePath("/dashboard/tips");
         return { success: true };
     } catch (error) {
-        console.error("Error saving tips:", error);
+
         return { success: false, error: "Failed to save distribution." };
     }
 }

@@ -117,7 +117,9 @@ export function CreateTaskDialog({
     const [employeeSearch, setEmployeeSearch] = useState("");
     const [empFilterStore, setEmpFilterStore] = useState("all");
     const [empFilterDept, setEmpFilterDept] = useState("all");
+    const [includeCreator, setIncludeCreator] = useState(false);
 
+    // Determine default scope on open or role change
     // Determine default scope on open or role change
     useEffect(() => {
         if (open) {
@@ -143,6 +145,7 @@ export function CreateTaskDialog({
                 } else {
                     setAssignments([]);
                 }
+                setIncludeCreator(false);
             }
 
             if (isGlobalAdmin) setScope("global");
@@ -209,8 +212,17 @@ export function CreateTaskDialog({
         else if (scope === 'store') {
             const store = availableStores.find(s => s._id === selectedEntityId);
             if (store) {
-                const type = selectedSubOption === 'managers' ? 'store_managers' : 'store_all';
-                const labelSuffix = selectedSubOption === 'managers' ? '(Managers Only)' : '(All Staff)';
+                let type = 'store_all';
+                let labelSuffix = '(All Staff)';
+
+                if (selectedSubOption === 'managers') {
+                    type = 'store_managers';
+                    labelSuffix = '(Managers Only)';
+                } else if (selectedSubOption === 'dept_heads') {
+                    type = 'store_dept_heads';
+                    labelSuffix = '(Dept Heads Only)';
+                }
+
                 newAssignment = {
                     type: type,
                     id: String(store._id),
@@ -221,10 +233,13 @@ export function CreateTaskDialog({
         else if (scope === 'department') {
             const dept = availableDepts.find(d => d._id === selectedEntityId);
             if (dept) {
+                const type = selectedSubOption === 'head_only' ? 'store_department_head_only' : 'store_department_all';
+                const labelSuffix = selectedSubOption === 'head_only' ? '(Head Only)' : '(All Staff)';
+
                 newAssignment = {
-                    type: 'store_department_all',
+                    type: type,
                     id: String(dept._id),
-                    label: `📂 Dept: ${dept.name}`
+                    label: `📂 Dept: ${dept.name} ${labelSuffix}`
                 };
             }
         }
@@ -285,7 +300,8 @@ export function CreateTaskDialog({
             todos,
             creatorId: currentUserId,
             requiresSubmission,
-            requiredFileNames
+            requiredFileNames,
+            includeCreator
         });
 
         if (res.success) {
@@ -338,6 +354,7 @@ export function CreateTaskDialog({
                                     date={deadline}
                                     setDate={(d) => setDeadline(d ? d.toISOString().split('T')[0] : "")}
                                     placeholder="Select deadline"
+                                    disabledDates={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                                 />
                             </div>
                         </div>
@@ -561,20 +578,30 @@ export function CreateTaskDialog({
                                                     <SelectContent>
                                                         <SelectItem value="all">All Employees</SelectItem>
                                                         <SelectItem value="managers">Managers Only</SelectItem>
+                                                        <SelectItem value="dept_heads">Dept Heads Only</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
                                         )}
 
                                         {scope === 'department' && (
-                                            <Select value={selectedEntityId} onValueChange={setSelectedEntityId} disabled={availableDepts.length === 1}>
-                                                <SelectTrigger><SelectValue placeholder="Select Department..." /></SelectTrigger>
-                                                <SelectContent>
-                                                    {availableDepts.map(d => (
-                                                        <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <div className="flex gap-2">
+                                                <Select value={selectedEntityId} onValueChange={setSelectedEntityId} disabled={availableDepts.length === 1}>
+                                                    <SelectTrigger className="w-[180px]"><SelectValue placeholder="Select Department..." /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {availableDepts.map(d => (
+                                                            <SelectItem key={d._id} value={d._id}>{d.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                                <Select value={selectedSubOption} onValueChange={setSelectedSubOption}>
+                                                    <SelectTrigger className="flex-1"><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="all">All Employees</SelectItem>
+                                                        <SelectItem value="head_only">Head Only</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
                                         )}
 
                                         {scope === 'global' && (
@@ -625,6 +652,20 @@ export function CreateTaskDialog({
                                     </Badge>
                                 ))}
                             </div>
+
+                            {/* Option to include self */}
+                            {assignments.length > 0 && (
+                                <div className="flex items-center space-x-2 pt-2">
+                                    <Checkbox
+                                        id="includeCreator"
+                                        checked={includeCreator}
+                                        onCheckedChange={(checked) => setIncludeCreator(checked as boolean)}
+                                    />
+                                    <Label htmlFor="includeCreator" className="text-sm font-medium cursor-pointer">
+                                        Include me in this assignment
+                                    </Label>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

@@ -1,39 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from "@/components/ui/table";
+
+import { useState, useEffect } from "react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface Vacation {
     _id: string;
-    type: string;
-    startDate: string;
-    endDate: string;
+    requestedFrom: string;
+    requestedTo: string;
     status: string;
+    type?: string;
 }
 
 export default function VacationRequestPage() {
     const [vacations, setVacations] = useState<Vacation[]>([]);
     const [type, setType] = useState("vacation");
-    const [startDate, setStartDate] = useState("");
-    const [endDate, setEndDate] = useState("");
+    const [startDate, setStartDate] = useState<Date>();
+    const [endDate, setEndDate] = useState<Date>();
     const [reason, setReason] = useState("");
 
     useEffect(() => {
@@ -48,19 +42,31 @@ export default function VacationRequestPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!startDate || !endDate) {
+            toast.error("Please select start and end dates");
+            return;
+        }
+
         const res = await fetch("/api/vacations", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ type, startDate, endDate, reason }),
+            body: JSON.stringify({
+                type,
+                startDate: startDate.toISOString(),
+                endDate: endDate.toISOString(),
+                reason
+            }),
         });
 
         if (res.ok) {
             fetchVacations();
-            setStartDate("");
-            setEndDate("");
+            setStartDate(undefined);
+            setEndDate(undefined);
             setReason("");
+            toast.success("Request submitted successfully");
         } else {
-            alert("Failed to submit request");
+            toast.error("Failed to submit request");
         }
     };
 
@@ -87,23 +93,57 @@ export default function VacationRequestPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div>
+                            <div className="flex flex-col space-y-2">
                                 <Label>Start Date</Label>
-                                <Input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    required
-                                />
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal",
+                                                !startDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar
+                                            mode="single"
+                                            selected={startDate}
+                                            onSelect={setStartDate}
+                                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
-                            <div>
+                            <div className="flex flex-col space-y-2">
                                 <Label>End Date</Label>
-                                <Input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    required
-                                />
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal",
+                                                !endDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar
+                                            mode="single"
+                                            selected={endDate}
+                                            onSelect={setEndDate}
+                                            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                             <div>
                                 <Label>Reason</Label>
@@ -127,13 +167,13 @@ export default function VacationRequestPage() {
                             {vacations.map((v) => (
                                 <div key={v._id} className="border rounded-lg p-3 space-y-2 bg-muted/20">
                                     <div className="flex justify-between items-center">
-                                        <span className="capitalize font-medium">{v.type}</span>
+                                        <span className="capitalize font-medium">{v.type || "Vacation"}</span>
                                         <span className={`text-xs font-bold capitalize ${v.status === 'approved' ? 'text-green-600' : v.status === 'rejected' ? 'text-red-600' : 'text-yellow-600'}`}>
                                             {v.status}
                                         </span>
                                     </div>
                                     <div className="text-sm text-muted-foreground">
-                                        {new Date(v.startDate).toLocaleDateString()} - {new Date(v.endDate).toLocaleDateString()}
+                                        {new Date(v.requestedFrom).toLocaleDateString()} - {new Date(v.requestedTo).toLocaleDateString()}
                                     </div>
                                 </div>
                             ))}
@@ -151,10 +191,10 @@ export default function VacationRequestPage() {
                             <TableBody>
                                 {vacations.map((v) => (
                                     <TableRow key={v._id}>
-                                        <TableCell className="capitalize">{v.type}</TableCell>
+                                        <TableCell className="capitalize">{v.type || "Vacation"}</TableCell>
                                         <TableCell>
-                                            {new Date(v.startDate).toLocaleDateString()} -{" "}
-                                            {new Date(v.endDate).toLocaleDateString()}
+                                            {new Date(v.requestedFrom).toLocaleDateString()} -{" "}
+                                            {new Date(v.requestedTo).toLocaleDateString()}
                                         </TableCell>
                                         <TableCell className="capitalize">{v.status}</TableCell>
                                     </TableRow>

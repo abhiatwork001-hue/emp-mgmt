@@ -837,6 +837,28 @@
             "account": "Konto"
         }
     },
+    "Weather": {
+        "title": "Wetter",
+        "feelsLike": "Gefühlt",
+        "humidity": "Luftfeuchtigkeit",
+        "wind": "Wind",
+        "updated": "Aktualisiert"
+    },
+    "Reviews": {
+        "title": "Google Bewertungen",
+        "sync": "Sync",
+        "syncing": "Synchronisieren...",
+        "noReviews": "Noch keine Bewertungen.",
+        "reviewsCount": "Bewertungen",
+        "viewMaps": "Auf Google Maps ansehen"
+    },
+    "ApiUsage": {
+        "title": "System-API-Nutzung",
+        "estCost": "Geschätzte Kosten",
+        "noCalls": "Keine API-Aufrufe heute aufgezeichnet.",
+        "googlePlaces": "Google Maps",
+        "openWeather": "OpenWeather"
+    },
     "Tasks": {
         "comments": {
             "title": "Kommentare",
@@ -845,5 +867,35 @@
             "posting": "Poste...",
             "placeholder": "Einen Kommentar schreiben..."
         }
+    },
+    "Reputation": {
+        "title": "Filial-Reputation",
+        "avg": "Durchschn.",
+        "noRatings": "Noch keine Bewertungen verfügbar.",
+        "viewFullReport": "Vollständigen Bericht ansehen"
+    },
+    "Analytics": {
+        "title": "Monatliche Analyse",
+        "avgRating": "Durchschnittliche Bewertung (Monat)",
+        "reviewTrend": "Monatlicher Bewertungstrend",
+        "latestActivity": "Neueste Aktivität",
+        "lastReview": "Letzte Bewertung",
+        "new": "neu",
+        "total": "Gesamt",
+        "ratingHistory": "Bewertungsverlauf (Monatlich)",
+        "lastMonth": "letzter Monat",
+        "na": "N/A"
+    },
+    "Comparison": {
+        "title": "Filial-Reputationsleistung",
+        "topRated": "Bestbewertete Filialen",
+        "mostReviewed": "Am meisten bewertet",
+        "storeName": "Filialname",
+        "rating": "Bewertung",
+        "reviews": "Bewertungen gesamt",
+        "trend": "Trend",
+        "lastUpdated": "Zuletzt aktualisiert",
+        "never": "Nie",
+        "loading": "Reputationsdaten werden geladen..."
     }
 }

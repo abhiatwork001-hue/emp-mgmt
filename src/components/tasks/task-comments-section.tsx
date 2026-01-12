@@ -14,9 +14,10 @@ interface TaskCommentsSectionProps {
     taskId: string;
     currentUserId: string;
     comments: any[];
+    disabled?: boolean;
 }
 
-export function TaskCommentsSection({ taskId, currentUserId, comments }: TaskCommentsSectionProps) {
+export function TaskCommentsSection({ taskId, currentUserId, comments, disabled = false }: TaskCommentsSectionProps) {
     const [commentText, setCommentText] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
@@ -62,19 +63,26 @@ export function TaskCommentsSection({ taskId, currentUserId, comments }: TaskCom
                     )}
                 </div>
 
-                <div className="space-y-2 pt-2 border-t mt-auto">
-                    <Textarea
-                        placeholder={t('placeholder')}
-                        value={commentText}
-                        onChange={(e) => setCommentText(e.target.value)}
-                        className="min-h-[100px] resize-none"
-                    />
-                    <div className="flex justify-end">
-                        <Button onClick={handleComment} disabled={!commentText.trim() || isSubmitting}>
-                            {isSubmitting ? t('posting') : t('post')}
-                        </Button>
+                {!disabled && (
+                    <div className="space-y-2 pt-2 border-t mt-auto">
+                        <Textarea
+                            placeholder={t('placeholder')}
+                            value={commentText}
+                            onChange={(e) => setCommentText(e.target.value)}
+                            className="min-h-[100px] resize-none"
+                        />
+                        <div className="flex justify-end">
+                            <Button onClick={handleComment} disabled={!commentText.trim() || isSubmitting}>
+                                {isSubmitting ? t('posting') : t('post')}
+                            </Button>
+                        </div>
                     </div>
-                </div>
+                )}
+                {disabled && (
+                    <div className="text-center py-4 text-sm text-muted-foreground bg-muted/20 rounded-md">
+                        Comments are disabled for completed tasks.
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

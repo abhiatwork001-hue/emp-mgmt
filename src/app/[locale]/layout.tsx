@@ -4,6 +4,8 @@ import "./globals.css";
 import "./mobile-compat.css";
 import { Providers } from "./providers";
 import { getMessages, getLocale } from 'next-intl/server';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
@@ -84,6 +86,7 @@ export default async function LocaleLayout({
   }
 
   const messages = await getMessages();
+  const session = await getServerSession(authOptions);
 
 
 
@@ -93,7 +96,7 @@ export default async function LocaleLayout({
         className={`${inter.variable} ${outfit.variable} ${geistMono.variable} antialiased font-sans`}
       >
         <ServiceWorkerRegister />
-        <Providers messages={messages} locale={locale}>
+        <Providers messages={messages} locale={locale} session={session}>
           {children}
           <Toaster />
         </Providers>

@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Star, Loader2, Sparkles } from "lucide-react";
-import { seedMockReviewsForAllStores } from "@/lib/actions/google-places.actions";
 import { EditStoreDialog } from "@/components/stores/edit-store-dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 
@@ -31,21 +30,7 @@ interface Store {
 
 export function StoreList({ initialStores, currentUserRoles = [] }: { initialStores: Store[], currentUserRoles?: string[] }) {
     const [searchTerm, setSearchTerm] = useState("");
-    const [isSeeding, setIsSeeding] = useState(false);
 
-    const isTech = currentUserRoles.includes("tech");
-
-    const handleSeed = async () => {
-        setIsSeeding(true);
-        try {
-            await seedMockReviewsForAllStores();
-            window.location.reload();
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setIsSeeding(false);
-        }
-    };
 
     const filteredStores = initialStores
         .filter((store) =>
@@ -71,12 +56,7 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                     />
                 </div>
                 <div className="flex items-center gap-2">
-                    {isTech && (
-                        <Button variant="outline" onClick={handleSeed} disabled={isSeeding}>
-                            {isSeeding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4 text-yellow-500" />}
-                            Generate Fake Data
-                        </Button>
-                    )}
+
                     <Link href="/dashboard/stores/new">
                         <Button>
                             <Plus className="mr-2 h-4 w-4" /> Add Store

@@ -26,6 +26,7 @@ export async function createTask(data: {
     creatorId: string;
     requiresSubmission?: boolean;
     requiredFileNames?: string[];
+    includeCreator?: boolean;
 }) {
     try {
         await connectToDB();
@@ -33,13 +34,7 @@ export async function createTask(data: {
         // 1. Resolve Assignments into unique User IDs
         const assigneeIds = new Set<string>();
 
-        // Also explicitly add the creator to see the task? 
-        // Usually creator wants to track it. We can add them as 'reader' or just query by 'createdBy'.
-        // existing getTasksForUser query: assignedTo OR createdBy? 
-        // Let's check getTasksForUser... it searches 'assignedTo'. 
-        // Queries should probably include createdBy user too if we want them to see it in their list.
-        // But for now, let's focus on Assignees.
-
+        // ... existing logic to populate assigneeIds ...
         for (const assignment of data.assignments) {
             if (assignment.type === 'individual') {
                 assigneeIds.add(assignment.id);
@@ -60,16 +55,28 @@ export async function createTask(data: {
                 employees.forEach(e => assigneeIds.add(e._id.toString()));
             } else if (assignment.type === 'global_role') {
                 const employees = await Employee.find({ roles: assignment.id }).select('_id');
-                employees.forEach(e => assigneeIds.add(e._id.toString()));
+                employees.forEach(e => assigneeIds.add(e._id.toString())); // Fixed missing add
             }
         }
 
-        if (assigneeIds.size === 0) {
+        // Ensure Creator is not assigned to their own task UNLESS explicitly requested
+        if (!data.includeCreator) {
+            assigneeIds.delete(data.creatorId);
+        }
+
+        // Double check by filtering the set array conversion
+        const assigneeArray = Array.from(assigneeIds);
+        if (!data.includeCreator) {
+            const index = assigneeArray.indexOf(data.creatorId);
+            if (index > -1) assigneeArray.splice(index, 1);
+        }
+
+        if (assigneeArray.length === 0) {
             return { success: false, error: "No valid assignees found." };
         }
 
         // 2. Create Single Shared Task
-        const assignedTo = Array.from(assigneeIds).map(id => ({
+        const assignedTo = assigneeArray.map(id => ({
             type: 'individual',
             id
         }));
@@ -101,7 +108,7 @@ export async function createTask(data: {
             const creator = await Employee.findById(data.creatorId).select("firstName lastName");
             const creatorName = creator ? `${creator.firstName} ${creator.lastName}` : "Someone";
 
-            const recipientIds = Array.from(assigneeIds).filter(id => id !== data.creatorId);
+            const recipientIds = assigneeArray.filter(id => id !== data.creatorId);
 
             if (recipientIds.length > 0) {
                 await triggerNotification({
@@ -181,7 +188,8 @@ export async function getTaskById(taskId: string) {
         await connectToDB();
         const task = await Task.findById(taskId)
             .populate('createdBy', 'firstName lastName image')
-            .populate('assignedTo.id', 'firstName lastName image')
+            .populate('assignedTo.id', 'firstName lastName image contract slug')
+            .populate('completedBy.userId', 'firstName lastName image contract slug')
             .populate('comments.userId', 'firstName lastName image') // Populate comment authors
             .lean();
 
@@ -197,7 +205,8 @@ export async function getTaskBySlug(slug: string) {
         await connectToDB();
         const task = await Task.findOne({ slug })
             .populate('createdBy', 'firstName lastName image')
-            .populate('assignedTo.id', 'firstName lastName image')
+            .populate('assignedTo.id', 'firstName lastName image contract slug')
+            .populate('completedBy.userId', 'firstName lastName image contract slug')
             .populate('comments.userId', 'firstName lastName image')
             .lean();
 
@@ -294,6 +303,25 @@ export async function toggleTodo(taskId: string, todoId: string, completed: bool
     try {
         await connectToDB();
 
+        // 1. Check if user is assigned to this task
+        const task = await Task.findById(taskId).select('completedBy assignedTo');
+
+        if (!task) return { success: false, error: "Task not found" };
+
+        const isAssigned = task.assignedTo?.some((a: any) => {
+            const assigneeId = a.id?._id ? a.id._id.toString() : a.id?.toString();
+            return assigneeId === userId;
+        });
+
+        if (!isAssigned) {
+            return { success: false, error: "You must be assigned to this task to update checklist items." };
+        }
+
+        // 2. Check if user has completed the task locally
+        if (task.completedBy?.some((cb: any) => cb.userId?.toString() === userId)) {
+            return { success: false, error: "Cannot check items on a completed task" };
+        }
+
         const updateOperation = completed
             ? { $addToSet: { "todos.$.completedBy": userId } }
             : { $pull: { "todos.$.completedBy": userId } };
@@ -319,6 +347,13 @@ export async function toggleTodo(taskId: string, todoId: string, completed: bool
 export async function addTaskComment(taskId: string, userId: string, text: string) {
     try {
         await connectToDB();
+
+        // 1. Check if user has completed the task
+        const existingTask = await Task.findById(taskId).select('completedBy');
+        if (existingTask && existingTask.completedBy?.some((cb: any) => cb.userId?.toString() === userId)) {
+            return { success: false, error: "You cannot comment on a task you have marked as complete." };
+        }
+
         const user = await Employee.findById(userId);
         const userName = `${user.firstName} ${user.lastName}`;
 

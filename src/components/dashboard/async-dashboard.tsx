@@ -35,7 +35,7 @@ function mergeRequests(vacations: any[], absences: any[], overtime: any[], sched
     return all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
-export async function AsyncDashboard({ employee, viewRole, stores, depts, managers, allRoles }: any) {
+export async function AsyncDashboard({ employee, viewRole, stores, depts, managers, allRoles, storeRatings, weather }: any) {
     const { GlobalDepartment, StoreDepartment } = require("@/lib/models");
 
     // --- Task System Data Fetching ---
@@ -88,19 +88,38 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             }
         }
 
-        // Parallelize Pending Requests with appropriate scoping
-        const results = await Promise.all([
+        const nextWeekDate = new Date();
+        nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+        const nextWeekISO = getISOWeekNumber(nextWeekDate);
+
+        // group all independent database calls
+        const promises = [
             getAllVacationRequests({ status: 'pending', storeId: sid, storeDepartmentId: did }),
             getAllAbsenceRequests({ status: 'pending', storeId: sid, storeDepartmentId: did }),
-            getPendingOvertimeRequests({ storeId: sid }), // Overtime might be store-wide or dept-specific depending on business logic, keeping it store-scaped for now
+            getPendingOvertimeRequests({ storeId: sid }),
             getPendingSchedules(sid, did),
             getPendingCoverageApprovals(sid),
-            // Stats scoping
             did ? getAllEmployees({ storeDepartmentId: did }, 1, 10000) : (storeId ? getEmployeesByStore(storeId) : getEmployeeStats({})),
-            Company.findOne({ active: true }).select('settings.scheduleRules'),
-            getEmployeeScheduleView(employee._id, new Date()), // Personal stats for the head
-            did ? getEmployeeStats({ storeDepartmentId: did }) : null // Explicit stats for global head scope
-        ]);
+            Company.findOne({ active: true }).select('settings.scheduleRules').lean(),
+            getEmployeeScheduleView(employee._id, new Date()),
+            did ? getEmployeeStats({ storeDepartmentId: did }) : Promise.resolve(null)
+        ];
+
+        // Add store-specific details if storeId exists
+        if (storeId) {
+            promises.push(getSchedulesLib(storeId));
+            promises.push(getStoreById(storeId.toString()));
+            promises.push(getStoreDepartments(storeId.toString()));
+            promises.push(getSchedulesLib(storeId, undefined, nextWeekISO.year, nextWeekISO.week));
+        } else {
+            // Global view schedules fetching
+            promises.push(Promise.all(stores.map((s: any) => getSchedulesLib(s._id.toString()))));
+            promises.push(Promise.resolve(null)); // dummy for getStoreById
+            promises.push(Promise.resolve([])); // dummy for getStoreDepartments
+            promises.push(Schedule.find({ year: nextWeekISO.year, weekNumber: nextWeekISO.week, status: { $in: ['published', 'approved'] } }).select('storeId').lean());
+        }
+
+        const results = await Promise.all(promises);
 
         const [
             pendingVacations,
@@ -111,7 +130,11 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             storeEmployeesOrStats,
             companyDoc,
             personalScheduleData,
-            globalHeadStats
+            globalHeadStats,
+            storeSchedulesOrAll,
+            fetchedFullStore,
+            fetchedStoreDepts,
+            nextWeekDataOrSchedules
         ] = results;
 
         // Personal Stats for Global Head (as employee)
@@ -139,7 +162,7 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
 
         // Schedule Calculation
         if (storeId) {
-            const storeSchedules = await getSchedulesLib(storeId);
+            const storeSchedules = storeSchedulesOrAll as any[];
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
@@ -223,7 +246,7 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             // Global View (Admin/Tech/Owner/Global Dept Head)
             const today = new Date();
             const todayStr = today.toISOString().split('T')[0];
-            const allSchedulesArrays = await Promise.all(stores.map((s: any) => getSchedulesLib(s._id.toString())));
+            const allSchedulesArrays = storeSchedulesOrAll as any[][];
             const coworkersMap = new Map();
 
             allSchedulesArrays.forEach((storeSchedules: any[]) => {
@@ -311,13 +334,12 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
         let radarStatus: "optimal" | "warning" | "critical" = "optimal";
         const alerts: any[] = [];
 
-        const fullStore = storeId ? await getStoreById(storeId.toString()) : null;
         let targetStaffing = 0;
         let maxStaffing = 0;
 
-        if (storeId && fullStore) {
-            targetStaffing = fullStore.minEmployees || 0;
-            maxStaffing = fullStore.maxEmployees || 999;
+        if (storeId && fetchedFullStore) {
+            targetStaffing = (fetchedFullStore as any).minEmployees || 0;
+            maxStaffing = (fetchedFullStore as any).maxEmployees || 999;
         } else {
             targetStaffing = stores.reduce((acc: number, s: any) => acc + (s.minEmployees || 0), 0);
             maxStaffing = stores.reduce((acc: number, s: any) => acc + (s.maxEmployees || 999), 0);
@@ -341,40 +363,30 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             alerts.push({ id: "staff-limit", type: "warning", title: "Overstaffed", message: `Exceeds max limit of ${staffingMetric.max} employees.` });
         }
 
-        const nextWeekDate = new Date();
-        nextWeekDate.setDate(nextWeekDate.getDate() + 7);
-        const nextWeekISO = getISOWeekNumber(nextWeekDate);
-
         let missingEntityNames: string[] = [];
         let missingEntityObjects: { id: string, name: string }[] = [];
         let nextWeekPublished = false;
 
         if (storeId) {
-            const storeDepts = await getStoreDepartments(storeId.toString());
-            const nextWeekSchedules = await getSchedulesLib(storeId, undefined, nextWeekISO.year, nextWeekISO.week);
+            const nextWeekSchedules = nextWeekDataOrSchedules as any[];
             const deptStatusMap = new Map();
             nextWeekSchedules.forEach((s: any) => {
                 if (s.status === 'published' || s.status === 'approved') deptStatusMap.set(s.storeDepartmentId?._id?.toString() || s.storeDepartmentId?.toString(), true);
             });
-            const missingDepts = storeDepts.filter((d: any) => d.active !== false && (!did || d._id.toString() === did) && !deptStatusMap.has(d._id.toString()));
+            const missingDepts = (fetchedStoreDepts as any[]).filter((d: any) => d.active !== false && (!did || d._id.toString() === did) && !deptStatusMap.has(d._id.toString()));
             missingEntityObjects = missingDepts.map((d: any) => ({ id: d._id.toString(), name: d.name }));
             missingEntityNames = missingEntityObjects.map((d: any) => d.name);
             nextWeekPublished = missingEntityNames.length === 0;
         } else {
-            const allNextWeekSchedules = await Schedule.find({ year: nextWeekISO.year, weekNumber: nextWeekISO.week, status: { $in: ['published', 'approved'] } }).select('storeId').lean();
+            const allNextWeekSchedules = nextWeekDataOrSchedules as any[];
             const fulfilledStoreIds = new Set(allNextWeekSchedules.map((s: any) => s.storeId.toString()));
             const missingStores = stores.filter((s: any) => s.active !== false && !fulfilledStoreIds.has(s._id.toString()));
             missingEntityObjects = missingStores.map((s: any) => ({ id: s._id.toString(), name: s.name }));
-            missingEntityNames = missingEntityObjects.map((s: any) => s.name);
+            missingEntityNames = missingEntityObjects.map((d: any) => d.name);
             nextWeekPublished = missingEntityNames.length === 0;
         }
 
-        const currentDay = new Date().getDay(); // 0=Sun, 1=Mon...
-        // Calculate Days Until Deadline
-        // If today is Monday (1) and deadline is Tuesday (2), remaining = 1.
-        // If today is Tuesday (2) and deadline is Tuesday (2), remaining = 0 (Today).
-        // If today is Wednesday (3) and deadline is Tuesday (2), remaining = -1 (Overdue).
-
+        const currentDay = new Date().getDay();
         const daysUntilDeadline = deadlineDay - currentDay;
         const isOverdue = !nextWeekPublished && currentDay > deadlineDay;
 
@@ -395,28 +407,41 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             alerts.push({ id: "approval-queue", type: "info", title: "High Pending Volume", message: `${pendingRequests.length} requests waiting review.`, actionLabel: "Review", actionUrl: "#approvals" });
         }
 
-        const operationsData = { score: Math.max(0, operationsScore), status: radarStatus, alerts, staffing: staffingMetric, scheduleHealth };
+
+        const operationsData = {
+            score: Math.max(0, operationsScore),
+            status: radarStatus,
+            alerts,
+            staffing: staffingMetric,
+            scheduleHealth,
+            metrics: {
+                laborCost: Math.round(totalScheduledHours * 10) / 10,
+                coverageGap: pendingCoverage.length
+            }
+        };
 
         const commonProps = {
-            employee,
-            pendingRequests,
-            requests: { vacations: pendingVacations, absences: pendingAbsences, overtime: pendingOvertime, schedules: pendingSchedules, coverage: pendingCoverage },
-            storeStats,
-            todaysCoworkers,
+            employee: JSON.parse(JSON.stringify(employee)),
+            pendingRequests: JSON.parse(JSON.stringify(pendingRequests)),
+            requests: JSON.parse(JSON.stringify({ vacations: pendingVacations, absences: pendingAbsences, overtime: pendingOvertime, schedules: pendingSchedules, coverage: pendingCoverage })),
+            storeStats: JSON.parse(JSON.stringify(storeStats)),
+            todaysCoworkers: JSON.parse(JSON.stringify(todaysCoworkers)),
             currentScheduleId,
             currentScheduleSlug,
             currentUserRole: viewRole,
-            operationsData,
+            operationsData: JSON.parse(JSON.stringify(operationsData)),
             tasks: JSON.parse(JSON.stringify(tasks || [])),
-            activeActions,
-            personalTodos,
-            swapRequests,
+            activeActions: JSON.parse(JSON.stringify(activeActions || { vacations: [], absences: [], coverageRequests: [], coverageOffers: [] })),
+            personalTodos: JSON.parse(JSON.stringify(personalTodos || [])),
+            swapRequests: JSON.parse(JSON.stringify(swapRequests || [])),
             currentUserRoles: allRoles,
             stores: JSON.parse(JSON.stringify(stores)),
             departments: JSON.parse(JSON.stringify(depts)),
             managers: JSON.parse(JSON.stringify(managers)),
             daysUntilNextDayOff: (employee as any).daysUntilNextDayOff,
-            allEmployees: (storeEmployeesOrStats as any)?.employees || [], // Pass full list for global overview
+            allEmployees: JSON.parse(JSON.stringify((storeEmployeesOrStats as any)?.employees || [])), // Pass full list for global overview
+            storeRatings: JSON.parse(JSON.stringify(storeRatings || [])),
+            weather: JSON.parse(JSON.stringify(weather || null))
         };
 
         if (viewRole === "store_department_head") {
@@ -500,17 +525,16 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
         }
     }
 
-
-
     return <EmployeeDashboard
-        employee={employee}
-        todaysCoworkers={todaysCoworkers}
+        employee={JSON.parse(JSON.stringify(employee))}
+        todaysCoworkers={JSON.parse(JSON.stringify(todaysCoworkers))}
         currentScheduleId={currentScheduleId}
         currentScheduleSlug={currentScheduleSlug}
         daysUntilNextDayOff={daysUntilNextDayOff}
-        personalTodos={personalTodos}
-        activeActions={activeActions}
-        swapRequests={swapRequests}
-        isWorkingToday={isWorkingToday} // Pass new prop
+        personalTodos={JSON.parse(JSON.stringify(personalTodos))}
+        activeActions={JSON.parse(JSON.stringify(activeActions))}
+        swapRequests={JSON.parse(JSON.stringify(swapRequests))}
+        isWorkingToday={isWorkingToday}
+        weather={JSON.parse(JSON.stringify(weather))}
     />;
 }

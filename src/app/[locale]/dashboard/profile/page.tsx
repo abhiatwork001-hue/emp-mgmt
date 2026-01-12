@@ -79,24 +79,24 @@ export default async function ProfilePage() {
 
             {/* Main Content Tabs */}
             <Tabs defaultValue="personal" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 md:grid-cols-5 lg:w-[750px] mb-8 bg-muted/50 p-1 border border-border h-auto">
-                    <TabsTrigger value="personal" className="flex items-center gap-2">
+                <TabsList className="grid w-full grid-cols-5 sm:w-[750px] mb-8 bg-muted/50 p-2 sm:p-2 border border-border h-auto gap-2">
+                    <TabsTrigger value="personal" className="flex items-center justify-center gap-2 py-2">
                         <User className="w-4 h-4" />
                         <span className="hidden sm:inline">{t("personal")}</span>
                     </TabsTrigger>
-                    <TabsTrigger value="history" className="flex items-center gap-2">
+                    <TabsTrigger value="history" className="flex items-center justify-center gap-2 py-2">
                         <Briefcase className="w-4 h-4" />
                         <span className="hidden sm:inline">{t("history")}</span>
                     </TabsTrigger>
-                    <TabsTrigger value="vacations" className="flex items-center gap-2">
+                    <TabsTrigger value="vacations" className="flex items-center justify-center gap-2 py-2">
                         <Palmtree className="w-4 h-4" />
                         <span className="hidden sm:inline">{t("vacations")}</span>
                     </TabsTrigger>
-                    <TabsTrigger value="absences" className="flex items-center gap-2">
+                    <TabsTrigger value="absences" className="flex items-center justify-center gap-2 py-2">
                         <AlertCircle className="w-4 h-4" />
                         <span className="hidden sm:inline">{t("absences")}</span>
                     </TabsTrigger>
-                    <TabsTrigger value="work" className="flex items-center gap-2">
+                    <TabsTrigger value="work" className="flex items-center justify-center gap-2 py-2">
                         <Calendar className="w-4 h-4" />
                         <span className="hidden sm:inline">Work</span>
                     </TabsTrigger>

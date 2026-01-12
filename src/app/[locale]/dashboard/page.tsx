@@ -11,6 +11,8 @@ import { AsyncDashboard } from "@/components/dashboard/async-dashboard";
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { Suspense } from "react";
 import { getHighestAccessRole } from "@/lib/auth-utils";
+import { getStoreWeather } from "@/lib/actions/weather.actions";
+import { getAllStoresRatings } from "@/lib/actions/google-places.actions";
 
 interface DashboardPageProps {
     searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -40,10 +42,16 @@ export default async function DashboardPage(props: DashboardPageProps) {
     // Determine effective role for rendering
     const viewRole = testRole || getHighestAccessRole(allRoles);
 
-    // Lightweight Fetches for Header
-    // We assume these are relatively fast compared to the full dashboard aggregation
-    const stores = await getAllStores();
-    const depts = await getAllGlobalDepartments();
+    const isManagement = ["admin", "hr", "owner", "tech", "super_user"].includes(viewRole);
+
+    // Parallelize Primary Fetches
+    const [stores, depts, storeRatingsRes] = await Promise.all([
+        getAllStores(),
+        getAllGlobalDepartments(),
+        isManagement ? getAllStoresRatings() : Promise.resolve([])
+    ]);
+
+    const storeRatings = storeRatingsRes;
 
     let localStoreDepartments: any[] = [];
     if (viewRole === "store_manager") {
@@ -53,7 +61,20 @@ export default async function DashboardPage(props: DashboardPageProps) {
         }
     }
 
-    const managers: never[] = []; // We don't fetch managers here anymore to save time
+    const managers: never[] = [];
+
+    // Fetch Weather (if store assigned, or first store for global roles)
+    let weather = null;
+    let weatherStoreId = employee.storeId?._id || employee.storeId;
+
+    if (!weatherStoreId && stores.length > 0) {
+        weatherStoreId = stores[0]._id;
+    }
+
+    if (weatherStoreId) {
+        const wRes = await getStoreWeather(weatherStoreId.toString());
+        if (wRes.success) weather = wRes.weather;
+    }
 
     return (
         <div className="min-h-screen bg-transparent">
@@ -67,6 +88,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
                         depts={depts}
                         localStoreDepartments={localStoreDepartments}
                         canSwitchRoles={canSwitchRoles}
+                        weather={weather}
                     />
                 </FadeIn>
                 <div className="mt-2 text-primary">
@@ -78,6 +100,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
                             depts={depts}
                             allRoles={allRoles}
                             managers={managers} // Passed as empty, fetched inside if needed or ignored if not critical
+                            storeRatings={storeRatings}
+                            weather={weather}
                         />
                     </Suspense>
                 </div>

@@ -22,8 +22,7 @@ export const ourFileRouter = {
         })
         .onUploadComplete(async ({ metadata, file }) => {
             // This code RUNS ON YOUR SERVER after upload
-            console.log("Upload complete for userId:", metadata.userId);
-            console.log("file url", file.url);
+
 
             // !!! Whatever is returned here is sent to the clientside `onClientUploadComplete` callback
             return { uploadedBy: metadata.userId };
@@ -36,7 +35,7 @@ export const ourFileRouter = {
             return { userId: user.id };
         })
         .onUploadComplete(async ({ metadata, file }) => {
-            console.log("Plating image upload complete", file.url);
+
             return { uploadedBy: metadata.userId };
         }),
 
@@ -47,7 +46,7 @@ export const ourFileRouter = {
             return { userId: user.id };
         })
         .onUploadComplete(async ({ metadata, file }) => {
-            console.log("Profile image upload complete", file.url);
+
             return { uploadedBy: metadata.userId };
         }),
 
@@ -63,7 +62,7 @@ export const ourFileRouter = {
             return { userId: user.id };
         })
         .onUploadComplete(async ({ metadata, file }) => {
-            console.log("Task attachment uploaded", file.url);
+
             return { uploadedBy: metadata.userId, url: file.url };
         }),
 
@@ -74,7 +73,7 @@ export const ourFileRouter = {
             return { userId: user.id };
         })
         .onUploadComplete(async ({ metadata, file }) => {
-            console.log("Message attachment uploaded", file.url);
+
             return { uploadedBy: metadata.userId, url: file.url };
         }),
 } satisfies FileRouter;

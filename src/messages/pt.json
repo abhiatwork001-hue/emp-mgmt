@@ -837,6 +837,28 @@
             "account": "Conta"
         }
     },
+    "Weather": {
+        "title": "Metereologia",
+        "feelsLike": "Sensação",
+        "humidity": "Humidade",
+        "wind": "Vento",
+        "updated": "Atualizado"
+    },
+    "Reviews": {
+        "title": "Avaliações Google",
+        "sync": "Sincronizar",
+        "syncing": "A sincronizar...",
+        "noReviews": "Ainda sem avaliações.",
+        "reviewsCount": "avaliações",
+        "viewMaps": "Ver no Google Maps"
+    },
+    "ApiUsage": {
+        "title": "Uso da API do Sistema",
+        "estCost": "Custo Est.",
+        "noCalls": "Nenhuma chamada de API registrada hoje.",
+        "googlePlaces": "Google Maps",
+        "openWeather": "OpenWeather"
+    },
     "Tasks": {
         "comments": {
             "title": "Comentários",
@@ -845,5 +867,35 @@
             "posting": "A publicar...",
             "placeholder": "Escreva um comentário..."
         }
+    },
+    "Reputation": {
+        "title": "Reputação da Loja",
+        "avg": "Média",
+        "noRatings": "Nenhuma avaliação disponível ainda.",
+        "viewFullReport": "Ver relatório completo"
+    },
+    "Analytics": {
+        "title": "Análise Mensal",
+        "avgRating": "Classificação Média (Mês)",
+        "reviewTrend": "Tendência de Revisão Mensal",
+        "latestActivity": "Atividade Recente",
+        "lastReview": "Última Avaliação",
+        "new": "novo",
+        "total": "Total",
+        "ratingHistory": "Histórico de Classificação (Mensal)",
+        "lastMonth": "mês passado",
+        "na": "N/A"
+    },
+    "Comparison": {
+        "title": "Desempenho da Reputação da Loja",
+        "topRated": "Lojas Melhor Classificadas",
+        "mostReviewed": "Mais Avaliadas",
+        "storeName": "Nome da Loja",
+        "rating": "Classificação",
+        "reviews": "Total de Avaliações",
+        "trend": "Tendência",
+        "lastUpdated": "Última Atualização",
+        "never": "Nunca",
+        "loading": "A carregar dados de reputação..."
     }
 }

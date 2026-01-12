@@ -13,13 +13,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Edit, Trash, Mail, MapPin, Phone, Building2, Users, Calendar as CalendarIcon, Layers } from "lucide-react";
+import { Edit, Trash, Mail, MapPin, Phone, Building2, Users, Calendar as CalendarIcon, Layers, TrendingUp } from "lucide-react";
 import { Link } from "@/i18n/routing";
 import { StoreDepartmentsListClient } from "@/components/stores/store-departments-list-client";
 import { RemoveStoreManagerButton } from "@/components/stores/remove-store-manager-button";
 import { CreateScheduleDialog } from "@/components/schedules/create-schedule-dialog";
 import { CredentialManager } from "@/components/credentials/credential-list";
 import { StoreReviewsWidget } from "@/components/stores/store-reviews-widget";
+import { StoreWeatherWidget } from "@/components/stores/store-weather-widget";
+import { getStoreWeather } from "@/lib/actions/weather.actions";
+import { StoreAnalyticsWidget } from "@/components/dashboard/analytics/store-analytics-widget";
 
 
 export default async function StoreDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -63,6 +66,15 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
     const { getSchedules } = require("@/lib/actions/schedule.actions");
     const allSchedules = await getSchedules(storeId);
     const activeSchedulesCount = allSchedules.filter((s: any) => s.status === 'published' || s.status === 'active').length;
+
+    // Fetch weather data
+    const weatherResult = await getStoreWeather(storeId);
+    const weather = weatherResult.success ? weatherResult.weather : null;
+
+    // Calculate rating change from history
+    const ratingHistory = store.ratingHistory || [];
+    const latestEntry = ratingHistory[ratingHistory.length - 1];
+    const ratingChange = latestEntry?.change || 0;
 
     return (
         <div className="space-y-6">
@@ -196,10 +208,31 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
                         rating={store.googleRating}
                         userRatingsTotal={store.googleUserRatingsTotal}
                         lastUpdated={store.lastReviewsUpdate}
+                        ratingChange={ratingChange}
+                        googlePlaceId={store.googlePlaceId}
                     />
+
+                    {/* Weather Section */}
+                    {weather && (
+                        <StoreWeatherWidget
+                            weather={weather}
+                            storeName={store.name}
+                        />
+                    )}
 
                     {/* Credentials Section */}
                     <CredentialManager storeId={store._id.toString()} userId={(session.user as any).id} canEdit={canEditCredentials} />
+
+                    {/* Monthly Analytics & History */}
+                    <div id="analytics" className="pt-6 border-t">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg">
+                                <TrendingUp className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                            </div>
+                            <h3 className="text-xl font-bold">Monthly Performance & History</h3>
+                        </div>
+                        <StoreAnalyticsWidget storeId={store._id.toString()} />
+                    </div>
                 </div>
 
                 {/* Right Column - Quick Stats & Quick Actions */}

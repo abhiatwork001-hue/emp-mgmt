@@ -27,11 +27,13 @@ import { PushPermissionButton } from "@/components/pwa/push-permission-button";
 export function Header({
     userRoles = ["employee"],
     departmentName = "",
-    employee = null
+    employee = null,
+    translations = {}
 }: {
     userRoles?: string[],
     departmentName?: string,
-    employee?: any
+    employee?: any,
+    translations?: { [key: string]: string }
 }) {
     const { data: session } = useSession();
     const t = useTranslations("Common");
@@ -46,7 +48,7 @@ export function Header({
         <div className="flex items-center justify-between p-4 px-4 md:px-8 border-b border-border/40 bg-background/60 backdrop-blur-md sticky top-0 z-40">
             <div className="flex items-center gap-4">
                 <div className="md:hidden">
-                    <MobileSidebar userRoles={userRoles} departmentName={departmentName} />
+                    <MobileSidebar userRoles={userRoles} departmentName={departmentName} translations={translations} />
                 </div>
                 <div className="hidden md:block">
                     <Breadcrumbs userRoles={userRoles} departmentName={departmentName} />

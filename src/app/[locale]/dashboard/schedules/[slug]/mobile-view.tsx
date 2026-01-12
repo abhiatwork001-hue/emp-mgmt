@@ -56,7 +56,9 @@ export function MobileScheduleView({
     });
 
     // Default to showing only my schedule if regular user, but show all for managers editing
-    const [showMyScheduleOnly, setShowMyScheduleOnly] = useState(!!currentUserId && !isEditMode);
+    // View Mode State
+    const [viewMode, setViewMode] = useState<'employees' | 'shifts'>('employees');
+    const [showMyScheduleOnly, setShowMyScheduleOnly] = useState(false);
 
     const currentDay = weekDays[activeDayIndex];
     if (!currentDay) return null;
@@ -70,6 +72,26 @@ export function MobileScheduleView({
     const displayedEmployees = showMyScheduleOnly && currentUserId
         ? employees.filter(e => e._id === currentUserId)
         : employees;
+
+    // Derived Shifts for Shift View
+    // Group by startTime-endTime
+    const shiftsByTime = new Map<string, any[]>();
+    currentDay.shifts.forEach((shift: any) => {
+        if (shift.employees.length === 0) return; // Skip unassigned in main view (shown separately)
+
+        const key = `${shift.startTime}-${shift.endTime}`;
+        if (!shiftsByTime.has(key)) {
+            shiftsByTime.set(key, []);
+        }
+        shiftsByTime.get(key)?.push(shift);
+    });
+
+    // Sort by start time
+    const sortedTimeKeys = Array.from(shiftsByTime.keys()).sort((a, b) => {
+        const [startA] = a.split('-');
+        const [startB] = b.split('-');
+        return startA.localeCompare(startB);
+    });
 
     return (
         <div className="md:hidden flex flex-col h-[calc(100vh-200px)]">
@@ -123,17 +145,41 @@ export function MobileScheduleView({
                         </p>
                     </div>
 
-                    {currentUserId && (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowMyScheduleOnly(!showMyScheduleOnly)}
-                            className={cn("h-8 text-xs gap-2", showMyScheduleOnly ? "bg-primary/10 text-primary border-primary/20" : "")}
-                        >
-                            {showMyScheduleOnly ? <User className="h-3 w-3" /> : <Users className="h-3 w-3" />}
-                            {showMyScheduleOnly ? "My View" : "Team View"}
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-2">
+                        {/* View Mode Toggle */}
+                        <div className="flex items-center p-1 bg-muted/50 rounded-lg border border-border">
+                            <Button
+                                variant={viewMode === 'employees' ? 'secondary' : 'ghost'}
+                                size="icon"
+                                className="h-6 w-6 rounded-md"
+                                onClick={() => setViewMode('employees')}
+                                title="Employee View"
+                            >
+                                <Users className="h-3 w-3" />
+                            </Button>
+                            <Button
+                                variant={viewMode === 'shifts' ? 'secondary' : 'ghost'}
+                                size="icon"
+                                className="h-6 w-6 rounded-md"
+                                onClick={() => setViewMode('shifts')}
+                                title="Shift View"
+                            >
+                                <Clock className="h-3 w-3" />
+                            </Button>
+                        </div>
+
+                        {currentUserId && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowMyScheduleOnly(!showMyScheduleOnly)}
+                                className={cn("h-8 text-xs gap-2", showMyScheduleOnly ? "bg-primary/10 text-primary border-primary/20" : "")}
+                            >
+                                {showMyScheduleOnly ? <User className="h-3 w-3" /> : <Users className="h-3 w-3" />}
+                                {showMyScheduleOnly ? "My View" : "All"}
+                            </Button>
+                        )}
+                    </div>
                 </div>
 
                 {/* 2. Unassigned Shifts (Queue) */}
@@ -160,159 +206,217 @@ export function MobileScheduleView({
                     </div>
                 )}
 
-                {/* 3. Employee List for this Day */}
-                <div className="space-y-3">
-                    {displayedEmployees.map((emp) => {
-                        // Find shifts for this employee on this day
-                        const empShifts = currentDay.shifts
-                            .map((s: any, idx: number) => ({ ...s, originalIndex: idx }))
-                            .filter((s: any) => s.employees.some((e: any) => e._id === emp._id));
+                {/* 3. Main Content (Employees vs Shifts) */}
+                {viewMode === 'employees' ? (
+                    <div className="space-y-3">
+                        {displayedEmployees.map((emp) => {
+                            // Find shifts for this employee on this day
+                            const empShifts = currentDay.shifts
+                                .map((s: any, idx: number) => ({ ...s, originalIndex: idx }))
+                                .filter((s: any) => s.employees.some((e: any) => e._id === emp._id));
 
-                        const hasShift = empShifts.length > 0;
-                        const isOff = hasShift && empShifts[0].shiftName === "Day Off";
+                            const hasShift = empShifts.length > 0;
+                            const isOff = hasShift && empShifts[0].shiftName === "Day Off";
 
-                        if (isDayClosed) return null;
+                            if (isDayClosed) return null;
 
-                        return (
-                            <div key={emp._id} className={cn(
-                                "flex items-center gap-3 p-3 rounded-2xl border transition-all",
-                                hasShift
-                                    ? (isOff ? "bg-muted/30 border-dashed border-border" : "bg-card border-border shadow-sm")
-                                    : "bg-muted/5 border-transparent opacity-80 hover:opacity-100"
-                            )}>
-                                {/* Avatar */}
-                                <Avatar className="h-10 w-10 border border-border shrink-0">
-                                    <AvatarImage src={emp.image} />
-                                    <AvatarFallback className="bg-muted text-muted-foreground font-bold text-xs">
-                                        {emp.firstName[0]}{emp.lastName[0]}
-                                    </AvatarFallback>
-                                </Avatar>
+                            return (
+                                <div key={emp._id} className={cn(
+                                    "flex items-center gap-3 p-3 rounded-2xl border transition-all",
+                                    hasShift
+                                        ? (isOff ? "bg-muted/30 border-dashed border-border" : "bg-card border-border shadow-sm")
+                                        : "bg-muted/5 border-transparent opacity-80 hover:opacity-100"
+                                )}>
+                                    {/* Avatar */}
+                                    <Avatar className="h-10 w-10 border border-border shrink-0">
+                                        <AvatarImage src={emp.image} />
+                                        <AvatarFallback className="bg-muted text-muted-foreground font-bold text-xs">
+                                            {emp.firstName[0]}{emp.lastName[0]}
+                                        </AvatarFallback>
+                                    </Avatar>
 
-                                {/* Content */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <span className="font-bold text-sm truncate">{emp.firstName} {emp.lastName}</span>
-                                        <span className="text-[10px] text-muted-foreground uppercase">{emp.positionId?.name?.substring(0, 12) || "Staff"}</span>
-                                    </div>
-
-                                    {/* Slot */}
-                                    {hasShift ? (
-                                        <div className="space-y-2">
-                                            {empShifts.map((shift: any) => {
-                                                const isCurrentUser = currentUserId && emp._id === currentUserId;
-
-                                                // Actions Logic
-                                                const shiftStartDateTime = new Date(currentDay.date);
-                                                const [startHours, startMinutes] = shift.startTime.split(':').map(Number);
-                                                shiftStartDateTime.setHours(startHours, startMinutes, 0, 0);
-                                                const hasStarted = new Date() > shiftStartDateTime;
-
-                                                // Calculate Has Ended for Overtime
-                                                const shiftEndDateTime = new Date(currentDay.date);
-                                                const [endHours, endMinutes] = shift.endTime.split(':').map(Number);
-                                                shiftEndDateTime.setHours(endHours, endMinutes, 0, 0);
-                                                // Handle overnight (if end < start, or if we want to be safe, if end < start in same day numbers, add 1 day)
-                                                // Comparing hours directly is safest if we assume valid shift times
-                                                if (endHours < startHours) {
-                                                    shiftEndDateTime.setDate(shiftEndDateTime.getDate() + 1);
-                                                }
-                                                const hasEnded = new Date() > shiftEndDateTime;
-
-                                                const canSwap = !isCurrentUser && !isEditMode && !isOff && !!onSwapRequest && !hasStarted;
-                                                const canAbsence = isCurrentUser && !isEditMode && !isOff && !!onAbsenceRequest;
-                                                const canOvertime = isCurrentUser && !isEditMode && !isOff && !!onOvertimeRequest && hasEnded;
-                                                const canPerformActions = canSwap || canAbsence || canOvertime;
-
-                                                const ShiftCard = (
-                                                    <div
-                                                        className={cn(
-                                                            "w-full text-left text-xs p-2 rounded-lg border flex items-center justify-between group relative transition-colors",
-                                                            isOff
-                                                                ? "bg-transparent border-transparent text-muted-foreground font-medium uppercase tracking-widest"
-                                                                : "bg-primary/5 border-primary/20 text-foreground font-medium",
-                                                            canPerformActions && "hover:bg-primary/10 cursor-pointer active:scale-[0.98]"
-                                                        )}
-                                                        style={shift.color && !isOff ? { borderLeft: `3px solid ${shift.color}` } : {}}
-                                                        onClick={() => isEditMode && onEditShift(shift, currentDay.date, shift.originalIndex)}
-                                                    >
-                                                        {isOff ? (
-                                                            <span>Day Off</span>
-                                                        ) : (
-                                                            <>
-                                                                <div className="flex items-center gap-2">
-                                                                    <span>{shift.startTime} - {shift.endTime}</span>
-                                                                    {canPerformActions && <MoreVertical className="h-3 w-3 text-muted-foreground" />}
-                                                                </div>
-                                                                {shift.breakMinutes > 0 && <span className="opacity-50 text-[9px]">{shift.breakMinutes}m break</span>}
-                                                            </>
-                                                        )}
-
-                                                        {/* Delete Button (Visible on Touch/Hover if Edit Mode) */}
-                                                        {isEditMode && (
-                                                            <div
-                                                                className="ml-2 p-1 bg-destructive/10 text-destructive rounded-full"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    onDeleteShift(currentDay.date, shift.originalIndex, emp._id);
-                                                                }}
-                                                            >
-                                                                <X className="h-3 w-3" />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-
-                                                if (canPerformActions) {
-                                                    return (
-                                                        <DropdownMenu key={shift.originalIndex}>
-                                                            <DropdownMenuTrigger asChild>
-                                                                {ShiftCard}
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end" className="w-48">
-                                                                <DropdownMenuLabel>Shift Actions</DropdownMenuLabel>
-                                                                <DropdownMenuSeparator />
-                                                                {canSwap && (
-                                                                    <DropdownMenuItem onClick={() => onSwapRequest(shift, currentDay.date, emp._id)}>
-                                                                        <ArrowLeftRight className="mr-2 h-4 w-4" />
-                                                                        <span>Swap Shift</span>
-                                                                    </DropdownMenuItem>
-                                                                )}
-                                                                {canAbsence && (
-                                                                    <DropdownMenuItem onClick={() => onAbsenceRequest(shift, currentDay.date, emp._id)}>
-                                                                        <CalendarOff className="mr-2 h-4 w-4" />
-                                                                        <span>Request Absence</span>
-                                                                    </DropdownMenuItem>
-                                                                )}
-                                                                {canOvertime && (
-                                                                    <DropdownMenuItem onClick={() => onOvertimeRequest && onOvertimeRequest(shift, currentDay.date, emp._id)}>
-                                                                        <Clock className="mr-2 h-4 w-4" />
-                                                                        <span>Request Overtime</span>
-                                                                    </DropdownMenuItem>
-                                                                )}
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    );
-                                                }
-
-                                                return <div key={shift.originalIndex}>{ShiftCard}</div>;
-                                            })}
+                                    {/* Content */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="font-bold text-sm truncate">{emp.firstName} {emp.lastName}</span>
+                                            <span className="text-[10px] text-muted-foreground uppercase">{emp.positionId?.name?.substring(0, 12) || "Staff"}</span>
                                         </div>
-                                    ) : (
-                                        // Empty Slot -> Add Button
-                                        isEditMode && (
-                                            <button
-                                                onClick={() => onAddShift(currentDay.date, emp._id)}
-                                                className="w-full py-1.5 rounded-lg border border-dashed border-muted-foreground/30 text-muted-foreground/50 text-[10px] uppercase font-bold hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-colors flex items-center justify-center gap-1"
-                                            >
-                                                <Plus className="h-3 w-3" /> Add Shift
-                                            </button>
-                                        )
-                                    )}
+
+                                        {/* Slot */}
+                                        {hasShift ? (
+                                            <div className="space-y-2">
+                                                {empShifts.map((shift: any) => {
+                                                    const isCurrentUser = currentUserId && emp._id === currentUserId;
+
+                                                    // Actions Logic
+                                                    const shiftStartDateTime = new Date(currentDay.date);
+                                                    const [startHours, startMinutes] = shift.startTime.split(':').map(Number);
+                                                    shiftStartDateTime.setHours(startHours, startMinutes, 0, 0);
+                                                    const hasStarted = new Date() > shiftStartDateTime;
+
+                                                    // Calculate Has Ended for Overtime
+                                                    const shiftEndDateTime = new Date(currentDay.date);
+                                                    const [endHours, endMinutes] = shift.endTime.split(':').map(Number);
+                                                    shiftEndDateTime.setHours(endHours, endMinutes, 0, 0);
+
+                                                    if (endHours < startHours) {
+                                                        shiftEndDateTime.setDate(shiftEndDateTime.getDate() + 1);
+                                                    }
+                                                    const hasEnded = new Date() > shiftEndDateTime;
+
+                                                    const userShiftOnDay = currentDay.shifts.find((s: any) => s.employees.some((e: any) => e._id === currentUserId));
+                                                    const isSameTime = userShiftOnDay && userShiftOnDay.startTime === shift.startTime && userShiftOnDay.endTime === shift.endTime;
+                                                    const canSwap = !isCurrentUser && !isEditMode && !isOff && !!onSwapRequest && !hasStarted && !isSameTime;
+                                                    const canAbsence = isCurrentUser && !isEditMode && !isOff && !!onAbsenceRequest;
+                                                    const canOvertime = isCurrentUser && !isEditMode && !isOff && !!onOvertimeRequest && hasEnded;
+                                                    const canPerformActions = canSwap || canAbsence || canOvertime;
+
+                                                    const ShiftCard = (
+                                                        <div
+                                                            className={cn(
+                                                                "w-full text-left text-xs p-2 rounded-lg border flex items-center justify-between group relative transition-colors",
+                                                                isOff
+                                                                    ? "bg-transparent border-transparent text-muted-foreground font-medium uppercase tracking-widest"
+                                                                    : "bg-primary/5 border-primary/20 text-foreground font-medium",
+                                                                canPerformActions && "hover:bg-primary/10 cursor-pointer active:scale-[0.98]"
+                                                            )}
+                                                            style={shift.color && !isOff ? { borderLeft: `3px solid ${shift.color}` } : {}}
+                                                            onClick={() => isEditMode && onEditShift(shift, currentDay.date, shift.originalIndex)}
+                                                        >
+                                                            {isOff ? (
+                                                                <span>Day Off</span>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span>{shift.startTime} - {shift.endTime}</span>
+                                                                        {canPerformActions && <MoreVertical className="h-3 w-3 text-muted-foreground" />}
+                                                                    </div>
+                                                                    {shift.breakMinutes > 0 && <span className="opacity-50 text-[9px]">{shift.breakMinutes}m break</span>}
+                                                                </>
+                                                            )}
+
+                                                            {/* Delete Button */}
+                                                            {isEditMode && (
+                                                                <div
+                                                                    className="ml-2 p-1 bg-destructive/10 text-destructive rounded-full"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        onDeleteShift(currentDay.date, shift.originalIndex, emp._id);
+                                                                    }}
+                                                                >
+                                                                    <X className="h-3 w-3" />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+
+                                                    if (canPerformActions) {
+                                                        return (
+                                                            <DropdownMenu key={shift.originalIndex}>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    {ShiftCard}
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="w-48">
+                                                                    <DropdownMenuLabel>Shift Actions</DropdownMenuLabel>
+                                                                    <DropdownMenuSeparator />
+                                                                    {canSwap && (
+                                                                        <DropdownMenuItem onClick={() => onSwapRequest(shift, currentDay.date, emp._id)}>
+                                                                            <ArrowLeftRight className="mr-2 h-4 w-4" />
+                                                                            <span>Swap Shift</span>
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                    {canAbsence && (
+                                                                        <DropdownMenuItem onClick={() => onAbsenceRequest(shift, currentDay.date, emp._id)}>
+                                                                            <CalendarOff className="mr-2 h-4 w-4" />
+                                                                            <span>Request Absence</span>
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                    {canOvertime && (
+                                                                        <DropdownMenuItem onClick={() => onOvertimeRequest && onOvertimeRequest(shift, currentDay.date, emp._id)}>
+                                                                            <Clock className="mr-2 h-4 w-4" />
+                                                                            <span>Request Overtime</span>
+                                                                        </DropdownMenuItem>
+                                                                    )}
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        );
+                                                    }
+
+                                                    return <div key={shift.originalIndex}>{ShiftCard}</div>;
+                                                })}
+                                            </div>
+                                        ) : (
+                                            // Empty Slot -> Add Button
+                                            isEditMode && (
+                                                <button
+                                                    onClick={() => onAddShift(currentDay.date, emp._id)}
+                                                    className="w-full py-1.5 rounded-lg border border-dashed border-muted-foreground/30 text-muted-foreground/50 text-[10px] uppercase font-bold hover:bg-primary/5 hover:text-primary hover:border-primary/30 transition-colors flex items-center justify-center gap-1"
+                                                >
+                                                    <Plus className="h-3 w-3" /> Add Shift
+                                                </button>
+                                            )
+                                        )}
+                                    </div>
                                 </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    // SHIFT VIEW
+                    <div className="space-y-4">
+                        {sortedTimeKeys.length === 0 ? (
+                            <div className="text-center py-10 text-muted-foreground">
+                                <Clock className="h-10 w-10 mx-auto mb-3 opacity-20" />
+                                <p className="text-sm">No shifts scheduled</p>
                             </div>
-                        );
-                    })}
-                </div>
+                        ) : (
+                            sortedTimeKeys.map(timeKey => {
+                                const shifts = shiftsByTime.get(timeKey) || [];
+                                const [startTime, endTime] = timeKey.split('-');
+
+                                return (
+                                    <div key={timeKey} className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
+                                        <div className="bg-muted/30 px-4 py-2 border-b border-border flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <Badge variant="outline" className="bg-background">
+                                                    {startTime} - {endTime}
+                                                </Badge>
+                                            </div>
+                                            <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                                                {shifts.reduce((acc: number, s: any) => acc + s.employees.length, 0)} Staff
+                                            </span>
+                                        </div>
+
+                                        <div className="divide-y divide-border/50">
+                                            {shifts.map((shift: any, idx: number) => (
+                                                <div key={idx} className="p-3">
+                                                    <div className="flex -space-x-2 overflow-hidden mb-3">
+                                                        {shift.employees.map((emp: any) => (
+                                                            <Avatar key={emp._id} className="inline-block h-8 w-8 ring-2 ring-background">
+                                                                <AvatarImage src={emp.image} />
+                                                                <AvatarFallback>{emp.firstName[0]}</AvatarFallback>
+                                                            </Avatar>
+                                                        ))}
+                                                    </div>
+
+                                                    <div className="space-y-2">
+                                                        {shift.employees.map((emp: any) => (
+                                                            <div key={emp._id} className="flex items-center justify-between text-sm">
+                                                                <span className="font-medium">{emp.firstName} {emp.lastName}</span>
+                                                                <span className="text-xs text-muted-foreground">{emp.positionId?.name || "Staff"}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                )}
+
 
                 {isDayClosed && (
                     <div className="flex flex-col items-center justify-center py-12 text-muted-foreground/50">
@@ -327,3 +431,4 @@ export function MobileScheduleView({
         </div>
     );
 }
+

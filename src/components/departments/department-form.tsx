@@ -17,9 +17,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createGlobalDepartment, updateGlobalDepartment } from "@/lib/actions/department.actions";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 
 const formSchema = z.object({
     name: z.string().min(2, {
@@ -73,13 +74,16 @@ export function DepartmentForm({ initialData }: DepartmentFormProps) {
         try {
             if (initialData) {
                 await updateGlobalDepartment(initialData._id, values);
+                toast.success("Department updated successfully");
             } else {
                 await createGlobalDepartment(values);
+                toast.success("Department created successfully");
             }
             router.push("/dashboard/departments");
             router.refresh();
         } catch (error) {
             console.error("Form submission error", error);
+            toast.error("Failed to save department. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -176,6 +180,40 @@ export function DepartmentForm({ initialData }: DepartmentFormProps) {
                     </Button>
                 </div>
             </form>
+
+            {initialData && (
+                <div className="mt-8 pt-8 border-t border-border">
+                    <h3 className="text-lg font-semibold text-destructive mb-2">Danger Zone</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Archiving a department will hide it from all lists and prevent new assignments. Existing data is preserved.
+                    </p>
+                    <Button
+                        variant="destructive"
+                        type="button"
+                        onClick={async () => {
+                            if (confirm("Are you sure you want to archive this department? This action cannot be easily undone.")) {
+                                setLoading(true);
+                                try {
+                                    const { archiveGlobalDepartment } = await import("@/lib/actions/department.actions");
+                                    await archiveGlobalDepartment(initialData._id);
+                                    toast.success("Department archived successfully");
+                                    router.push("/dashboard/departments");
+                                    router.refresh();
+                                } catch (error) {
+                                    console.error("Archive error", error);
+                                    toast.error("Failed to archive department");
+                                } finally {
+                                    setLoading(false);
+                                }
+                            }
+                        }}
+                        disabled={loading}
+                    >
+                        {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash className="mr-2 h-4 w-4" />}
+                        Archive Department
+                    </Button>
+                </div>
+            )}
         </Form>
     );
 }

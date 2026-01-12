@@ -5,35 +5,71 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, ClipboardList, Users, Package, TrendingUp, AlertCircle, ShoppingCart, MessageSquare, Sun, CheckCircle2, Palmtree, Store } from "lucide-react";
+import { Calendar, ClipboardList, Users, Package, TrendingUp, AlertCircle, Sun, MapPin, Palmtree, Store } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
-import { PendingApprovalsWidget } from "@/components/dashboard/pending-approvals-widget";
+import dynamic from "next/dynamic";
+import { WidgetSkeleton } from "@/components/dashboard/widget-skeleton";
+
+const PendingApprovalsWidget = dynamic(() => import("@/components/dashboard/pending-approvals-widget").then(mod => mod.PendingApprovalsWidget), {
+    loading: () => <WidgetSkeleton />,
+    ssr: false
+});
+
+const TaskBoard = dynamic(() => import("@/components/tasks/task-board").then(mod => mod.TaskBoard), {
+    loading: () => <WidgetSkeleton />,
+    ssr: false
+});
+
+const ActiveActionsWidget = dynamic(() => import("@/components/dashboard/active-actions-widget").then(mod => mod.ActiveActionsWidget), {
+    loading: () => <div className="h-32 animate-pulse bg-muted/20 rounded-xl" />,
+    ssr: false
+});
+
+const SwapRequestsWidget = dynamic(() => import("@/components/dashboard/swap-requests-widget").then(mod => mod.SwapRequestsWidget), {
+    loading: () => <div className="h-24 animate-pulse bg-muted/20 rounded-xl" />,
+    ssr: false
+});
+
+const StoreAnalyticsWidget = dynamic(() => import("@/components/dashboard/analytics/store-analytics-widget").then(mod => mod.StoreAnalyticsWidget), {
+    loading: () => <div className="h-64 animate-pulse bg-muted/20 rounded-xl" />,
+    ssr: false
+});
+
+const ApiUsageWidget = dynamic(() => import("@/components/dashboard/widgets/api-usage-widget").then(mod => mod.ApiUsageWidget), {
+    loading: () => <div className="h-40 animate-pulse bg-muted/20 rounded-xl" />,
+    ssr: false
+});
+
+const BirthdayWidget = dynamic(() => import("@/components/dashboard/widgets/birthday-widget").then(mod => mod.BirthdayWidget), {
+    loading: () => <div className="h-32 animate-pulse bg-muted/20 rounded-xl" />,
+    ssr: false
+});
+
+const HolidayWidget = dynamic(() => import("@/components/dashboard/widgets/holiday-widget").then(mod => mod.HolidayWidget), {
+    loading: () => <div className="h-32 animate-pulse bg-muted/20 rounded-xl" />,
+    ssr: false
+});
+
 import { CredentialManager } from "@/components/credentials/credential-list";
-import { BirthdayWidget } from "@/components/dashboard/widgets/birthday-widget";
-import { HolidayWidget } from "@/components/dashboard/widgets/holiday-widget";
 import { HolidayGreetingWidget } from "@/components/dashboard/widgets/holiday-greeting-widget";
 import { ProblemStatsWidget } from "@/components/dashboard/widgets/problem-stats-widget";
 import { EmployeeScheduleTab } from "@/components/employees/employee-schedule-tab";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EmployeeLink } from "../../common/employee-link";
-
-// Import OperationsRadar
 import { OperationsRadar, DashboardAlert } from "@/components/dashboard/operations-radar";
 import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import { ActivityLog } from "@/components/dashboard/activity-log";
 import { PersonalTodoWidget } from "@/components/dashboard/personal-todo-widget";
 import { ReminderWidget } from "@/components/reminders/reminder-widget";
-import { SwapRequestsWidget } from "@/components/dashboard/swap-requests-widget";
 import { NoticeBoard } from "@/components/notices/notice-board";
-import { TaskBoard } from "@/components/tasks/task-board";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import InsightsPanel from "@/components/dashboard/insights-panel";
 import { VacationAnalytics } from "@/components/dashboard/hr/vacation-analytics";
-import { StaffingAlerts } from "@/components/dashboard/hr/staffing-alerts";
-import { ActiveActionsWidget } from "@/components/dashboard/active-actions-widget";
+import { ReputationSummary } from "@/components/dashboard/reputation-summary";
+import { ScheduleAlertModal } from "@/components/dashboard/schedule-alert-modal";
 
 interface StoreManagerDashboardProps {
     employee: any;
@@ -62,7 +98,6 @@ interface StoreManagerDashboardProps {
         staffing: any;
         scheduleHealth: any;
     };
-    // New Props for full layout integration
     tasks: any[];
     personalTodos: any[];
     swapRequests: any[];
@@ -76,11 +111,9 @@ interface StoreManagerDashboardProps {
         coverageOffers: any[];
     };
     currentUserRoles?: string[];
+    storeRatings?: any[];
+    weather?: any;
 }
-
-import { ScheduleAlertModal } from "@/components/dashboard/schedule-alert-modal";
-
-// ... (imports remain)
 
 export function StoreManagerDashboard({
     employee,
@@ -98,13 +131,14 @@ export function StoreManagerDashboard({
     currentUserRoles = [],
     stores = [],
     departments = [],
+    storeRatings = [],
     managers = [],
-    activeActions = { vacations: [], absences: [], coverageRequests: [], coverageOffers: [] }
+    activeActions = { vacations: [], absences: [], coverageRequests: [], coverageOffers: [] },
+    weather
 }: StoreManagerDashboardProps) {
     const [showScheduleAlert, setShowScheduleAlert] = useState(false);
     const t = useTranslations("Dashboard");
 
-    // Helper: Compute Extended Stats for StatsCards
     const extendedStats = {
         totalEmployees: storeStats.totalEmployees,
         onVacation: storeStats.onVacation,
@@ -118,16 +152,8 @@ export function StoreManagerDashboard({
     const isDeptLevel = ["department_head", "store_department_head"].includes(currentUserRole);
 
     const userStoreId = typeof employee.storeId === 'object' ? employee.storeId?._id : employee.storeId;
-    // Fix: For High Level roles (Network View), do NOT default to stores[0] if user has no store.
-    // This allows widgets to see "All Stores" (undefined storeId).
-    // Only default to stores[0] if we are in a role that REQUIRES a store view but somehow lost it, OR if we want to ensure a fallback.
-    // Actually, if isHighLevel is true, we want effectiveStoreId to be undefined so we see Global Data.
     const effectiveStoreId = isHighLevel ? (userStoreId || undefined) : (userStoreId || stores[0]?._id);
 
-    const hasSchedule = currentScheduleId && currentScheduleId !== "null";
-    const hasCoworkers = Array.isArray(todaysCoworkers) && todaysCoworkers.length > 0;
-
-    // Wrapper for Coworkers to be a widget
     const CoworkersWidget = () => (
         <Card className="h-full border-l-4 border-l-emerald-500 shadow-sm relative overflow-hidden flex flex-col min-h-[400px]">
             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
@@ -182,7 +208,6 @@ export function StoreManagerDashboard({
         </Card>
     );
 
-    // Prepare Widgets Map
     const widgets = {
         "operations-radar": operationsData ? (
             <OperationsRadar
@@ -256,8 +281,6 @@ export function StoreManagerDashboard({
                             </div>
                         </Link>
                     )}
-
-                    {/* Add more vertical actions if needed or spacers */}
                 </CardContent>
             </Card>
         ),
@@ -274,20 +297,20 @@ export function StoreManagerDashboard({
         ),
 
         "insights-panel": <InsightsPanel />,
-
         "problem-stats": <ProblemStatsWidget userId={employee._id} role={currentUserRole} storeId={effectiveStoreId} />,
-
         "notice-board": <NoticeBoard userId={employee._id} />,
-
         "birthday-widget": <BirthdayWidget storeId={effectiveStoreId || ""} currentUserId={employee._id} />,
-
         "my-schedule": <EmployeeScheduleTab employeeId={employee._id} />,
-
         "coworkers-widget": <CoworkersWidget />,
-
         "holiday-greeting": <HolidayGreetingWidget />,
-
-        "holiday-widget": <HolidayWidget storeId={effectiveStoreId || ""} />
+        "holiday-widget": <HolidayWidget storeId={effectiveStoreId || ""} />,
+        "reputation-summary": storeRatings && storeRatings.length > 0 ? (
+            <ReputationSummary stores={storeRatings} />
+        ) : null,
+        "api-usage": <ApiUsageWidget />,
+        "analytics-widget": effectiveStoreId ? (
+            <StoreAnalyticsWidget storeId={effectiveStoreId} />
+        ) : null
     };
 
     const sidebarContent: any = {
@@ -318,7 +341,6 @@ export function StoreManagerDashboard({
     return (
         <DashboardLayout sidebar={sidebarContent}>
             <div className="flex flex-col gap-8 animate-in fade-in duration-700">
-                {/* Visual Role Indicator */}
                 <div className="flex items-center gap-3">
                     <Badge variant="outline" className="px-3 py-1 bg-primary/5 text-primary border-primary/20 font-bold uppercase tracking-wider text-[10px]">
                         {isHighLevel ? t('widgets.networkDashboard') : isDeptLevel ? t('widgets.departmentView') : t('widgets.storeDashboard')}
@@ -326,7 +348,6 @@ export function StoreManagerDashboard({
                     <div className="h-[1px] flex-1 bg-gradient-to-r from-border/50 via-border to-transparent" />
                 </div>
 
-                {/* High Priority Compliance Alert for Managers/Admins/HR */}
                 {operationsData?.scheduleHealth?.overdue && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
@@ -367,17 +388,33 @@ export function StoreManagerDashboard({
                     </motion.div>
                 )}
 
-                {/* 1. Key Statistics */}
                 <div className="w-full">
                     {widgets["stats-cards"]}
                 </div>
 
-                {/* 2. Top Level Operations Radar */}
+                {widgets["reputation-summary"] && (
+                    <div className="w-full">
+                        {widgets["reputation-summary"]}
+                    </div>
+                )}
+
                 <div className="w-full">
                     {widgets["operations-radar"]}
                 </div>
 
-                {/* HR Insights & Analytics */}
+                {widgets["analytics-widget"] && (
+                    <div className="w-full">
+                        <div className="flex items-center gap-3 mb-4">
+                            <Badge variant="outline" className="px-3 py-1 bg-yellow-500/5 text-yellow-600 border-yellow-500/20 font-bold uppercase tracking-wider text-[10px]">
+                                <TrendingUp className="h-3 w-3 mr-1 inline" />
+                                Monthly Analytics
+                            </Badge>
+                            <div className="h-[1px] flex-1 bg-gradient-to-r from-border/50 via-border to-transparent" />
+                        </div>
+                        {widgets["analytics-widget"]}
+                    </div>
+                )}
+
                 {isHighLevel && (
                     <div className="space-y-4">
                         <div className="flex items-center gap-3">
@@ -391,43 +428,35 @@ export function StoreManagerDashboard({
                     </div>
                 )}
 
-                {/* 3. Reported Issues (Full Width) */}
                 <div className="w-full">
                     {widgets["problem-stats"]}
                 </div>
 
-                {/* 4. Management & Tasks (Stack) | Approvals (Side) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-                    <div className="flex flex-col gap-8 h-full">
-                        <div>
-                            {widgets["management-suite"]}
-                        </div>
-                        <div className="flex-1">
-                            {widgets["task-board"]}
-                        </div>
+                    <div className="h-full">
+                        {widgets["management-suite"]}
                     </div>
                     <div className="h-full">
                         {widgets["pending-approvals-card"]}
                     </div>
                 </div>
 
-                {/* 4b. Credential Manager (Full Width) */}
                 <div className="w-full">
-                    {widgets["credential-manager"]}
+                    {widgets["task-board"]}
                 </div>
 
-
-                {/* 5. Scheduling */}
                 <div className="w-full">
                     {widgets["my-schedule"]}
                 </div>
 
-                {/* 6. Notice Board (Full Width) */}
+                <div className="w-full">
+                    {widgets["credential-manager"]}
+                </div>
+
                 <div className="w-full">
                     {widgets["notice-board"]}
                 </div>
 
-                {/* 7. Birthdays & Public Holidays */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
                     <div className="h-full">
                         {widgets["birthday-widget"]}
@@ -436,6 +465,12 @@ export function StoreManagerDashboard({
                         {widgets["holiday-widget"]}
                     </div>
                 </div>
+
+                {["tech", "admin", "owner"].includes(currentUserRole) && (
+                    <div className="grid grid-cols-1 gap-6">
+                        {widgets["api-usage"]}
+                    </div>
+                )}
 
                 <ScheduleAlertModal
                     isOpen={showScheduleAlert}

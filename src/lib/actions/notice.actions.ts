@@ -141,7 +141,7 @@ export async function createNotice(data: {
             }
 
         } catch (notifError) {
-            console.error("Failed to send notice notifications:", notifError);
+
         }
 
         // Log Action
@@ -168,24 +168,20 @@ export async function createNotice(data: {
 
         return { success: true };
     } catch (error) {
-        console.error("Create Notice Error:", error);
         return { success: false, error: "Failed to create notice" };
     }
 }
 
 export async function getNoticesForUser(userId: string) {
-    console.log("getNoticesForUser called for:", userId);
     try {
         await connectToDB();
 
         if (!userId) {
-            console.log("No userId provided");
             return [];
         }
 
         // Check types of imported models to ensure no circular dependency issues
         if (!Notice || !Employee || !StoreDepartment) {
-            console.error("Critical: One of the models (Notice, Employee, StoreDepartment) is undefined.", { Notice: !!Notice, Employee: !!Employee, StoreDepartment: !!StoreDepartment });
             throw new Error("Internal Model Error");
         }
 
@@ -197,7 +193,6 @@ export async function getNoticesForUser(userId: string) {
         });
 
         if (!user) {
-            console.log("User not found in getNoticesForUser");
             return [];
         }
 
@@ -257,12 +252,10 @@ export async function getNoticesForUser(userId: string) {
             .sort({ createdAt: -1 })
             .populate('createdBy', 'firstName lastName image');
 
-        console.log(`Found ${notices.length} notices for user`);
+
 
         return JSON.parse(JSON.stringify(notices));
     } catch (error) {
-        console.error("Fetch Notices Error:", error);
-        // Return empty array instead of throwing to prevent client crash
         return [];
     }
 }
@@ -281,7 +274,6 @@ export async function getNoticeById(noticeId: string) {
         if (!notice) return null;
         return JSON.parse(JSON.stringify(notice));
     } catch (error) {
-        console.error("Get Notice Error:", error);
         return null;
     }
 }
@@ -300,7 +292,6 @@ export async function getNoticeBySlug(slug: string) {
         if (!notice) return null;
         return JSON.parse(JSON.stringify(notice));
     } catch (error) {
-        console.error("Get Notice By Slug Error:", error);
         return null;
     }
 }
@@ -360,7 +351,6 @@ export async function addComment(noticeId: string, userId: string, content: stri
                 }
             }
         } catch (e) {
-            console.error("Notice Comment Notification Error:", e);
         }
 
         // Log Action
@@ -387,7 +377,6 @@ export async function addComment(noticeId: string, userId: string, content: stri
 
         return { success: true, comment: JSON.parse(JSON.stringify(comment)) };
     } catch (error) {
-        console.error("Add Comment Error:", error);
         return { success: false, error: "Failed to add comment" };
     }
 }
@@ -451,7 +440,6 @@ export async function updateNotice(noticeId: string, userId: string, data: Parti
 
         return { success: true };
     } catch (error) {
-        console.error("Update Notice Error:", error);
         return { success: false, error: "Failed to update notice" };
     }
 }

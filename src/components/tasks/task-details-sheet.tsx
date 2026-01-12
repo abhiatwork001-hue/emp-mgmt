@@ -1,5 +1,6 @@
 "use client";
 import { CreateTaskDialog } from "@/components/tasks/create-task-dialog";
+import { TaskChecklist } from "@/components/tasks/task-checklist";
 import { useState } from "react";
 import { format } from "date-fns";
 import {
@@ -9,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-    MessageSquare, CheckCircle2, Clock, Calendar, type LucideIcon, User, Edit
+    MessageSquare, CheckCircle2, Clock, Calendar, type LucideIcon, User, Edit, ChevronDown, ChevronUp
 } from "lucide-react";
 import { addTaskComment, updateTaskStatus } from "@/lib/actions/task.actions";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -29,6 +30,7 @@ export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskD
     const [commentText, setCommentText] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isEditOpen, setIsEditOpen] = useState(false);
+    const [expandedAssignee, setExpandedAssignee] = useState<string | null>(null);
 
     if (!task) return null;
 
@@ -45,6 +47,12 @@ export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskD
         const id = a.id?._id || a.id;
         return id?.toString() === currentUserId;
     });
+
+    // Simple role check based on props or context if available, otherwise rely on ownership
+    const isCreator = task.createdBy?._id === currentUserId || task.createdBy === currentUserId;
+    // We don't have roles prop here, so we'll default to Creator visibility. 
+    // If we need roles, we should update the parent to pass them.
+    // For now, Creator is the most important one for "checking if everyone completed".
 
     const handleComment = async () => {
         if (!commentText.trim()) return;
@@ -116,25 +124,99 @@ export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskD
                         </div>
                     )}
 
-                    {/* Progress / Completions */}
+                    {/* Detailed Completion Progress */}
                     <div className="space-y-3 pt-4 border-t">
                         <h4 className="text-sm font-semibold flex items-center gap-2">
                             <CheckCircle2 className="h-4 w-4 text-green-600" />
-                            Completion Progress
+                            Completion Status
                         </h4>
-                        {task.completedBy && task.completedBy.length > 0 ? (
-                            <div className="flex flex-wrap gap-2">
-                                {task.completedBy.map((cb: any, idx: number) => (
-                                    <Badge key={idx} variant="outline" className="gap-1 pl-1 bg-green-50 text-green-700 border-green-200">
-                                        <Avatar className="h-4 w-4">
-                                            <AvatarFallback className="text-[9px]">U</AvatarFallback>
-                                        </Avatar>
-                                        ID: {cb.userId.toString().slice(-4)} {/* Ideally fetch names, but ID suffix for now if populate missing */}
-                                    </Badge>
-                                ))}
+
+                        {task.assignedTo && task.assignedTo.length > 0 ? (
+                            <div className="space-y-2">
+                                {task.assignedTo.map((assignment: any, idx: number) => {
+                                    const assigneeId = assignment.id?._id || assignment.id;
+                                    const assigneeName = assignment.id?.firstName
+                                        ? `${assignment.id.firstName} ${assignment.id.lastName}`
+                                        : "Unknown User";
+
+                                    const isCompleted = task.completedBy?.some((cb: any) => cb.userId?.toString() === assigneeId?.toString());
+
+                                    const totalTodos = task.todos?.length || 0;
+                                    const completedTodos = task.todos?.filter((t: any) =>
+                                        t.completedBy?.includes(assigneeId?.toString())
+                                    ).length || 0;
+
+                                    const isExpanded = expandedAssignee === assigneeId?.toString();
+
+                                    return (
+                                        <div key={idx} className="flex flex-col gap-2 p-2 rounded-md bg-muted/40 border text-sm transition-all">
+                                            <div
+                                                className="flex items-center justify-between cursor-pointer hover:bg-muted/60 p-1 rounded-sm -m-1"
+                                                onClick={() => setExpandedAssignee(isExpanded ? null : assigneeId?.toString())}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <Avatar className="h-6 w-6">
+                                                        <AvatarFallback className="text-[10px]">{assigneeName[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <span className="font-medium">{assigneeName}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    {totalTodos > 0 && (
+                                                        <span className={`text-xs ${completedTodos === totalTodos ? 'text-green-600' : 'text-muted-foreground'}`}>
+                                                            {completedTodos}/{totalTodos} subtasks
+                                                        </span>
+                                                    )}
+                                                    {isCompleted ? (
+                                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                                            Completed
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline" className="text-muted-foreground">
+                                                            Pending
+                                                        </Badge>
+                                                    )}
+                                                    {totalTodos > 0 && (
+                                                        isExpanded
+                                                            ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                                                            : <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Collapsible Details */}
+                                            {isExpanded && totalTodos > 0 && (
+                                                <div className="pl-2 pr-2 pb-2 pt-0 mt-2 border-t border-border/50">
+                                                    <p className="text-xs text-muted-foreground mb-2 mt-2 font-medium">
+                                                        Checklist for {assigneeName}:
+                                                    </p>
+                                                    <TaskChecklist
+                                                        taskId={task._id}
+                                                        todos={task.todos}
+                                                        currentUserId={currentUserId}
+                                                        canEdit={false} // Read-only view
+                                                        showCompletionDetails={false} // Don't show hover cards here, redundant
+                                                        assignees={[]}
+                                                        viewAsUserId={assigneeId} // IMPORTANT: Show THIS user's checkmarks
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ) : (
-                            <p className="text-xs text-muted-foreground italic">No completions yet.</p>
+                            // Fallback for tasks without granular assignment data or legacy
+                            task.completedBy && task.completedBy.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {task.completedBy.map((cb: any, idx: number) => (
+                                        <Badge key={idx} variant="outline" className="bg-green-50 text-green-700">
+                                            User {cb.userId?.toString().slice(-4)}
+                                        </Badge>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground italic">No completion data available.</p>
+                            )
                         )}
                     </div>
 
@@ -142,18 +224,49 @@ export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskD
                     {task.todos && task.todos.length > 0 && (
                         <div className="space-y-2 pt-4 border-t">
                             <h4 className="text-sm font-semibold">Checklist</h4>
-                            <ul className="space-y-2">
-                                {task.todos.map((todo: any, idx: number) => (
-                                    <li key={idx} className="flex items-center gap-2 text-sm">
-                                        <div className={`h - 4 w - 4 rounded border flex items - center justify - center ${todo.completed ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground"} `}>
-                                            {todo.completed && <CheckCircle2 className="h-3 w-3" />}
-                                        </div>
-                                        <span className={todo.completed ? "line-through text-muted-foreground" : ""}>
-                                            {todo.text}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
+                            {isAssigned || !isCreator ? (
+                                <TaskChecklist
+                                    taskId={task._id}
+                                    todos={task.todos}
+                                    currentUserId={currentUserId}
+                                    canEdit={isAssigned && !isCompletedByMe}
+                                    showCompletionDetails={isCreator}
+                                    assignees={task.assignedTo?.map((a: any) => a.id) || []}
+                                    viewAsUserId={(isCreator && task.assignedTo?.length === 1)
+                                        ? (task.assignedTo[0].id?._id || task.assignedTo[0].id || task.assignedTo[0])
+                                        : undefined}
+                                />
+                            ) : (
+                                <div className="bg-muted/20 rounded-lg border p-4 space-y-2">
+                                    <p className="text-xs text-muted-foreground mb-3">
+                                        You are viewing this task as the creator. Assignees will see interactive checkboxes.
+                                    </p>
+                                    {task.todos.map((todo: any, idx: number) => {
+                                        const completionCount = todo.completedBy?.length || 0;
+                                        const totalAssignees = task.assignedTo?.length || 0;
+                                        const percentage = totalAssignees > 0 ? Math.round((completionCount / totalAssignees) * 100) : 0;
+
+                                        return (
+                                            <div key={idx} className="flex items-start gap-3 p-3 bg-background rounded-md border">
+                                                <div className="flex-1 space-y-1.5">
+                                                    <p className="text-sm font-medium">{todo.text}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                                            <div
+                                                                className={percentage === 100 ? "h-full bg-green-500" : "h-full bg-blue-500"}
+                                                                style={{ width: `${percentage}%` }}
+                                                            />
+                                                        </div>
+                                                        <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
+                                                            {completionCount}/{totalAssignees}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -218,10 +331,11 @@ export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskD
                 <div className="pt-4 mt-auto border-t bg-background sticky bottom-0 z-10 space-y-4">
                     <div className="flex gap-2">
                         <Textarea
-                            placeholder="Write a comment..."
+                            placeholder={isCompletedByMe ? "You cannot comment on completed tasks." : "Write a comment..."}
                             value={commentText}
                             onChange={(e) => setCommentText(e.target.value)}
                             className="min-h-[80px] resize-none"
+                            disabled={isCompletedByMe}
                         />
                     </div>
                     <div className="flex flex-col gap-4">
@@ -251,15 +365,26 @@ export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskD
                                     />
                                 </div>
                             ) : (
-                                <div className="flex items-center justify-between w-full">
-                                    <Button
-                                        variant={isCompletedByMe ? "outline" : "default"}
-                                        className={isCompletedByMe ? "border-green-600 text-green-600 hover:bg-green-50 w-full md:w-auto" : "w-full md:w-auto"}
-                                        onClick={handleToggleStatus}
-                                    >
-                                        {isCompletedByMe ? "Mark as Incomplete" : "Mark as Complete"}
-                                    </Button>
-                                    <div />
+                                <div className="flex flex-col w-full gap-2">
+                                    <div className="flex items-center justify-between w-full">
+                                        <Button
+                                            variant={isCompletedByMe ? "outline" : "default"}
+                                            className={isCompletedByMe ? "border-green-600 text-green-600 hover:bg-green-50 w-full md:w-auto" : "w-full md:w-auto"}
+                                            onClick={handleToggleStatus}
+                                        >
+                                            {isCompletedByMe
+                                                ? (task.todos?.length > 0
+                                                    ? `Completed (${task.todos.filter((t: any) => t.completedBy?.includes(currentUserId)).length}/${task.todos.length} Subtasks)`
+                                                    : "Mark as Incomplete")
+                                                : "Mark as Complete"
+                                            }
+                                        </Button>
+                                    </div>
+                                    {isCompletedByMe && task.todos?.length > 0 && task.todos.some((t: any) => !t.completedBy?.includes(currentUserId)) && (
+                                        <p className="text-xs text-yellow-600 flex items-center gap-1">
+                                            ⚠️ You have completed this task with pending checklist items.
+                                        </p>
+                                    )}
                                 </div>
                             )
                         ) : (
@@ -268,7 +393,7 @@ export function TaskDetailsSheet({ task, currentUserId, isOpen, onClose }: TaskD
 
                         <div className="flex items-center justify-between pt-2">
                             <span />
-                            <Button onClick={handleComment} disabled={!commentText.trim() || isSubmitting} variant="ghost" size="sm">
+                            <Button onClick={handleComment} disabled={!commentText.trim() || isSubmitting || isCompletedByMe} variant="ghost" size="sm">
                                 Post Comment
                             </Button>
                         </div>

@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Star, StarHalf } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Star, StarHalf, TrendingUp, TrendingDown, Minus, ExternalLink } from "lucide-react";
 import { updateStoreReviews } from "@/lib/actions/google-places.actions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
+import { useTranslations } from "next-intl";
 
 interface Review {
     author_name: string;
@@ -22,7 +24,9 @@ interface StoreReviewsWidgetProps {
     rating?: number;
     userRatingsTotal?: number;
     lastUpdated?: Date;
+    ratingChange?: number;
     compact?: boolean;
+    googlePlaceId?: string;
 }
 
 export function StoreReviewsWidget({
@@ -31,11 +35,15 @@ export function StoreReviewsWidget({
     rating: initialRating = 0,
     userRatingsTotal: initialTotal = 0,
     lastUpdated,
-    compact = false
+    ratingChange: initialChange = 0,
+    compact = false,
+    googlePlaceId
 }: StoreReviewsWidgetProps) {
+    const t = useTranslations("Reviews");
     const [reviews, setReviews] = useState<Review[]>(initialReviews);
     const [rating, setRating] = useState(initialRating);
     const [total, setTotal] = useState(initialTotal);
+    const [ratingChange, setRatingChange] = useState(initialChange);
     const [isLoading, setIsLoading] = useState(false);
 
     const handleRefresh = async () => {
@@ -43,13 +51,11 @@ export function StoreReviewsWidget({
         try {
             const res = await updateStoreReviews(storeId);
             if (res.success) {
-                // Determine structure based on how we saved it (DB vs raw return)
-                // The action returns { success: true, rating, reviewsCount } but doesn't return full list in response directly unless we adjust action.
-                // Wait, action returns { success, rating, reviewsCount }. It updates DB.
-                // We should re-fetch or use a separate getter. 
-                // For simplified UX, I'll reload page or better yet, I should update the action to return the new data.
-                // Reloading window to see fresh server-side data is easiest for now.
-                window.location.reload();
+                // Update local state with new data
+                setRating(res.rating || 0);
+                setTotal(res.reviewsCount || 0);
+                setRatingChange(res.change || 0);
+                setReviews(res.reviews || []);
             }
         } catch (error) {
             console.error("Failed to refresh reviews", error);
@@ -75,12 +81,29 @@ export function StoreReviewsWidget({
         );
     };
 
+    const getRatingChangeDisplay = () => {
+        if (!ratingChange || Math.abs(ratingChange) < 0.1) return null;
+
+        const isPositive = ratingChange > 0;
+        const Icon = isPositive ? TrendingUp : TrendingDown;
+        const color = isPositive ? "text-green-600" : "text-red-600";
+        const bgColor = isPositive ? "bg-green-50" : "bg-red-50";
+
+        return (
+            <Badge variant="outline" className={cn("gap-1 font-semibold", bgColor, color)}>
+                <Icon className="h-3 w-3" />
+                {isPositive ? '+' : ''}{ratingChange.toFixed(1)}
+            </Badge>
+        );
+    };
+
     if (compact) {
         return (
             <div className="flex items-center gap-2">
                 <span className="font-bold text-lg">{rating.toFixed(1)}</span>
                 {renderStars(rating)}
                 <span className="text-xs text-muted-foreground">({total})</span>
+                {getRatingChangeDisplay()}
             </div>
         );
     }
@@ -88,32 +111,46 @@ export function StoreReviewsWidget({
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-lg font-medium">Google Reviews</CardTitle>
+                <CardTitle className="text-lg font-medium">{t("title")}</CardTitle>
                 <div className="flex items-center gap-2">
                     <div className="flex flex-col items-end">
                         <div className="flex items-center gap-2">
                             <span className="text-2xl font-bold">{rating.toFixed(1)}</span>
                             <div className="flex flex-col">
                                 {renderStars(rating)}
-                                <span className="text-xs text-muted-foreground">{total} reviews</span>
+                                <span className="text-xs text-muted-foreground">{total} {t("reviewsCount")}</span>
                             </div>
                         </div>
+                        {getRatingChangeDisplay()}
                     </div>
-                    <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isLoading}>
-                        {isLoading ? "Syncing..." : "Sync"}
-                    </Button>
+                    <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isLoading}>
+                            {isLoading ? t("syncing") : t("sync")}
+                        </Button>
+                        {googlePlaceId && (
+                            <Button variant="ghost" size="icon" asChild title={t("viewMaps")}>
+                                <a href={`https://search.google.com/local/reviews?placeid=${googlePlaceId}`} target="_blank" rel="noopener noreferrer">
+                                    <ExternalLink className="h-4 w-4" />
+                                </a>
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </CardHeader>
             <CardContent>
+                {lastUpdated && (
+                    <p className="text-xs text-muted-foreground mb-3">
+                        Last updated: {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true })}
+                    </p>
+                )}
                 <div className="space-y-4">
                     {reviews.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-4">No reviews yet.</p>
+                        <p className="text-center text-muted-foreground py-4">{t("noReviews")}</p>
                     ) : (
                         reviews.slice(0, 5).map((review, i) => (
                             <div key={i} className="border-b last:border-0 pb-3 last:pb-0">
                                 <div className="flex items-center justify-between mb-1">
                                     <div className="flex items-center gap-2">
-                                        {/* Anonymized user - no avatar */}
                                         <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold">
                                             {review.author_name.charAt(0)}
                                         </div>

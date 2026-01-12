@@ -3,6 +3,13 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (type === "number") {
+      e.target.select();
+    }
+    props.onFocus?.(e);
+  }
+
   return (
     <input
       type={type}
@@ -14,6 +21,7 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
         "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
         className
       )}
+      onFocus={handleFocus}
       {...props}
     />
   )

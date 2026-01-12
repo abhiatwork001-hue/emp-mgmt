@@ -24,8 +24,15 @@ interface User {
     name: string;
 }
 
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
 export default function ScheduleManagementPage() {
-    const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+    const [date, setDate] = useState<Date>(new Date());
     const [shifts, setShifts] = useState<Shift[]>([]);
     const [users, setUsers] = useState<User[]>([]);
     // Mock storeDepartmentId for now - in real app, get from user context or selection
@@ -49,7 +56,7 @@ export default function ScheduleManagementPage() {
 
     const fetchSchedule = async () => {
         const res = await fetch(
-            `/api/schedules?storeDepartmentId=${storeDepartmentId}&date=${date}`
+            `/api/schedules?storeDepartmentId=${storeDepartmentId}&date=${date.toISOString().split("T")[0]}`
         );
         const data = await res.json();
         if (data.shifts) {
@@ -98,15 +105,15 @@ export default function ScheduleManagementPage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 storeDepartmentId,
-                date,
+                date: date.toISOString().split("T")[0],
                 shifts: shiftsToSave,
             }),
         });
 
         if (res.ok) {
-            alert("Schedule saved!");
+            toast.success("Schedule saved!");
         } else {
-            alert("Failed to save schedule");
+            toast.error("Failed to save schedule");
         }
     };
 
@@ -115,13 +122,31 @@ export default function ScheduleManagementPage() {
             <h1 className="text-3xl font-bold mb-6">Schedule Management</h1>
 
             <div className="flex gap-4 mb-6">
-                <div>
+                <div className="flex flex-col space-y-2">
                     <Label>Date</Label>
-                    <Input
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                    />
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-[240px] justify-start text-left font-normal",
+                                    !date && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {date ? format(date, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={date}
+                                onSelect={(day) => day && setDate(day)}
+                                disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
                 </div>
                 {/* Add Store Department Selector here if needed */}
             </div>

@@ -171,21 +171,26 @@ export default async function EmployeeDetailsPage({ params }: { params: Promise<
                 <div className="md:col-span-8 lg:col-span-9">
                     <Tabs defaultValue="position_history" className="w-full">
                         <div className="bg-muted p-1 rounded-lg">
-                            <TabsList className="w-full bg-transparent justify-start h-auto p-0">
-                                <TabsTrigger value="position_history" className="flex-1 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm py-3 rounded-md text-muted-foreground">
-                                    <Briefcase className="mr-2 h-4 w-4" /> Position History
+                            <TabsList className="grid w-full grid-cols-5 h-auto gap-2 p-1 bg-transparent">
+                                <TabsTrigger value="position_history" className="flex items-center justify-center data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm py-2 rounded-md text-muted-foreground gap-2">
+                                    <Briefcase className="h-4 w-4" />
+                                    <span className="hidden sm:inline">History</span>
                                 </TabsTrigger>
-                                <TabsTrigger value="vacation" className="flex-1 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm py-3 rounded-md text-muted-foreground">
-                                    <Calendar className="mr-2 h-4 w-4" /> Vacation
+                                <TabsTrigger value="vacation" className="flex items-center justify-center data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm py-2 rounded-md text-muted-foreground gap-2">
+                                    <Calendar className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Vacation</span>
                                 </TabsTrigger>
-                                <TabsTrigger value="absences" className="flex-1 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm py-3 rounded-md text-muted-foreground">
-                                    <Clock className="mr-2 h-4 w-4" /> Absences
+                                <TabsTrigger value="absences" className="flex items-center justify-center data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm py-2 rounded-md text-muted-foreground gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Absence</span>
                                 </TabsTrigger>
-                                <TabsTrigger value="schedule" className="flex-1 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm py-3 rounded-md text-muted-foreground">
-                                    <FileText className="mr-2 h-4 w-4" /> Schedule
+                                <TabsTrigger value="schedule" className="flex items-center justify-center data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm py-2 rounded-md text-muted-foreground gap-2">
+                                    <FileText className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Schedule</span>
                                 </TabsTrigger>
-                                <TabsTrigger value="work" className="flex-1 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm py-3 rounded-md text-muted-foreground">
-                                    <Clock className="mr-2 h-4 w-4" /> Work
+                                <TabsTrigger value="work" className="flex items-center justify-center data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm py-2 rounded-md text-muted-foreground gap-2">
+                                    <Clock className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Work</span>
                                 </TabsTrigger>
                             </TabsList>
                         </div>

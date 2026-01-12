@@ -119,9 +119,16 @@ export function TaskBoard({
         }
 
         const isCompletedByUser = task.completedBy?.some((cb: any) => cb.userId === currentUserId) || task.status === 'completed';
+        const isCreator = (task.createdBy?._id || task.createdBy) === currentUserId;
+        const isFullyCompleted = task.assignedTo?.length > 0 && task.completedBy?.length >= task.assignedTo.length;
 
-        if (filter === 'all') return !isCompletedByUser;
-        if (filter === 'completed') return isCompletedByUser;
+        if (filter === 'all') {
+            // Hide if I completed it, OR if I am creator and everyone else completed it
+            if (isCompletedByUser) return false;
+            if (isCreator && isFullyCompleted) return false;
+            return true;
+        }
+        if (filter === 'completed') return isCompletedByUser || (isCreator && isFullyCompleted);
         if (filter === 'high_priority') return task.priority === 'high' && !isCompletedByUser;
         return true;
     });

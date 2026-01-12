@@ -171,6 +171,7 @@ export default async function DashboardLayout({
                                 userRoles={normalizedRoles}
                                 departmentName={deptName}
                                 employee={employee ? JSON.parse(JSON.stringify(employee)) : null}
+                                translations={sidebarTranslations}
                             />
                         </div>
                         <ContentWrapper>

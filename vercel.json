@@ -1,0 +1,12 @@
+{
+    "crons": [
+        {
+            "path": "/api/cron/refresh-reviews",
+            "schedule": "0 * * * *"
+        },
+        {
+            "path": "/api/cron/finalize-monthly-reviews",
+            "schedule": "0 23 28-31 * *"
+        }
+    ]
+}

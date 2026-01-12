@@ -150,6 +150,7 @@ export async function getGlobalDepartmentById(id: string) {
             $project: {
                 _id: 1,
                 name: 1,
+                slug: 1,
                 description: 1,
                 hasHead: 1,
                 departmentHead: 1,  // New field
@@ -170,9 +171,7 @@ export async function getGlobalDepartmentById(id: string) {
 
     if (!departments.length) return null;
 
-    console.log("[getGlobalDepartmentById] Raw aggregation result:", departments[0]);
     const dept = JSON.parse(JSON.stringify(departments[0]));
-    console.log("[getGlobalDepartmentById] After JSON conversion:", dept);
 
     // 2. Fetch Employees separately (cleaner than massive aggregation)
     // Get all valid storeDepartment IDs for this global department
@@ -196,8 +195,7 @@ export async function getGlobalDepartmentById(id: string) {
     delete dept.storeDepts; // Clean up
 
     // 3. Populate departmentHead with employee details
-    console.log("[getGlobalDepartmentById] departmentHead before population:", dept.departmentHead);
-    console.log("[getGlobalDepartmentById] subHead before population:", dept.subHead);
+
 
     if (dept.departmentHead && dept.departmentHead.length > 0) {
         const heads = await Employee.find({
@@ -208,10 +206,7 @@ export async function getGlobalDepartmentById(id: string) {
             .populate("storeId", "name")
             .lean();
 
-        console.log("[getGlobalDepartmentById] Found department heads:", heads);
         dept.departmentHead = JSON.parse(JSON.stringify(heads));
-    } else {
-        console.log("[getGlobalDepartmentById] No department heads to populate");
     }
 
     // 4. Populate subHead with employee details
@@ -224,21 +219,23 @@ export async function getGlobalDepartmentById(id: string) {
             .populate("storeId", "name")
             .lean();
 
-        console.log("[getGlobalDepartmentById] Found sub heads:", subHeads);
         dept.subHead = JSON.parse(JSON.stringify(subHeads));
-    } else {
-        console.log("[getGlobalDepartmentById] No sub heads to populate");
     }
 
-    console.log("[getGlobalDepartmentById] Final department:", JSON.stringify(dept, null, 2));
+
     return dept;
 }
 
-export async function getGlobalDepartmentBySlug(slug: string) {
+export async function getGlobalDepartmentBySlug(slug: string, includeStats = true) {
     await dbConnect();
     const deptDoc = await GlobalDepartment.findOne({ slug, active: true }).lean();
     if (!deptDoc) return null;
-    return getGlobalDepartmentById(deptDoc._id.toString());
+
+    if (includeStats) {
+        return getGlobalDepartmentById(deptDoc._id.toString());
+    }
+
+    return JSON.parse(JSON.stringify(deptDoc));
 }
 
 /**
@@ -285,9 +282,20 @@ export async function createGlobalDepartment(data: DepartmentData) {
 export async function updateGlobalDepartment(id: string, data: DepartmentData) {
     await dbConnect();
 
+    // If name changes, regenerate slug but ensure uniqueness (excluding self)
     if (data.name) {
         data.slug = slugify(data.name);
+
+        // Ensure uniqueness
+        let count = 1;
+        let finalSlug = data.slug;
+        // Check if slug exists AND it's not THIS document
+        while (await GlobalDepartment.findOne({ slug: finalSlug, _id: { $ne: id } })) {
+            finalSlug = `${data.slug}-${count++}`;
+        }
+        data.slug = finalSlug;
     }
+
     const updatedDepartment = await GlobalDepartment.findByIdAndUpdate(id, data, { new: true }).lean();
 
     revalidatePath("/dashboard/departments");
@@ -406,31 +414,23 @@ export async function assignGlobalDepartmentHead(departmentId: string, employeeI
 
         const { Employee, GlobalDepartment } = require("@/lib/models");
 
-        console.log("[assignGlobalDepartmentHead] Starting assignment:", { departmentId, employeeId });
-
         const employee = await Employee.findById(employeeId);
         if (!employee) {
-            console.error("[assignGlobalDepartmentHead] Employee not found:", employeeId);
             throw new Error("Employee not found");
         }
 
         const department = await GlobalDepartment.findById(departmentId);
         if (!department) {
-            console.error("[assignGlobalDepartmentHead] Department not found:", departmentId);
             throw new Error("Department not found");
         }
-
-        console.log("[assignGlobalDepartmentHead] Found employee and department");
 
         // Add globalDepartmentHead role if not present
         if (!employee.roles) employee.roles = [];
         if (!employee.roles.includes("globalDepartmentHead")) {
             employee.roles.push("globalDepartmentHead");
-            console.log("[assignGlobalDepartmentHead] Added globalDepartmentHead role");
         }
 
         await employee.save();
-        console.log("[assignGlobalDepartmentHead] Employee saved");
 
         // Initialize departmentHead if it doesn't exist
         if (!department.departmentHead) {
@@ -448,14 +448,11 @@ export async function assignGlobalDepartmentHead(departmentId: string, employeeI
         }
         if (!department.employees.includes(employeeId)) {
             department.employees.push(employeeId);
-            console.log("[assignGlobalDepartmentHead] Added to employees array");
         }
 
         await department.save();
-        console.log("[assignGlobalDepartmentHead] Department saved, departmentHead:", department.departmentHead);
 
         revalidatePath(`/dashboard/departments/${department.slug}`);
-        console.log("[assignGlobalDepartmentHead] Assignment successful");
 
         // reused session variable defined at top of function
         if (session?.user) {
@@ -470,7 +467,6 @@ export async function assignGlobalDepartmentHead(departmentId: string, employeeI
 
         return { success: true };
     } catch (error) {
-        console.error("[assignGlobalDepartmentHead] Error:", error);
         throw error;
     }
 }
@@ -496,31 +492,23 @@ export async function assignGlobalDepartmentSubHead(departmentId: string, employ
 
         const { Employee, GlobalDepartment } = require("@/lib/models");
 
-        console.log("[assignGlobalDepartmentSubHead] Starting assignment:", { departmentId, employeeId });
-
         const employee = await Employee.findById(employeeId);
         if (!employee) {
-            console.error("[assignGlobalDepartmentSubHead] Employee not found:", employeeId);
             throw new Error("Employee not found");
         }
 
         const department = await GlobalDepartment.findById(departmentId);
         if (!department) {
-            console.error("[assignGlobalDepartmentSubHead] Department not found:", departmentId);
             throw new Error("Department not found");
         }
-
-        console.log("[assignGlobalDepartmentSubHead] Found employee and department");
 
         // Add globalDepartmentSubHead role if not present
         if (!employee.roles) employee.roles = [];
         if (!employee.roles.includes("globalDepartmentSubHead")) {
             employee.roles.push("globalDepartmentSubHead");
-            console.log("[assignGlobalDepartmentSubHead] Added globalDepartmentSubHead role");
         }
 
         await employee.save();
-        console.log("[assignGlobalDepartmentSubHead] Employee saved");
 
         // Initialize subHead if it doesn't exist
         if (!department.subHead) {
@@ -538,14 +526,11 @@ export async function assignGlobalDepartmentSubHead(departmentId: string, employ
         }
         if (!department.employees.includes(employeeId)) {
             department.employees.push(employeeId);
-            console.log("[assignGlobalDepartmentSubHead] Added to employees array");
         }
 
         await department.save();
-        console.log("[assignGlobalDepartmentSubHead] Department saved, subHead:", department.subHead);
 
         revalidatePath(`/dashboard/departments/${department.slug}`);
-        console.log("[assignGlobalDepartmentSubHead] Assignment successful");
 
         // reused session variable defined at top of function
         if (session?.user) {
@@ -560,7 +545,6 @@ export async function assignGlobalDepartmentSubHead(departmentId: string, employ
 
         return { success: true };
     } catch (error) {
-        console.error("[assignGlobalDepartmentSubHead] Error:", error);
         throw error;
     }
 }

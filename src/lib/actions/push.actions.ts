@@ -55,7 +55,7 @@ export async function sendPushNotification(userId: string, payload: { title: str
         try {
             const { firebaseAdmin } = await import("@/lib/firebase-admin");
 
-            console.log(`[PushAction] Sending FCM to user ${employee.email} (${userId}) - Tokens: ${employee.pushSubscriptionNative.length}`);
+
 
             const response = await firebaseAdmin.messaging().sendEachForMulticast({
                 tokens: employee.pushSubscriptionNative,
@@ -69,21 +69,14 @@ export async function sendPushNotification(userId: string, payload: { title: str
                 }
             });
 
+
             if (response.successCount > 0) results.native = true;
 
-            if (response.failureCount > 0) {
-                console.warn(`[PushAction] FCM partial failure: ${response.failureCount} failed out of ${response.responses.length}`);
-                // Optional: Remove invalid tokens here if error code matches 'messaging/registration-token-not-registered'
-                // But let's keep it simple for now to avoid accidental deletion
-            }
-
         } catch (error: any) {
-            console.error("[PushAction] FCM Error:", error);
             results.errors.push(`Native: ${error.message}`);
         }
-    } else {
-        console.log(`[PushAction] No native tokens for user ${userId}`);
     }
+
 
     return { success: results.web || results.native, details: results };
 }

@@ -315,6 +315,8 @@
                 "approveBtn": "Approve ({count})",
                 "allHandledTitle": "All approvals handled 🎉",
                 "allHandledDesc": "Great job! You're all caught up.",
+                "teamPendingTitle": "Team Pending Actions",
+                "teamPendingDesc": "Overview of your team's requests.",
                 "selectAll": "Select All",
                 "viewAll": "VIEW ALL {count} REQUESTS",
                 "viewCommandCenter": "VIEW COMMAND CENTER",
@@ -368,7 +370,9 @@
                 "noTarget": "No Target Set",
                 "underMin": "Under minimum requirement of {min}",
                 "allSystemsGo": "All systems operational",
-                "view": "View"
+                "view": "View",
+                "infoTooltip": "Live overview of critical store metrics, schedule status, and staffing health.",
+                "scheduleHealthTooltip": "Days remaining until the next week's schedule must be published to avoid being overdue."
             },
             "insights": {
                 "title": "Insights"
@@ -697,7 +701,8 @@
         "discardChangesConfirm": "You have unsaved changes. Discard them?",
         "editCancelled": "Edit cancelled, schedule republished",
         "cancelEditFailed": "Failed to cancel edit",
-        "shiftDetails": "Shift Details"
+        "shiftDetails": "Shift Details",
+        "printPdf": "Print PDF"
     },
     "Profile": {
         "personal": "Personal",
@@ -843,6 +848,28 @@
             "account": "Account"
         }
     },
+    "Weather": {
+        "title": "Weather",
+        "feelsLike": "Feels Like",
+        "humidity": "Humidity",
+        "wind": "Wind",
+        "updated": "Updated"
+    },
+    "Reviews": {
+        "title": "Google Reviews",
+        "sync": "Sync",
+        "syncing": "Syncing...",
+        "noReviews": "No reviews yet.",
+        "reviewsCount": "reviews",
+        "viewMaps": "View on Google Maps"
+    },
+    "ApiUsage": {
+        "title": "System API Usage",
+        "estCost": "Est. Cost",
+        "noCalls": "No external API calls recorded today.",
+        "googlePlaces": "Google Maps",
+        "openWeather": "OpenWeather"
+    },
     "Tasks": {
         "comments": {
             "title": "Comments",
@@ -851,5 +878,35 @@
             "posting": "Posting...",
             "placeholder": "Write a comment..."
         }
+    },
+    "Reputation": {
+        "title": "Store Reputation",
+        "avg": "Avg",
+        "noRatings": "No ratings available yet.",
+        "viewFullReport": "View full report"
+    },
+    "Analytics": {
+        "title": "Monthly Analytics",
+        "avgRating": "Average Rating (Month)",
+        "reviewTrend": "Monthly Review Trend",
+        "latestActivity": "Latest Activity",
+        "lastReview": "Last Review",
+        "new": "new",
+        "total": "Total",
+        "ratingHistory": "Rating History (Monthly)",
+        "lastMonth": "last month",
+        "na": "N/A"
+    },
+    "Comparison": {
+        "title": "Store Reputation Performance",
+        "topRated": "Top Rated Stores",
+        "mostReviewed": "Most Reviewed",
+        "storeName": "Store Name",
+        "rating": "Rating",
+        "reviews": "Total Reviews",
+        "trend": "Trend",
+        "lastUpdated": "Last Updated",
+        "never": "Never",
+        "loading": "Loading reputation data..."
     }
 }

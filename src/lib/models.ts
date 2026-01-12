@@ -75,8 +75,53 @@ export interface IStore extends Document {
         time: number;
         relative_time_description: string;
     }[];
-    ratingHistory?: { date: Date; rating: number }[];
+    ratingHistory?: {
+        date: Date;
+        rating: number;
+        change?: number; // Change from previous rating
+        reviewsCount?: number; // Total reviews at this point
+        starDistribution?: {
+            1: number;
+            2: number;
+            3: number;
+            4: number;
+            5: number;
+        };
+    }[];
+    googleStarDistribution?: {
+        1: number;
+        2: number;
+        3: number;
+        4: number;
+        5: number;
+    };
     lastReviewsUpdate?: Date;
+    monthlyStats?: {
+        year: number;
+        month: number;
+        avgRating: number;
+        totalReviews: number;
+        newReviews: number;
+        commentsCount: number;
+        starDistribution: {
+            1: number;
+            2: number;
+            3: number;
+            4: number;
+            5: number;
+        };
+    }[];
+
+    // Weather Cache
+    weatherCache?: {
+        temp: number;
+        feelsLike: number;
+        condition: string;
+        icon: string;
+        humidity?: number;
+        windSpeed?: number;
+        lastUpdated: Date;
+    };
 
     settings?: {
         supplierAlertPreferences: {
@@ -461,7 +506,26 @@ const StoreSchema = new Schema<IStore>({
         time: Number, // Unix timestamp
         relative_time_description: String
     }],
-    ratingHistory: [{ date: Date, rating: Number }],
+    ratingHistory: [{
+        date: Date,
+        rating: Number,
+        reviewsCount: { type: Number, default: 0 },
+        change: { type: Number, default: 0 },
+        starDistribution: {
+            1: { type: Number, default: 0 },
+            2: { type: Number, default: 0 },
+            3: { type: Number, default: 0 },
+            4: { type: Number, default: 0 },
+            5: { type: Number, default: 0 }
+        }
+    }],
+    googleStarDistribution: {
+        1: { type: Number, default: 0 },
+        2: { type: Number, default: 0 },
+        3: { type: Number, default: 0 },
+        4: { type: Number, default: 0 },
+        5: { type: Number, default: 0 }
+    },
     lastReviewsUpdate: { type: Date },
 
     settings: {
@@ -473,6 +537,22 @@ const StoreSchema = new Schema<IStore>({
             }]
         }
     },
+
+    monthlyStats: [{
+        year: Number,
+        month: Number,
+        avgRating: Number,
+        totalReviews: Number,
+        newReviews: Number,
+        commentsCount: Number,
+        starDistribution: {
+            1: { type: Number, default: 0 },
+            2: { type: Number, default: 0 },
+            3: { type: Number, default: 0 },
+            4: { type: Number, default: 0 },
+            5: { type: Number, default: 0 }
+        }
+    }],
 
     active: { type: Boolean, default: true },
     archivedAt: { type: Date }
@@ -1094,7 +1174,7 @@ const TaskSchema = new Schema<ITask>({
 
     assignedTo: [{
         type: { type: String, enum: ['individual', 'store', 'store_department', 'global_department'], required: true },
-        id: { type: Schema.Types.ObjectId, required: true }
+        id: { type: Schema.Types.ObjectId, required: true, ref: 'Employee' }
     }],
 
     deadline: { type: Date },
@@ -1804,5 +1884,23 @@ ActionLogSchema.index({ targetId: 1 });
 export const Conversation = mongoose.models.Conversation || mongoose.model<IConversation>('Conversation', ConversationSchema);
 export const Message = mongoose.models.Message || mongoose.model<IMessage>('Message', MessageSchema);
 export const ActionLog = mongoose.models.ActionLog || mongoose.model<IActionLog>('ActionLog', ActionLogSchema);
+
+export interface IApiUsage extends Document {
+    service: string; // "google-places", "openweather", "pusher"
+    date: Date; // Normalized to YYYY-MM-DD
+    count: number;
+    costEstimate: number; // For basic tracking
+}
+
+const ApiUsageSchema = new Schema<IApiUsage>({
+    service: { type: String, required: true },
+    date: { type: Date, required: true },
+    count: { type: Number, default: 0 },
+    costEstimate: { type: Number, default: 0 }
+}, { timestamps: true });
+
+ApiUsageSchema.index({ service: 1, date: 1 }, { unique: true });
+
+export const ApiUsage = mongoose.models.ApiUsage || mongoose.model<IApiUsage>('ApiUsage', ApiUsageSchema);
 
 

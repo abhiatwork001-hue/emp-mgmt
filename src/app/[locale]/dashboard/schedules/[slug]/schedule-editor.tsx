@@ -1872,16 +1872,14 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                     });
                     setSwapDialogOpen(true);
                 }}
-                onReportAbsence={() => {
+                onReportAbsence={targetDetailsShift?.targetEmployeeId === userId ? () => {
                     setDetailsDialogOpen(false);
-                    // Pass current shift details to absence dialog
-                    // We need shiftId, date (string), employeeId
                     handleAbsenceRequest(
                         targetDetailsShift.shift,
                         targetDetailsShift.date,
                         targetDetailsShift.targetEmployeeId
                     );
-                }}
+                } : undefined}
             />
 
             <Dialog open={showLogs} onOpenChange={setShowLogs}>

@@ -9,10 +9,40 @@ import { Calendar, ClipboardList, Users, Package, TrendingUp, AlertCircle, Shopp
 import { format } from "date-fns";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
-import { PendingApprovalsWidget } from "@/components/dashboard/pending-approvals-widget";
+import dynamic from "next/dynamic";
+import { WidgetSkeleton } from "@/components/dashboard/widget-skeleton";
+
+const PendingApprovalsWidget = dynamic(() => import("@/components/dashboard/pending-approvals-widget").then(mod => mod.PendingApprovalsWidget), {
+    loading: () => <WidgetSkeleton />,
+    ssr: false
+});
+
+const TaskBoard = dynamic(() => import("@/components/tasks/task-board").then(mod => mod.TaskBoard), {
+    loading: () => <WidgetSkeleton />,
+    ssr: false
+});
+
+const ActiveActionsWidget = dynamic(() => import("@/components/dashboard/active-actions-widget").then(mod => mod.ActiveActionsWidget), {
+    loading: () => <div className="h-32 animate-pulse bg-muted/20 rounded-xl" />,
+    ssr: false
+});
+
+const SwapRequestsWidget = dynamic(() => import("@/components/dashboard/swap-requests-widget").then(mod => mod.SwapRequestsWidget), {
+    loading: () => <div className="h-24 animate-pulse bg-muted/20 rounded-xl" />,
+    ssr: false
+});
+
+const BirthdayWidget = dynamic(() => import("@/components/dashboard/widgets/birthday-widget").then(mod => mod.BirthdayWidget), {
+    loading: () => <div className="h-32 animate-pulse bg-muted/20 rounded-xl" />,
+    ssr: false
+});
+
+const HolidayWidget = dynamic(() => import("@/components/dashboard/widgets/holiday-widget").then(mod => mod.HolidayWidget), {
+    loading: () => <div className="h-32 animate-pulse bg-muted/20 rounded-xl" />,
+    ssr: false
+});
+
 import { CredentialManager } from "@/components/credentials/credential-list";
-import { BirthdayWidget } from "@/components/dashboard/widgets/birthday-widget";
-import { HolidayWidget } from "@/components/dashboard/widgets/holiday-widget";
 import { HolidayGreetingWidget } from "@/components/dashboard/widgets/holiday-greeting-widget";
 import { ProblemStatsWidget } from "@/components/dashboard/widgets/problem-stats-widget";
 import { EmployeeScheduleTab } from "@/components/employees/employee-schedule-tab";
@@ -24,13 +54,11 @@ import DashboardLayout from "@/components/dashboard/dashboard-layout";
 import { ActivityLog } from "@/components/dashboard/activity-log";
 import { PersonalTodoWidget } from "@/components/dashboard/personal-todo-widget";
 import { ReminderWidget } from "@/components/reminders/reminder-widget";
-import { SwapRequestsWidget } from "@/components/dashboard/swap-requests-widget";
 import { NoticeBoard } from "@/components/notices/notice-board";
-import { TaskBoard } from "@/components/tasks/task-board";
 import { StatsCards } from "@/components/dashboard/stats-cards";
 import InsightsPanel from "@/components/dashboard/insights-panel";
-import { ActiveActionsWidget } from "@/components/dashboard/active-actions-widget";
 import { ScheduleAlertModal } from "@/components/dashboard/schedule-alert-modal";
+import { StoreWeatherWidget } from "@/components/stores/store-weather-widget";
 
 interface DepartmentHeadDashboardProps {
     employee: any;
@@ -74,6 +102,7 @@ interface DepartmentHeadDashboardProps {
     currentUserRoles?: string[];
     daysUntilNextDayOff?: number | null;
     allEmployees?: any[];
+    weather?: any;
 }
 
 export function DepartmentHeadDashboard({
@@ -95,20 +124,13 @@ export function DepartmentHeadDashboard({
     managers = [],
     activeActions = { vacations: [], absences: [], coverageRequests: [], coverageOffers: [] },
     daysUntilNextDayOff = null,
-    allEmployees = []
+    allEmployees = [],
+    weather
 }: DepartmentHeadDashboardProps) {
     const [showScheduleAlert, setShowScheduleAlert] = useState(false);
     const t = useTranslations("Dashboard");
 
-    console.log("[DepartmentHeadDashboard] Props:", {
-        hasOperationsData: !!operationsData,
-        tasksCount: tasks.length,
-        storesCount: stores.length,
-        departmentsCount: departments.length,
-        managersCount: managers.length,
-        allEmployeesCount: allEmployees.length,
-        daysUntilNextDayOff
-    });
+
 
     const extendedStats = {
         totalEmployees: storeStats.totalEmployees,
@@ -322,6 +344,7 @@ export function DepartmentHeadDashboard({
         "coworkers-widget": <CoworkersWidget />,
 
         "holiday-greeting": <HolidayGreetingWidget />,
+
         "holiday-widget": <HolidayWidget storeId={effectiveStoreId || ""} />,
 
         "personal-stats": <PersonalStats />,
@@ -538,7 +561,6 @@ export function DepartmentHeadDashboard({
                     </motion.div>
                 )}
 
-
                 <div className="w-full">
                     {widgets["stats-cards"]}
                 </div>
@@ -551,26 +573,29 @@ export function DepartmentHeadDashboard({
                     {widgets["problem-stats"]}
                 </div>
 
+                {/* 4. Management & Pending Approvals (Side by Side, Equal Height) */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
-                    <div className="flex flex-col gap-8 h-full">
-                        <div>
-                            {widgets["management-suite"]}
-                        </div>
-                        <div className="flex-1">
-                            {widgets["task-board"]}
-                        </div>
+                    <div className="h-full">
+                        {widgets["management-suite"]}
                     </div>
                     <div className="h-full">
                         {widgets["pending-approvals-card"]}
                     </div>
                 </div>
 
+                {/* 5. Team Tasks (Full Width) */}
                 <div className="w-full">
-                    {widgets["credential-manager"]}
+                    {widgets["task-board"]}
                 </div>
 
+                {/* 6. My Schedule (Full Width) */}
                 <div className="w-full">
                     {widgets["my-schedule"]}
+                </div>
+
+                {/* 7. Credential Manager (Full Width) */}
+                <div className="w-full">
+                    {widgets["credential-manager"]}
                 </div>
 
                 <div className="w-full">

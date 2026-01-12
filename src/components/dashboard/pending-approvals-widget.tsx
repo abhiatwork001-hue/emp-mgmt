@@ -295,16 +295,32 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
     }
 
     return (
-        <Card glass premium className="border-destructive/10 overflow-hidden h-full flex flex-col">
-            <CardHeader className="bg-destructive/5 border-b border-destructive/10 py-5 flex flex-row items-center justify-between space-y-0 shrink-0">
+        <Card glass premium className={cn("overflow-hidden h-full flex flex-col", canApprove ? "border-destructive/10" : "border-primary/10")}>
+            <CardHeader className={cn(
+                "border-b py-5 flex flex-row items-center justify-between space-y-0 shrink-0",
+                canApprove ? "bg-destructive/5 border-destructive/10" : "bg-primary/5 border-primary/10"
+            )}>
                 <div className="flex items-center gap-3">
                     <div className="relative">
-                        <AlertCircle className="h-5 w-5 animate-pulse text-destructive" />
-                        <div className="absolute inset-0 bg-destructive/20 blur-lg rounded-full animate-ping" />
+                        {canApprove ? (
+                            <>
+                                <AlertCircle className="h-5 w-5 animate-pulse text-destructive" />
+                                <div className="absolute inset-0 bg-destructive/20 blur-lg rounded-full animate-ping" />
+                            </>
+                        ) : (
+                            <Clock className="h-5 w-5 text-primary" />
+                        )}
                     </div>
                     <div>
-                        <CardTitle className="text-sm font-black tracking-widest text-destructive">{t('criticalApprovals')}</CardTitle>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-70 mt-0.5">{t('actionRequired')}</p>
+                        <CardTitle className={cn(
+                            "text-sm font-black tracking-widest",
+                            canApprove ? "text-destructive" : "text-primary"
+                        )}>
+                            {canApprove ? t('criticalApprovals') : t('teamPendingTitle')}
+                        </CardTitle>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-70 mt-0.5">
+                            {canApprove ? t('actionRequired') : t('teamPendingDesc')}
+                        </p>
                     </div>
                 </div>
 

@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { TestNotificationButton } from "@/components/pwa/test-notification-button";
 import { Store } from "lucide-react";
 
+import { StoreWeatherWidget } from "@/components/stores/store-weather-widget";
+
 export function DashboardHeader({
     session,
     viewRole,
@@ -18,7 +20,8 @@ export function DashboardHeader({
     stores,
     depts,
     localStoreDepartments,
-    canSwitchRoles
+    canSwitchRoles,
+    weather
 }: any) {
     const t = useTranslations("Dashboard");
     const [greetingKey, setGreetingKey] = useState("morning");
@@ -34,35 +37,44 @@ export function DashboardHeader({
         <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+            className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6"
         >
-            <div className="space-y-0.5">
-                <h1 className="text-3xl font-black tracking-tight text-foreground italic flex items-center gap-2">
-                    {t(`greetings.${greetingKey}`)}, <span className="bg-gradient-to-r from-primary via-violet-500 to-primary bg-clip-text text-transparent animate-gradient-x">
-                        {(() => {
-                            const sessionName = session?.user?.name;
-                            if (sessionName && sessionName !== "undefined undefined" && !sessionName.includes("undefined")) {
-                                return sessionName.split(' ')[0];
-                            }
-                            return employee?.firstName || t('userFallback');
-                        })()}
-                    </span>
-                </h1>
-                <div className="flex flex-col gap-0.5">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-2">
-                        <span className="w-1 h-1 rounded-full bg-primary/40" />
-                        {t('workspaceWelcome')}
-                    </p>
-                    {(employee.storeId && ["employee", "store_manager", "store_department_head"].includes(viewRole)) && (
-                        <div className="flex items-center gap-1.5 ml-3 text-emerald-600/80">
-                            <Store className="w-3 h-3" />
-                            <span className="text-[10px] font-bold uppercase tracking-wider">
-                                {employee.storeId.name || stores?.find((s: any) => s._id === employee.storeId || s._id === employee.storeId?._id)?.name || t('storeFallback')}
-                            </span>
-                        </div>
-                    )}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-8 w-full lg:w-auto">
+                <div className="space-y-0.5 flex-1">
+                    <h1 className="text-3xl font-black tracking-tight text-foreground italic flex items-center gap-2 flex-wrap">
+                        {t(`greetings.${greetingKey}`)}, <span className="bg-gradient-to-r from-primary via-violet-500 to-primary bg-clip-text text-transparent animate-gradient-x">
+                            {(() => {
+                                const sessionName = session?.user?.name;
+                                if (sessionName && sessionName !== "undefined undefined" && !sessionName.includes("undefined")) {
+                                    return sessionName.split(' ')[0];
+                                }
+                                return employee?.firstName || t('userFallback');
+                            })()}
+                        </span>
+                    </h1>
+                    <div className="flex flex-col gap-0.5">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-2">
+                            <span className="w-1 h-1 rounded-full bg-primary/40" />
+                            {t('workspaceWelcome')}
+                        </p>
+                        {(employee.storeId && ["employee", "store_manager", "store_department_head"].includes(viewRole)) && (
+                            <div className="flex items-center gap-1.5 ml-3 text-emerald-600/80">
+                                <Store className="w-3 h-3" />
+                                <span className="text-[10px] font-bold uppercase tracking-wider">
+                                    {employee.storeId.name || stores?.find((s: any) => s._id === employee.storeId || s._id === employee.storeId?._id)?.name || t('storeFallback')}
+                                </span>
+                            </div>
+                        )}
+                    </div>
                 </div>
+
+                {weather && (
+                    <div className="flex items-center shrink-0 bg-muted/20 sm:bg-transparent p-2 sm:p-0 rounded-xl sm:rounded-none">
+                        <StoreWeatherWidget weather={weather} compact />
+                    </div>
+                )}
             </div>
+
             <div className="flex items-center gap-3">
 
                 {["admin", "hr", "owner", "super_user", "store_manager", "department_head", "store_department_head"].includes(viewRole) && (

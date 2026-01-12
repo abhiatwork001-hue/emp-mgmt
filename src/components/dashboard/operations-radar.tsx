@@ -8,6 +8,13 @@ import { Link } from "@/i18n/routing";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
 
 export interface DashboardAlert {
     id: string | number;
@@ -35,6 +42,10 @@ interface OperationsRadarProps {
         nextWeekPublished: boolean;
         missingEntities?: string[];
     };
+    metrics?: {
+        laborCost: number;
+        coverageGap: number;
+    };
     role?: string;
 }
 
@@ -44,6 +55,7 @@ export function OperationsRadar({
     alerts = [],
     staffing = { current: 0, min: 0, max: 0, target: 0 },
     scheduleHealth = { daysUntilDeadline: 0, overdue: false, nextWeekPublished: false },
+    metrics,
     role
 }: OperationsRadarProps) {
     const t = useTranslations("Dashboard.widgets.operationsRadar");
@@ -58,7 +70,19 @@ export function OperationsRadar({
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-lg flex items-center gap-2">
                         <Activity className="h-5 w-5 text-purple-500" />
-                        {t('title')}
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div className="flex items-center gap-2 cursor-help">
+                                        {t('title')}
+                                        <Info className="h-3.5 w-3.5 text-muted-foreground/60" />
+                                    </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="max-w-xs text-xs">{t('infoTooltip')}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </CardTitle>
                     <Badge variant="outline" className="border-purple-200 text-purple-700 bg-purple-100/50 animate-pulse">
                         {t('liveMetrics')}
@@ -69,7 +93,16 @@ export function OperationsRadar({
                 {/* Schedule Health */}
                 <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold uppercase text-muted-foreground">{t('scheduleHealth')}</span>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="text-xs font-bold uppercase text-muted-foreground cursor-help border-b border-dotted border-muted-foreground/30">{t('scheduleHealth')}</span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs">{t('scheduleHealthTooltip')}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                         <div className="flex items-center gap-1.5">
                             {scheduleHealth.nextWeekPublished ? <CheckCircle2 className="h-3 w-3 text-emerald-500" /> : <Clock className="h-3 w-3 text-amber-500" />}
                             <span className="text-[10px] font-semibold text-muted-foreground">{t('nextWeek')}</span>
@@ -125,6 +158,36 @@ export function OperationsRadar({
                         </p>
                     )}
                 </div>
+
+                {/* Operations Pulse (New) */}
+                {metrics && (
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                        <div className="p-3 bg-secondary/30 rounded-lg border border-border/50 flex flex-col gap-1">
+                            <span className="text-[10px] uppercase font-bold text-muted-foreground">{t('laborPulse')}</span>
+                            <div className="flex items-end gap-1">
+                                <span className="text-xl font-black">{metrics.laborCost}</span>
+                                <span className="text-[10px] font-bold text-muted-foreground mb-1">Hrs</span>
+                            </div>
+                        </div>
+                        <div className={cn("p-3 rounded-lg border flex flex-col gap-1",
+                            metrics.coverageGap > 0 ? "bg-amber-500/10 border-amber-500/20" : "bg-emerald-500/10 border-emerald-500/20"
+                        )}>
+                            <span className={cn("text-[10px] uppercase font-bold",
+                                metrics.coverageGap > 0 ? "text-amber-600" : "text-emerald-600"
+                            )}>
+                                {t('coverageRisk')}
+                            </span>
+                            <div className="flex items-end gap-1">
+                                <span className={cn("text-xl font-black",
+                                    metrics.coverageGap > 0 ? "text-amber-700" : "text-emerald-700"
+                                )}>
+                                    {metrics.coverageGap}
+                                </span>
+                                <span className="text-[10px] font-bold opacity-70 mb-1">{t('openShifts')}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Alerts List */}
                 <div className="space-y-3 pt-2">

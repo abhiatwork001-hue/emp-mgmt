@@ -72,10 +72,6 @@ export default async function DepartmentDetailsPage({ params }: { params: Promis
                                 <Edit className="mr-2 h-4 w-4" /> Edit
                             </a>
                         </Button>
-                        <Button variant="destructive">
-                            <Trash className="mr-2 h-4 w-4" /> Delete
-                        </Button>
-                        <TestNotificationButton />
                     </div>
                 )}
             </div>

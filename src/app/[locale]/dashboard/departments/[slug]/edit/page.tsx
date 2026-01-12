@@ -11,7 +11,8 @@ export default async function EditDepartmentPage({ params }: { params: Promise<{
     if (!session) redirect("/login");
 
     const { slug } = await params;
-    const department = await getGlobalDepartmentBySlug(slug);
+    // Pass false to skip heavy aggregation/stats needed for viewing, ensuring reliability for editing
+    const department = await getGlobalDepartmentBySlug(slug, false);
 
     if (!department) {
         return <div>Department not found</div>;

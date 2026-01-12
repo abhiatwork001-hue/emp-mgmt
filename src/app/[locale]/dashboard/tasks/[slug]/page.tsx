@@ -244,8 +244,12 @@ export default async function TaskAnalyticsPage(props: { params: Promise<{ slug:
                                                             <AvatarFallback>{assignee.id.firstName?.[0]}</AvatarFallback>
                                                         </Avatar>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-sm font-medium truncate">{assignee.id.firstName} {assignee.id.lastName}</p>
-                                                            <p className="text-xs text-muted-foreground truncate">{assignee.id.contract?.positionId || "Employee"}</p>
+                                                            <p className="text-sm font-medium truncate">
+                                                                {assignee.id?.firstName} {assignee.id?.lastName}
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground truncate">
+                                                                {assignee.id?.contract?.positionId || "Employee"}
+                                                            </p>
                                                         </div>
                                                     </div>
                                                 ))
@@ -269,12 +273,58 @@ export default async function TaskAnalyticsPage(props: { params: Promise<{ slug:
                                                             </Avatar>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center justify-between">
-                                                                    <p className="text-sm font-medium truncate">{cb.userId.firstName} {cb.userId.lastName}</p>
+                                                                    <p className="text-sm font-medium truncate">
+                                                                        {cb.userId?.firstName} {cb.userId?.lastName}
+                                                                    </p>
                                                                     <CheckCircle2 className="h-3 w-3 text-green-600" />
                                                                 </div>
                                                                 <p className="text-xs text-muted-foreground truncate">
                                                                     {format(new Date(cb.completedAt), "MMM d, h:mm a")}
                                                                 </p>
+
+                                                                {/* Subtask Progress */}
+                                                                {task.todos && task.todos.length > 0 && (() => {
+                                                                    const completedSubtasks = task.todos.filter((t: any) =>
+                                                                        t.completedBy?.includes(uId)
+                                                                    ).length;
+                                                                    const totalSubtasks = task.todos.length;
+                                                                    const percentage = Math.round((completedSubtasks / totalSubtasks) * 100);
+
+                                                                    return (
+                                                                        <div className="mt-2 space-y-1.5">
+                                                                            <div className="flex items-center justify-between text-xs">
+                                                                                <span className="text-muted-foreground">Subtasks</span>
+                                                                                <span className={completedSubtasks === totalSubtasks ? "text-green-600 font-medium" : "text-orange-600 font-medium"}>
+                                                                                    {completedSubtasks}/{totalSubtasks}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                                                                <div
+                                                                                    className={completedSubtasks === totalSubtasks ? "h-full bg-green-500" : "h-full bg-orange-500"}
+                                                                                    style={{ width: `${percentage}%` }}
+                                                                                />
+                                                                            </div>
+                                                                            {completedSubtasks < totalSubtasks && (
+                                                                                <div className="mt-2 space-y-0.5">
+                                                                                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Incomplete:</p>
+                                                                                    {task.todos
+                                                                                        .filter((t: any) => !t.completedBy?.includes(uId))
+                                                                                        .slice(0, 3)
+                                                                                        .map((t: any, i: number) => (
+                                                                                            <div key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                                                                                                <span className="text-orange-500 mt-0.5">○</span>
+                                                                                                <span className="line-clamp-1">{t.text}</span>
+                                                                                            </div>
+                                                                                        ))
+                                                                                    }
+                                                                                    {task.todos.filter((t: any) => !t.completedBy?.includes(uId)).length > 3 && (
+                                                                                        <p className="text-[10px] text-muted-foreground italic pl-4">+{task.todos.filter((t: any) => !t.completedBy?.includes(uId)).length - 3} more</p>
+                                                                                    )}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    );
+                                                                })()}
                                                                 {/* Submitted Files List */}
                                                                 {userSubmissions.length > 0 && (
                                                                     <div className="mt-2 space-y-1">

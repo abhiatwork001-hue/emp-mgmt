@@ -9,15 +9,17 @@ import { NativeNotificationListener } from "@/components/native-notification-lis
 export function Providers({
     children,
     messages,
-    locale
+    locale,
+    session
 }: {
     children: React.ReactNode;
     messages: AbstractIntlMessages;
     locale: string;
+    session: any;
 }) {
     return (
         <NextIntlClientProvider messages={messages} locale={locale} timeZone="Europe/Lisbon">
-            <SessionProvider>
+            <SessionProvider session={session}>
                 <ThemeProvider
                     attribute="class"
                     defaultTheme="dark"

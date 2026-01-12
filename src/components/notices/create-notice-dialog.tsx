@@ -192,6 +192,20 @@ export function CreateNoticeDialog({
                         </div>
                     )}
 
+                    {/* Store Department Head - Just Role Filter */}
+                    {scope === 'store_department' && isStoreDeptHead && (
+                        <div className="grid gap-2">
+                            <Label>{t('filterContent')}</Label>
+                            <Select value={targetRole} onValueChange={setTargetRole}>
+                                <SelectTrigger><SelectValue placeholder={t('allEmployeesInDept')} /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">{t('allEmployees')}</SelectItem>
+                                    <SelectItem value="Employee">{t('staffOnly')}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    )}
+
                     {/* Store Selection (Super User) */}
                     {scope === 'store' && isSuper && (
                         <div className="grid gap-2">

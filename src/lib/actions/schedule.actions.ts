@@ -852,7 +852,7 @@ export async function updateScheduleStatus(id: string, status: string, userId: s
 
                 const recipients = Array.from(employeeIds).filter(r => r !== userId);
 
-                console.log(`[ScheduleNotification] Status: ${status}, Recipients found: ${recipients.length}`);
+
 
                 if (recipients.length > 0) {
                     await triggerNotification({
@@ -1009,7 +1009,7 @@ export async function copyPreviousSchedule(currentScheduleId: string, userId: st
     const searchEnd = new Date(targetPrevStart);
     searchEnd.setHours(searchEnd.getHours() + 12);
 
-    console.log(`[CopySchedule] Current Start: ${currentStart.toISOString()}, Looking for Prev Start between: ${searchStart.toISOString()} and ${searchEnd.toISOString()} `);
+
 
     // 3. Find previous schedule by DATE range
     const prevSchedule = await Schedule.findOne({
@@ -1356,7 +1356,7 @@ export async function getDashboardData(date: Date = new Date(), storeIdFilter?: 
     const isStoreDeptHead = roles.includes("store_department_head");
     const isGlobalDeptHead = roles.includes("department_head");
 
-    console.log(`[getDashboardData] User: ${currentUser.email}, Roles: ${roles.join(',')}, StoreId: ${currentUser.storeId}`);
+
 
     // 1. Calculate Week/Year
     const d = new Date(date);
@@ -1412,7 +1412,7 @@ export async function getDashboardData(date: Date = new Date(), storeIdFilter?: 
     };
     if (deptQuery._id) scheduleQuery.storeDepartmentId = deptQuery._id;
 
-    console.log(`[getDashboardData] Querying Schedules:`, JSON.stringify(scheduleQuery));
+
 
     const schedules = await Schedule.find(scheduleQuery).lean();
 
