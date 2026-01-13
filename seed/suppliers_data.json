@@ -1,0 +1,1099 @@
+[
+    {
+        "name": "PROGELCONE",
+        "items": [
+            {
+                "sku": "0715321",
+                "name": "ALCOOL ETILICO 250ML",
+                "unit": "Cx 24un"
+            },
+            {
+                "sku": "0471832",
+                "name": "CAIXA CARTOLINA GRANDE 1350ML",
+                "unit": "Cx 300un"
+            },
+            {
+                "sku": "0471830",
+                "name": "CAIXA CARTOLINA PEQUENA 780ML",
+                "unit": "Cx 300un"
+            },
+            {
+                "sku": "0406729",
+                "name": "COPO CAFÉ DESCARTAVEL",
+                "unit": "Cx 1000un"
+            },
+            {
+                "sku": "0401362",
+                "name": "COPO MOLHEIRA GRANDE",
+                "unit": "Cx 640un"
+            },
+            {
+                "sku": "0400528",
+                "name": "COPO MOLHEIRA PEQ",
+                "unit": "Cx 2500un"
+            },
+            {
+                "sku": "0200072",
+                "name": "DOCE DE LEITE",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "0410255",
+                "name": "EMBALAGEM SOPA",
+                "unit": "Cx 504un"
+            },
+            {
+                "sku": "0381370",
+                "name": "ESFREGAO AÇO INOX",
+                "unit": "Cx 10un"
+            },
+            {
+                "sku": "0381379",
+                "name": "ESFREGÃO ESPONJA",
+                "unit": "Cx 12un"
+            },
+            {
+                "sku": "0338416",
+                "name": "ETIQUETA AUTOC. HACCP DOMINGO",
+                "unit": "Rolo 500un"
+            },
+            {
+                "sku": "0338412",
+                "name": "ETIQUETA AUTOC. HACCP QUARTA",
+                "unit": "Rolo 500un"
+            },
+            {
+                "sku": "0338413",
+                "name": "ETIQUETA AUTOC. HACCP QUINTA",
+                "unit": "Rolo 500un"
+            },
+            {
+                "sku": "0338415",
+                "name": "ETIQUETA AUTOC. HACCP SABADO",
+                "unit": "Rolo 500un"
+            },
+            {
+                "sku": "0338410",
+                "name": "ETIQUETA AUTOC. HACCP SEGUNDA",
+                "unit": "Rolo 500un"
+            },
+            {
+                "sku": "0338414",
+                "name": "ETIQUETA AUTOC. HACCP SEXTA",
+                "unit": "Rolo 500un"
+            },
+            {
+                "sku": "0338411",
+                "name": "ETIQUETA AUTOC. HACCP TERCA",
+                "unit": "Rolo 500un"
+            },
+            {
+                "sku": "0488200",
+                "name": "FRASCO PULVERIZADOR 750ML",
+                "unit": "Unidade"
+            },
+            {
+                "sku": "0310628",
+                "name": "GARRAFA PLASTICO 250ML",
+                "unit": "Cx 210un"
+            },
+            {
+                "sku": "0132101",
+                "name": "GLUCOSE",
+                "unit": "Emb 14kg"
+            },
+            {
+                "sku": "208096",
+                "name": "PALHINHAS",
+                "unit": "Cx 250un"
+            },
+            {
+                "sku": "0531523",
+                "name": "PANO MICROFIBRAS",
+                "unit": "Cx 10un"
+            },
+            {
+                "sku": "0528014",
+                "name": "PAPEL HIGIENICO",
+                "unit": "Cx 12un"
+            },
+            {
+                "sku": "0508012",
+                "name": "PAPEL SECA MÃOS",
+                "unit": "Cx 6un"
+            },
+            {
+                "sku": "0508303",
+                "name": "TOALHAS PAPEL DOBRADAS",
+                "unit": "Cx 3000Un"
+            },
+            {
+                "sku": "0334315",
+                "name": "ROLO TERMICO GRANDE",
+                "unit": "Cx 10un"
+            },
+            {
+                "sku": "0334301",
+                "name": "ROLO TERMICO PEQUENO",
+                "unit": "Cx 10un"
+            },
+            {
+                "sku": "0482941",
+                "name": "SACO ASAS BRANCO",
+                "unit": "Cx 250un"
+            },
+            {
+                "sku": "0482590",
+                "name": "SACO LIXO 100LT",
+                "unit": "Rolo 10un"
+            },
+            {
+                "sku": "0482480",
+                "name": "SACO LIXO 50LT",
+                "unit": "Rolo 10un"
+            },
+            {
+                "sku": "0482520",
+                "name": "SACO LIXO GRANDE",
+                "unit": "Emb 10Kg"
+            },
+            {
+                "sku": "482695",
+                "name": "SACOS CONGELAÇÃO TRANSPARENTES",
+                "unit": "Cx 500un"
+            },
+            {
+                "sku": "0480318",
+                "name": "SAQUETA PAPEL BRANCO KRAFT",
+                "unit": "Cx 1000un"
+            },
+            {
+                "sku": "0424259",
+                "name": "TAMPA EMBAL. SOPA",
+                "unit": "Cx 504un"
+            },
+            {
+                "sku": "0424604",
+                "name": "TAMPA MOLHEIRA GRANDE",
+                "unit": "Cx 1080un"
+            },
+            {
+                "sku": "790001",
+                "name": "TESTES DE OLEO",
+                "unit": "Cx 30un"
+            },
+            {
+                "sku": "0188156",
+                "name": "TORTILHA TRIGO REDONDA 25CM",
+                "unit": "Cx 6*18un"
+            },
+            {
+                "sku": "0530109",
+                "name": "TOUCAS DESCARTAVEIS",
+                "unit": "Cx 100un"
+            }
+        ]
+    },
+    {
+        "name": "BUONDI",
+        "items": [
+            {
+                "sku": "12530142",
+                "name": "AÇUCAR SAQUETAS",
+                "unit": "Cx 800un"
+            },
+            {
+                "sku": "12309918",
+                "name": "ADOÇANTE SAQUETAS",
+                "unit": "Cx 250un"
+            },
+            {
+                "sku": "12128052",
+                "name": "CAFÉ CAPSULAS",
+                "unit": "Cx 150un"
+            },
+            {
+                "sku": "1723341",
+                "name": "CAFÉ DESCAFEINADO CAPSULAS",
+                "unit": "Cx 25un"
+            },
+            {
+                "name": "COPO DESCARTAVEL PEQUENO",
+                "unit": "Cx 50un"
+            },
+            {
+                "sku": "104475411",
+                "name": "PALHETA MADEIRA CAFE",
+                "unit": "Cx 100un"
+            }
+        ]
+    },
+    {
+        "name": "SOLBEL",
+        "items": [
+            {
+                "sku": "0800100",
+                "name": "AMENDOA AMARGA",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "800260",
+                "name": "APEROL",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "800392",
+                "name": "BRANDYMEL",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "1200662",
+                "name": "ESP.CINZANO PRO-SPRITZ",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "200204",
+                "name": "GIN BOMBAY ORIGINAL",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "0601948",
+                "name": "TEQUILA",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "2100694",
+                "name": "VINHO BRANCO POUCA ROUPA",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "2102760",
+                "name": "VINHO BRANCO RASPA SAIAS",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "1100603",
+                "name": "VINHO PORTO FERREIRA DªANTONIA",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "2300694",
+                "name": "VINHO ROSE POUCA ROUPA",
+                "unit": "Gf 75CL"
+            },
+            {
+                "name": "VINHO TINTO MARQUÊS DE BORBA",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "2000694",
+                "name": "VINHO TINTO POUCA ROUPA",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "2002760",
+                "name": "VINHO TINTO RASPA SAIAS",
+                "unit": "Gf 75CL"
+            },
+            {
+                "sku": "401170",
+                "name": "VODKA SKYY",
+                "unit": "Gf 75CL"
+            }
+        ]
+    },
+    {
+        "name": "NOVADIS",
+        "items": [
+            {
+                "sku": "5002005",
+                "name": "GINGER ALE 20CL",
+                "unit": "Cx 24un"
+            },
+            {
+                "sku": "1000000969",
+                "name": "GINGER BEER 20CL",
+                "unit": "Cx 6un"
+            },
+            {
+                "sku": "1000000151",
+                "name": "REFRIGERANTE AGUA COM GAS 25CL",
+                "unit": "Cx 6un"
+            },
+            {
+                "name": "REFRIGERANTE AGUA S/GAS PET 33CL",
+                "unit": "Cx 24un"
+            },
+            {
+                "name": "REFRIGERANTE AGUA TONICA 20CL",
+                "unit": "Cx 24un"
+            },
+            {
+                "name": "REFRIGERANTE ANANAS 33CL",
+                "unit": "Cx 28un"
+            },
+            {
+                "name": "REFRIGERANTE COCA COLA LATA 33CL",
+                "unit": "Cx 28un"
+            },
+            {
+                "name": "REFRIGERANTE COCA COLA ZERO LATA 33CL",
+                "unit": "Cx 28un"
+            },
+            {
+                "name": "REFRIGERANTE GUARANA LATA 33CL",
+                "unit": "Cx 6un"
+            },
+            {
+                "name": "REFRIGERANTE ICE TEA LIMAO LATA 33CL",
+                "unit": "Cx 28un"
+            },
+            {
+                "sku": "1000000576",
+                "name": "REFRIGERANTE ICE TEA PESSEGO LATA 33CL",
+                "unit": "Cx 28un"
+            },
+            {
+                "name": "REFRIGERANTE LARANJA 33CL",
+                "unit": "Cx 28un"
+            },
+            {
+                "sku": "740",
+                "name": "REFRIGERANTE SPRITE 33CL",
+                "unit": "Cx 28un"
+            },
+            {
+                "name": "SANGRIA BARRIL",
+                "unit": "Barril 30 Lt"
+            }
+        ]
+    },
+    {
+        "name": "CENTRAL DE CERVEJAS",
+        "items": [
+            {
+                "name": "BANDIDA POMAR BARRIL",
+                "unit": "Barril 20 Lt"
+            },
+            {
+                "name": "BOTIJA CO2",
+                "unit": "Unidade"
+            },
+            {
+                "sku": "1170006",
+                "name": "CERVEJA BRANCA GF 25CL",
+                "unit": "Cx 24un"
+            },
+            {
+                "sku": "127000",
+                "name": "CERVEJA BRANCA GF 33CL",
+                "unit": "Cx 24un"
+            },
+            {
+                "name": "CERVEJA PRETA GF 33CL",
+                "unit": "Cx 24un"
+            },
+            {
+                "sku": "1070050",
+                "name": "CERVEJA SAGRES BARRIL",
+                "unit": "Barril 50 Lt"
+            },
+            {
+                "name": "CERVEJA S/ALCOOL GF 33CL",
+                "unit": "Cx 24un"
+            },
+            {
+                "sku": "2094755",
+                "name": "COPO DESCARTAVEL PEQUENO",
+                "unit": "Cx 3000Un"
+            },
+            {
+                "sku": "1405204",
+                "name": "REFRIGERANTE AGUA COM GAS 25CL",
+                "unit": "Cx 6un"
+            },
+            {
+                "sku": "1208072",
+                "name": "REFRIGERANTE AGUA S/GAS PET 33CL",
+                "unit": "Cx 24un"
+            }
+        ]
+    },
+    {
+        "name": "INOGEN",
+        "items": [
+            {
+                "sku": "1000003073",
+                "name": "QUIMICO DESENGORDURANTE LIMPA GRELHAS POWERFOAM",
+                "unit": "Emb 20Lt"
+            },
+            {
+                "sku": "1000003775",
+                "name": "QUIMICO DESINFECTANTE LEGUMES UN (M) SUMA CHLOR D.4",
+                "unit": "Emb 5Lt"
+            },
+            {
+                "sku": "1000006348",
+                "name": "QUIMICO DETERGENTE IIMPA CHÃO UN (M) CIF PINHO",
+                "unit": "Emb 5Lt"
+            },
+            {
+                "sku": "1000003688",
+                "name": "QUIMICO DETERGENTE MANUAL LOIÇA UN (M) SHURECLEAN PLUS",
+                "unit": "Emb 20Lt"
+            },
+            {
+                "sku": "1000003774",
+                "name": "QUIMICO DETERGENTE MAQUINA LOIÇA UN (M) SUMA ALU L10",
+                "unit": "Emb 20Lt"
+            },
+            {
+                "name": "QUIMICO LIMPA SUPERFICIES (M) SUMA BAC D10",
+                "unit": "Emb 5Lt"
+            },
+            {
+                "sku": "1000003780",
+                "name": "QUIMICO LIMPA VIDROS UN (M) SUMA RAPID D6",
+                "unit": "Emb 750ml"
+            },
+            {
+                "sku": "1000008474",
+                "name": "QUIMICO SECANTE MAQUINA LOIÇA UN (M) SUMA RINSE A5",
+                "unit": "Emb 20Lt"
+            }
+        ]
+    },
+    {
+        "name": "MAXONE",
+        "items": [
+            {
+                "sku": "505EA55023B",
+                "name": "AGRAFADOR 24/6",
+                "unit": "Unidade"
+            },
+            {
+                "sku": "1551011",
+                "name": "AGRAFOS 24/6 RAPID",
+                "unit": "Cx 1000un"
+            },
+            {
+                "sku": "656W240402",
+                "name": "INDIVIDUAIS CHICKINHO",
+                "unit": "Cx 1000un"
+            },
+            {
+                "name": "SACO PAPEL KRAFT TAKEAWAY C/ ALÇA",
+                "unit": "Cx 250un"
+            }
+        ]
+    },
+    {
+        "name": "UNILEVER",
+        "items": [
+            {
+                "sku": "67951953",
+                "name": "PEDAÇOS FRANGO VEGAN",
+                "unit": "Emb 1,75kg"
+            }
+        ]
+    },
+    {
+        "name": "PURA",
+        "items": [
+            {
+                "sku": "F002",
+                "name": "ABACATE HAAS",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "A001",
+                "name": "ALECRIM",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "2037564",
+                "name": "ALFACE ICEBERG",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "EM012",
+                "name": "ALHO PELADO",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "EM019",
+                "name": "BATATA FRITA PALITO",
+                "unit": "Emb 5Kg"
+            },
+            {
+                "sku": "L144",
+                "name": "CEBOLA GROSSA",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "L027",
+                "name": "CEBOLA ROXA",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "L029",
+                "name": "CENOURA",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "A031",
+                "name": "COENTROS",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "L043",
+                "name": "COUVE ROXA",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "A032",
+                "name": "FOLHA DE LOURO",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "L052",
+                "name": "GENGIBRE",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "A034",
+                "name": "HORTELA",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "F118",
+                "name": "LARANJA",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "F024",
+                "name": "LIMA",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "F025",
+                "name": "LIMAO",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "EM067",
+                "name": "MAÇAROCA MILHO",
+                "unit": "Emb 400gr"
+            },
+            {
+                "sku": "A007",
+                "name": "MANJERICAO",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "L065",
+                "name": "PIMENTO ENCARNADO",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "L057",
+                "name": "PIRI-PIRI VERMELHO",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "A033",
+                "name": "SALSA",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "E089",
+                "name": "SUMO DE LIMÃO",
+                "unit": "Emb 1Lt"
+            },
+            {
+                "sku": "L079",
+                "name": "TOMATE CHUCHA",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "A013",
+                "name": "TOMILHO FRESCO",
+                "unit": "Kilograma"
+            }
+        ]
+    },
+    {
+        "name": "EUROPASTRY",
+        "items": [
+            {
+                "sku": "68900",
+                "name": "PÃO BAO",
+                "unit": "Cx 30un"
+            },
+            {
+                "sku": "69442",
+                "name": "PÃO HAMBURGUER BRIOCHE",
+                "unit": "CX 60un"
+            }
+        ]
+    },
+    {
+        "name": "MEIGAL",
+        "items": [
+            {
+                "sku": "10000362",
+                "name": "BACON FATIADO",
+                "unit": "Kilograma"
+            },
+            {
+                "name": "CANJINHA DE GALINHA",
+                "unit": "Emb 600gr"
+            },
+            {
+                "sku": "1000018195",
+                "name": "FRANGO DESOSSADO COXAS",
+                "unit": "Cx ~ 8Kg"
+            },
+            {
+                "sku": "1000018189",
+                "name": "FRANGO INTEIRO S/MIUDOS",
+                "unit": "Cx 15un"
+            },
+            {
+                "sku": "1000001823",
+                "name": "HAMBURGUER FRANGO CAMPO",
+                "unit": "Cx 2un"
+            },
+            {
+                "sku": "1000010258",
+                "name": "PEITOS FRANGO - BIFES 80-120GR",
+                "unit": "Emb ~ 3Kg"
+            },
+            {
+                "sku": "1000002226",
+                "name": "SALSICHA FRANGO",
+                "unit": "Emb 5,76Kg"
+            }
+        ]
+    },
+    {
+        "name": "COMPRA DIRECTA",
+        "items": [
+            {
+                "sku": "C02200001",
+                "name": "BATATA GOMOS (WEDGES)",
+                "unit": "Emb 4 x 2.5kg"
+            },
+            {
+                "sku": "A02270025",
+                "name": "EMBAL. ALUMINIO CHURRASCO L3180",
+                "unit": "Cx 600un"
+            },
+            {
+                "sku": "A02270023",
+                "name": "EMBAL. ALUMINIO GRANDE L6314",
+                "unit": "Cx 800un"
+            },
+            {
+                "sku": "A02270024",
+                "name": "EMBAL. ALUMINIO MEDIO L6310",
+                "unit": "Cx 800un"
+            },
+            {
+                "sku": "A02270022",
+                "name": "EMBAL. ALUMINIO PEQUENO L0150",
+                "unit": "Cx 500un"
+            },
+            {
+                "sku": "C02590001",
+                "name": "GUACAMOLE CONGELADO",
+                "unit": "Emb 950gr"
+            },
+            {
+                "sku": "C02210001",
+                "name": "GYOZA FRANGO",
+                "unit": "Emb 600gr"
+            },
+            {
+                "sku": "C02210002",
+                "name": "GYOZA VEGETAIS",
+                "unit": "Emb 600gr"
+            },
+            {
+                "sku": "A02260003",
+                "name": "MOLHO SWEET CHILLI",
+                "unit": "Gf 5Lt"
+            },
+            {
+                "sku": "A02260002",
+                "name": "MOLHO TERIYAKI",
+                "unit": "Gf 5Lt"
+            },
+            {
+                "sku": "A02270034",
+                "name": "PAPEL DE EMBRULHO BRANCO",
+                "unit": "Cx 1000un"
+            },
+            {
+                "sku": "A02270033",
+                "name": "PAPEL DE EMBRULHO VERMELHO",
+                "unit": "Cx 1000un"
+            },
+            {
+                "sku": "A2270001",
+                "name": "SACO PAPEL CHICKINHO",
+                "unit": "Cx 250un"
+            },
+            {
+                "sku": "A02270028",
+                "name": "TAMPA RETANGULAR BRANCA",
+                "unit": "CX 400un"
+            },
+            {
+                "sku": "A02270027",
+                "name": "TAMPA RETANGULAR VERMELHA",
+                "unit": "CX 400un"
+            },
+            {
+                "sku": "A02270009",
+                "name": "TAMPAS GRANDE BRANCA 6310",
+                "unit": "CX 400un"
+            },
+            {
+                "sku": "A02270021",
+                "name": "TAMPAS GRANDE VERDE 6310",
+                "unit": "CX 400un"
+            },
+            {
+                "sku": "A02270008",
+                "name": "TAMPAS GRANDE VERMELHA 6310",
+                "unit": "CX 400un"
+            },
+            {
+                "sku": "A02270010",
+                "name": "TAMPAS PEQ. BRANCA 0150",
+                "unit": "CX 400un"
+            },
+            {
+                "sku": "A02270011",
+                "name": "TAMPAS PEQ. VERDE 0150",
+                "unit": "CX 400un"
+            },
+            {
+                "sku": "A02270012",
+                "name": "TAMPAS PEQ. VERMELHA 0150",
+                "unit": "CX 400un"
+            }
+        ]
+    },
+    {
+        "name": "AVILUDO",
+        "items": [
+            {
+                "sku": "3749",
+                "name": "ACUCAR BRANCO",
+                "unit": "Emb 10Kg"
+            },
+            {
+                "sku": "3532",
+                "name": "ALHO MOIDO",
+                "unit": "Emb 710gr"
+            },
+            {
+                "sku": "3396",
+                "name": "ARROZ THAI PERFUMADO",
+                "unit": "Emb 2.5kg"
+            },
+            {
+                "sku": "1984",
+                "name": "ARROZ VAPORIZADO",
+                "unit": "Emb 5Kg"
+            },
+            {
+                "sku": "8785",
+                "name": "ASAS FRANGO BBQ",
+                "unit": "Emb 5Kg"
+            },
+            {
+                "sku": "90408",
+                "name": "AVENTAIS DESCARTAVEIS",
+                "unit": "Cx 100un"
+            },
+            {
+                "sku": "3250",
+                "name": "AZEITE TRADICIONAL",
+                "unit": "Gf 5Lt"
+            },
+            {
+                "sku": "15960",
+                "name": "BATATA DOCE PALITO",
+                "unit": "Emb 4 x 2.5kg"
+            },
+            {
+                "sku": "7610",
+                "name": "BATATA FRITA PACOTE",
+                "unit": "Emb 10 x 280gr"
+            },
+            {
+                "sku": "3513",
+                "name": "BICARBONATO DE SODIO",
+                "unit": "Emb 910gr"
+            },
+            {
+                "sku": "8295",
+                "name": "BOLO DE CACO",
+                "unit": "Cx 30un"
+            },
+            {
+                "sku": "16017",
+                "name": "CANELA MOIDA",
+                "unit": "Emb 710gr"
+            },
+            {
+                "sku": "3544",
+                "name": "CARIL",
+                "unit": "Emb 910gr"
+            },
+            {
+                "sku": "7596",
+                "name": "CHA FRUTOS VERMELHOS",
+                "unit": "Cx 6 x 25un"
+            },
+            {
+                "sku": "16394",
+                "name": "CHURROS",
+                "unit": "Emb 5Kg"
+            },
+            {
+                "sku": "3543",
+                "name": "COMINHOS MOIDOS",
+                "unit": "Emb 810gr"
+            },
+            {
+                "sku": "8164",
+                "name": "CORN FLAKES",
+                "unit": "Emb 8 x 1Kg"
+            },
+            {
+                "sku": "7095",
+                "name": "FARINHA DE TRIGO",
+                "unit": "Emb 10Kg"
+            },
+            {
+                "sku": "8625",
+                "name": "FEIJAO ENCARNADO COZIDO",
+                "unit": "Emb 6 x 2.5kg"
+            },
+            {
+                "sku": "90389",
+                "name": "GUARDANAPO 40X40",
+                "unit": "Unidade"
+            },
+            {
+                "sku": "4169",
+                "name": "KETCHUP SAQUETAS 10 ML",
+                "unit": "CX 200un"
+            },
+            {
+                "sku": "8663",
+                "name": "LEITE COCO",
+                "unit": "Pack 12 x 400ml"
+            },
+            {
+                "sku": "6399",
+                "name": "LEITE UHT M/GORDO",
+                "unit": "Pack 6 x 1Lt"
+            },
+            {
+                "sku": "16435",
+                "name": "LUVAS TAMANHO L",
+                "unit": "Cx 100un"
+            },
+            {
+                "sku": "16434",
+                "name": "LUVAS TAMANHO M",
+                "unit": "Cx 100un"
+            },
+            {
+                "sku": "3481",
+                "name": "MAIONESE",
+                "unit": "Gf 5Lt"
+            },
+            {
+                "sku": "4173",
+                "name": "MAIONESE SAQUETAS 10 ML",
+                "unit": "CX 200un"
+            },
+            {
+                "sku": "6900",
+                "name": "MANTEIGA S/SAL",
+                "unit": "Emb 6 x 1Kg"
+            },
+            {
+                "sku": "16105",
+                "name": "MARGARINA",
+                "unit": "Emb 4 x 2.5kg"
+            },
+            {
+                "sku": "16264",
+                "name": "MOLHO BBQ BARBECUE",
+                "unit": "Emb 2.5kg"
+            },
+            {
+                "sku": "3849",
+                "name": "MOLHO FRUTOS VERMELHOS",
+                "unit": "Emb 1,7kg"
+            },
+            {
+                "sku": "15947",
+                "name": "MOSTARDA AMARELA",
+                "unit": "Emb 6 x 1Kg"
+            },
+            {
+                "sku": "7646",
+                "name": "MOSTARDA DIJON",
+                "unit": "Emb 12 x 215gr"
+            },
+            {
+                "sku": "2620",
+                "name": "MOUSSE DE CHOCOLATE",
+                "unit": "Emb 1,5kg"
+            },
+            {
+                "sku": "3237",
+                "name": "OLEO ALIMENTAR",
+                "unit": "Gf 5Lt"
+            },
+            {
+                "sku": "9845",
+                "name": "OLEO ALTO RENDIMENTO",
+                "unit": "Gf 10Lt"
+            },
+            {
+                "sku": "3558",
+                "name": "OREGAO SECO",
+                "unit": "Emb 160gr"
+            },
+            {
+                "sku": "1500",
+                "name": "OVO LIQUIDO INTEIRO",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "1594",
+                "name": "OVOS COZIDOS",
+                "unit": "Cx 24un"
+            },
+            {
+                "sku": "9082",
+                "name": "PALITOS INDIVIDUAIS",
+                "unit": "Cx 1000un"
+            },
+            {
+                "sku": "4134",
+                "name": "PANNA COTTA",
+                "unit": "Pack 6 x 1Lt"
+            },
+            {
+                "sku": "3537",
+                "name": "PAU DE CANELA",
+                "unit": "Emb 310gr"
+            },
+            {
+                "sku": "90378",
+                "name": "PELICULA ADERENTE",
+                "unit": "Unidade"
+            },
+            {
+                "sku": "8194",
+                "name": "PIMENTAO DOCE",
+                "unit": "Emb 810gr"
+            },
+            {
+                "sku": "3565",
+                "name": "PIMENTA PRETA GRAO",
+                "unit": "Emb 910gr"
+            },
+            {
+                "sku": "3564",
+                "name": "PIMENTA PRETA MOIDA",
+                "unit": "Emb 910gr"
+            },
+            {
+                "sku": "3549",
+                "name": "PIRI-PIRI GRÃO INTEIRO",
+                "unit": "Emb 310gr"
+            },
+            {
+                "sku": "3275",
+                "name": "POLPA DE MANGA",
+                "unit": "Pack 6 x 850ml"
+            },
+            {
+                "sku": "15635",
+                "name": "PURE DE BATATA",
+                "unit": "Emb 4 x 2.5kg"
+            },
+            {
+                "sku": "15989",
+                "name": "QUEIJO CHEDDAR RED FATIADO",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "7703",
+                "name": "QUEIJO CREME",
+                "unit": "Emb 3Kg"
+            },
+            {
+                "sku": "7082",
+                "name": "QUEIJO PARMESAO",
+                "unit": "Kilograma"
+            },
+            {
+                "sku": "1976",
+                "name": "QUINOA BRANCA",
+                "unit": "Emb 5Kg"
+            },
+            {
+                "sku": "1978",
+                "name": "QUINOA VERMELHA",
+                "unit": "Emb 5Kg"
+            },
+            {
+                "sku": "9147",
+                "name": "SAL FINO",
+                "unit": "Emb 250gr"
+            },
+            {
+                "sku": "9146",
+                "name": "SAL GROSSO",
+                "unit": "Emb 20Kg"
+            },
+            {
+                "sku": "3571",
+                "name": "SESAMO SEMENTES",
+                "unit": "Emb 910gr"
+            },
+            {
+                "sku": "15146",
+                "name": "TALHERES DESCARTAVEIS",
+                "unit": "Cx 30un"
+            },
+            {
+                "sku": "90401",
+                "name": "TOALHETES LIMÃO",
+                "unit": "Cx 250un"
+            },
+            {
+                "sku": "3669",
+                "name": "TOMATE PELADO TRITURADO",
+                "unit": "Emb 12 x 780gr"
+            },
+            {
+                "sku": "3119",
+                "name": "VINAGRE VINHO",
+                "unit": "Gf 5Lt"
+            }
+        ]
+    }
+]

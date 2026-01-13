@@ -12,6 +12,7 @@ import { seedVacationsAndAbsences } from './steps/09-vacations-absences';
 import { seedTasksAndNotices } from './steps/10-tasks-notices';
 import { seedChat } from './steps/11-chat';
 import { seedAuditLogs } from './steps/12-audit-logs';
+import { importSuppliers } from './steps/13-import-suppliers';
 
 interface SeedData {
   company?: any;
@@ -92,6 +93,10 @@ async function seed() {
 
     // Step 12: Audit Logs
     seedData = await seedAuditLogs(seedData);
+    console.log('');
+
+    // Step 13: Import Suppliers
+    await importSuppliers();
     console.log('');
 
     console.log('🎉 Seed completed successfully!');

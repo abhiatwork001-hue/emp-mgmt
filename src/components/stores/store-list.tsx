@@ -56,12 +56,13 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                     />
                 </div>
                 <div className="flex items-center gap-2">
-
-                    <Link href="/dashboard/stores/new">
-                        <Button>
-                            <Plus className="mr-2 h-4 w-4" /> Add Store
-                        </Button>
-                    </Link>
+                    {currentUserRoles.some(role => ['owner', 'admin', 'tech'].includes(role)) && (
+                        <Link href="/dashboard/stores/new">
+                            <Button>
+                                <Plus className="mr-2 h-4 w-4" /> Add Store
+                            </Button>
+                        </Link>
+                    )}
                 </div>
             </div>
 

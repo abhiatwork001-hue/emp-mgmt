@@ -64,7 +64,7 @@ export function Sidebar({
             if (!route) return null;
 
             if (route.label === "Stores") {
-                const isContextOnlyRole = effectiveRoles.some(r => ["store_manager", "store_department_head", "employee"].includes(r));
+                const isContextOnlyRole = effectiveRoles.some(r => ["store_manager", "manager", "store_department_head", "employee"].includes(r));
 
                 if (!isContextOnlyRole && hasAccess(effectiveRoles, "/dashboard/stores", departmentName, permissions)) {
                     return route;
@@ -96,6 +96,7 @@ export function Sidebar({
             }
 
             if (route.label === "Tips") {
+                // STRICT Allowlist: Only Store Manager and Tech
                 // STRICT Allowlist: Only Store Manager and Tech
                 const isAllowed = effectiveRoles.some((r: string) => ["store_manager", "tech"].includes(r));
                 if (!isAllowed) return null;
@@ -249,7 +250,7 @@ export function MobileSidebar({
                     departmentName={departmentName}
                     storeSlug={storeSlug}
                     deptSlug={deptSlug}
-                    isMobile={true}
+                    isMobile={false} // Force desktop view inside sheet
                     onNavItemClick={() => setOpen(false)}
                     hasRecipes={hasRecipes}
                     hasCoverage={hasCoverage}

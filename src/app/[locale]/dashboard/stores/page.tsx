@@ -16,7 +16,7 @@ export default async function StoresPage() {
     // Server-side Role Check
     const employee = await getEmployeeById(user.id);
     const roles = (employee?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-    const allowedRoles = ["owner", "admin", "hr", "super_user", "tech", "department_head", "store_manager"];
+    const allowedRoles = ["owner", "admin", "hr", "super_user", "tech", "department_head", "store_manager", "manager"];
 
     if (!roles.some((r: string) => allowedRoles.includes(r))) {
         redirect("/dashboard"); // Or show forbidden
@@ -35,13 +35,33 @@ export default async function StoresPage() {
             const storeDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).select('storeId');
             const allowedStoreIds = storeDepts.map((sd: any) => sd.storeId.toString());
             stores = stores.filter((s: any) => allowedStoreIds.includes(s._id.toString()));
-        } else if (roles.includes("store_manager")) {
+        } else if (roles.includes("store_manager") || roles.includes("manager")) {
             const userStoreId = (employee.storeId?._id || employee.storeId)?.toString();
             stores = stores.filter((s: any) => s._id.toString() === userStoreId);
         } else {
             // Other roles see nothing if not admin or these specific managers
             stores = [];
         }
+    }
+
+    // Smart Redirection Logic
+    if (stores.length === 0) {
+        // No access at all -> Redirect to Unauthorized / Dashboard
+        // Or render a "No Access" page. Redirecting to dashboard might cause an infinite loop if this IS the dashboard entry.
+        // But this is /dashboard/stores. So redirecting to /dashboard is safe-ish.
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
+                <h2 className="text-2xl font-bold">Access Denied</h2>
+                <p className="text-muted-foreground">You do not have permission to view any stores.</p>
+            </div>
+        );
+    }
+
+    if (stores.length === 1 && !isGlobalAdmin) {
+        // If user is restricted to 1 store, take them there directly
+        // We exclude global admins so they can still see the "List" view of 1 store if filter applies,
+        // (though usually they have more). But mainly for Store Managers.
+        redirect(`/dashboard/stores/${stores[0].slug}`);
     }
 
     return (

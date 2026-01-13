@@ -38,7 +38,7 @@ export default async function TipsPage({
     }
 
     const roles = (employee.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-    const allowedRoles = ["store_manager", "tech", "super_user"];
+    const allowedRoles = ["store_manager", "manager", "tech", "super_user"];
     const hasAccess = roles.some((r: string) => allowedRoles.includes(r));
     const isTech = roles.includes("tech") || roles.includes("super_user");
 
