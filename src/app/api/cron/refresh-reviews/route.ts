@@ -4,14 +4,14 @@ import { refreshAllStoresReviews } from '@/lib/actions/google-places.actions';
 /**
  * Cron Job: Refresh Google Reviews for all stores
  * 
- * This endpoint is called hourly by Vercel Cron
+ * This endpoint is called daily by Vercel Cron
  * Protected by CRON_SECRET environment variable
  * 
  * Setup in vercel.json:
  * {
  *   "crons": [{
  *     "path": "/api/cron/refresh-reviews",
- *     "schedule": "0 * * * *"
+ *     "schedule": "0 0 * * *"
  *   }]
  * }
  */
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        console.log('🔄 Starting hourly reviews refresh...');
+        console.log('🔄 Starting daily reviews refresh...');
         const startTime = Date.now();
 
         // Refresh all stores

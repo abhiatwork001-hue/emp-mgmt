@@ -323,7 +323,9 @@
                     "foundReplacement": "Substituto Encontrado",
                     "seeking": "Procurando"
                 },
-                "bulkRejectReason": "Rejeição em Massa"
+                "bulkRejectReason": "Rejeição em Massa",
+                "teamPendingTitle": "Aprovações de Equipa Pendentes",
+                "teamPendingDesc": "Reveja e aprove pedidos da sua equipa."
             },
             "swapRequestsWidget": {
                 "title": "Pedidos de Troca de Turno",
@@ -363,7 +365,9 @@
                 "noTarget": "Sem Alvo Definido",
                 "underMin": "Abaixo do requisito mínimo de {min}",
                 "allSystemsGo": "Todos os sistemas operacionais",
-                "view": "Ver"
+                "view": "Ver",
+                "infoTooltip": "Visão geral das métricas operacionais em tempo real.",
+                "scheduleHealthTooltip": "Estado da saúde das escalas e conformidade."
             },
             "insights": {
                 "title": "Informações"
@@ -599,6 +603,7 @@
         "workingDays": "Dias Úteis",
         "balanceAfter": "Saldo Após",
         "reason": "Razão (Opcional)",
+        "reasonPlaceholder": "Introduza o motivo...",
         "comments": "Comentários",
         "history": "Histórico de Férias",
         "pending": "Solicitações Pendentes",
@@ -691,7 +696,8 @@
         "discardChangesConfirm": "Tem alterações não guardadas. Deseja descartá-las?",
         "editCancelled": "Edição cancelada, escala republicada",
         "cancelEditFailed": "Falha ao cancelar edição",
-        "shiftDetails": "Detalhes do Turno"
+        "shiftDetails": "Detalhes do Turno",
+        "printPdf": "Imprimir PDF"
     },
     "Profile": {
         "personal": "Pessoal",
