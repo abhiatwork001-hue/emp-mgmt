@@ -64,6 +64,8 @@ interface EmployeeListProps {
     stores: FilterOption[];
     departments: FilterOption[];
     positions: FilterOption[];
+    currentUser?: any;
+    initialScope?: { type: string, id: any };
 }
 
 export function EmployeeList({ initialEmployees, pagination, stores, departments, positions }: EmployeeListProps) {

@@ -134,7 +134,6 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
                     <Input id="address" name="address" value={formData.address} onChange={handleChange} placeholder="Warehouse Location" />
                 </div>
 
-                {/* Min Order Section */}
                 <div className="md:col-span-2 grid grid-cols-2 gap-4 border-t pt-4 mt-2">
                     <div className="space-y-2">
                         <Label htmlFor="minimumOrderValue">Minimum Order Value (€)</Label>
@@ -158,6 +157,31 @@ export function SupplierForm({ supplier, onSuccess }: SupplierFormProps) {
                         <Label htmlFor="minimumOrderIsTaxExclusive" className="font-normal">
                             Values are Tax Exclusive (Add Tax later)
                         </Label>
+                    </div>
+                </div>
+
+                {/* Alert Preferences */}
+                <div className="md:col-span-2 space-y-3 border-t pt-4 mt-2">
+                    <Label className="text-base font-semibold">Alert Preferences</Label>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="customLeadTime" className="text-xs">Custom Alert Timing (Days Before)</Label>
+                            <Input
+                                id="customLeadTime"
+                                type="number"
+                                min="0"
+                                value={(formData as any).alertSettings?.customLeadTime ?? ""}
+                                onChange={(e) => setFormData(p => ({
+                                    ...p,
+                                    alertSettings: {
+                                        ...((p as any).alertSettings || {}),
+                                        customLeadTime: e.target.value === "" ? undefined : parseInt(e.target.value)
+                                    }
+                                }))}
+                                placeholder="Default: Same as Lead Days"
+                            />
+                            <p className="text-[10px] text-muted-foreground">Override when the dashboard alert appears.</p>
+                        </div>
                     </div>
                 </div>
             </div>

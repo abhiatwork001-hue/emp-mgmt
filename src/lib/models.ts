@@ -919,9 +919,23 @@ export interface ISupplier extends Document {
     storeId?: ObjectId; // Optional: If specific to a store
     minimumOrderValue?: number; // New: Min limit
     minimumOrderIsTaxExclusive?: boolean; // New: Tax flag
+    alertSettings?: {
+        notifyRoles: string[]; // e.g., ["store_manager"]
+        customLeadTime?: number; // Override default calc
+        alertTime?: string; // "09:00"
+    };
     active: boolean;
     createdAt: Date;
     updatedAt: Date;
+}
+
+export interface ISupplierOrderCheck extends Document {
+    storeId: ObjectId;
+    supplierId: ObjectId;
+    date: Date;
+    status: 'ordered' | 'checked_stock' | 'skipped';
+    checkedBy: ObjectId;
+    createdAt: Date;
 }
 
 const SupplierSchema = new Schema<ISupplier>({
@@ -939,10 +953,10 @@ const SupplierSchema = new Schema<ISupplier>({
         price: { type: Number }
     }],
     deliverySchedule: [{
-        dayOfWeek: { type: Number, required: true }, // 0-6
+        dayOfWeek: { type: Number, required: true },
         orderCutoff: {
-            leadDays: { type: Number, default: 1 },
-            time: { type: String, default: "17:00" }
+            leadDays: { type: Number, required: true },
+            time: { type: String, required: true }
         }
     }],
     temporarySchedules: [{
@@ -957,14 +971,28 @@ const SupplierSchema = new Schema<ISupplier>({
             }
         }]
     }],
-    createdBy: { type: Schema.Types.ObjectId, ref: 'Employee' },
+    createdBy: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
     storeId: { type: Schema.Types.ObjectId, ref: 'Store' },
     minimumOrderValue: { type: Number },
-    minimumOrderIsTaxExclusive: { type: Boolean, default: false },
+    minimumOrderIsTaxExclusive: { type: Boolean },
+    alertSettings: {
+        notifyRoles: [{ type: String }],
+        customLeadTime: { type: Number },
+        alertTime: { type: String }
+    },
     active: { type: Boolean, default: true }
 }, { timestamps: true });
 
+const SupplierOrderCheckSchema = new Schema<ISupplierOrderCheck>({
+    storeId: { type: Schema.Types.ObjectId, ref: 'Store', required: true },
+    supplierId: { type: Schema.Types.ObjectId, ref: 'Supplier', required: true },
+    date: { type: Date, required: true },
+    status: { type: String, enum: ['ordered', 'checked_stock', 'skipped'], required: true },
+    checkedBy: { type: Schema.Types.ObjectId, ref: 'Employee', required: true }
+}, { timestamps: true });
+
 export const Supplier = mongoose.models.Supplier || mongoose.model<ISupplier>('Supplier', SupplierSchema);
+export const SupplierOrderCheck = mongoose.models.SupplierOrderCheck || mongoose.model<ISupplierOrderCheck>("SupplierOrderCheck", SupplierOrderCheckSchema);
 
 
 // --- Store Resource Model ---

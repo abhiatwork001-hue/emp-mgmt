@@ -55,7 +55,13 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
     let totalScheduledHours = 0;
 
     if (["owner", "admin", "hr", "super_user", "store_manager", "tech", "department_head", "store_department_head"].includes(viewRole)) {
-        const isStoreLevelRole = ["store_manager", "store_department_head"].includes(viewRole);
+        // Dual Role Logic: If user is HR/Admin BUT also a Store Manager, we want to fetch their store data context.
+        const isStoreManagerRole = allRoles.includes("store_manager");
+        // Force store-level context if they are a Store Manager, regardless of current viewRole (unless explicitly viewing another store as Admin? No, focus on "My Focused Area")
+        // Actually, if viewRole is 'hr', they see HR dash. But we want to inject "My Store" widgets or data.
+        // For now, let's ensure we FETCH the store-specific data if they have a storeId.
+
+        const isStoreLevelRole = ["store_manager", "store_department_head"].includes(viewRole) || (isStoreManagerRole && !!employee.storeId);
         const isGlobalDeptHead = viewRole === "department_head";
         const isStoreDeptHead = viewRole === "store_department_head";
 
@@ -371,15 +377,42 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             const nextWeekSchedules = nextWeekDataOrSchedules as any[];
             const deptStatusMap = new Map();
             nextWeekSchedules.forEach((s: any) => {
-                if (s.status === 'published' || s.status === 'approved') deptStatusMap.set(s.storeDepartmentId?._id?.toString() || s.storeDepartmentId?.toString(), true);
+                if (s.status === 'published' || s.status === 'approved') {
+                    // Robustly handle populated or unpopulated ID
+                    const sid = s.storeDepartmentId ? (s.storeDepartmentId._id || s.storeDepartmentId).toString() : null;
+                    if (sid) deptStatusMap.set(sid, true);
+                }
             });
-            const missingDepts = (fetchedStoreDepts as any[]).filter((d: any) => d.active !== false && (!did || d._id.toString() === did) && !deptStatusMap.has(d._id.toString()));
+            // Fix: Filter departments that are ACTIVE and match current context
+            const missingDepts = (fetchedStoreDepts as any[]).filter((d: any) => {
+                const isActive = d.active !== false;
+                const isContextMatch = !did || d._id.toString() === did;
+                const isDone = deptStatusMap.has(d._id.toString());
+                return isActive && isContextMatch && !isDone;
+            });
             missingEntityObjects = missingDepts.map((d: any) => ({ id: d._id.toString(), name: d.name }));
             missingEntityNames = missingEntityObjects.map((d: any) => d.name);
             nextWeekPublished = missingEntityNames.length === 0;
         } else {
+            // Global View (Check Stores)
+            // We need to check if ALL departments in a store are published to consider the store "Done"?
+            // Or just check if "Store" has "Schedule"?
+            // Current logic checked "StoreId" in schedule list.
+            // But schedules are per DEPARTMENT.
+            // So logic: A store is missing if ANY of its active departments is missing a schedule.
+            // This is heavy. Simplified: Check if store has ANY relevant schedule?
+            // "missingEntity" here is "Stores".
+            // Let's rely on the previous logic which checked if storeId was present in the list of "Approved/Published" schedules.
+            // BUT a store might have 5 depts, and only 1 published.
+            // For Global Admin, maybe just flagging "Stores causing alerts" is enough.
+            // Let's refine: If a store has NO schedules at all, it's definitely missing.
+            // If it has some, maybe partial.
+            // Restoring previous simple logic for now but ensuring status is checked.
             const allNextWeekSchedules = nextWeekDataOrSchedules as any[];
-            const fulfilledStoreIds = new Set(allNextWeekSchedules.map((s: any) => s.storeId.toString()));
+            const fulfilledStoreIds = new Set(allNextWeekSchedules
+                .filter((s: any) => s.status === 'published' || s.status === 'approved')
+                .map((s: any) => s.storeId?._id?.toString() || s.storeId?.toString()));
+
             const missingStores = stores.filter((s: any) => s.active !== false && !fulfilledStoreIds.has(s._id.toString()));
             missingEntityObjects = missingStores.map((s: any) => ({ id: s._id.toString(), name: s.name }));
             missingEntityNames = missingEntityObjects.map((d: any) => d.name);

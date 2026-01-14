@@ -51,6 +51,11 @@ export default async function StaffViewerPage({ params: { locale } }: { params: 
     // Fetch dependencies for filters
     const stores = await Store.find({}).select("name _id").lean();
     const departments = await StoreDepartment.find({}).select("name _id").lean();
+    const positions = await (await import("@/lib/models")).Position.find({}).select("name _id translations").lean();
+
+    // Fetch Initial Data
+    const { getAllEmployees } = await import("@/lib/actions/employee.actions");
+    const { employees: initialEmployees, pagination } = await getAllEmployees(initialFilters, 1, 20);
 
     const t = await getTranslations("Employees");
 
@@ -67,8 +72,11 @@ export default async function StaffViewerPage({ params: { locale } }: { params: 
 
             <EmployeeList
                 currentUser={JSON.parse(JSON.stringify(employee))}
+                initialEmployees={initialEmployees}
+                pagination={pagination}
                 stores={JSON.parse(JSON.stringify(stores))}
                 departments={JSON.parse(JSON.stringify(departments))}
+                positions={JSON.parse(JSON.stringify(positions))}
                 initialScope={{ type: scopeType, id: scopeId }}
             />
         </div>

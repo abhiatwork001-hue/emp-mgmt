@@ -223,8 +223,10 @@ export async function checkScheduleDeadlines() {
                     weekNumber: nextWeekNum
                 });
 
-                // Rule: If No Schedule OR Schedule is 'draft' -> Alert
-                if (!schedule || schedule.status === 'draft') {
+                // Rule: If No Schedule OR Schedule is NOT 'published'/'approved' -> Alert
+                const isDone = schedule && (schedule.status === 'published' || schedule.status === 'approved');
+
+                if (!isDone) {
                     // Alert needed!
 
                     // 1. Whom to alert?
@@ -244,7 +246,7 @@ export async function checkScheduleDeadlines() {
                             type: "warning",
                             category: "schedule",
                             recipients: recipients,
-                            link: `/dashboard/schedules`, // Todo: Link to create
+                            link: `/dashboard/schedules`,
                             relatedStoreId: store._id,
                             relatedDepartmentId: dept._id
                         });
@@ -256,7 +258,7 @@ export async function checkScheduleDeadlines() {
                     // Let's notify Admins too if it's strictly deadline day.
 
                     if (currentDay >= deadlineDay) {
-                        const admins = await Employee.find({ roles: { $in: ['admin', 'hr', 'owner', 'tech'] } }).select('_id');
+                        const admins = await Employee.find({ roles: { $in: ['admin', 'hr', 'owner', 'tech'] }, active: true }).select('_id');
                         const adminIds = admins.map(a => a._id.toString());
 
                         await triggerNotification({
@@ -1899,30 +1901,28 @@ export async function notifyScheduleReminders(entityIds: string[], type: 'store'
 
     // Calculate Next Week
     const nextWeekDate = new Date();
-    nextWeekDate.setUTCDate(nextWeekDate.getUTCDate() + 7);
-    const day = nextWeekDate.getUTCDay() || 7;
-    nextWeekDate.setUTCDate(nextWeekDate.getUTCDate() + 4 - day);
-    const yearStart = new Date(Date.UTC(nextWeekDate.getUTCFullYear(), 0, 1));
-    const nextWeekNumber = Math.ceil((((nextWeekDate.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
-    const nextYear = nextWeekDate.getUTCFullYear();
+    nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+    const { week: nextWeekNumber, year: nextYear } = getISOWeekNumber(nextWeekDate);
 
     try {
         if (type === 'store') {
             const managers = await Employee.find({
                 storeId: { $in: entityIds },
-                roles: { $in: ['store_manager', 'Store Manager'] },
-                active: true
+                roles: { $in: ['store_manager', 'Store Manager', 'store_manager'.replace('_', ' ')] }, // robust check
+                active: { $ne: false } // Handle active undefined/true
             }).select('_id firstName lastName storeId');
 
             for (const manager of managers) {
-                // Check if schedule is already published for NEXT week
-                const exists = await Schedule.exists({
+                // Check if schedule is PUBLISHED or APPROVED for NEXT week
+                const exists = await Schedule.findOne({
                     storeId: manager.storeId,
                     year: nextYear,
                     weekNumber: nextWeekNumber,
-                    status: 'published'
+                    status: { $in: ['published', 'approved'] }
                 });
 
+                // If NO published/approved schedule exists, send alert.
+                // (Even if draft exists, it is technically not "submitted", so we alert)
                 if (!exists) {
                     await triggerNotification({
                         title: "Urgent: Schedule Submission Overdue",
@@ -1934,24 +1934,30 @@ export async function notifyScheduleReminders(entityIds: string[], type: 'store'
                         senderId: (session.user as any).id,
                         relatedStoreId: manager.storeId
                     });
+                    recipientsCount++;
                 }
             }
-            recipientsCount = managers.length;
         } else {
+            // Department Logic
             const heads = await Employee.find({
                 storeDepartmentId: { $in: entityIds },
-                roles: { $in: ['store_department_head', 'Department Head'] },
-                active: true
+                roles: { $in: ['store_department_head', 'Department Head', 'store_department_head'.replace('_', ' ')] },
+                active: { $ne: false }
             }).select('_id firstName lastName storeDepartmentId storeId');
 
+            // Also notify Store Managers of these stores in case Dept Head is missing?
+            // User requirement: "Alert Managers" -> implies Store Managers too if Dept missing?
+            // "StoreManager, StoreDepartment gets alert if they are on deadline"
+            // For now, let's stick to the direct responsible (Head), but checking store manager for dept failure is good practice.
+            // Following existing logic which targeted Heads for departments.
+
             for (const head of heads) {
-                // Check if schedule is already published for NEXT week for this department
-                const exists = await Schedule.exists({
+                const exists = await Schedule.findOne({
                     storeId: head.storeId,
                     storeDepartmentId: head.storeDepartmentId,
                     year: nextYear,
                     weekNumber: nextWeekNumber,
-                    status: 'published'
+                    status: { $in: ['published', 'approved'] }
                 });
 
                 if (!exists) {
@@ -1966,9 +1972,9 @@ export async function notifyScheduleReminders(entityIds: string[], type: 'store'
                         relatedStoreId: head.storeId,
                         relatedDepartmentId: head.storeDepartmentId
                     });
+                    recipientsCount++;
                 }
             }
-            recipientsCount = heads.length;
         }
 
         return { success: true, count: recipientsCount };

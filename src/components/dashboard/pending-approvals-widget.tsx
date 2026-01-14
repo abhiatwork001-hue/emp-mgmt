@@ -34,6 +34,33 @@ import { FinalizeCoverageDialog } from "@/components/coverage/finalize-coverage-
 // Assuming similar cancel actions exist or need to be created for other types. 
 // For now implementing Overtime cancel/edit as requested in Issue #6.
 
+// For now implementing Overtime cancel/edit as requested in Issue #6.
+
+interface PendingItem {
+    id: string;
+    type: 'overtime' | 'vacation' | 'absence' | 'schedule' | 'coverage';
+    employeeName: string;
+    employeeId?: string;
+    employeeSlug?: string;
+    storeName: string;
+    date: Date;
+    details: string;
+    createdAt: Date;
+    link: string;
+    raw?: any;
+}
+
+interface PendingApprovalsWidgetProps {
+    overtime: any[];
+    vacations: any[];
+    absences: any[];
+    schedules?: any[];
+    coverage?: any[];
+    compact?: boolean;
+    role?: string;
+    currentUserRoles?: string[];
+}
+
 interface DetailsDialogProps {
     item: PendingItem | null;
     open: boolean;
