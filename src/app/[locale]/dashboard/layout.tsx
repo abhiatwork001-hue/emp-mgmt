@@ -172,6 +172,10 @@ export default async function DashboardLayout({
                                 departmentName={deptName}
                                 employee={employee ? JSON.parse(JSON.stringify(employee)) : null}
                                 translations={sidebarTranslations}
+                                storeSlug={storeSlug}
+                                deptSlug={deptSlug}
+                                hasRecipes={hasRecipes}
+                                hasCoverage={hasCoverageActions}
                             />
                         </div>
                         <ContentWrapper>

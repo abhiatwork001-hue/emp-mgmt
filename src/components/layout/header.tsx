@@ -28,12 +28,20 @@ export function Header({
     userRoles = ["employee"],
     departmentName = "",
     employee = null,
-    translations = {}
+    translations = {},
+    storeSlug = "",
+    deptSlug = "",
+    hasRecipes = true,
+    hasCoverage = false
 }: {
     userRoles?: string[],
     departmentName?: string,
     employee?: any,
-    translations?: { [key: string]: string }
+    translations?: { [key: string]: string },
+    storeSlug?: string,
+    deptSlug?: string,
+    hasRecipes?: boolean,
+    hasCoverage?: boolean
 }) {
     const { data: session } = useSession();
     const t = useTranslations("Common");
@@ -48,7 +56,15 @@ export function Header({
         <div className="flex items-center justify-between p-4 px-4 md:px-8 border-b border-border/40 bg-background/60 backdrop-blur-md sticky top-0 z-40">
             <div className="flex items-center gap-4">
                 <div className="md:hidden">
-                    <MobileSidebar userRoles={userRoles} departmentName={departmentName} translations={translations} />
+                    <MobileSidebar
+                        userRoles={userRoles}
+                        departmentName={departmentName}
+                        translations={translations}
+                        storeSlug={storeSlug}
+                        deptSlug={deptSlug}
+                        hasRecipes={hasRecipes}
+                        hasCoverage={hasCoverage}
+                    />
                 </div>
                 <div className="hidden md:block">
                     <Breadcrumbs userRoles={userRoles} departmentName={departmentName} />

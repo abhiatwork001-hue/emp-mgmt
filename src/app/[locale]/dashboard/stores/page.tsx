@@ -19,7 +19,9 @@ export default async function StoresPage() {
     const allowedRoles = ["owner", "admin", "hr", "super_user", "tech", "department_head", "store_manager", "manager"];
 
     if (!roles.some((r: string) => allowedRoles.includes(r))) {
-        redirect("/dashboard"); // Or show forbidden
+        const { getLocale } = await import("next-intl/server");
+        const locale = await getLocale();
+        redirect(`/${locale}/access-denied`);
     }
 
     let stores = await getAllStoresWithStats();
@@ -46,15 +48,9 @@ export default async function StoresPage() {
 
     // Smart Redirection Logic
     if (stores.length === 0) {
-        // No access at all -> Redirect to Unauthorized / Dashboard
-        // Or render a "No Access" page. Redirecting to dashboard might cause an infinite loop if this IS the dashboard entry.
-        // But this is /dashboard/stores. So redirecting to /dashboard is safe-ish.
-        return (
-            <div className="flex flex-col items-center justify-center h-[60vh] text-center space-y-4">
-                <h2 className="text-2xl font-bold">Access Denied</h2>
-                <p className="text-muted-foreground">You do not have permission to view any stores.</p>
-            </div>
-        );
+        const { getLocale } = await import("next-intl/server");
+        const locale = await getLocale();
+        redirect(`/${locale}/access-denied`);
     }
 
     if (stores.length === 1 && !isGlobalAdmin) {
