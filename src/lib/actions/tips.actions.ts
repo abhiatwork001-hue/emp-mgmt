@@ -1,7 +1,7 @@
 "use server";
 
 import connectToDB from "@/lib/db";
-import { Schedule, TipsDistribution, StoreDepartment } from "@/lib/models";
+import { Schedule, TipsDistribution, StoreDepartment, Notification } from "@/lib/models";
 import { revalidatePath } from "next/cache";
 
 interface CalculationPeriod {
@@ -226,7 +226,7 @@ export async function saveTipsDistribution(data: any) {
         const weekStartDate = new Date(Math.min(...starts));
         const weekEndDate = new Date(Math.max(...ends));
 
-        await TipsDistribution.create({
+        const distributionData = {
             storeId: data.storeId,
             weekStartDate,
             weekEndDate,
@@ -236,12 +236,33 @@ export async function saveTipsDistribution(data: any) {
             status: 'finalized',
             finalizedBy: data.userId,
             finalizedAt: new Date()
-        });
+        };
+
+        let result;
+        if (data._id) {
+            result = await TipsDistribution.findByIdAndUpdate(data._id, distributionData, { new: true });
+        } else {
+            result = await TipsDistribution.create(distributionData);
+        }
+
+        // Send Notifications
+        await Promise.all(
+            data.records.map((record: any) =>
+                Notification.create({
+                    userId: record.employeeId,
+                    type: "general",
+                    title: "Tips Distributed",
+                    message: `You have been allocated €${record.finalAmount.toFixed(2)} in tips for the period ${new Date(weekStartDate).toLocaleDateString()} - ${new Date(weekEndDate).toLocaleDateString()}. Status: ${record.status === 'paid' ? 'Paid' : 'Pending'}.`,
+                    isRead: false,
+                    createdAt: new Date()
+                })
+            )
+        );
 
         revalidatePath("/dashboard/tips");
         return { success: true };
     } catch (error) {
-
+        console.error("Save Tips Error:", error);
         return { success: false, error: "Failed to save distribution." };
     }
 }
@@ -251,6 +272,33 @@ export async function getTipsHistory(storeId: string) {
         await connectToDB();
         const history = await TipsDistribution.find({ storeId }).sort({ createdAt: -1 }); // Sort by creation/finalization
         return JSON.parse(JSON.stringify(history));
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function getEmployeeTipsHistory(employeeId: string) {
+    try {
+        await connectToDB();
+        const history = await TipsDistribution.find({
+            "records.employeeId": employeeId
+        }).sort({ createdAt: -1 });
+
+        // Filter records to only show this employee's data
+        const processed = history.map((h: any) => {
+            const record = h.records.find((r: any) => r.employeeId.toString() === employeeId);
+            return {
+                _id: h._id,
+                weekStartDate: h.weekStartDate,
+                weekEndDate: h.weekEndDate,
+                totalAmount: h.totalAmount, // Pool total
+                myAmount: record ? record.finalAmount : 0,
+                status: record ? record.status : 'pending',
+                finalizedAt: h.finalizedAt
+            };
+        });
+
+        return JSON.parse(JSON.stringify(processed));
     } catch (error) {
         return [];
     }

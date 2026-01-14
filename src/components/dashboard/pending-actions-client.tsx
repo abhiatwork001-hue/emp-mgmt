@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ActionItemCard } from "./action-item-card";
 
 import {
-    getPendingActions
+    getPendingActions,
+    getActionHistory
 } from "@/lib/actions/pending-actions.actions";
 import {
     cancelVacationRequest,
@@ -30,7 +31,7 @@ import { editOvertimeRequest } from "@/lib/actions/overtime.actions";
 import { RequestDetailsDialog } from "./request-details-dialog";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
-import { Inbox, LayoutGrid, Palmtree, AlertCircle, Clock, CalendarDays, Loader2, UserCheck, Timer, Check } from "lucide-react";
+import { Inbox, LayoutGrid, Palmtree, AlertCircle, Clock, CalendarDays, Loader2, UserCheck, Timer, Check, History } from "lucide-react";
 import { useRouter } from "@/i18n/routing";
 import { FinalizeCoverageDialog } from "@/components/coverage/finalize-coverage-dialog";
 import { useRealtimeUpdates } from "@/hooks/use-realtime-updates";
@@ -38,12 +39,14 @@ import { SwapRequestsWidget } from "./swap-requests-widget";
 
 interface PendingActionsClientProps {
     initialData: any;
+    history: any;
     userId: string;
 }
 
-export function PendingActionsClient({ initialData, userId }: PendingActionsClientProps) {
+export function PendingActionsClient({ initialData, history, userId }: PendingActionsClientProps) {
     const t = useTranslations("PendingActions");
     const [data, setData] = useState(initialData);
+    const [actionHistory, setActionHistory] = useState(history);
     const [isLoading, setIsLoading] = useState(false);
     const [finalizeDialogOpen, setFinalizeDialogOpen] = useState(false);
     const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
@@ -52,25 +55,6 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
 
     // Enable real-time updates for all actions
     useRealtimeUpdates(userId);
-
-    const refreshData = async () => {
-        setIsLoading(true);
-        try {
-            const newData = await getPendingActions();
-            setData(newData);
-            // Also update selected request if open
-            if (selectedRequest && detailsDialogOpen) {
-                // Try to find it in new data
-                const updated = findItemIn(newData, selectedRequest._id);
-                if (updated) setSelectedRequest({ ...updated, type: selectedRequest.type });
-            }
-            router.refresh();
-        } catch (error) {
-            console.error("Failed to refresh actions", error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     const findItemIn = (dataObj: any, id: string) => {
         const lists = [
@@ -85,6 +69,29 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
             ...(dataObj.approvals?.coverage || [])
         ];
         return lists.find((i: any) => i._id === id);
+    };
+
+    const refreshData = async () => {
+        setIsLoading(true);
+        try {
+            const [newData, newHistory] = await Promise.all([
+                getPendingActions(),
+                getActionHistory()
+            ]);
+            setData(newData);
+            setActionHistory(newHistory);
+            // Also update selected request if open
+            if (selectedRequest && detailsDialogOpen) {
+                // Try to find it in new data
+                const updated = findItemIn(newData, selectedRequest._id);
+                if (updated) setSelectedRequest({ ...updated, type: selectedRequest.type });
+            }
+            router.refresh();
+        } catch (error) {
+            console.error("Failed to refresh actions", error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleSaveEdit = async (id: string, type: string, formData: any) => {
@@ -234,6 +241,10 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
                             <UserCheck className="w-4 h-4 mr-2 text-violet-500" />
                             {t("tabs.coverage")}
                         </TabsTrigger>
+                        <TabsTrigger value="history" className="rounded-xl px-6 data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                            <History className="w-4 h-4 mr-2 text-zinc-500" />
+                            History
+                        </TabsTrigger>
                     </TabsList>
 
 
@@ -354,6 +365,28 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
                                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider ml-1">To Finalize</h3>
                                 {renderSection(data.approvals.coverage, 'coverage', true)}
                             </div>
+                        )}
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="history" className="space-y-8 animate-in fade-in duration-300">
+                    <div className="grid gap-4">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="h-1 w-12 bg-zinc-500/20 rounded-full" />
+                            <h2 className="text-xl font-black tracking-tight">History</h2>
+                        </div>
+                        {(!actionHistory?.vacations?.length && !actionHistory?.absences?.length && !actionHistory?.overtime?.length && !actionHistory?.coverage?.length) ? (
+                            <div className="text-center py-10 text-muted-foreground">
+                                <History className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                                <p>No historical actions found.</p>
+                            </div>
+                        ) : (
+                            <>
+                                {renderSection(actionHistory.vacations, 'vacation', false)}
+                                {renderSection(actionHistory.absences, 'absence', false)}
+                                {renderSection(actionHistory.overtime, 'overtime', false)}
+                                {renderSection(actionHistory.coverage, 'coverage', false)}
+                            </>
                         )}
                     </div>
                 </TabsContent>

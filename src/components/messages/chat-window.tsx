@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+import { format, isSameDay, isToday, isYesterday } from "date-fns";
+import React from "react";
 import { Send, ArrowLeft, MoreVertical, Paperclip, X, File as FileIcon, Check, CheckCheck, Clock, Download, Smile, Info, Trash, BellOff, Bell, Mic, StopCircle, Play, Pause, FastForward } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -43,6 +44,20 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { deleteMessageForEveryone, deleteMessageForMe } from "@/lib/actions/message.actions";
+
+function DateSeparator({ date }: { date: Date }) {
+    let label = format(date, "MMMM d, yyyy");
+    if (isToday(date)) label = "Today";
+    if (isYesterday(date)) label = "Yesterday";
+
+    return (
+        <div className="flex justify-center my-4">
+            <span className="text-[10px] font-medium text-muted-foreground bg-muted/50 px-3 py-1 rounded-full uppercase tracking-wider">
+                {label}
+            </span>
+        </div>
+    );
+}
 
 function VoicePlayer({ attachment, isMe }: { attachment: any, isMe: boolean }) {
     const audioRef = useRef<HTMLAudioElement>(null);
@@ -836,6 +851,10 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
                         const showAvatar = !isMe && (idx === 0 || messages[idx - 1].sender?._id !== msg.sender?._id);
                         const isRead = msg.readBy && msg.readBy.length > 1;
 
+                        const messageDate = new Date(msg.createdAt);
+                        const previousMessage = idx > 0 ? messages[idx - 1] : null;
+                        const showDateSeparator = !previousMessage || !isSameDay(new Date(previousMessage.createdAt), messageDate);
+
                         const reactions = msg.reactions || [];
                         const groupedReactions = reactions.reduce((acc: any, r: any) => {
                             acc[r.emoji] = (acc[r.emoji] || 0) + 1;
@@ -844,304 +863,307 @@ export function ChatWindow({ conversation, initialMessages, currentUserId }: Cha
                         const myReactions = reactions.filter((r: any) => (r.user?._id || r.user) === currentUserId).map((r: any) => r.emoji);
 
                         return (
-                            <ContextMenu key={msg._id}>
-                                <ContextMenuTrigger disabled={isMobile} asChild>
-                                    <div
-                                        className={cn("flex w-full gap-2", isMe ? "justify-end" : "justify-start")}
-                                        onTouchStart={() => handleLongPressStart(msg)}
-                                        onTouchEnd={handleLongPressEnd}
-                                        onTouchMove={handleLongPressEnd}
-                                    >
-                                        {!isMe && (
-                                            <div className="w-8 flex-shrink-0">
-                                                {showAvatar && (
-                                                    <Avatar className="h-8 w-8 mt-1">
-                                                        <AvatarImage src={msg.sender?.image} />
-                                                        <AvatarFallback>{msg.sender?.firstName?.[0]}</AvatarFallback>
-                                                    </Avatar>
-                                                )}
-                                            </div>
-                                        )}
-                                        <div id={`msg-${msg._id}`} className={cn("flex items-end gap-2 max-w-[85%] group select-none touch-none", isMe ? "flex-row-reverse" : "flex-row")}>
-                                            <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
-                                                {!isMe && showAvatar && conversation.type === 'group' && (
-                                                    <p className="text-[10px] text-muted-foreground mb-1 font-semibold opacity-75 px-1">{msg.sender?.firstName}</p>
-                                                )}
+                            <React.Fragment key={msg._id}>
+                                {showDateSeparator && <DateSeparator date={messageDate} />}
+                                <ContextMenu>
+                                    <ContextMenuTrigger disabled={isMobile} asChild>
+                                        <div
+                                            className={cn("flex w-full gap-2", isMe ? "justify-end" : "justify-start")}
+                                            onTouchStart={() => handleLongPressStart(msg)}
+                                            onTouchEnd={handleLongPressEnd}
+                                            onTouchMove={handleLongPressEnd}
+                                        >
+                                            {!isMe && (
+                                                <div className="w-8 flex-shrink-0">
+                                                    {showAvatar && (
+                                                        <Avatar className="h-8 w-8 mt-1">
+                                                            <AvatarImage src={msg.sender?.image} />
+                                                            <AvatarFallback>{msg.sender?.firstName?.[0]}</AvatarFallback>
+                                                        </Avatar>
+                                                    )}
+                                                </div>
+                                            )}
+                                            <div id={`msg-${msg._id}`} className={cn("flex items-end gap-2 max-w-[85%] group select-none touch-none", isMe ? "flex-row-reverse" : "flex-row")}>
+                                                <div className={cn("flex flex-col", isMe ? "items-end" : "items-start")}>
+                                                    {!isMe && showAvatar && conversation.type === 'group' && (
+                                                        <p className="text-[10px] text-muted-foreground mb-1 font-semibold opacity-75 px-1">{msg.sender?.firstName}</p>
+                                                    )}
 
-                                                {/* Reply Context */}
-                                                {msg.parentMessageId && (
-                                                    <div
-                                                        className={cn(
-                                                            "mb-1 p-2 rounded-lg text-xs bg-muted/50 border-l-4 border-primary cursor-pointer max-w-[200px] truncate",
-                                                            isMe ? "rounded-br-none" : "rounded-bl-none"
-                                                        )}
-                                                        onClick={() => scrollToMessage(msg.parentMessageId._id)}
-                                                    >
-                                                        <p className="font-semibold text-[10px] text-primary">{msg.parentMessageId.sender?.firstName}</p>
-                                                        <div className="flex items-center gap-1 opacity-70 truncate">
-                                                            {msg.parentMessageId.attachments?.length > 0 && <Paperclip className="h-3 w-3 shrink-0" />}
-                                                            <p className="truncate">{msg.parentMessageId.content || (msg.parentMessageId.attachments?.length ? "Media" : "")}</p>
+                                                    {/* Reply Context */}
+                                                    {msg.parentMessageId && (
+                                                        <div
+                                                            className={cn(
+                                                                "mb-1 p-2 rounded-lg text-xs bg-muted/50 border-l-4 border-primary cursor-pointer max-w-[200px] truncate",
+                                                                isMe ? "rounded-br-none" : "rounded-bl-none"
+                                                            )}
+                                                            onClick={() => scrollToMessage(msg.parentMessageId._id)}
+                                                        >
+                                                            <p className="font-semibold text-[10px] text-primary">{msg.parentMessageId.sender?.firstName}</p>
+                                                            <div className="flex items-center gap-1 opacity-70 truncate">
+                                                                {msg.parentMessageId.attachments?.length > 0 && <Paperclip className="h-3 w-3 shrink-0" />}
+                                                                <p className="truncate">{msg.parentMessageId.content || (msg.parentMessageId.attachments?.length ? "Media" : "")}</p>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    )}
 
-                                                {msg.isDeleted ? (
-                                                    <div className={cn(
-                                                        "px-4 py-2 rounded-2xl text-xs shadow-sm bg-muted text-muted-foreground italic flex items-center gap-2",
-                                                        isMe ? "rounded-br-none" : "rounded-bl-none"
-                                                    )}>
-                                                        <Trash className="h-3 w-3" />
-                                                        <span>This message was deleted</span>
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex flex-col gap-1">
-                                                        {/* Attachments */}
-                                                        {msg.attachments && msg.attachments.length > 0 && (
-                                                            <div className={cn("space-y-1 mb-1 flex flex-col", isMe ? "items-end" : "items-start")}>
-                                                                {msg.attachments.filter((a: any) => a.type !== 'audio').map((att: any, i: number) => (
-                                                                    <div key={i} className="rounded-lg overflow-hidden border bg-muted/20 max-w-sm">
-                                                                        {att.type === 'image' ? (
-                                                                            <div className="cursor-pointer hover:opacity-90 transition-opacity max-h-48 overflow-hidden" onClick={() => setFullscreenMedia(att)}>
-                                                                                <img src={att.url} alt="attachment" className="object-cover w-full h-full" />
-                                                                            </div>
-                                                                        ) : (
-                                                                            <div
-                                                                                className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
-                                                                                onClick={() => handleDownload(att.url, att.name || 'file')}
-                                                                            >
-                                                                                <FileIcon className="h-5 w-5 text-muted-foreground" />
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    <p className="text-xs font-medium truncate">{att.name || 'document.pdf'}</p>
+                                                    {msg.isDeleted ? (
+                                                        <div className={cn(
+                                                            "px-4 py-2 rounded-2xl text-xs shadow-sm bg-muted text-muted-foreground italic flex items-center gap-2",
+                                                            isMe ? "rounded-br-none" : "rounded-bl-none"
+                                                        )}>
+                                                            <Trash className="h-3 w-3" />
+                                                            <span>This message was deleted</span>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex flex-col gap-1">
+                                                            {/* Attachments */}
+                                                            {msg.attachments && msg.attachments.length > 0 && (
+                                                                <div className={cn("space-y-1 mb-1 flex flex-col", isMe ? "items-end" : "items-start")}>
+                                                                    {msg.attachments.filter((a: any) => a.type !== 'audio').map((att: any, i: number) => (
+                                                                        <div key={i} className="rounded-lg overflow-hidden border bg-muted/20 max-w-sm">
+                                                                            {att.type === 'image' ? (
+                                                                                <div className="cursor-pointer hover:opacity-90 transition-opacity max-h-48 overflow-hidden" onClick={() => setFullscreenMedia(att)}>
+                                                                                    <img src={att.url} alt="attachment" className="object-cover w-full h-full" />
                                                                                 </div>
-                                                                                <Download className="h-4 w-4 opacity-50" />
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
+                                                                            ) : (
+                                                                                <div
+                                                                                    className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50 transition-colors"
+                                                                                    onClick={() => handleDownload(att.url, att.name || 'file')}
+                                                                                >
+                                                                                    <FileIcon className="h-5 w-5 text-muted-foreground" />
+                                                                                    <div className="flex-1 min-w-0">
+                                                                                        <p className="text-xs font-medium truncate">{att.name || 'document.pdf'}</p>
+                                                                                    </div>
+                                                                                    <Download className="h-4 w-4 opacity-50" />
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
 
-                                                        {/* Voice Message */}
-                                                        {msg.attachments?.some((a: any) => a.type === 'audio') && (
-                                                            <VoicePlayer attachment={msg.attachments.find((a: any) => a.type === 'audio')} isMe={isMe} />
-                                                        )}
+                                                            {/* Voice Message */}
+                                                            {msg.attachments?.some((a: any) => a.type === 'audio') && (
+                                                                <VoicePlayer attachment={msg.attachments.find((a: any) => a.type === 'audio')} isMe={isMe} />
+                                                            )}
 
-                                                        {/* Text Content */}
-                                                        {(msg.content && msg.content !== "Sent an attachment" && msg.content !== "\u200B") && (
-                                                            <div className={cn(
-                                                                "px-4 py-2 rounded-2xl text-sm shadow-sm",
-                                                                isMe ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
-                                                            )}>
-                                                                <p className="break-words leading-relaxed">{msg.content}</p>
-                                                            </div>
+                                                            {/* Text Content */}
+                                                            {(msg.content && msg.content !== "Sent an attachment" && msg.content !== "\u200B") && (
+                                                                <div className={cn(
+                                                                    "px-4 py-2 rounded-2xl text-sm shadow-sm",
+                                                                    isMe ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none"
+                                                                )}>
+                                                                    <p className="break-words leading-relaxed">{msg.content}</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Status & Timestamp */}
+                                                    <div className={cn("text-[9px] mt-1 flex items-center opacity-70 gap-1 px-1", isMe ? "justify-end text-muted-foreground" : "justify-start text-muted-foreground")}>
+                                                        {format(new Date(msg.createdAt), "h:mm a")}
+                                                        {isMe && !msg.isDeleted && (
+                                                            msg.pending ? <Clock className="h-3 w-3 animate-pulse" /> : (isRead ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />)
                                                         )}
                                                     </div>
-                                                )}
 
-                                                {/* Status & Timestamp */}
-                                                <div className={cn("text-[9px] mt-1 flex items-center opacity-70 gap-1 px-1", isMe ? "justify-end text-muted-foreground" : "justify-start text-muted-foreground")}>
-                                                    {format(new Date(msg.createdAt), "h:mm a")}
-                                                    {isMe && !msg.isDeleted && (
-                                                        msg.pending ? <Clock className="h-3 w-3 animate-pulse" /> : (isRead ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />)
+                                                    {/* Reactions Display */}
+                                                    {Object.keys(groupedReactions).length > 0 && (
+                                                        <div className={cn("flex gap-1 mt-1 flex-wrap", isMe ? "justify-end" : "justify-start")}>
+                                                            {Object.entries(groupedReactions).map(([emoji, count]) => (
+                                                                <button
+                                                                    key={emoji}
+                                                                    onClick={() => toggleReaction(msg._id, currentUserId, emoji)}
+                                                                    className={cn(
+                                                                        "text-xs border px-1.5 py-0.5 rounded-full flex items-center gap-1 transition-colors scale-90",
+                                                                        myReactions.includes(emoji) ? "bg-primary/10 border-primary/20 text-primary" : "bg-muted/50 border-transparent hover:bg-muted"
+                                                                    )}
+                                                                >
+                                                                    <span>{emoji}</span>
+                                                                    <span className="text-[9px] opacity-70">{count as number}</span>
+                                                                </button>
+                                                            ))}
+                                                        </div>
                                                     )}
                                                 </div>
 
-                                                {/* Reactions Display */}
-                                                {Object.keys(groupedReactions).length > 0 && (
-                                                    <div className={cn("flex gap-1 mt-1 flex-wrap", isMe ? "justify-end" : "justify-start")}>
-                                                        {Object.entries(groupedReactions).map(([emoji, count]) => (
-                                                            <button
-                                                                key={emoji}
-                                                                onClick={() => toggleReaction(msg._id, currentUserId, emoji)}
-                                                                className={cn(
-                                                                    "text-xs border px-1.5 py-0.5 rounded-full flex items-center gap-1 transition-colors scale-90",
-                                                                    myReactions.includes(emoji) ? "bg-primary/10 border-primary/20 text-primary" : "bg-muted/50 border-transparent hover:bg-muted"
-                                                                )}
-                                                            >
-                                                                <span>{emoji}</span>
-                                                                <span className="text-[9px] opacity-70">{count as number}</span>
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
+                                                {/* Action Menu (Reactions & Delete) */}
+                                                <div className="flex flex-col gap-1 items-center self-center">
+                                                    {!msg.isDeleted && (
+                                                        <Popover>
+                                                            <PopoverTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex">
+                                                                    <Smile className="h-4 w-4 text-muted-foreground" />
+                                                                </Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-auto p-1 flex gap-1 bg-background border shadow-md" side="top">
+                                                                {['👍', '❤️', '😂', '😮', '😢', '😡'].map(emoji => (
+                                                                    <button
+                                                                        key={emoji}
+                                                                        className={cn("text-xl p-2 hover:bg-muted rounded-md transition-colors", myReactions.includes(emoji) && "bg-muted")}
+                                                                        onClick={() => toggleReaction(msg._id, currentUserId, emoji)}
+                                                                    >
+                                                                        {emoji}
+                                                                    </button>
+                                                                ))}
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                    )}
 
-                                            {/* Action Menu (Reactions & Delete) */}
-                                            <div className="flex flex-col gap-1 items-center self-center">
-                                                {!msg.isDeleted && (
-                                                    <Popover>
-                                                        <PopoverTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hidden md:flex">
-                                                                <Smile className="h-4 w-4 text-muted-foreground" />
-                                                            </Button>
-                                                        </PopoverTrigger>
-                                                        <PopoverContent className="w-auto p-1 flex gap-1 bg-background border shadow-md" side="top">
-                                                            {['👍', '❤️', '😂', '😮', '😢', '😡'].map(emoji => (
-                                                                <button
-                                                                    key={emoji}
-                                                                    className={cn("text-xl p-2 hover:bg-muted rounded-md transition-colors", myReactions.includes(emoji) && "bg-muted")}
-                                                                    onClick={() => toggleReaction(msg._id, currentUserId, emoji)}
+                                                    {!msg.isDeleted && (
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hidden md:flex"
                                                                 >
-                                                                    {emoji}
-                                                                </button>
-                                                            ))}
-                                                        </PopoverContent>
-                                                    </Popover>
-                                                )}
-
-                                                {!msg.isDeleted && (
-                                                    <DropdownMenu>
-                                                        <DropdownMenuTrigger asChild>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive hidden md:flex"
-                                                            >
-                                                                <Trash className="h-4 w-4" />
-                                                            </Button>
-                                                        </DropdownMenuTrigger>
-                                                        <DropdownMenuContent align={isMe ? "end" : "start"}>
-                                                            <DropdownMenuItem onClick={() => {
-                                                                setAlertConfig({
-                                                                    open: true,
-                                                                    title: "Delete for me?",
-                                                                    description: "This message will be hidden from your chat window.",
-                                                                    onConfirm: async () => {
-                                                                        const res = await deleteMessageForMe(msg._id, currentUserId);
-                                                                        if (res.success) router.refresh();
-                                                                    }
-                                                                });
-                                                            }}>
-                                                                <Trash className="mr-2 h-4 w-4" />
-                                                                <span>Delete for Me</span>
-                                                            </DropdownMenuItem>
-                                                            {isMe && (
-                                                                <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => {
+                                                                    <Trash className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align={isMe ? "end" : "start"}>
+                                                                <DropdownMenuItem onClick={() => {
                                                                     setAlertConfig({
                                                                         open: true,
-                                                                        title: "Delete for everyone?",
-                                                                        description: "This will remove the message for everyone. This action cannot be undone.",
-                                                                        variant: 'destructive',
+                                                                        title: "Delete for me?",
+                                                                        description: "This message will be hidden from your chat window.",
                                                                         onConfirm: async () => {
-                                                                            const res = await deleteMessageForEveryone(msg._id, currentUserId);
+                                                                            const res = await deleteMessageForMe(msg._id, currentUserId);
                                                                             if (res.success) router.refresh();
                                                                         }
                                                                     });
                                                                 }}>
                                                                     <Trash className="mr-2 h-4 w-4" />
-                                                                    <span>Delete for Everyone</span>
+                                                                    <span>Delete for Me</span>
                                                                 </DropdownMenuItem>
-                                                            )}
-                                                        </DropdownMenuContent>
-                                                    </DropdownMenu>
-                                                )}
+                                                                {isMe && (
+                                                                    <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => {
+                                                                        setAlertConfig({
+                                                                            open: true,
+                                                                            title: "Delete for everyone?",
+                                                                            description: "This will remove the message for everyone. This action cannot be undone.",
+                                                                            variant: 'destructive',
+                                                                            onConfirm: async () => {
+                                                                                const res = await deleteMessageForEveryone(msg._id, currentUserId);
+                                                                                if (res.success) router.refresh();
+                                                                            }
+                                                                        });
+                                                                    }}>
+                                                                        <Trash className="mr-2 h-4 w-4" />
+                                                                        <span>Delete for Everyone</span>
+                                                                    </DropdownMenuItem>
+                                                                )}
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
 
-                                </ContextMenuTrigger>
-                                <ContextMenuContent className="w-56">
-                                    {!msg.isDeleted && (
-                                        <>
-                                            <ContextMenuItem onClick={() => setReplyingTo(msg)}>
-                                                <ArrowLeft className="mr-2 h-4 w-4 rotate-180" />
-                                                <span>Reply</span>
-                                            </ContextMenuItem>
-                                            <ContextMenuItem onClick={() => handleCopy(msg.content)}>
-                                                <Download className="mr-2 h-4 w-4 rotate-180" />
-                                                <span>Copy Text</span>
-                                            </ContextMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <ContextMenuItem onClick={() => {
-                                                setAlertConfig({
-                                                    open: true,
-                                                    title: "Delete for me?",
-                                                    description: "This message will be hidden from your chat window.",
-                                                    onConfirm: async () => {
-                                                        const res = await deleteMessageForMe(msg._id, currentUserId);
-                                                        if (res.success) router.refresh();
-                                                    }
-                                                });
-                                            }}>
-                                                <Trash className="mr-2 h-4 w-4" />
-                                                <span>Delete for Me</span>
-                                            </ContextMenuItem>
-                                            {isMe && (
-                                                <ContextMenuItem className="text-destructive focus:text-destructive" onClick={() => {
+                                    </ContextMenuTrigger>
+                                    <ContextMenuContent className="w-56">
+                                        {!msg.isDeleted && (
+                                            <>
+                                                <ContextMenuItem onClick={() => setReplyingTo(msg)}>
+                                                    <ArrowLeft className="mr-2 h-4 w-4 rotate-180" />
+                                                    <span>Reply</span>
+                                                </ContextMenuItem>
+                                                <ContextMenuItem onClick={() => handleCopy(msg.content)}>
+                                                    <Download className="mr-2 h-4 w-4 rotate-180" />
+                                                    <span>Copy Text</span>
+                                                </ContextMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <ContextMenuItem onClick={() => {
                                                     setAlertConfig({
                                                         open: true,
-                                                        title: "Delete for everyone?",
-                                                        description: "This will remove the message for everyone. This action cannot be undone.",
-                                                        variant: 'destructive',
+                                                        title: "Delete for me?",
+                                                        description: "This message will be hidden from your chat window.",
                                                         onConfirm: async () => {
-                                                            const res = await deleteMessageForEveryone(msg._id, currentUserId);
+                                                            const res = await deleteMessageForMe(msg._id, currentUserId);
                                                             if (res.success) router.refresh();
                                                         }
                                                     });
                                                 }}>
                                                     <Trash className="mr-2 h-4 w-4" />
-                                                    <span>Delete for Everyone</span>
+                                                    <span>Delete for Me</span>
                                                 </ContextMenuItem>
+                                                {isMe && (
+                                                    <ContextMenuItem className="text-destructive focus:text-destructive" onClick={() => {
+                                                        setAlertConfig({
+                                                            open: true,
+                                                            title: "Delete for everyone?",
+                                                            description: "This will remove the message for everyone. This action cannot be undone.",
+                                                            variant: 'destructive',
+                                                            onConfirm: async () => {
+                                                                const res = await deleteMessageForEveryone(msg._id, currentUserId);
+                                                                if (res.success) router.refresh();
+                                                            }
+                                                        });
+                                                    }}>
+                                                        <Trash className="mr-2 h-4 w-4" />
+                                                        <span>Delete for Everyone</span>
+                                                    </ContextMenuItem>
+                                                )}
+                                            </>
+                                        )}
+                                        {!msg.isDeleted && isMe && (
+                                            <ContextMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => {
+                                                setAlertConfig({
+                                                    open: true,
+                                                    title: "Delete for everyone?",
+                                                    description: "This will remove the message for all participants.",
+                                                    variant: 'destructive',
+                                                    onConfirm: async () => {
+                                                        const res = await deleteMessageForEveryone(msg._id, currentUserId);
+                                                        if (res.success) router.refresh();
+                                                    }
+                                                });
+                                            }}>
+                                                <Trash className="mr-2 h-4 w-4" />
+                                                <span>Delete for Everyone</span>
+                                            </ContextMenuItem>
+                                        )}
+                                        {!msg.isDeleted && !isMe && (
+                                            <ContextMenuItem onClick={() => toggleReaction(msg._id, currentUserId, '👍')}>
+                                                <Smile className="mr-2 h-4 w-4" />
+                                                <span>Quick React 👍</span>
+                                            </ContextMenuItem>
+                                        )}
+                                        <ContextMenuSeparator />
+                                        <ContextMenuItem onClick={async () => {
+                                            const res = await toggleMuteConversation(conversation._id, currentUserId);
+                                            if (res.success) router.refresh();
+                                        }}>
+                                            {(conversation.mutedBy || []).includes(currentUserId) ? (
+                                                <>
+                                                    <Bell className="mr-2 h-4 w-4 text-primary" />
+                                                    <span>Unmute Chat</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <BellOff className="mr-2 h-4 w-4 text-muted-foreground" />
+                                                    <span>Mute Notifications</span>
+                                                </>
                                             )}
-                                        </>
-                                    )}
-                                    {!msg.isDeleted && isMe && (
-                                        <ContextMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onClick={() => {
+                                        </ContextMenuItem>
+                                        <ContextMenuItem className="text-destructive" onClick={() => {
                                             setAlertConfig({
                                                 open: true,
-                                                title: "Delete for everyone?",
-                                                description: "This will remove the message for all participants.",
+                                                title: "Delete conversation?",
+                                                description: "This will hide the conversation from your list. It will reappear if you receive a new message.",
                                                 variant: 'destructive',
                                                 onConfirm: async () => {
-                                                    const res = await deleteMessageForEveryone(msg._id, currentUserId);
-                                                    if (res.success) router.refresh();
+                                                    const res = await deleteConversation(conversation._id, currentUserId);
+                                                    if (res.success && res.redirect) router.push('/dashboard/messages');
                                                 }
                                             });
                                         }}>
                                             <Trash className="mr-2 h-4 w-4" />
-                                            <span>Delete for Everyone</span>
+                                            <span>Delete Conversation</span>
                                         </ContextMenuItem>
-                                    )}
-                                    {!msg.isDeleted && !isMe && (
-                                        <ContextMenuItem onClick={() => toggleReaction(msg._id, currentUserId, '👍')}>
-                                            <Smile className="mr-2 h-4 w-4" />
-                                            <span>Quick React 👍</span>
-                                        </ContextMenuItem>
-                                    )}
-                                    <ContextMenuSeparator />
-                                    <ContextMenuItem onClick={async () => {
-                                        const res = await toggleMuteConversation(conversation._id, currentUserId);
-                                        if (res.success) router.refresh();
-                                    }}>
-                                        {(conversation.mutedBy || []).includes(currentUserId) ? (
-                                            <>
-                                                <Bell className="mr-2 h-4 w-4 text-primary" />
-                                                <span>Unmute Chat</span>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <BellOff className="mr-2 h-4 w-4 text-muted-foreground" />
-                                                <span>Mute Notifications</span>
-                                            </>
-                                        )}
-                                    </ContextMenuItem>
-                                    <ContextMenuItem className="text-destructive" onClick={() => {
-                                        setAlertConfig({
-                                            open: true,
-                                            title: "Delete conversation?",
-                                            description: "This will hide the conversation from your list. It will reappear if you receive a new message.",
-                                            variant: 'destructive',
-                                            onConfirm: async () => {
-                                                const res = await deleteConversation(conversation._id, currentUserId);
-                                                if (res.success && res.redirect) router.push('/dashboard/messages');
-                                            }
-                                        });
-                                    }}>
-                                        <Trash className="mr-2 h-4 w-4" />
-                                        <span>Delete Conversation</span>
-                                    </ContextMenuItem>
-                                </ContextMenuContent>
-                            </ContextMenu>
+                                    </ContextMenuContent>
+                                </ContextMenu>
+                            </React.Fragment>
                         );
                     })
                 )}

@@ -188,3 +188,43 @@ export async function getPendingActions() {
         approvals: JSON.parse(JSON.stringify(approvals))
     };
 }
+
+export async function getActionHistory() {
+    await dbConnect();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+    const userId = session.user.id;
+
+    // Fetch last 50 items combined? Or 20 of each? Let's do 20 of each for now.
+    const [vacations, absences, overtime, coverage] = await Promise.all([
+        VacationRequest.find({
+            employeeId: userId,
+            status: { $ne: 'pending' }
+        }).sort({ updatedAt: -1 }).limit(20).lean(),
+
+        AbsenceRequest.find({
+            employeeId: userId,
+            status: { $ne: 'pending' }
+        }).sort({ updatedAt: -1 }).limit(20).lean(),
+
+        OvertimeRequest.find({
+            employeeId: userId,
+            status: { $ne: 'pending' }
+        }).sort({ updatedAt: -1 }).limit(20).lean(),
+
+        ShiftCoverageRequest.find({
+            originalEmployeeId: userId,
+            status: { $in: ['approved', 'completed', 'cancelled', 'rejected'] }
+        }).sort({ updatedAt: -1 }).limit(20).populate({
+            path: 'originalShift.storeId',
+            select: 'name'
+        }).lean()
+    ]);
+
+    return {
+        vacations: JSON.parse(JSON.stringify(vacations)),
+        absences: JSON.parse(JSON.stringify(absences)),
+        overtime: JSON.parse(JSON.stringify(overtime)),
+        coverage: JSON.parse(JSON.stringify(coverage))
+    };
+}

@@ -10,9 +10,10 @@ import { TipsChart } from "@/components/tips/tips-chart";
 
 interface TipsHistoryProps {
     storeId: string;
+    onEdit?: (data: any) => void;
 }
 
-export function TipsHistory({ storeId }: TipsHistoryProps) {
+export function TipsHistory({ storeId, onEdit }: TipsHistoryProps) {
     const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -23,9 +24,13 @@ export function TipsHistory({ storeId }: TipsHistoryProps) {
         setLoading(false);
     };
 
+    // Trigger refresh if storeId changes
     useEffect(() => {
         fetchHistory();
     }, [storeId]);
+
+    // Expose refresh method via ref if needed, or just rely on parent state changes? 
+    // For now simple refresh on storeId is fine.
 
     if (loading) return <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />;
 
@@ -54,10 +59,15 @@ export function TipsHistory({ storeId }: TipsHistoryProps) {
                                     <TableCell className="text-xs font-mono text-muted-foreground">
                                         {format(new Date(h.weekStartDate), "MMM d")} - {format(new Date(h.weekEndDate), "MMM d")}
                                     </TableCell>
-                                    <TableCell className="font-bold text-emerald-500">${h.totalAmount.toFixed(2)}</TableCell>
+                                    <TableCell className="font-bold text-emerald-500">€{h.totalAmount.toFixed(2)}</TableCell>
                                     <TableCell className="text-muted-foreground text-xs">{h.records.length}</TableCell>
-                                    <TableCell className="text-right text-primary text-xs font-medium cursor-pointer hover:underline">
-                                        View
+                                    <TableCell className="text-right">
+                                        <button
+                                            onClick={() => onEdit?.(h)}
+                                            className="text-primary text-xs font-medium cursor-pointer hover:underline"
+                                        >
+                                            Edit
+                                        </button>
                                     </TableCell>
                                 </TableRow>
                             ))}

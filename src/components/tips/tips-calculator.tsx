@@ -16,11 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface TipsCalculatorProps {
-    storeId: string;
-    userId: string;
-    onSuccess?: () => void;
-}
+
 
 interface Period {
     id: number;
@@ -41,6 +37,7 @@ interface CalculationRecord {
     calculatedShares: number;
     adjustedShares: number;
     finalAmount: number;
+    status?: 'pending' | 'paid';
     periodDetails: {
         periodIndex: number;
         shares: number;
@@ -48,7 +45,16 @@ interface CalculationRecord {
     }[];
 }
 
-export function TipsCalculator({ storeId, userId, onSuccess }: TipsCalculatorProps) {
+interface TipsCalculatorProps {
+    storeId: string;
+    userId: string;
+    onSuccess?: () => void;
+    initialData?: any; // ITipsDistribution
+    onCancel?: () => void;
+}
+
+
+export function TipsCalculator({ storeId, userId, onSuccess, initialData, onCancel }: TipsCalculatorProps) {
     // State
     const [periods, setPeriods] = useState<Period[]>([
         { id: 1, startDate: "", endDate: "", amount: "" }
@@ -72,10 +78,34 @@ export function TipsCalculator({ storeId, userId, onSuccess }: TipsCalculatorPro
             ]);
             setDepartments(depts);
 
+            // If initialData provided, load it
+            if (initialData) {
+                // Map periods
+                if (initialData.periods) {
+                    setPeriods(initialData.periods.map((p: any, i: number) => ({
+                        id: i,
+                        startDate: new Date(p.startDate).toISOString().split('T')[0],
+                        endDate: new Date(p.endDate).toISOString().split('T')[0],
+                        amount: p.amount.toString()
+                    })));
+                } else {
+                    setPeriods([{
+                        id: 1,
+                        startDate: new Date(initialData.weekStartDate).toISOString().split('T')[0],
+                        endDate: new Date(initialData.weekEndDate).toISOString().split('T')[0],
+                        amount: initialData.totalAmount.toString()
+                    }]);
+                }
+                setRecords(initialData.records);
+            }
+
             // Process history to blocked ranges
             // Check both legacy root range AND periods array
             const blocked: { start: number, end: number }[] = [];
             history.forEach((h: any) => {
+                // Don't block our own dates if editing
+                if (initialData && h._id === initialData._id) return;
+
                 if (h.periods && h.periods.length > 0) {
                     h.periods.forEach((p: any) => {
                         blocked.push({
@@ -94,7 +124,7 @@ export function TipsCalculator({ storeId, userId, onSuccess }: TipsCalculatorPro
             setHistoryRanges(blocked);
         };
         load();
-    }, [storeId]);
+    }, [storeId, initialData]);
 
     // Check if a date is unavailable
     const isDateDisabled = (date: Date, currentPeriodId?: number) => {
@@ -310,7 +340,7 @@ export function TipsCalculator({ storeId, userId, onSuccess }: TipsCalculatorPro
                                     />
                                 </div>
                                 <div className="w-full sm:w-40 space-y-1.5">
-                                    <Label className="text-xs font-medium">Amount ($)</Label>
+                                    <Label className="text-xs font-medium">Amount (€)</Label>
                                     <div className="flex items-center gap-2">
                                         <Input
                                             type="number"
@@ -373,7 +403,7 @@ export function TipsCalculator({ storeId, userId, onSuccess }: TipsCalculatorPro
 
                     <div className="text-right">
                         <div className="text-xs text-muted-foreground uppercase font-bold">Total Pool</div>
-                        <div className="text-2xl font-bold text-primary">${totalInput.toFixed(2)}</div>
+                        <div className="text-2xl font-bold text-primary">€{totalInput.toFixed(2)}</div>
                     </div>
                 </div>
 
@@ -391,7 +421,7 @@ export function TipsCalculator({ storeId, userId, onSuccess }: TipsCalculatorPro
                             <div className="p-4 bg-muted/40 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                                 <h3 className="font-semibold">Distribution Preview</h3>
                                 <div className={variance !== 0 ? "text-destructive font-mono text-sm" : "text-emerald-600 font-mono text-sm"}>
-                                    Variance: ${variance.toFixed(2)}
+                                    Variance: €{variance.toFixed(2)}
                                 </div>
                             </div>
                             <Table>
@@ -416,6 +446,7 @@ export function TipsCalculator({ storeId, userId, onSuccess }: TipsCalculatorPro
                                             </div>
                                         </TableHead>
                                         <TableHead className="w-[100px] text-center">Adjust</TableHead>
+                                        <TableHead className="text-center w-[100px]">Status</TableHead>
                                         <TableHead className="text-right">Payout</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -442,8 +473,20 @@ export function TipsCalculator({ storeId, userId, onSuccess }: TipsCalculatorPro
                                                     onChange={(e) => handleAdjustShare(i, e.target.value)}
                                                 />
                                             </TableCell>
+                                            <TableCell className="text-center">
+                                                <div
+                                                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer ${r.status === 'paid' ? 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80' : 'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}
+                                                    onClick={() => {
+                                                        const newRecords = [...records];
+                                                        newRecords[i].status = r.status === 'paid' ? 'pending' : 'paid';
+                                                        setRecords(newRecords);
+                                                    }}
+                                                >
+                                                    {r.status === 'paid' ? 'Paid' : 'Pending'}
+                                                </div>
+                                            </TableCell>
                                             <TableCell className="text-right font-bold text-lg">
-                                                ${r.finalAmount.toFixed(2)}
+                                                €{r.finalAmount.toFixed(2)}
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -452,10 +495,13 @@ export function TipsCalculator({ storeId, userId, onSuccess }: TipsCalculatorPro
                         </div>
 
                         <div className="flex gap-2 justify-end pt-4">
+                            {initialData && onCancel && (
+                                <Button variant="outline" onClick={onCancel}>Cancel Edit</Button>
+                            )}
                             <Button variant="outline" onClick={() => setRecords(null)}>Back to Config</Button>
                             <Button onClick={handleSave} disabled={saving} className="min-w-[150px]">
                                 {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                <Save className="mr-2 h-4 w-4" /> Finalize & Save
+                                <Save className="mr-2 h-4 w-4" /> {initialData ? "Update Distribution" : "Finalize & Save"}
                             </Button>
                         </div>
                     </div>

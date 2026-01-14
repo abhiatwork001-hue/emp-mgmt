@@ -1,4 +1,4 @@
-import { getPendingActions } from "@/lib/actions/pending-actions.actions";
+import { getPendingActions, getActionHistory } from "@/lib/actions/pending-actions.actions";
 import { PendingActionsClient } from "@/components/dashboard/pending-actions-client";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -10,7 +10,10 @@ export default async function PendingActionsPage() {
     if (!session?.user) redirect("/login");
 
     const t = await getTranslations("PendingActions");
-    const data = await getPendingActions();
+    const [data, history] = await Promise.all([
+        getPendingActions(),
+        getActionHistory()
+    ]);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 pb-10">
@@ -19,7 +22,7 @@ export default async function PendingActionsPage() {
                 <p className="text-muted-foreground">{t('description')}</p>
             </div>
 
-            <PendingActionsClient initialData={data} userId={session.user.id} />
+            <PendingActionsClient initialData={data} history={history} userId={session.user.id} />
         </div>
     );
 }

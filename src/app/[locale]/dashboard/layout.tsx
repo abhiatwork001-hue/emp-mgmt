@@ -1,4 +1,5 @@
 import { Sidebar } from "@/components/layout/sidebar";
+import Footer from '@/components/layout/footer';
 import { Header } from "@/components/layout/header";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -180,6 +181,9 @@ export default async function DashboardLayout({
                         </div>
                         <ContentWrapper>
                             {children}
+                            <div className="mt-auto">
+                                <Footer />
+                            </div>
                         </ContentWrapper>
                         <div className="print-hidden">
                             <BottomNav />

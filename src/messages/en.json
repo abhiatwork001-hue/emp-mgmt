@@ -86,11 +86,13 @@
             "store_manager": "Store Manager",
             "department_head": "Global Dept Head",
             "store_department_head": "Store Dept Head",
-            "employee": "Employee"
+            "employee": "Employee",
+            "tech": "Tech"
         }
     },
     "RoleSwitcher": {
         "testView": "Test View:",
+        "viewAs": "View As",
         "selectRole": "Select role",
         "testingMode": "Testing Mode"
     },

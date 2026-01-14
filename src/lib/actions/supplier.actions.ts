@@ -158,6 +158,26 @@ export async function markSupplierOrder(storeId: string, supplierId: string, sta
 }
 
 /**
+ * Update store preference for a supplier order day
+ */
+export async function updateSupplierStorePreference(supplierId: string, storeId: string, preferredOrderDay: number) {
+    await dbConnect();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+
+    await Supplier.findByIdAndUpdate(supplierId, {
+        $pull: { storePreferences: { storeId: storeId } }
+    });
+
+    const updated = await Supplier.findByIdAndUpdate(supplierId, {
+        $push: { storePreferences: { storeId: storeId, preferredOrderDay } }
+    }, { new: true }).lean();
+
+    revalidatePath("/dashboard");
+    return JSON.parse(JSON.stringify(updated));
+}
+
+/**
  * Get active ordering alerts for a store for TODAY or CUSTOM ALERT DAY.
  * Checks default schedules, temporary overrides, and "SupplierOrderCheck" status.
  */

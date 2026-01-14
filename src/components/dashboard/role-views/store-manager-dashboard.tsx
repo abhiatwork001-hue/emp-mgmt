@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, ClipboardList, Users, Package, TrendingUp, AlertCircle, Sun, MapPin, Palmtree, Store } from "lucide-react";
+import { Calendar, ClipboardList, Users, Package, TrendingUp, AlertCircle, Sun, MapPin, Palmtree, Store, Truck } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
@@ -70,7 +70,8 @@ import InsightsPanel from "@/components/dashboard/insights-panel";
 import { VacationAnalytics } from "@/components/dashboard/hr/vacation-analytics";
 import { ReputationSummary } from "@/components/dashboard/reputation-summary";
 import { ScheduleAlertModal } from "@/components/dashboard/schedule-alert-modal";
-
+import { getAvailableSuppliersForToday } from "@/lib/actions/supplier-alerts.actions";
+import { SupplierAlertWidget } from "@/components/suppliers/supplier-alert-widget";
 interface StoreManagerDashboardProps {
     employee: any;
     pendingRequests: any[];
@@ -137,6 +138,7 @@ export function StoreManagerDashboard({
     weather
 }: StoreManagerDashboardProps) {
     const [showScheduleAlert, setShowScheduleAlert] = useState(false);
+    const [supplierAlerts, setSupplierAlerts] = useState<any[]>([]);
     const t = useTranslations("Dashboard");
 
     const extendedStats = {
@@ -153,6 +155,12 @@ export function StoreManagerDashboard({
 
     const userStoreId = typeof employee.storeId === 'object' ? employee.storeId?._id : employee.storeId;
     const effectiveStoreId = isHighLevel ? (userStoreId || undefined) : (userStoreId || stores[0]?._id);
+
+    useEffect(() => {
+        if (effectiveStoreId) {
+            getAvailableSuppliersForToday(effectiveStoreId.toString()).then(setSupplierAlerts);
+        }
+    }, [effectiveStoreId]);
 
     const CoworkersWidget = () => (
         <Card className="h-full border-l-4 border-l-emerald-500 shadow-sm relative overflow-hidden flex flex-col min-h-[400px]">
@@ -310,6 +318,9 @@ export function StoreManagerDashboard({
         "api-usage": <ApiUsageWidget />,
         "analytics-widget": effectiveStoreId ? (
             <StoreAnalyticsWidget storeId={effectiveStoreId} />
+        ) : null,
+        "supplier-alerts": effectiveStoreId && supplierAlerts.length > 0 ? (
+            <SupplierAlertWidget alerts={supplierAlerts} storeId={effectiveStoreId.toString()} />
         ) : null
     };
 
@@ -401,6 +412,12 @@ export function StoreManagerDashboard({
                 <div className="w-full">
                     {widgets["operations-radar"]}
                 </div>
+
+                {widgets["supplier-alerts"] && (
+                    <div className="w-full">
+                        {widgets["supplier-alerts"]}
+                    </div>
+                )}
 
                 {widgets["analytics-widget"] && (
                     <div className="w-full">

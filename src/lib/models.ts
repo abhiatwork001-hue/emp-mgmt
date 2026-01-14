@@ -918,6 +918,10 @@ export interface ISupplier extends Document {
         alertTime?: string; // "09:00"
     };
     active: boolean;
+    storePreferences?: {
+        storeId: ObjectId;
+        preferredOrderDay: number; // 0=Sun, 1=Mon...
+    }[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -973,6 +977,10 @@ const SupplierSchema = new Schema<ISupplier>({
         customLeadTime: { type: Number },
         alertTime: { type: String }
     },
+    storePreferences: [{
+        storeId: { type: Schema.Types.ObjectId, ref: 'Store' },
+        preferredOrderDay: { type: Number, min: 0, max: 6 }
+    }],
     active: { type: Boolean, default: true }
 }, { timestamps: true });
 
@@ -1622,6 +1630,7 @@ export interface ITipsDistribution extends Document {
         calculatedShares: number;
         adjustedShares: number;
         finalAmount: number;
+        status?: 'pending' | 'paid';
         periodDetails?: { // Optional breakdown
             periodIndex: number;
             shares: number;
@@ -1652,6 +1661,7 @@ const TipsDistributionSchema = new Schema<ITipsDistribution>({
         calculatedShares: { type: Number },
         adjustedShares: { type: Number },
         finalAmount: { type: Number },
+        status: { type: String, enum: ['pending', 'paid'], default: 'pending' }, // Added status
         periodDetails: [{
             periodIndex: { type: Number },
             shares: { type: Number },
@@ -1948,4 +1958,6 @@ export const ApiUsage = mongoose.models.ApiUsage || mongoose.model<IApiUsage>('A
 
 
 
+
+export { Document };
 

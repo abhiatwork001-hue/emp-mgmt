@@ -15,6 +15,7 @@ export const metadata: Metadata = {
 import { getAllStores } from "@/lib/actions/store.actions";
 import { TipsStoreSelector } from "@/components/tips/tips-store-selector";
 import { AccessDenied } from "@/components/auth/access-denied";
+import { TipsManager } from "@/components/tips/tips-manager";
 
 export default async function TipsPage({
     params,
@@ -82,17 +83,10 @@ export default async function TipsPage({
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div>
-                    <TipsCalculator
-                        storeId={activeStoreId}
-                        userId={employee._id.toString()}
-                    />
-                </div>
-                <div>
-                    <TipsHistory storeId={activeStoreId} />
-                </div>
-            </div>
+            <TipsManager
+                storeId={activeStoreId}
+                userId={employee._id.toString()}
+            />
         </div>
     );
 }
