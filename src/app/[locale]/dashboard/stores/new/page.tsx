@@ -11,16 +11,16 @@ export default async function NewStorePage() {
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-4">
-                <Button variant="outline" size="icon" className="h-8 w-8 rounded-full border-zinc-700 bg-transparent text-zinc-400 hover:bg-zinc-800 hover:text-white" asChild>
+                <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" asChild>
                     <a href="/dashboard/stores">{"<"}</a>
                 </Button>
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-white">Create Store</h2>
+                    <h2 className="text-3xl font-bold tracking-tight">Create Store</h2>
                     <p className="text-zinc-400">Add a new store to your company.</p>
                 </div>
             </div>
 
-            <div className="bg-[#1e293b]/50 p-6 rounded-xl border border-zinc-800">
+            <div className="bg-card p-6 rounded-xl border">
                 <StoreForm />
             </div>
         </div>

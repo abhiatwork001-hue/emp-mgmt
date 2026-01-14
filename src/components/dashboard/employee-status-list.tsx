@@ -28,7 +28,7 @@ export function EmployeeStatusList({ employees }: { employees: EmployeeStatus[] 
     };
 
     return (
-        <Card className="border-zinc-800 bg-slate-900/50">
+        <Card className="border-border bg-card">
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-lg font-medium text-white">Employee Status</CardTitle>
@@ -37,7 +37,7 @@ export function EmployeeStatusList({ employees }: { employees: EmployeeStatus[] 
             </CardHeader>
             <CardContent className="space-y-4">
                 {employees.map((emp) => (
-                    <div key={emp._id} className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-slate-900 p-4 transition-colors hover:bg-slate-800/50">
+                    <div key={emp._id} className="flex flex-col gap-3 rounded-lg border border-border bg-muted p-4 transition-colors hover:bg-accent">
                         <div className="flex items-start justify-between">
                             <div className="flex items-center gap-3">
                                 <Avatar className="h-10 w-10 border border-zinc-700">
@@ -58,18 +58,18 @@ export function EmployeeStatusList({ employees }: { employees: EmployeeStatus[] 
                         </div>
 
                         {emp.status !== "Active" && (
-                            <div className="ml-14 rounded bg-slate-950/50 px-3 py-2 text-sm text-slate-400">
+                            <div className="ml-14 rounded bg-muted px-3 py-2 text-sm text-muted-foreground">
                                 {emp.status === "On Vacation" ? "Family vacation" : emp.status === "Absent" ? "Sick leave" : ""}
                             </div>
                         )}
 
                         <div className="ml-14 flex items-center gap-2">
-                            <Button variant="outline" size="sm" className="h-8 border-zinc-700 bg-transparent text-slate-300 hover:bg-slate-800" asChild>
+                            <Button variant="outline" size="sm" className="h-8" asChild>
                                 <Link href={`/dashboard/employees/${emp.slug}`}>
                                     <User className="mr-2 h-3 w-3" /> View Profile
                                 </Link>
                             </Button>
-                            <Button variant="outline" size="sm" className="h-8 border-zinc-700 bg-transparent text-slate-300 hover:bg-slate-800">
+                            <Button variant="outline" size="sm" className="h-8">
                                 <MessageSquare className="mr-2 h-3 w-3" /> Contact
                             </Button>
                         </div>

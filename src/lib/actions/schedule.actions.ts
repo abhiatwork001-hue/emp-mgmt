@@ -109,24 +109,9 @@ export async function getSchedules(storeId?: string, departmentId?: string, year
     }
 
     // 2. Security Scoping
+    // IMPORTANT: Check more specific roles first (Store Manager, Store Dept Head) before global roles
     if (isGlobalAdmin) {
         // Full access
-    } else if (isGlobalDeptHead) {
-        // Access all stores, but only departments matching their Global Department
-        const { GlobalDepartment, StoreDepartment } = await import("@/lib/models");
-        const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: currentUser._id }).select('_id');
-        const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
-
-        // Find all StoreDepartments linked to these GlobalDepartments
-        const allowedStoreDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).distinct('_id');
-
-        if (departmentId) {
-            if (!allowedStoreDepts.find((id: any) => id.toString() === departmentId)) return [];
-            query.storeDepartmentId = departmentId;
-        } else {
-            query.storeDepartmentId = { $in: allowedStoreDepts };
-        }
-
     } else if (isStoreManager) {
         // Access OWN store, ALL depts
         const userStoreId = currentUser.storeId?._id?.toString() || currentUser.storeId?.toString();
@@ -143,6 +128,30 @@ export async function getSchedules(storeId?: string, departmentId?: string, year
 
         query.storeId = userStoreId;
         query.storeDepartmentId = userDeptId;
+
+    } else if (isGlobalDeptHead) {
+        // Access all stores, but only departments matching their Global Department
+        const { GlobalDepartment, StoreDepartment } = await import("@/lib/models");
+        const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: currentUser._id }).select('_id');
+        const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
+
+        // Find all StoreDepartments linked to these GlobalDepartments
+        const allowedStoreDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).distinct('_id');
+
+        if (departmentId) {
+            if (!allowedStoreDepts.find((id: any) => id.toString() === departmentId)) return [];
+            query.storeDepartmentId = departmentId;
+        } else if (allowedStoreDepts.length > 0) {
+            // Only apply filter if they actually lead some departments
+            query.storeDepartmentId = { $in: allowedStoreDepts };
+        }
+        // If allowedStoreDepts is empty, don't add storeDepartmentId filter - they see nothing or everything based on business logic
+        // For now, if they lead NO departments, treat them like a regular employee (see own store/dept only)
+        // OR we could treat them as having no access. Let's be restrictive: if no depts assigned, see nothing.
+        if (allowedStoreDepts.length === 0 && !departmentId) {
+            // No departments assigned - return empty
+            return [];
+        }
 
     } else {
         // Regular Employee: Can see OWN store, OWN dept (View Only)
@@ -1905,25 +1914,83 @@ export async function notifyScheduleReminders(entityIds: string[], type: 'store'
     const { week: nextWeekNumber, year: nextYear } = getISOWeekNumber(nextWeekDate);
 
     try {
+        console.log('[notifyScheduleReminders] Input:', { entityIds, type, nextWeek: { year: nextYear, week: nextWeekNumber } });
+
         if (type === 'store') {
+            // "entityIds" could be Store IDs OR StoreDepartment IDs (if HR is alerting managers about specific missing depts)
+            // We need to resolve the target Store IDs first.
+            let targetStoreIds = [...entityIds];
+
+            // Check if any of these are actually StoreDepartments
+            const { StoreDepartment } = await import("@/lib/models");
+            const possibleDepts = await StoreDepartment.find({ _id: { $in: entityIds } }).select('storeId');
+            console.log('[notifyScheduleReminders] Found departments:', possibleDepts.length);
+
+            if (possibleDepts.length > 0) {
+                const deptStoreIds = possibleDepts.map((d: any) => d.storeId.toString());
+                targetStoreIds = [...new Set([...targetStoreIds, ...deptStoreIds])];
+            }
+
             const managers = await Employee.find({
-                storeId: { $in: entityIds },
-                roles: { $in: ['store_manager', 'Store Manager', 'store_manager'.replace('_', ' ')] }, // robust check
-                active: { $ne: false } // Handle active undefined/true
+                storeId: { $in: targetStoreIds },
+                roles: {
+                    $in: [
+                        'store_manager',
+                        'Store Manager',
+                        'store_manager'.replace('_', ' '),
+                        'manager',
+                        'Manager'
+                    ]
+                },
+                active: { $ne: false }
             }).select('_id firstName lastName storeId');
 
             for (const manager of managers) {
-                // Check if schedule is PUBLISHED or APPROVED for NEXT week
-                const exists = await Schedule.findOne({
+                // Determine if we should alert THIS manager.
+                // We should alert if ANY of the entities intended for this store are still missing.
+
+                const managerStoreIdStr = manager.storeId.toString();
+
+                let shouldAlert = false;
+
+                // 1. Get all published/approved schedules for this store next week
+                const coveredSchedules = await Schedule.find({
                     storeId: manager.storeId,
                     year: nextYear,
                     weekNumber: nextWeekNumber,
                     status: { $in: ['published', 'approved'] }
-                });
+                }).select('storeDepartmentId');
 
-                // If NO published/approved schedule exists, send alert.
-                // (Even if draft exists, it is technically not "submitted", so we alert)
-                if (!exists) {
+                const coveredDeptIds = new Set(coveredSchedules.map(s => s.storeDepartmentId?.toString()));
+
+                // 2. Identify relevant missing entities for this manager's store
+                // If entityIds contains the StoreID itself -> Check if ALL departments are covered
+                if (entityIds.includes(managerStoreIdStr)) {
+                    // Get all active departments for this store
+                    const { StoreDepartment } = await import("@/lib/models");
+                    const allStoreDepts = await StoreDepartment.find({
+                        storeId: manager.storeId,
+                        active: { $ne: false }
+                    }).select('_id');
+
+                    // Check if any department is missing
+                    const missingDepts = allStoreDepts.filter(d => !coveredDeptIds.has(d._id.toString()));
+                    if (missingDepts.length > 0) shouldAlert = true;
+                } else {
+                    // Otherwise, entityIds contains Dept IDs.
+                    // We check if any of these Dept IDs belong to this store AND are missing.
+                    const relevantMissingIds = entityIds.filter(id => {
+                        return possibleDepts.some((pd: any) => pd._id.toString() === id && pd.storeId.toString() === managerStoreIdStr);
+                    });
+
+                    if (relevantMissingIds.length > 0) {
+                        // If any relevant dept is NOT in coveredDeptIds, we alert.
+                        const stillMissingCount = relevantMissingIds.filter(id => !coveredDeptIds.has(id)).length;
+                        if (stillMissingCount > 0) shouldAlert = true;
+                    }
+                }
+
+                if (shouldAlert) {
                     await triggerNotification({
                         title: "Urgent: Schedule Submission Overdue",
                         message: `Schedule for Next Week (Week ${nextWeekNumber}) is overdue. Please publish it immediately.`,

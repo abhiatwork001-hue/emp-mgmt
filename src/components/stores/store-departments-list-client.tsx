@@ -39,7 +39,7 @@ export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeI
     // Let's add imports first.
 
     return (
-        <Card className="bg-[#1e293b] border-none text-white">
+        <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle className="text-lg">Departments</CardTitle>
@@ -52,7 +52,7 @@ export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeI
                         <Button
                             variant={isEditing ? "secondary" : "outline"}
                             size="sm"
-                            className="border-zinc-700 hover:bg-zinc-800"
+                            className="border-border hover:bg-accent"
                             onClick={() => setIsEditing(!isEditing)}
                         >
                             {isEditing ? "Done Editing" : "Manage Depts"}
@@ -66,17 +66,17 @@ export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeI
                 ) : (
                     <div className="space-y-4">
                         {storeDepartments.map((dept: any) => (
-                            <div key={dept._id} className="flex items-center justify-between rounded-lg border border-zinc-700/50 p-4 hover:bg-zinc-800 transition group">
+                            <div key={dept._id} className="flex items-center justify-between rounded-lg border border-border p-4 hover:bg-accent transition group">
                                 <Link
                                     href={`/dashboard/stores/${storeSlug}/departments/${dept.slug}`}
                                     className="flex-1"
                                 >
                                     <div className="flex items-center gap-4">
-                                        <div className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center">
+                                        <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center">
                                             <Building2 className="h-5 w-5 text-zinc-400" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-white group-hover:text-zinc-200">{dept.name}</p>
+                                            <p className="font-medium group-hover:text-muted-foreground">{dept.name}</p>
                                             <p className="text-sm text-zinc-500">{dept.globalDepartmentId?.description || "No description available"}</p>
                                         </div>
                                     </div>
@@ -84,10 +84,10 @@ export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeI
                                         {/* Display Department Head(s) if available */}
                                         {dept.headOfDepartment && dept.headOfDepartment.length > 0 ? (
                                             <div className="flex items-center gap-1">
-                                                <span className="text-xs font-bold bg-zinc-800 px-1 rounded text-zinc-400">HD</span>
+                                                <span className="text-xs font-bold bg-muted px-1 rounded text-muted-foreground">HD</span>
                                                 <div className="flex -space-x-2">
                                                     {dept.headOfDepartment.map((head: any) => (
-                                                        <div key={`${dept._id}-head-${head._id}`} className="h-5 w-5 rounded-full bg-zinc-700 border border-zinc-900 flex items-center justify-center overflow-hidden" title={`${head.firstName} ${head.lastName}`}>
+                                                        <div key={`${dept._id}-head-${head._id}`} className="h-5 w-5 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden" title={`${head.firstName} ${head.lastName}`}>
                                                             {head.image ? (
                                                                 <img src={head.image} alt={head.firstName} className="h-full w-full object-cover" />
                                                             ) : (
@@ -99,7 +99,7 @@ export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeI
                                             </div>
                                         ) : (
                                             <div className="flex items-center gap-1 opacity-50">
-                                                <span className="text-xs font-bold bg-zinc-800 px-1 rounded text-zinc-400">HD</span>
+                                                <span className="text-xs font-bold bg-muted px-1 rounded text-muted-foreground">HD</span>
                                                 <span className="text-sm text-zinc-500">Unassigned</span>
                                             </div>
                                         )}
@@ -126,17 +126,17 @@ export function StoreDepartmentsListClient({ storeDepartments, storeSlug, storeI
             </CardContent>
 
             <AlertDialog open={!!deptToRemove} onOpenChange={(open) => !open && setDeptToRemove(null)}>
-                <AlertDialogContent className="bg-[#1e293b] text-white border-zinc-700">
+                <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Remove {deptToRemove?.name}?</AlertDialogTitle>
-                        <AlertDialogDescription className="text-zinc-400">
+                        <AlertDialogDescription>
                             This will remove the department from this store.
                             Employees will be unassigned and pending coverage requests cancelled.
                             This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-transparent border-zinc-700 hover:bg-zinc-800 text-white">Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             className="bg-red-600 hover:bg-red-700 text-white"
                             disabled={isRemoving}

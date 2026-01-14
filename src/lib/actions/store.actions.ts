@@ -1,13 +1,14 @@
 "use server";
 
-import dbConnect from "@/lib/db";
-import { Store, IStore, Company } from "@/lib/models";
+import { Store, IStore, Company, Employee, StoreDepartment, Position, ShiftCoverageRequest } from "@/lib/models";
 import { revalidatePath } from "next/cache";
+import { Types } from "mongoose";
 import { logAction } from "./log.actions";
 import { pusherServer } from "../pusher";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
+import dbConnect from "@/lib/db";
 
 // --- Types ---
 // Helper type for Create/Update payloads
@@ -21,7 +22,7 @@ type StoreData = Partial<IStore>;
 export async function getAllStores() {
     await dbConnect();
     // Only return active stores by default
-    const stores = await Store.find({ active: true }).select("name address translations").lean();
+    const stores = await Store.find({ active: true }).select("name address translations managers").lean();
     return JSON.parse(JSON.stringify(stores));
 }
 
@@ -51,34 +52,17 @@ export async function getAllStoresWithStats() {
                 as: "employees_list"
             }
         },
-        // Lookup manager details (assuming managers[0] is the main manager)
-        {
-            $lookup: {
-                from: "employees",
-                let: { managerId: { $arrayElemAt: ["$managers", 0] } },
-                pipeline: [
-                    { $match: { $expr: { $eq: ["$_id", "$$managerId"] } } },
-                    { $project: { firstName: 1, lastName: 1, email: 1 } }
-                ],
-                as: "managerDetails"
-            }
-        },
-        {
-            $addFields: {
-                employeeCount: { $size: { $ifNull: ["$employees_list", []] } },
-                departmentCount: { $size: { $ifNull: ["$departments_list", []] } },
-                manager: { $arrayElemAt: ["$managerDetails", 0] }
-            }
-        },
         {
             $project: {
-                departments_list: 0,
-                employees_list: 0,
-                managerDetails: 0
+                name: 1,
+                address: 1,
+                active: 1,
+                departmentsCount: { $size: "$departments_list" },
+                employeesCount: { $size: "$employees_list" }
             }
-        }
+        },
+        { $sort: { active: -1, name: 1 } }
     ]);
-
     return JSON.parse(JSON.stringify(stores));
 }
 
@@ -96,7 +80,14 @@ export async function getStoresWithDepartments() {
                 foreignField: "storeId",
                 as: "departments"
             }
-        }
+        },
+        {
+            $project: {
+                name: 1,
+                departments: { _id: 1, name: 1 }
+            }
+        },
+        { $sort: { name: 1 } }
     ]);
     return JSON.parse(JSON.stringify(stores));
 }
@@ -105,536 +96,265 @@ export async function getStoresWithDepartments() {
  * Get departments for a specific store
  */
 export async function getStoreDepartments(storeId: string) {
-    console.log("Fetching departments for store:", storeId);
-    try {
-        await dbConnect();
-        const { StoreDepartment } = require("@/lib/models");
-        const departments = await StoreDepartment.find({ storeId }).select("name").lean();
-        console.log(`Found ${departments.length} departments`);
-        return JSON.parse(JSON.stringify(departments));
-    } catch (error) {
-        console.error("Error fetching store departments:", error);
-        return [];
-    }
+    if (!storeId) return [];
+    await dbConnect();
+    const departments = await StoreDepartment.find({ storeId, active: true }).select("name").lean();
+    return JSON.parse(JSON.stringify(departments));
 }
 
-/**
- * Get single store by ID
- */
 export async function getStoreById(storeId: string) {
     await dbConnect();
-    const { Employee } = require("@/lib/models");
-
-    const store = await Store.findById(storeId)
-        .populate({
-            path: "managers",
-            select: "firstName lastName email image positionId",
-            populate: { path: "positionId", select: "name" }
-        })
-        .populate({
-            path: "subManagers",
-            select: "firstName lastName email image positionId",
-            populate: { path: "positionId", select: "name" }
-        })
-        .lean();
-
+    const store = await Store.findById(storeId).populate("managers", "firstName lastName image email").lean();
     if (!store) return null;
-    return JSON.parse(JSON.stringify(store));
+
+    // Get departments
+    // Get departments
+    const departments = await StoreDepartment.find({ storeId: store._id, active: true }).lean();
+
+    return JSON.parse(JSON.stringify({ ...store, departments }));
 }
 
 export async function getStoreBySlug(slug: string) {
     await dbConnect();
-    const { Employee } = require("@/lib/models");
-    const mongoose = require("mongoose");
-
-    let query: any = { slug };
-
-    // If it looks like an ObjectId, allow finding by ID as fallback/alternative
-    if (mongoose.Types.ObjectId.isValid(slug)) {
-        query = { $or: [{ slug }, { _id: slug }] };
-    }
-
-    const store = await Store.findOne(query)
-        .populate({
-            path: "managers",
-            select: "firstName lastName email image positionId",
-            populate: { path: "positionId", select: "name" }
-        })
-        .populate({
-            path: "subManagers",
-            select: "firstName lastName email image positionId",
-            populate: { path: "positionId", select: "name" }
-        })
-        .populate({
-            path: "departments",
-            select: "name _id"
-        })
-        .lean();
-
+    const store = await Store.findOne({ slug }).populate("managers", "firstName lastName image email").lean();
     if (!store) return null;
-    return JSON.parse(JSON.stringify(store));
+
+    // Get departments
+    // Get departments
+    const departments = await StoreDepartment.find({ storeId: store._id, active: true }).populate("headOfDepartment", "firstName lastName image").lean();
+
+    return JSON.parse(JSON.stringify({ ...store, departments }));
 }
 
-/**
- * Create a new store
- */
 export async function createStore(data: StoreData) {
-    await dbConnect();
+    try {
+        await dbConnect();
+        const session = await getServerSession(authOptions);
 
-    // Automatically assign the first company found
-    const company = await Company.findOne();
-    if (!company) {
-        throw new Error("No company found in database. Cannot create store without a company.");
-    }
-
-    if (data.name) {
-        data.slug = slugify(data.name);
-        // Ensure uniqueness
-        let count = 1;
-        let finalSlug = data.slug;
-        while (await Store.findOne({ slug: finalSlug })) {
-            finalSlug = `${data.slug}-${count++}`;
+        if (data.name) {
+            data.slug = slugify(data.name);
         }
-        data.slug = finalSlug;
-    }
 
-    const newStore = await Store.create({
-        ...data,
-        companyId: company._id,
-        active: true // Ensure new stores are active by default
-    });
+        const newStore = await Store.create(data);
 
-    // Link store to company
-    await Company.findByIdAndUpdate(company._id, {
-        $push: { branches: newStore._id }
-    });
-
-    revalidatePath("/dashboard/stores");
-
-    const session = await getServerSession(authOptions);
-    if (session?.user) {
         await logAction({
-            action: 'CREATE_STORE',
-            performedBy: (session.user as any).id,
+            action: 'create',
+            performedBy: session?.user?.id || 'system',
             storeId: newStore._id.toString(),
             targetId: newStore._id,
-            targetModel: 'Store',
-            details: { name: newStore.name }
+            targetModel: 'store',
+            details: { data, message: `Created store: ${newStore.name}` }
         });
+
+        revalidatePath("/dashboard/stores");
+        revalidatePath("/dashboard/stores");
+        return JSON.parse(JSON.stringify(newStore));
+    } catch (e) {
+        throw e;
     }
-
-    await pusherServer.trigger("global", "store:updated", {
-        storeId: newStore._id,
-        status: 'created'
-    });
-
-    return JSON.parse(JSON.stringify(newStore));
 }
 
-/**
- * Update a store
- */
 export async function updateStore(storeId: string, data: StoreData) {
-    await dbConnect();
-    if (data.name) {
-        data.slug = slugify(data.name);
-    }
-    const updatedStore = await Store.findByIdAndUpdate(storeId, data, { new: true }).lean();
-
-    revalidatePath("/dashboard/stores");
-    if (updatedStore) {
-        revalidatePath(`/dashboard/stores/${updatedStore.slug}`);
-
+    try {
+        await dbConnect();
         const session = await getServerSession(authOptions);
-        if (session?.user) {
-            await logAction({
-                action: 'UPDATE_STORE',
-                performedBy: (session.user as any).id,
-                storeId: storeId,
-                targetId: storeId,
-                targetModel: 'Store'
-            });
+
+        if (data.name) {
+            data.slug = slugify(data.name);
         }
-    }
 
-    await pusherServer.trigger("global", "store:updated", {
-        storeId: storeId,
-        status: 'updated'
-    });
+        const updatedStore = await Store.findByIdAndUpdate(storeId, data, { new: true });
 
-    return JSON.parse(JSON.stringify(updatedStore));
-}
-
-/**
- * Archive (Soft Delete) a store
- */
-export async function archiveStore(storeId: string) {
-    await dbConnect();
-
-    const archivedStore = await Store.findByIdAndUpdate(
-        storeId,
-        {
-            active: false,
-            archivedAt: new Date()
-        },
-        { new: true }
-    ).lean();
-
-    revalidatePath("/dashboard/stores");
-    if (archivedStore) {
-        revalidatePath(`/dashboard/stores/${archivedStore.slug}`);
-    }
-
-    const session = await getServerSession(authOptions);
-    if (session?.user) {
         await logAction({
-            action: 'ARCHIVE_STORE',
-            performedBy: (session.user as any).id,
+            action: 'update',
+            performedBy: session?.user?.id || 'system',
             storeId: storeId,
             targetId: storeId,
-            targetModel: 'Store'
+            targetModel: 'store',
+            details: { data, message: `Updated store: ${updatedStore.name}` }
         });
+
+        revalidatePath("/dashboard/stores");
+        revalidatePath(`/dashboard/stores/${updatedStore.slug}`);
+        return JSON.parse(JSON.stringify(updatedStore));
+    } catch (e) {
+        throw e;
     }
-
-    await pusherServer.trigger("global", "store:updated", {
-        storeId: storeId,
-        status: 'archived'
-    });
-
-    return JSON.parse(JSON.stringify(archivedStore));
 }
 
-/**
- * Get available manager candidates (both store and global employees)
- */
+export async function archiveStore(storeId: string) {
+    try {
+        await dbConnect();
+        const session = await getServerSession(authOptions);
+
+        await Store.findByIdAndUpdate(storeId, { active: false });
+
+        await logAction({
+            action: 'archive',
+            performedBy: session?.user?.id || 'system',
+            storeId: storeId,
+            targetId: storeId,
+            targetModel: 'store',
+            details: { message: `Archived store` }
+        });
+
+        revalidatePath("/dashboard/stores");
+        return { success: true, message: "Store archived successfully" };
+    } catch (e) {
+        throw e;
+    }
+}
+
 export async function getAvailableManagerCandidates(storeId: string) {
     await dbConnect();
-    const { Employee } = require("@/lib/models");
+    // Get all employees who are NOT currently managers of this store? 
+    // Actually typically we want a list of employees to search from.
+    // For now, return all active employees in this store OR global employees (managers can be from anywhere)
+    // For now, return all active employees in this store OR global employees (managers can be from anywhere)
+    // Let's just return all employees for autocomplete.
 
-    const store = await Store.findById(storeId).select("managers subManagers").lean();
-    if (!store) throw new Error("Store not found");
+    // Maybe filter out those who are ALREADY managers of this store
+    const store = await Store.findById(storeId).select('managers');
+    const managerIds = store?.managers || [];
 
-    // Get IDs to exclude (current managers + subManagers)
-    const excludeIds = [
-        ...(store.managers || []),
-        ...(store.subManagers || [])
-    ].map(id => id.toString());
-
-    // Store Employees: Employees already in this store
-    const storeEmployees = await Employee.find({
-        storeId,
+    const candidates = await Employee.find({
         active: true,
-        _id: { $nin: excludeIds }
+        _id: { $nin: managerIds }
     })
         .select("firstName lastName email image positionId")
         .populate("positionId", "name")
+        .limit(20)
         .lean();
 
-    // Global Employees: Employees not in any store or in different stores
-    const globalEmployees = await Employee.find({
-        $or: [
-            { storeId: { $exists: false } },
-            { storeId: null },
-            { storeId: { $ne: storeId } }
-        ],
-        active: true,
-        _id: { $nin: excludeIds }
-    })
-        .select("firstName lastName email image positionId storeId")
-        .populate("positionId", "name")
-        .populate("storeId", "name")
-        .lean();
-
-    return {
-        storeEmployees: JSON.parse(JSON.stringify(storeEmployees)),
-        globalEmployees: JSON.parse(JSON.stringify(globalEmployees))
-    };
+    return JSON.parse(JSON.stringify(candidates));
 }
 
-/**
- * Helper: Find or create "Store Manager" position
- */
-async function getOrCreateStoreManagerPosition() {
-    const { Position } = require("@/lib/models");
-
-    let position = await Position.findOne({ name: "Store Manager", active: true });
-
-    if (!position) {
-        position = await Position.create({
-            name: "Store Manager",
-            level: 8,
-            permissions: [], // Permissions come from roles
-            isStoreSpecific: false,
-            active: true
-        });
-    }
-
-    return position;
-}
-
-/**
- * Assign employee as store manager or sub-manager
- */
-export async function assignStoreManager(
-    storeId: string,
-    employeeId: string,
-    isSubManager: boolean = false,
-    assignedBy?: string
-) {
+export async function getOrCreateStoreManagerPosition() {
     await dbConnect();
-    const { Employee } = require("@/lib/models");
-
-    const employee = await Employee.findById(employeeId);
-    if (!employee) throw new Error("Employee not found");
-
-    const store = await Store.findById(storeId);
-    if (!store) throw new Error("Store not found");
-
-    // 1. If employee not in this store, assign them first
-    if (!employee.storeId || employee.storeId.toString() !== storeId) {
-        // Add to store
-        employee.storeId = storeId;
-
-        // Add to storeHistory
-        if (!employee.storeHistory) employee.storeHistory = [];
-        employee.storeHistory.push({
-            storeId,
-            from: new Date()
-        });
-
-        // Add to store.employees array
-        await Store.findByIdAndUpdate(storeId, {
-            $addToSet: { employees: employeeId }
+    let pos = await Position.findOne({ slug: 'store-manager' });
+    if (!pos) {
+        pos = await Position.create({
+            name: "Store Manager",
+            slug: "store-manager",
+            level: 10,
+            roles: ["store_manager"],
+            description: "System generated role for Store Managers"
         });
     }
+    return pos;
+}
 
-    // 2. Add manager role if not present
-    if (!employee.roles) employee.roles = [];
-    if (!employee.roles.includes("manager")) {
-        employee.roles.push("manager");
-    }
+export async function assignStoreManager(storeId: string, employeeId: string, isSubManager: boolean = false, assignedBy?: string) {
+    await dbConnect();
 
-    // 3. Get/Create Store Manager position
-    const managerPosition = await getOrCreateStoreManagerPosition();
+    // 1. Add to Store.managers
+    const store = await Store.findByIdAndUpdate(storeId, {
+        $addToSet: { managers: employeeId }
+    }, { new: true });
 
-    // 4. Close previous position history if exists
-    if (employee.positionHistory && employee.positionHistory.length > 0) {
-        const lastHistory = employee.positionHistory[employee.positionHistory.length - 1];
-        if (!lastHistory.to) {
-            lastHistory.to = new Date();
-        }
-    }
+    // 2. Add 'store_manager' role to employee if not present? 
+    // Ideally we should assign them the "Store Manager" Position or add the Role to their current position?
+    // A simpler way: Add "Store Manager" as a secondary position or just ensure they have the role.
+    // Our system supports `positions` array (multiple positions).
 
-    // 5. Update position and add to history
-    employee.positionId = managerPosition._id;
-    if (!employee.positionHistory) employee.positionHistory = [];
-    employee.positionHistory.push({
-        positionId: managerPosition._id,
-        storeId,
-        from: new Date(),
-        assignedBy: assignedBy || undefined,
-        reason: isSubManager ? "Assigned as Sub-Manager" : "Assigned as Store Manager"
+    // Let's get "Store Manager" position
+    const managerPos = await getOrCreateStoreManagerPosition();
+
+    await Employee.findByIdAndUpdate(employeeId, {
+        $addToSet: { positions: managerPos._id }
     });
 
-    await employee.save();
+    // Notify
+    // ...
 
-    // 6. Add to store.managers or store.subManagers
-    const updateField = isSubManager ? "subManagers" : "managers";
-    await Store.findByIdAndUpdate(storeId, {
-        $addToSet: { [updateField]: employeeId }
-    });
-
-    const session = await getServerSession(authOptions);
     await logAction({
-        action: isSubManager ? 'ASSIGN_SUB_MANAGER' : 'ASSIGN_MANAGER',
-        performedBy: assignedBy || (session?.user as any)?.id || 'SYSTEM',
-        storeId,
-        targetId: employeeId,
-        targetModel: 'Employee',
-        details: { storeId }
+        action: 'assign_manager',
+        performedBy: assignedBy || 'system',
+        storeId: storeId,
+        targetId: storeId,
+        targetModel: 'store',
+        details: { employeeId, message: `Assigned manager ${employeeId} to store ${store.name}` }
     });
 
     revalidatePath(`/dashboard/stores/${store.slug}`);
-    return { success: true };
+    revalidatePath(`/dashboard/employees/${employeeId}`); // Revalidate employee profile
+    return { success: true, message: "Manager assigned successfully" };
 }
 
-/**
- * Remove employee from store manager/sub-manager role
- */
-export async function removeStoreManager(storeId: string, employeeId: string, isSubManager: boolean = false) {
+export async function removeStoreManager(storeId: string, employeeId: string, _isSubManager: boolean = false) {
     await dbConnect();
-    const { Employee } = require("@/lib/models");
 
-    // 1. Remove from store.managers or store.subManagers
-    const updateField = isSubManager ? "subManagers" : "managers";
     await Store.findByIdAndUpdate(storeId, {
-        $pull: { [updateField]: employeeId }
+        $pull: { managers: employeeId }
     });
 
-    // 2. Check if employee is still a manager in ANY store
-    const stores = await Store.find({
-        $or: [
-            { managers: employeeId },
-            { subManagers: employeeId }
-        ]
-    });
-
-    // 3. If not a manager anywhere, remove "manager" role and close position
-    if (stores.length === 0) {
-        // Fetch employee first to get current state (including positionId)
-        const employee = await Employee.findById(employeeId);
-
-        if (employee) {
-            // Remove "manager" role
-            if (employee.roles && employee.roles.includes("manager")) {
-                employee.roles = employee.roles.filter((r: string) => r !== "manager");
-            }
-
-            // Close Position History
-            // We do this BEFORE unsetting positionId so we implicitly know this history entry is ending now.
-            if (employee.positionHistory && employee.positionHistory.length > 0) {
-                const lastHistory = employee.positionHistory[employee.positionHistory.length - 1];
-                if (!lastHistory.to) {
-                    lastHistory.to = new Date();
-                    // Explicitly mark array as modified if needed, though direct obj mod usually tracks in Mongoose
-                }
-            }
-
-            // Unset Position
-            employee.positionId = undefined;
-
-            await employee.save();
-        }
+    // We might want to remove the Position "Store Manager" from the employee if they don't manage any other stores?
+    // Check if they manage other stores
+    const otherStores = await Store.countDocuments({ managers: employeeId });
+    if (otherStores === 0) {
+        const managerPos = await getOrCreateStoreManagerPosition();
+        await Employee.findByIdAndUpdate(employeeId, {
+            $pull: { positions: managerPos._id }
+        });
     }
 
-    revalidatePath(`/dashboard/stores/${storeId}`);
-    revalidatePath(`/dashboard/employees/${employeeId}`);
-    return { success: true };
+    revalidatePath(`/dashboard/stores`);
+    return { success: true, message: "Manager removed successfully" };
 }
 
-/**
- * Remove a StoreDepartment from a Store
- * This will:
- * - Unassign all employees from the department (set storeDepartmentId to null)
- * - Cancel pending coverage requests for the department
- * - Remove department from store's departments array
- * - Delete the StoreDepartment document
- */
-export async function removeStoreDepartment(
-    storeId: string,
-    storeDepartmentId: string
-) {
+export async function removeStoreDepartment(storeId: string, storeDepartmentId: string) {
     await dbConnect();
 
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-        throw new Error("Unauthorized");
-    }
+    // 1. Verify existence
+    const dept = await StoreDepartment.findOne({ _id: storeDepartmentId, storeId });
+    if (!dept) throw new Error("Department not found in this store");
 
-    // 1. Verify department exists and belongs to this store
-    const { StoreDepartment } = await import("@/lib/models");
-    const storeDept = await StoreDepartment.findById(storeDepartmentId).lean();
+    // 2. Get impact for internal log
+    // const employeesCount = await Employee.countDocuments({ storeDepartmentId });
 
-    if (!storeDept) {
-        throw new Error("Department not found");
-    }
-
-    if (storeDept.storeId.toString() !== storeId) {
-        throw new Error("Department does not belong to this store");
-    }
-
-    // 2. Get affected employees count
-    const { Employee } = await import("@/lib/models");
-    const affectedEmployees = await Employee.find({
-        storeDepartmentId
-    }).select("_id firstName lastName").lean();
-
-    // 3. Update employees - set storeDepartmentId to null
+    // 4. Update Employees: Set storeDepartmentId to null
     await Employee.updateMany(
         { storeDepartmentId },
-        { $set: { storeDepartmentId: null } }
+        { $unset: { storeDepartmentId: "" } }
     );
 
-    // 4. Cancel pending coverage requests (if coverage model exists)
-    try {
-        const { ShiftCoverageRequest } = await import("@/lib/models");
-        await ShiftCoverageRequest.updateMany(
-            {
-                storeDepartmentId,
-                status: "pending"
-            },
-            { $set: { status: "cancelled", cancelledAt: new Date() } }
-        );
-    } catch (error) {
-        // Coverage model might not exist, continue
-        console.log("Coverage requests not updated:", error);
-    }
+    // 5. Delete Department
+    await StoreDepartment.deleteOne({ _id: storeDepartmentId });
 
-    // 5. Remove department from store's departments array
-    // Virtual field, no need to pull.
-
-    // 6. Delete the StoreDepartment
-    await StoreDepartment.findByIdAndDelete(storeDepartmentId);
-
-    // 7. Log the action
-    await logAction({
-        performedBy: session.user.id,
-        action: "delete_store_department",
-        targetModel: "store_department",
-        targetId: storeDepartmentId,
-        details: {
-            storeId,
-            departmentName: storeDept.name,
-            affectedEmployeesCount: affectedEmployees.length
-        }
-    });
-
-    // 8. Get store for revalidation
-    const store = await Store.findById(storeId).select("slug").lean();
-
-    // 9. Revalidate paths
-    revalidatePath("/dashboard/stores");
-    if (store?.slug) {
-        revalidatePath(`/dashboard/stores/${store.slug}`);
-        revalidatePath(`/dashboard/stores/${store.slug}/edit`);
-    }
-
-    return {
-        success: true,
-        affectedEmployees: affectedEmployees.length,
-        employeeNames: affectedEmployees.map((e: any) => `${e.firstName} ${e.lastName}`),
-        message: `Department "${storeDept.name}" removed successfully. ${affectedEmployees.length} employees unassigned.`
-    };
+    revalidatePath(`/dashboard/stores`);
+    return { success: true, message: "Department removed successfully" };
 }
 
-/**
- * Get count of employees and pending coverage requests for a department
- * Used before deletion to show confirmation dialog
- */
 export async function getStoreDepartmentImpact(storeDepartmentId: string) {
     await dbConnect();
 
-    const { Employee, StoreDepartment } = await import("@/lib/models");
+    const employees = await Employee.countDocuments({ storeDepartmentId });
+    const pendingRequests = await ShiftCoverageRequest.countDocuments({
+        "originalShift.storeDepartmentId": storeDepartmentId,
+        status: { $in: ['seeking_coverage', 'pending_hr'] }
+    });
 
-    const [employeeCount, department] = await Promise.all([
-        Employee.countDocuments({ storeDepartmentId }),
-        StoreDepartment.findById(storeDepartmentId).select("name").lean()
-    ]);
+    return { employeeCount: employees, pendingCoverageCount: pendingRequests };
+}
 
-    let pendingCoverageCount = 0;
-    try {
-        const { ShiftCoverageRequest } = await import("@/lib/models");
-        pendingCoverageCount = await ShiftCoverageRequest.countDocuments({
-            storeDepartmentId,
-            status: "pending"
-        });
-    } catch (error) {
-        // Coverage model might not exist
-    }
+/**
+ * Get the store ID that the user manages.
+ * Returns the first active store where the user is listed as a manager.
+ */
+export async function getStoreManagedByUser(userId: string | any) {
+    await dbConnect();
 
-    return {
-        departmentName: department?.name || "Unknown",
-        employeeCount,
-        pendingCoverageCount
-    };
+    // Ensure we ignore invalid IDs
+    if (!userId) return null;
+
+    // Try finding where user is manager
+    // Ensure we handle both string and ObjectId formats
+    const targetId = typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
+
+    const store = await Store.findOne({
+        managers: { $in: [userId, targetId] },
+        active: true
+    }).select("_id").lean();
+
+    return store ? (store._id as any).toString() : null;
 }

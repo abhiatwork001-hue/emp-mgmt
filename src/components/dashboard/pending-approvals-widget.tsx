@@ -82,8 +82,10 @@ function DetailsDialog({ item, open, onOpenChange, canApprove, onApprove, onReje
         if (item) {
             setEditData({
                 hours: item.raw?.hoursRequested,
-                reason: item.raw?.reason || "",
-                // Add others as needed
+                reason: item.raw?.reason || item.raw?.comments || "",
+                requestedFrom: item.raw?.requestedFrom,
+                requestedTo: item.raw?.requestedTo,
+                date: item.raw?.date,
             });
             setEditMode(false);
         }
@@ -135,58 +137,105 @@ function DetailsDialog({ item, open, onOpenChange, canApprove, onApprove, onReje
                                 )}
                             </div>
                         )}
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label className="text-muted-foreground text-xs uppercase">Reason / Details</Label>
-                        {editMode ? (
-                            <Textarea
-                                value={editData.reason}
-                                onChange={e => setEditData({ ...editData, reason: e.target.value })}
-                            />
-                        ) : (
-                            <div className="p-3 rounded-lg bg-muted/30 text-sm">
-                                {item.raw?.reason || item.details || "No details provided."}
+                    
+                    {item.type === 'vacation' && (
+                        <>
+                            <div>
+                                <Label className="text-muted-foreground text-xs uppercase">From</Label>
+                                {editMode ? (
+                                    <Input
+                                        type="date"
+                                        value={editData.requestedFrom ? new Date(editData.requestedFrom).toISOString().split('T')[0] : ''}
+                                        onChange={e => setEditData({ ...editData, requestedFrom: new Date(e.target.value) })}
+                                        className="h-8"
+                                    />
+                                ) : (
+                                    <div className="font-medium">{item.raw?.requestedFrom ? format(new Date(item.raw.requestedFrom), "PPP") : 'N/A'}</div>
+                                )}
                             </div>
-                        )}
-                    </div>
-                </div>
-
-                <DialogFooter className="flex gap-2 justify-end">
-                    {canApprove ? (
-                        <>
-                            <Button variant="destructive" onClick={() => onReject(item.id, item.type)} disabled={isProcessing}>
-                                Reject
-                            </Button>
-                            <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => onApprove(item.id, item.type)} disabled={isProcessing}>
-                                Approve
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            {/* Actions for the Requestor (Edit/Cancel) */}
-                            {editMode ? (
-                                <>
-                                    <Button variant="ghost" onClick={() => setEditMode(false)}>Cancel Edit</Button>
-                                    <Button onClick={() => onSaveEdit(item.id, item.type, editData)} disabled={isProcessing}>Save Changes</Button>
-                                </>
-                            ) : (
-                                <>
-                                    <Button variant="destructive" onClick={() => onCancel(item.id, item.type)} disabled={isProcessing}>
-                                        Cancel Request
-                                    </Button>
-                                    {item.type === 'overtime' && (
-                                        <Button variant="outline" onClick={() => setEditMode(true)} disabled={isProcessing}>
-                                            Edit Request
-                                        </Button>
-                                    )}
-                                </>
-                            )}
+                            <div>
+                                <Label className="text-muted-foreground text-xs uppercase">To</Label>
+                                {editMode ? (
+                                    <Input
+                                        type="date"
+                                        value={editData.requestedTo ? new Date(editData.requestedTo).toISOString().split('T')[0] : ''}
+                                        onChange={e => setEditData({ ...editData, requestedTo: new Date(e.target.value) })}
+                                        className="h-8"
+                                    />
+                                ) : (
+                                    <div className="font-medium">{item.raw?.requestedTo ? format(new Date(item.raw.requestedTo), "PPP") : 'N/A'}</div>
+                                )}
+                            </div>
                         </>
                     )}
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                    {item.type === 'absence' && (
+                        <div>
+                            <Label className="text-muted-foreground text-xs uppercase">Absence Date</Label>
+                            {editMode ? (
+                                <Input
+                                    type="date"
+                                    value={editData.date ? new Date(editData.date).toISOString().split('T')[0] : ''}
+                                    onChange={e => setEditData({ ...editData, date: new Date(e.target.value) })}
+                                    className="h-8"
+                                />
+                            ) : (
+                                <div className="font-medium">{item.raw?.date ? format(new Date(item.raw.date), "PPP") : 'N/A'}</div>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-2">
+                    <Label className="text-muted-foreground text-xs uppercase">Reason / Details</Label>
+                    {editMode ? (
+                        <Textarea
+                            value={editData.reason}
+                            onChange={e => setEditData({ ...editData, reason: e.target.value })}
+                        />
+                    ) : (
+                        <div className="p-3 rounded-lg bg-muted/30 text-sm">
+                            {item.raw?.reason || item.details || "No details provided."}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+
+            <DialogFooter className="flex gap-2 justify-end">
+                {canApprove ? (
+                    <>
+                        <Button variant="destructive" onClick={() => onReject(item.id, item.type)} disabled={isProcessing}>
+                            Reject
+                        </Button>
+                        <Button className="bg-emerald-600 hover:bg-emerald-700" onClick={() => onApprove(item.id, item.type)} disabled={isProcessing}>
+                            Approve
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        {/* Actions for the Requestor (Edit/Cancel) */}
+                        {editMode ? (
+                            <>
+                                <Button variant="ghost" onClick={() => setEditMode(false)}>Cancel Edit</Button>
+                                <Button onClick={() => onSaveEdit(item.id, item.type, editData)} disabled={isProcessing}>Save Changes</Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button variant="destructive" onClick={() => onCancel(item.id, item.type)} disabled={isProcessing}>
+                                    Cancel Request
+                                </Button>
+                                {(item.type === 'overtime' || item.type === 'vacation' || item.type === 'absence') && (
+                                    <Button variant="outline" onClick={() => setEditMode(true)} disabled={isProcessing}>
+                                        Edit Request
+                                    </Button>
+                                )}
+                            </>
+                        )}
+                    </>
+                )}
+            </DialogFooter>
+        </DialogContent>
+        </Dialog >
     );
 }
 
@@ -391,6 +440,19 @@ export function PendingApprovalsWidget({ overtime, vacations, absences, schedule
         try {
             if (type === 'overtime') {
                 await editOvertimeRequest(id, userId, { hoursRequested: data.hours, reason: data.reason });
+            } else if (type === 'vacation') {
+                const { updateVacationRequest } = await import('@/lib/actions/vacation.actions');
+                await updateVacationRequest(id, userId, {
+                    requestedFrom: data.requestedFrom,
+                    requestedTo: data.requestedTo,
+                    comments: data.reason
+                });
+            } else if (type === 'absence') {
+                const { editAbsenceRequest } = await import('@/lib/actions/absence.actions');
+                await editAbsenceRequest(id, userId, {
+                    date: data.date,
+                    reason: data.reason
+                });
             }
             toast.success("Request updated");
             router.refresh();

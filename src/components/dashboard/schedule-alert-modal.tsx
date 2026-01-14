@@ -79,14 +79,14 @@ export function ScheduleAlertModal({ isOpen, onOpenChange, missingEntities, miss
                         <Button
                             onClick={handleNotify}
                             disabled={isNotifying}
-                            className="w-full sm:w-auto bg-slate-900 border-red-500/50 hover:bg-slate-800"
+                            className="w-full sm:w-auto bg-destructive border-destructive/50 hover:bg-destructive/90"
                         >
                             {isNotifying ? (
                                 "Sending..."
                             ) : (
                                 <>
                                     <Bell className="mr-2 h-4 w-4" />
-                                    Alert Managers
+                                    Alert {type === 'store' ? 'Store Managers' : 'Department Heads'}
                                 </>
                             )}
                         </Button>

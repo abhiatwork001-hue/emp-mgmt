@@ -31,7 +31,8 @@ export default async function DashboardPage(props: DashboardPageProps) {
     // Determine Role & Dashboard Type
     const allRoles = employee.roles || [];
 
-    const canSwitchRoles = allRoles.includes("tech");
+    // Allow switching if user has more than 1 role
+    const canSwitchRoles = allRoles.length > 1;
 
     // Check for role override
     const testRoleParam = canSwitchRoles && searchParams?.testRole;
@@ -87,6 +88,7 @@ export default async function DashboardPage(props: DashboardPageProps) {
                         stores={stores}
                         depts={depts}
                         localStoreDepartments={localStoreDepartments}
+                        allRoles={allRoles}
                         canSwitchRoles={canSwitchRoles}
                         weather={weather}
                     />

@@ -19,8 +19,8 @@ export default async function EvaluationsPage() {
     if (!employee) redirect("/login");
 
     const roles = employee.roles || [];
-    const isHR = roles.includes("hr") || roles.includes("admin") || roles.includes("owner") || roles.includes("tech");
-    const isManager = roles.includes("store_manager") || roles.includes("manager");
+    const isHR = roles.some((r: string) => ["hr", "admin", "owner", "tech", "super_user"].includes(r.toLowerCase().replace(/ /g, "_")));
+    const isManager = roles.some((r: string) => ["store_manager", "manager"].includes(r.toLowerCase().replace(/ /g, "_")));
 
     // Fetch HR data if applicable
     const allAssignments = isHR ? await getAllAssignments() : [];

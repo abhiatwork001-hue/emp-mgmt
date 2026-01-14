@@ -28,6 +28,8 @@ import { getEmployeeById } from "@/lib/actions/employee.actions";
 import { getAllStores } from "@/lib/actions/store.actions";
 import { getAllGlobalDepartments } from "@/lib/actions/department.actions";
 import { getAllAbsenceRequests } from "@/lib/actions/absence.actions";
+import { getVacationAnalytics } from "@/lib/actions/analytics/vacation-analytics.actions";
+import { VacationAnalytics } from "@/components/dashboard/vacations/vacation-analytics";
 
 export default async function VacationsPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {
     const { year } = await searchParams;
@@ -35,34 +37,70 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
     if (!session) redirect("/login");
 
     const employee = await getEmployeeById((session.user as any).id);
-    const roles = (employee?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
+    const rawRoles = (employee?.roles || []);
+    const roles = rawRoles.map((r: string) => r.toLowerCase().replace(/ /g, "_").replace(/manager/g, "_manager").replace(/head/g, "_head").replace(/__/g, "_"));
+
+    // Normalize commonly used checks
+    const hasRole = (r: string) => roles.some((role: string) => role.includes(r));
+
     const ALLOWED_ROLES = ["store_manager", "store_department_head", "department_head", "admin", "owner", "super_user", "hr", "tech"];
-    if (!roles.some((r: string) => ALLOWED_ROLES.includes(r))) {
+    if (!roles.some((r: string) => ALLOWED_ROLES.includes(r)) && !hasRole("manager")) {
         redirect("/dashboard");
     }
 
-    let storeIdFilter = undefined;
-    let deptIdFilter = undefined;
-    const isDeptHeadGlobal = roles.includes("department_head");
-    const isStoreLevel = roles.some((r: string) => ["store_manager", "store_department_head"].includes(r));
+    let storeIdFilter: any = undefined;
+    let deptIdFilter: any = undefined;
+
     const isGlobalLevel = roles.some((r: string) => ["admin", "owner", "super_user", "hr", "tech"].includes(r));
+    const isDeptHeadGlobal = roles.includes("department_head");
+    const isStoreLevel = roles.some((r: string) => ["store_manager", "store_department_head"].includes(r)) || hasRole("manager");
 
     if (!isGlobalLevel) {
+        const deptIds: string[] = [];
+
+        // 1. Department Head (Global) - leads specific global departments
         if (isDeptHeadGlobal) {
             const { GlobalDepartment, StoreDepartment } = await import("@/lib/models");
             const ledGlobalDepts = await GlobalDepartment.find({ departmentHead: employee._id }).select('_id');
             const ledGlobalDeptIds = ledGlobalDepts.map((d: any) => d._id);
-            const storeDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).select('_id');
-            deptIdFilter = { $in: storeDepts.map((sd: any) => sd._id.toString()) };
-        } else if (isStoreLevel) {
-            storeIdFilter = (employee.storeId?._id || employee.storeId)?.toString();
-            if (!storeIdFilter) storeIdFilter = "000000000000000000000000";
-
-            if (roles.includes("store_department_head")) {
-                deptIdFilter = (employee.storeDepartmentId?._id || employee.storeDepartmentId)?.toString();
-                if (!deptIdFilter) deptIdFilter = "000000000000000000000000";
+            if (ledGlobalDeptIds.length > 0) {
+                const storeDepts = await StoreDepartment.find({ globalDepartmentId: { $in: ledGlobalDeptIds } }).select('_id');
+                storeDepts.forEach((sd: any) => deptIds.push(sd._id.toString()));
             }
-        } else {
+        }
+
+        // 2. Store Level (Manager or Dept Head)
+        if (isStoreLevel) {
+            const currentStoreId = (employee.storeId?._id || employee.storeId)?.toString();
+
+            // If Store Manager, prioritize the store they actually manage
+            if (roles.includes("store_manager") || hasRole("manager")) {
+                const { getStoreManagedByUser } = await import("@/lib/actions/store.actions");
+                const managedStoreId = await getStoreManagedByUser(employee._id);
+                storeIdFilter = managedStoreId || currentStoreId;
+            } else {
+                storeIdFilter = currentStoreId;
+            }
+
+            // Store Department Head
+            if (roles.includes("store_department_head") && !roles.includes("store_manager") && !hasRole("manager")) {
+                const sdId = (employee.storeDepartmentId?._id || employee.storeDepartmentId)?.toString();
+                if (sdId) deptIds.push(sdId);
+            }
+        }
+
+        // Finalize filters
+        if (deptIds.length > 0) {
+            deptIdFilter = deptIds.length === 1 ? deptIds[0] : { $in: deptIds };
+        }
+
+        // Fallback for storeId if strictly store-level but somehow missing
+        if (isStoreLevel && !storeIdFilter) {
+            storeIdFilter = "000000000000000000000000";
+        }
+
+        // If they have NO filters set but are NOT global, they should see nothing (dummy)
+        if (!storeIdFilter && !deptIdFilter) {
             storeIdFilter = "000000000000000000000000";
         }
     }
@@ -71,15 +109,16 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
     const t = await getTranslations("Dashboard.vacations");
 
     // Parallel fetch for data
-    const [requests, stores, departments, absences] = await Promise.all([
+    const [requests, stores, departments, absences, analytics] = await Promise.all([
         getAllVacationRequests({ storeId: storeIdFilter, storeDepartmentId: deptIdFilter, year: currentYear }),
         getAllStores(),
         getAllGlobalDepartments(),
-        getAllAbsenceRequests({ storeId: storeIdFilter, storeDepartmentId: deptIdFilter, year: currentYear })
+        getAllAbsenceRequests({ storeId: storeIdFilter, storeDepartmentId: deptIdFilter, year: currentYear }),
+        getVacationAnalytics({ storeId: storeIdFilter, storeDepartmentId: deptIdFilter, year: currentYear })
     ]);
 
-    const pendingCount = requests.filter((r: any) => r.status === 'pending').length;
-    const approvedCount = requests.filter((r: any) => r.status === 'approved').length;
+    const pendingDays = requests.filter((r: any) => r.status === 'pending').reduce((acc: number, r: any) => acc + (r.totalDays || 0), 0);
+    const approvedDays = requests.filter((r: any) => r.status === 'approved').reduce((acc: number, r: any) => acc + (r.totalDays || 0), 0);
 
     const isGlobal = roles.some((r: string) => ["owner", "admin", "hr", "tech", "super_user"].includes(r));
 
@@ -101,33 +140,40 @@ export default async function VacationsPage({ searchParams }: { searchParams: Pr
             {isGlobal && <AdminRecordVacationDialog />}
 
             <div className="grid gap-4 md:grid-cols-3">
-                <Card className="bg-[#1e293b] border-none text-white">
+                <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">{t('pendingRequests')}</CardTitle>
                         <Clock className="h-4 w-4 text-yellow-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{pendingCount}</div>
+                        <div className="text-2xl font-bold">{pendingDays} <span className="text-sm font-normal text-muted-foreground ml-1">Days</span></div>
                     </CardContent>
                 </Card>
-                <Card className="bg-[#1e293b] border-none text-white">
+                <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">{t('approvedThisYear')}</CardTitle>
                         <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{approvedCount}</div>
+                        <div className="text-2xl font-bold">{approvedDays} <span className="text-sm font-normal text-muted-foreground ml-1">Days</span></div>
                     </CardContent>
                 </Card>
                 {/* Stats Card can be added here */}
             </div>
 
             <VacationRequestList
+                key={currentYear}
                 initialRequests={requests}
                 stores={stores}
                 departments={departments}
                 initialAbsences={absences}
+                year={currentYear}
             />
+
+            <div className="mt-8">
+                <h2 className="text-xl font-bold tracking-tight mb-4">{t('analyticsTitle') || "Analytics & Trends"}</h2>
+                <VacationAnalytics data={analytics} />
+            </div>
         </div>
     );
 }

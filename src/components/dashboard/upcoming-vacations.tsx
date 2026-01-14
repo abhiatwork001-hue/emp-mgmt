@@ -25,7 +25,7 @@ export function UpcomingVacations({ vacations }: { vacations: UpcomingVacation[]
     const thisMonth = vacations.filter(v => v.daysUntil <= 30).length;
 
     return (
-        <Card className="border-zinc-800 bg-slate-900/50">
+        <Card className="border-border bg-card">
             <CardHeader>
                 <div className="flex items-center justify-between">
                     <CardTitle className="text-lg font-medium text-white">{t('title')}</CardTitle>
@@ -35,15 +35,15 @@ export function UpcomingVacations({ vacations }: { vacations: UpcomingVacation[]
             <CardContent className="space-y-6">
                 {/* Mini Stats */}
                 <div className="grid grid-cols-3 gap-4">
-                    <div className="rounded-lg bg-slate-900 p-3 text-center border border-zinc-800">
+                    <div className="rounded-lg bg-muted p-3 text-center border border-border">
                         <div className="text-2xl font-bold text-white">{thisWeek}</div>
                         <div className="text-xs text-slate-500">{t('thisWeek')}</div>
                     </div>
-                    <div className="rounded-lg bg-slate-900 p-3 text-center border border-zinc-800">
+                    <div className="rounded-lg bg-muted p-3 text-center border border-border">
                         <div className="text-2xl font-bold text-white">{thisMonth}</div>
                         <div className="text-xs text-slate-500">{t('thisMonth')}</div>
                     </div>
-                    <div className="rounded-lg bg-slate-900 p-3 text-center border border-zinc-800">
+                    <div className="rounded-lg bg-muted p-3 text-center border border-border">
                         <div className="text-2xl font-bold text-white">{vacations.length}</div>
                         <div className="text-xs text-slate-500">{t('total')}</div>
                     </div>
@@ -55,7 +55,7 @@ export function UpcomingVacations({ vacations }: { vacations: UpcomingVacation[]
                         <div className="p-4 text-center text-sm text-slate-500">{t('empty')}</div>
                     ) : (
                         vacations.map((vacation) => (
-                            <div key={vacation._id} className="flex flex-col gap-3 rounded-lg border border-zinc-800 bg-slate-900 p-4 transition-colors hover:bg-slate-800/50">
+                            <div key={vacation._id} className="flex flex-col gap-3 rounded-lg border border-border bg-muted p-4 transition-colors hover:bg-accent">
                                 <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="grid h-10 w-10 place-items-center rounded bg-blue-500/10 text-blue-400">
@@ -79,12 +79,12 @@ export function UpcomingVacations({ vacations }: { vacations: UpcomingVacation[]
                                 </div>
 
                                 <div className="ml-14 flex items-center gap-2">
-                                    <Button variant="outline" size="sm" className="h-8 border-zinc-700 bg-transparent text-slate-300 hover:bg-slate-800">
+                                    <Button variant="outline" size="sm" className="h-8">
                                         <Link href={`/dashboard/vacations?id=${vacation._id}`}>
                                             {t('viewDetails')}
                                         </Link>
                                     </Button>
-                                    <Button variant="outline" size="sm" className="h-8 border-zinc-700 bg-transparent text-slate-300 hover:bg-slate-800">
+                                    <Button variant="outline" size="sm" className="h-8">
                                         {t('contact')}
                                     </Button>
                                 </div>

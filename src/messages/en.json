@@ -516,7 +516,8 @@
             "title": "Vacations",
             "subtitle": "Manage and review employee vacation requests.",
             "pendingRequests": "Pending Requests",
-            "approvedThisYear": "Approved This Year"
+            "approvedThisYear": "Approved This Year",
+            "analyticsTitle": "Analytics & Trends"
         }
     },
     "Notices": {

@@ -20,6 +20,7 @@ export function DashboardHeader({
     stores,
     depts,
     localStoreDepartments,
+    allRoles,
     canSwitchRoles,
     weather
 }: any) {
@@ -93,7 +94,7 @@ export function DashboardHeader({
                         {["admin", "owner", "super_user", "hr"].includes(viewRole) && <TestNotificationButton />}
                     </div>
                 )}
-                {canSwitchRoles && <RoleSwitcher currentUserRole={viewRole} />}
+                {canSwitchRoles && <RoleSwitcher currentUserRole={viewRole} allRoles={allRoles} />}
             </div>
         </motion.div>
     );

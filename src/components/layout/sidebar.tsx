@@ -77,18 +77,20 @@ export function Sidebar({
             }
 
 
+            // Custom Business Logic Overrides (CHECK FIRST)
+            if (route.label === "Departments") {
+                // STRICT: Only Admin, Owner, HR, Tech, Global Dept Head
+                const allowedRoles = ["admin", "owner", "hr", "tech", "department_head"];
+                const isAllowed = effectiveRoles.some((r: string) => allowedRoles.includes(r));
+                if (!isAllowed) return null;
+            }
+
             const isAccessible = hasAccess(effectiveRoles, route.href, departmentName, permissions);
 
             if (!isAccessible) return null;
 
-            // Custom Business Logic Overrides
+            // Department-specific routing for Global Dept Heads
             if (route.label === "Departments") {
-                // Allow: Admin, Owner, HR, Tech, Global Dept Head
-                const allowedRoles = ["admin", "owner", "hr", "tech", "department_head"];
-                const isAllowed = effectiveRoles.some((r: string) => allowedRoles.includes(r));
-                if (!isAllowed) return null;
-
-                // For Global Dept Head, redirect to their specific department
                 const isGlobalHeadOnly = effectiveRoles.includes("department_head") && !["admin", "owner", "hr", "tech"].some(r => effectiveRoles.includes(r));
                 if (isGlobalHeadOnly && deptSlug) {
                     return { ...route, label: "My Department", href: `/dashboard/departments/${deptSlug}` };

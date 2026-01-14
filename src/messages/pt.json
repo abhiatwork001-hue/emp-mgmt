@@ -511,7 +511,8 @@
             "title": "Férias",
             "subtitle": "Gerir e rever pedidos de férias dos funcionários.",
             "pendingRequests": "Pedidos Pendentes",
-            "approvedThisYear": "Aprovado Este Ano"
+            "approvedThisYear": "Aprovado Este Ano",
+            "analyticsTitle": "Análises e Tendências"
         }
     },
     "Notices": {

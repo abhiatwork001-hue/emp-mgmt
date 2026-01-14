@@ -60,7 +60,7 @@ export function EditStoreDepartmentDialog({ department }: EditStoreDepartmentDia
                 <Button
                     variant="outline"
                     size="sm"
-                    className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                    className="border-border hover:bg-accent"
                     onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -134,10 +134,10 @@ export function EditStoreDepartmentDialog({ department }: EditStoreDepartmentDia
                         />
                     </div>
                     <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400 hover:text-white hover:bg-zinc-800">
+                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
                             Cancel
                         </Button>
-                        <Button type="submit" disabled={loading} className="bg-white text-black hover:bg-zinc-200">
+                        <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save Changes
                         </Button>

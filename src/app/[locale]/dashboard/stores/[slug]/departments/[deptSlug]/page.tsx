@@ -131,7 +131,7 @@ export default async function StoreDepartmentPage({ params }: PageProps) {
                             </div>
                         </div>
 
-                        <Separator className="bg-zinc-800 my-6" />
+                        <Separator />
 
                         <div>
                             <p className="text-sm text-muted-foreground mb-2">Description</p>
@@ -218,7 +218,7 @@ export default async function StoreDepartmentPage({ params }: PageProps) {
                                 {department.globalDepartmentId?.departmentHead && department.globalDepartmentId.departmentHead.length > 0 ? (
                                     department.globalDepartmentId.departmentHead.map((head: any) => (
                                         <div key={head._id} className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
+                                            <div className="h-8 w-8 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden">
                                                 {head.image ? (
                                                     <img src={head.image} alt={head.firstName} className="h-full w-full object-cover" />
                                                 ) : (
@@ -236,7 +236,7 @@ export default async function StoreDepartmentPage({ params }: PageProps) {
                                 )}
                             </div>
 
-                            <Separator className="bg-zinc-800" />
+                            <Separator />
 
                             {/* Global Sub-Head */}
                             <div className="space-y-2">
@@ -244,7 +244,7 @@ export default async function StoreDepartmentPage({ params }: PageProps) {
                                 {department.globalDepartmentId?.subHead && department.globalDepartmentId.subHead.length > 0 ? (
                                     department.globalDepartmentId.subHead.map((head: any) => (
                                         <div key={head._id} className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
+                                            <div className="h-8 w-8 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden">
                                                 {head.image ? (
                                                     <img src={head.image} alt={head.firstName} className="h-full w-full object-cover" />
                                                 ) : (
@@ -274,7 +274,7 @@ export default async function StoreDepartmentPage({ params }: PageProps) {
                                 {department.headOfDepartment && department.headOfDepartment.length > 0 ? (
                                     department.headOfDepartment.map((head: any) => (
                                         <div key={head._id} className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
+                                            <div className="h-8 w-8 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden">
                                                 {head.image ? (
                                                     <img src={head.image} alt={head.firstName} className="h-full w-full object-cover" />
                                                 ) : (
@@ -292,7 +292,7 @@ export default async function StoreDepartmentPage({ params }: PageProps) {
                                 )}
                             </div>
 
-                            <Separator className="bg-zinc-800" />
+                            <Separator />
 
                             {/* Local Sub-Head */}
                             <div className="space-y-2">
@@ -300,7 +300,7 @@ export default async function StoreDepartmentPage({ params }: PageProps) {
                                 {department.subHead && department.subHead.length > 0 ? (
                                     department.subHead.map((head: any) => (
                                         <div key={head._id} className="flex items-center gap-3">
-                                            <div className="h-8 w-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
+                                            <div className="h-8 w-8 rounded-full bg-muted border border-border flex items-center justify-center overflow-hidden">
                                                 {head.image ? (
                                                     <img src={head.image} alt={head.firstName} className="h-full w-full object-cover" />
                                                 ) : (

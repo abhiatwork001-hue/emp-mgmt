@@ -240,14 +240,10 @@ export function StoreComparisonDashboard() {
                                         width={90}
                                     />
                                     <Tooltip
-                                        cursor={{ fill: 'hsl(var(--muted)/0.3)' }}
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--popover))',
-                                            borderRadius: '8px',
-                                            border: '1px solid hsl(var(--border))',
-                                            color: 'hsl(var(--popover-foreground))'
-                                        }}
-                                        labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: 'bold' }}
+                                        cursor={{ fill: 'transparent' }}
+                                        itemStyle={{ color: '#fff' }}
+                                        contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                        labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: '#fff' }}
                                     />
                                     <Bar dataKey="rating" fill="#facc15" radius={[0, 6, 6, 0]} barSize={24} />
                                 </BarChart>
@@ -274,14 +270,10 @@ export function StoreComparisonDashboard() {
                                         width={90}
                                     />
                                     <Tooltip
-                                        cursor={{ fill: 'hsl(var(--muted)/0.3)' }}
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--popover))',
-                                            borderRadius: '8px',
-                                            border: '1px solid hsl(var(--border))',
-                                            color: 'hsl(var(--popover-foreground))'
-                                        }}
-                                        labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: 'bold' }}
+                                        cursor={{ fill: 'transparent' }}
+                                        itemStyle={{ color: '#fff' }}
+                                        contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                        labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: '#fff' }}
                                     />
                                     <Bar dataKey="total" fill="#3b82f6" radius={[0, 6, 6, 0]} barSize={24} />
                                 </BarChart>
@@ -448,14 +440,10 @@ export function StoreComparisonDashboard() {
                                         tick={{ fontSize: 11, fill: '#e5e7eb' }}
                                     />
                                     <Tooltip
-                                        cursor={{ fill: 'hsl(var(--muted)/0.3)' }}
-                                        contentStyle={{
-                                            backgroundColor: 'hsl(var(--popover))',
-                                            borderRadius: '8px',
-                                            border: '1px solid hsl(var(--border))',
-                                            color: 'hsl(var(--popover-foreground))'
-                                        }}
-                                        labelStyle={{ color: 'hsl(var(--popover-foreground))', fontWeight: 'bold' }}
+                                        cursor={{ fill: 'transparent' }}
+                                        itemStyle={{ color: '#fff' }}
+                                        contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
+                                        labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: '#fff' }}
                                     />
                                     <Bar dataKey="A" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} name={stores.find(s => s._id === compareA.storeId)?.name || 'Store A'} />
                                     <Bar dataKey="B" fill="#3b82f6" radius={[6, 6, 0, 0]} name={stores.find(s => s._id === compareB.storeId)?.name || 'Store B'} />
@@ -541,6 +529,7 @@ export function StoreComparisonDashboard() {
                                         tick={{ fontSize: 11, fill: '#e5e7eb' }}
                                     />
                                     <Tooltip
+                                        cursor={{ fill: 'transparent' }}
                                         labelFormatter={(m) => getMonthsList()[parseInt(m.toString()) - 1]}
                                         contentStyle={{
                                             backgroundColor: 'hsl(var(--popover))',

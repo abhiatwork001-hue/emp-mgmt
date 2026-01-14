@@ -66,7 +66,7 @@ export function AssignGlobalDepartmentHeadDialog({ departmentId, departmentName,
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" className="border-zinc-700 bg-transparent text-white hover:bg-zinc-800">
+                <Button variant="outline" >
                     <UserPlus className="mr-2 h-4 w-4" />
                     {type === "head" ? "Assign Head" : "Assign Sub Head"}
                 </Button>

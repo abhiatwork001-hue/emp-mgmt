@@ -11,6 +11,8 @@ import { logAction } from "./log.actions";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { pusherServer } from "../pusher";
+import { getStoreManagedByUser } from "@/lib/actions/store.actions";
+import { Types } from "mongoose";
 
 const dbConnect = connectToDB;
 
@@ -91,12 +93,14 @@ export async function getAllAbsenceRequests(filters: any = {}) {
     }
 
     if (filters.storeId) {
-        const storeQuery: any = { storeId: filters.storeId };
+        const storeId = typeof filters.storeId === 'string' ? new Types.ObjectId(filters.storeId) : filters.storeId;
+        const storeQuery: any = { storeId };
         if (filters.storeDepartmentId) {
-            storeQuery.storeDepartmentId = filters.storeDepartmentId;
+            const sdId = typeof filters.storeDepartmentId === 'string' ? new Types.ObjectId(filters.storeDepartmentId) : filters.storeDepartmentId;
+            storeQuery.storeDepartmentId = sdId;
         }
 
-        const employeesInStore = await Employee.find(storeQuery).select("_id");
+        const employeesInStore = await Employee.find({ ...storeQuery, active: true }).select("_id");
         const empIds = employeesInStore.map(e => e._id);
 
         if (query.employeeId) {
@@ -108,7 +112,7 @@ export async function getAllAbsenceRequests(filters: any = {}) {
             query.employeeId = { $in: empIds };
         }
     } else if (filters.storeDepartmentId) {
-        const employeesInDept = await Employee.find({ storeDepartmentId: filters.storeDepartmentId }).select("_id");
+        const employeesInDept = await Employee.find({ storeDepartmentId: filters.storeDepartmentId, active: true }).select("_id");
         const empIds = employeesInDept.map(e => e._id);
         if (query.employeeId) {
             const existing = Array.isArray(query.employeeId.$in) ? query.employeeId.$in : [query.employeeId];
@@ -135,11 +139,25 @@ export async function approveAbsenceRequest(requestId: string, approverId: strin
     // Permission Check
     const approver = await Employee.findById(approverId).select("roles");
     const roles = (approver?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-    const allowed = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech'].includes(r));
-    if (!allowed) throw new Error("Permission Denied: Only HR, Owners, Admin, or Tech can approve absences.");
 
+    // 1. Global
+    const isGlobal = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech', 'super_user'].includes(r));
+
+    // 2. Scoped (Store Manager)
+    let isScoped = false;
     const request = await AbsenceRequest.findById(requestId);
     if (!request) throw new Error("Request not found");
+
+    if (!isGlobal && roles.includes("store_manager")) {
+        const reqEmp = await Employee.findById(request.employeeId).select("storeId");
+        const managedStoreId = await getStoreManagedByUser(approverId);
+        if (managedStoreId && reqEmp?.storeId?.toString() === managedStoreId) {
+            isScoped = true;
+        }
+    }
+
+    if (!isGlobal && !isScoped) throw new Error("Permission Denied: Only HR, Owners, Admin, Tech or Store Manager can approve absences.");
+
     if (request.status !== 'pending') throw new Error("Request is not pending");
 
     const absenceType = payload.type || request.type || "Unspecified";
@@ -243,11 +261,22 @@ export async function rejectAbsenceRequest(requestId: string, reviewerId: string
     // Permission Check
     const reviewer = await Employee.findById(reviewerId).select("roles");
     const roles = (reviewer?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-    const allowed = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech'].includes(r));
-    if (!allowed) throw new Error("Permission Denied: Only HR, Owners, Admin, or Tech can reject absences.");
+
+    const isGlobal = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech', 'super_user'].includes(r));
 
     const request = await AbsenceRequest.findById(requestId);
     if (!request) throw new Error("Request not found");
+
+    let isScoped = false;
+    if (!isGlobal && roles.includes("store_manager")) {
+        const reqEmp = await Employee.findById(request.employeeId).select("storeId");
+        const managedStoreId = await getStoreManagedByUser(reviewerId);
+        if (managedStoreId && reqEmp?.storeId?.toString() === managedStoreId) {
+            isScoped = true;
+        }
+    }
+
+    if (!isGlobal && !isScoped) throw new Error("Permission Denied: Only HR, Owners, Admin, Tech or Store Manager can reject absences.");
 
     request.status = 'rejected';
     request.approvedBy = reviewerId as any;
@@ -378,6 +407,24 @@ export async function cancelAbsenceRequest(requestId: string, employeeId: string
     if (request.status !== 'pending') throw new Error("Only pending requests can be cancelled");
 
     await AbsenceRequest.findByIdAndDelete(requestId);
+
+    revalidatePath("/dashboard/absences");
+    revalidatePath("/dashboard/pending-actions");
+    return { success: true };
+}
+export async function editAbsenceRequest(requestId: string, employeeId: string, data: { date?: Date; reason?: string }) {
+    await dbConnect();
+    const request = await AbsenceRequest.findById(requestId);
+    if (!request) throw new Error("Request not found");
+    if (request.employeeId.toString() !== employeeId) throw new Error("Unauthorized");
+    if (request.status !== "pending") throw new Error("Only pending requests can be edited");
+
+    if (data.date) request.date = data.date;
+    if (data.reason) request.reason = data.reason;
+
+    await request.save();
+
+    await pusherServer.trigger("global", "absence:updated", { requestId, status: "updated" });
 
     revalidatePath("/dashboard/absences");
     revalidatePath("/dashboard/pending-actions");

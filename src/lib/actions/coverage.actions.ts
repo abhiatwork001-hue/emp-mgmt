@@ -494,6 +494,17 @@ export async function acceptCoverageOffer(requestId: string, employeeId: string)
         link: `/dashboard/coverage/${requestId}`
     });
 
+    // Notify the original employee who requested coverage
+    await triggerNotification({
+        title: "Your Coverage Request Was Accepted!",
+        message: `${accepter.firstName} ${accepter.lastName} has accepted to cover your shift. HR will finalize the details.`,
+        type: "success",
+        category: "schedule",
+        recipients: [request.originalEmployeeId.toString()],
+        link: `/dashboard/coverage/${requestId}`,
+        senderId: employeeId
+    });
+
     revalidatePath('/dashboard');
     return { success: true, request: JSON.parse(JSON.stringify(updated)) };
 }

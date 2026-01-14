@@ -59,7 +59,7 @@ export function FinalizeCoverageDialog({ open, onOpenChange, request, onSuccess 
 
     const originalName = request.originalEmployeeId?.firstName || "Original Employee";
     const coverName = request.acceptedBy?.firstName || "Covering Employee";
-    const shiftDate = new Date(request.originalShift.dayDate).toLocaleDateString();
+    const shiftDate = request.originalShift?.dayDate ? new Date(request.originalShift.dayDate).toLocaleDateString() : 'Unknown Date';
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -154,7 +154,7 @@ export function FinalizeCoverageDialog({ open, onOpenChange, request, onSuccess 
 
                         {compType === 'extra_hour' && (
                             <div className="text-[11px] text-muted-foreground mt-1 bg-background/50 p-2 rounded">
-                                Will create an approved Extra Hour request for the shift duration ({request.originalShift.startTime} - {request.originalShift.endTime}).
+                                Will create an approved Extra Hour request for the shift duration ({request.originalShift?.startTime || '?'} - {request.originalShift?.endTime || '?'}).
                             </div>
                         )}
                     </div>

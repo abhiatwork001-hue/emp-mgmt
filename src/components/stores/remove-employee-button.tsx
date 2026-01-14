@@ -46,7 +46,7 @@ export function RemoveStoreEmployeeButton({ departmentId, employeeId }: RemoveSt
                     variant="ghost"
                     size="icon"
                     disabled={loading}
-                    className="h-8 w-8 text-zinc-500 hover:text-red-400 hover:bg-zinc-800"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-accent"
                 >
                     {loading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />

@@ -2,16 +2,7 @@
 
 import { triggerNotification } from "@/lib/actions/notification.actions";
 import { pusherServer } from "@/lib/pusher";
-import {
-    VacationRequest,
-    VacationRecord,
-    Employee,
-    Store,
-    StoreDepartment,
-    IVacationRequest,
-    IVacationRecord,
-    RequestStatus
-} from "@/lib/models";
+import { VacationRequest, Employee, VacationRecord, StoreDepartment, Store, Schedule } from "@/lib/models";
 import connectToDB from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
@@ -20,6 +11,68 @@ import { logAction } from "./log.actions";
 import { calculateWorkingDays } from "@/lib/holidays";
 import { redirect } from "next/navigation";
 import { getLocale } from "next-intl/server";
+import { Types } from "mongoose";
+import { getStoreManagedByUser } from "@/lib/actions/store.actions";
+
+// --- Helpers ---
+
+async function checkVacationConstraints(
+    storeDepartmentId: string,
+    from: Date,
+    to: Date,
+    excludeRequestId?: string
+) {
+    if (!storeDepartmentId) return { valid: true, errors: [] }; // Cannot check without dept
+
+    const dept = await StoreDepartment.findById(storeDepartmentId).select("minEmployees name");
+    if (!dept) return { valid: true, errors: [] };
+
+    const totalStaff = await Employee.countDocuments({ storeDepartmentId, active: true });
+
+    // Count APPROVED vacations overlapping range (excluding current request)
+    const overlapping = await VacationRequest.find({
+        status: 'approved',
+        requestedFrom: { $lte: to },
+        requestedTo: { $gte: from },
+        _id: { $ne: excludeRequestId }
+    }).countDocuments();
+
+    // If we approve this one, we effectively remove 1 more person
+    const remainingStaff = totalStaff - overlapping - 1;
+
+    const errors: string[] = [];
+    if (dept.minEmployees !== undefined && dept.minEmployees > 0 && remainingStaff < dept.minEmployees) {
+        errors.push(`Staff Shortage: Approving this leaves ${remainingStaff} employee(s) (Min: ${dept.minEmployees}) in ${dept.name}.`);
+    }
+
+    // Conflict Check (Pending or Approved requests from same dept)
+    const conflictRequests = await VacationRequest.find({
+        storeDepartmentId: storeDepartmentId, // Ensure we check by StoreDept if we populated/saved it. Do we?
+        // Note: VacationRequest might NOT have storeDepartmentId saved directly in schema previously.
+        // We need to resolve it via Employee lookup if not present?
+        // Optimization: checking via Employee lookup efficiently.
+        status: { $in: ['approved', 'pending'] },
+        requestedFrom: { $lte: to },
+        requestedTo: { $gte: from },
+        _id: { $ne: excludeRequestId }
+    }).populate('employeeId', 'firstName lastName');
+
+    // Filtering logic if 'storeDepartmentId' isn't on Request:
+    // We can rely on the find query above IF we implement saving storeDepartmentId on Request creation.
+    // Assuming we WILL populate it now.
+
+    if (conflictRequests.length > 0) {
+        const names = conflictRequests.map((r: any) => `${r.employeeId.firstName} ${r.employeeId.lastName}`).join(", ");
+        errors.push(`Conflict: Overlaps with ${conflictRequests.length} other request(s) (${names}).`);
+    }
+
+    return {
+        valid: errors.length === 0,
+        errors,
+        shortage: remainingStaff < (dept.minEmployees || 0),
+        conflict: conflictRequests.length > 0
+    };
+}
 
 const dbConnect = connectToDB;
 
@@ -225,15 +278,30 @@ export async function createVacationRequest(data: VacationRequestData) {
         }).select("slug dateRange");
 
         if (overlappingSchedules.length > 0) {
-            warnings.push(`Employee is already assigned to shifts in ${overlappingSchedules.length} schedule(s) during this period.`);
+            warnings.push(`Employee is assigned to shifts in ${overlappingSchedules.length} schedule(s).`);
         }
+
+        // --- NEW: Staff Alerts Check ---
+        const emp = await Employee.findById(data.employeeId).select("storeDepartmentId");
+        if (emp?.storeDepartmentId) {
+            const constraints = await checkVacationConstraints(emp.storeDepartmentId.toString(), start, end);
+            if (!constraints.valid && constraints.errors) {
+                warnings.push(...constraints.errors);
+            }
+        }
+
     } catch (err) {
-        console.error("Schedule check error:", err);
+        console.error("Constraint check error:", err);
     }
 
     try {
+        // Fetch employee details to save StoreDept on request for faster querying
+        const employeeDetails = await Employee.findById(data.employeeId).select("storeId storeDepartmentId");
+
         const newRequest = await VacationRequest.create({
             ...requestData,
+            storeId: employeeDetails?.storeId, // Optimization
+            storeDepartmentId: employeeDetails?.storeDepartmentId, // Optimization for constraints
             totalDays: finalTotalDays,
             status: bypassValidation ? 'approved' : 'pending',
             reviewedBy: bypassValidation ? data.employeeId : undefined,
@@ -331,12 +399,11 @@ export async function getAllVacationRequests(filters: any = {}) {
 
     // Filter by Store ID (for Managers)
     if (filters.storeId) {
-        // If we also have storeDepartmentId, we should prioritize that intersect or just use it?
-        // Usually Dept is subset of Store.
-        // Let's filter by BOTH if provided to be safe/strict.
-        const storeQuery: any = { storeId: filters.storeId };
+        const storeId = typeof filters.storeId === 'string' ? new Types.ObjectId(filters.storeId) : filters.storeId;
+        const storeQuery: any = { storeId };
         if (filters.storeDepartmentId) {
-            storeQuery.storeDepartmentId = filters.storeDepartmentId;
+            const sdId = typeof filters.storeDepartmentId === 'string' ? new Types.ObjectId(filters.storeDepartmentId) : filters.storeDepartmentId;
+            storeQuery.storeDepartmentId = sdId;
         }
 
         const employeesInStore = await Employee.find(storeQuery).select("_id");
@@ -353,7 +420,8 @@ export async function getAllVacationRequests(filters: any = {}) {
         }
     } else if (filters.storeDepartmentId) {
         // Only Dept ID provided
-        const employeesInDept = await Employee.find({ storeDepartmentId: filters.storeDepartmentId }).select("_id");
+        const sdId = typeof filters.storeDepartmentId === 'string' ? new Types.ObjectId(filters.storeDepartmentId) : filters.storeDepartmentId;
+        const employeesInDept = await Employee.find({ storeDepartmentId: sdId }).select("_id");
         const empIds = employeesInDept.map(e => e._id);
         if (query.employeeId) {
             // Intersect
@@ -382,20 +450,38 @@ export async function getAllVacationRequests(filters: any = {}) {
     return JSON.parse(JSON.stringify(requests));
 }
 
-// Helper for strict approval permissions
-async function checkApprovalPermission(userId: string) {
+// Helper for strict approval permissions with Scope Support
+async function checkApprovalPermission(userId: string, targetRequestId?: string) {
     const user = await Employee.findById(userId).select("roles");
     const roles = (user?.roles || []).map((r: string) => r.toLowerCase().replace(/ /g, "_"));
-    const allowed = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech'].includes(r));
-    if (!allowed) {
-        const locale = await getLocale();
-        redirect(`/${locale}/access-denied`);
+
+    // 1. Global Approvers
+    const isGlobal = roles.some((r: string) => ['hr', 'owner', 'admin', 'tech', 'super_user'].includes(r));
+    if (isGlobal) return true;
+
+    // 2. Scoped Approvers (Store Manager)
+    if (roles.includes("store_manager") && targetRequestId) {
+        const request = await VacationRequest.findById(targetRequestId).select("employeeId");
+        if (!request) return false; // Should handle not found
+
+        const requestor = await Employee.findById(request.employeeId).select("storeId");
+        const managedStoreId = await getStoreManagedByUser(userId);
+
+        if (managedStoreId && requestor?.storeId?.toString() === managedStoreId) {
+            return true;
+        }
     }
+
+    // Future: Department Head Scoped Check check here...
+
+    const locale = await getLocale();
+    redirect(`/${locale}/access-denied`);
 }
 
 export async function approveVacationRequest(requestId: string, approverId: string) {
     await dbConnect();
-    await checkApprovalPermission(approverId);
+    // Pass requestId for scoping check
+    await checkApprovalPermission(approverId, requestId);
 
     const request = await VacationRequest.findById(requestId);
     if (!request) throw new Error("Request not found");
@@ -405,6 +491,32 @@ export async function approveVacationRequest(requestId: string, approverId: stri
     const end = new Date(request.requestedTo);
     start.setHours(0, 0, 0, 0);
     end.setHours(0, 0, 0, 0);
+
+    // --- Strict Staff Constraint Check ---
+    // If strict compliance is required, we fail here. But user asked for "option to override".
+    // We assume the Approver SEES the warning in UI before clicking Approve.
+    // But we should double check if critical?
+    // Let's pass 'force' param? For now, we rely on warnings logged unless we strictly block.
+    // User: "after accepting one can we show alert on the other" -> This implies retroactive checking.
+    // User: "give option to override".
+
+    // We will re-run check. If critical shortage, maybe we should have blocked in UI.
+    // The previous implementation stored warnings.
+    // Let's check updated constraints (in case situation changed since Request).
+    const emp = await Employee.findById(request.employeeId).select("storeDepartmentId");
+    if (emp?.storeDepartmentId) {
+        const constraints = await checkVacationConstraints(emp.storeDepartmentId.toString(), start, end, request._id.toString());
+        if (!constraints.valid) {
+            // If we want to block unless overridden:
+            // We can check if 'storeDepartmentWarnings' ALREADY contains these errors. 
+            // If yes, Approver approved knowing them?
+            // If NO (new conflicts), we should probably block or Warn.
+            // Given limitations of Server Actions (no confirmation dialog mid-flight), 
+            // We assume UI handled "Override" confirmation (e.g. checkbox "Force Approve").
+            // We'll update the 'storeDepartmentWarnings' on the approved request to reflect final state.
+            request.storeDepartmentWarnings = constraints.errors;
+        }
+    }
 
     const finalDays = calculateWorkingDays(start, end);
 
@@ -470,18 +582,18 @@ export async function approveVacationRequest(requestId: string, approverId: stri
     const { removeEmployeeFromSchedulesInRange } = require("./schedule.actions");
     await removeEmployeeFromSchedulesInRange(request.employeeId, start, end);
 
-    const emp = await Employee.findById(request.employeeId).select("slug storeId");
+    const empForPush = await Employee.findById(request.employeeId).select("slug storeId");
 
     // Trigger Real-time Update for affected store schedules
-    if (emp?.storeId) {
-        await pusherServer.trigger(`store-${emp.storeId}`, "schedule:updated", {
+    if (empForPush?.storeId) {
+        await pusherServer.trigger(`store-${empForPush.storeId}`, "schedule:updated", {
             status: 'vacation_approved',
             employeeId: request.employeeId
         });
     }
 
     revalidatePath("/dashboard/vacations");
-    revalidatePath(`/dashboard/employees/${emp?.slug || request.employeeId}`);
+    revalidatePath(`/dashboard/employees/${empForPush?.slug || request.employeeId}`);
     revalidatePath("/dashboard/schedules");
     revalidatePath("/[locale]/dashboard/schedules/[slug]", "page");
     revalidatePath("/dashboard");

@@ -105,7 +105,7 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             getPendingOvertimeRequests({ storeId: sid }),
             getPendingSchedules(sid, did),
             getPendingCoverageApprovals(sid),
-            did ? getAllEmployees({ storeDepartmentId: did }, 1, 10000) : (storeId ? getEmployeesByStore(storeId) : getEmployeeStats({})),
+            did ? getAllEmployees({ storeDepartmentId: did }, 1, 10000) : (sid ? getEmployeesByStore(sid) : getEmployeeStats({})),
             Company.findOne({ active: true }).select('settings.scheduleRules').lean(),
             getEmployeeScheduleView(employee._id, new Date()),
             did ? getEmployeeStats({ storeDepartmentId: did }) : Promise.resolve(null)
@@ -113,10 +113,10 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
 
         // Add store-specific details if storeId exists
         if (storeId) {
-            promises.push(getSchedulesLib(storeId));
-            promises.push(getStoreById(storeId.toString()));
-            promises.push(getStoreDepartments(storeId.toString()));
-            promises.push(getSchedulesLib(storeId, undefined, nextWeekISO.year, nextWeekISO.week));
+            promises.push(getSchedulesLib(sid));
+            promises.push(getStoreById(sid));
+            promises.push(getStoreDepartments(sid));
+            promises.push(getSchedulesLib(sid, undefined, nextWeekISO.year, nextWeekISO.week));
         } else {
             // Global view schedules fetching
             promises.push(Promise.all(stores.map((s: any) => getSchedulesLib(s._id.toString()))));

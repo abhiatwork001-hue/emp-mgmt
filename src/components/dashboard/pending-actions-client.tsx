@@ -24,6 +24,10 @@ import {
     cancelCoverageRequest,
     acceptCoverageOffer
 } from "@/lib/actions/coverage.actions";
+import { updateVacationRequest } from "@/lib/actions/vacation.actions";
+import { editAbsenceRequest } from "@/lib/actions/absence.actions";
+import { editOvertimeRequest } from "@/lib/actions/overtime.actions";
+import { RequestDetailsDialog } from "./request-details-dialog";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { Inbox, LayoutGrid, Palmtree, AlertCircle, Clock, CalendarDays, Loader2, UserCheck, Timer, Check } from "lucide-react";
@@ -42,6 +46,7 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
     const [data, setData] = useState(initialData);
     const [isLoading, setIsLoading] = useState(false);
     const [finalizeDialogOpen, setFinalizeDialogOpen] = useState(false);
+    const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<any>(null);
     const router = useRouter();
 
@@ -53,9 +58,60 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
         try {
             const newData = await getPendingActions();
             setData(newData);
+            // Also update selected request if open
+            if (selectedRequest && detailsDialogOpen) {
+                // Try to find it in new data
+                const updated = findItemIn(newData, selectedRequest._id);
+                if (updated) setSelectedRequest({ ...updated, type: selectedRequest.type });
+            }
             router.refresh();
         } catch (error) {
             console.error("Failed to refresh actions", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const findItemIn = (dataObj: any, id: string) => {
+        const lists = [
+            ...(dataObj.myActions?.vacations || []),
+            ...(dataObj.myActions?.absences || []),
+            ...(dataObj.myActions?.overtime || []),
+            ...(dataObj.myActions?.coverage || []),
+            ...(dataObj.approvals?.vacations || []),
+            ...(dataObj.approvals?.absences || []),
+            ...(dataObj.approvals?.overtime || []),
+            ...(dataObj.approvals?.schedules || []),
+            ...(dataObj.approvals?.coverage || [])
+        ];
+        return lists.find((i: any) => i._id === id);
+    };
+
+    const handleSaveEdit = async (id: string, type: string, formData: any) => {
+        setIsLoading(true);
+        try {
+            if (type === 'vacation') {
+                await updateVacationRequest(id, userId, {
+                    requestedFrom: formData.requestedFrom,
+                    requestedTo: formData.requestedTo,
+                    comments: formData.reason
+                });
+            } else if (type === 'absence') {
+                await editAbsenceRequest(id, userId, {
+                    date: formData.date,
+                    reason: formData.reason
+                });
+            } else if (type === 'overtime') {
+                await editOvertimeRequest(id, userId, {
+                    hoursRequested: formData.hours,
+                    reason: formData.reason
+                });
+            }
+            toast.success("Request updated successfully");
+            await refreshData();
+            setDetailsDialogOpen(false);
+        } catch (error: any) {
+            toast.error("Failed to update: " + error.message);
         } finally {
             setIsLoading(false);
         }
@@ -65,6 +121,18 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
         setIsLoading(true);
         try {
             let res: any;
+
+            if (action === 'view' || action === 'edit') {
+                // Find item
+                const item = findItemIn(data, id);
+                if (item) {
+                    setSelectedRequest({ ...item, type });
+                    setDetailsDialogOpen(true);
+                }
+                setIsLoading(false);
+                return;
+            }
+
             if (type === 'vacation') {
                 if (action === 'cancel') res = await cancelVacationRequest(id, userId);
                 else if (action === 'approve') res = await approveVacationRequest(id, userId);
@@ -296,6 +364,19 @@ export function PendingActionsClient({ initialData, userId }: PendingActionsClie
                 onOpenChange={setFinalizeDialogOpen}
                 request={selectedRequest}
                 onSuccess={refreshData}
+            />
+
+            <RequestDetailsDialog
+                open={detailsDialogOpen}
+                onOpenChange={setDetailsDialogOpen}
+                item={selectedRequest}
+                userId={userId}
+                canEdit={true} // Logic inside dialog handles ownership check
+                isProcessing={isLoading}
+                onCancel={(id, type) => handleAction(id, 'cancel', type)}
+                onSaveEdit={handleSaveEdit}
+                onApprove={(id, type) => handleAction(id, 'approve', type)}
+                onReject={(id, type) => handleAction(id, 'reject', type)}
             />
         </div>
     );

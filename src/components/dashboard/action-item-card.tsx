@@ -119,7 +119,10 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
             whileHover={{ scale: 1.01 }}
             className="group"
         >
-            <Card className="border-border/40 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300">
+            <Card
+                className="border-border/40 bg-card/50 backdrop-blur-sm overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 cursor-pointer"
+                onClick={() => onAction(item._id, 'view')}
+            >
                 <CardContent className="p-0">
                     <div className="flex items-stretch min-h-[120px]">
                         {/* Status/Type Sidebar */}
@@ -153,26 +156,34 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                 </div>
 
                                 {isApproval ? (
-                                    <div className="flex flex-wrap items-center gap-4 pt-1">
-                                        <div className="flex items-center gap-2">
-                                            <User className="w-3.5 h-3.5 text-primary" />
-                                            <span className="text-xs font-bold">{item.employeeId?.firstName || item.originalEmployeeId?.firstName} {item.employeeId?.lastName || item.originalEmployeeId?.lastName}</span>
+                                    <>
+                                        <div className="flex flex-wrap items-center gap-4 pt-1">
+                                            <div className="flex items-center gap-2">
+                                                <User className="w-3.5 h-3.5 text-primary" />
+                                                <span className="text-xs font-bold">{item.employeeId?.firstName || item.originalEmployeeId?.firstName} {item.employeeId?.lastName || item.originalEmployeeId?.lastName}</span>
+                                            </div>
+                                            {/* Store Name */}
+                                            {(item.employeeId?.storeId?.name || item.originalShift?.storeId?.name || item.storeId?.name) && (
+                                                <div className="flex items-center gap-2 text-muted-foreground">
+                                                    <Store className="w-3.5 h-3.5" />
+                                                    <span className="text-xs">{item.employeeId?.storeId?.name || item.originalShift?.storeId?.name || item.storeId?.name}</span>
+                                                </div>
+                                            )}
+                                            {/* Department Name */}
+                                            {(item.employeeId?.storeDepartmentId?.name || item.originalShift?.storeDepartmentId?.name || item.storeDepartmentId?.name) && (
+                                                <div className="flex items-center gap-2 text-muted-foreground">
+                                                    <MapPin className="w-3.5 h-3.5" />
+                                                    <span className="text-xs font-medium">{item.employeeId?.storeDepartmentId?.name || item.originalShift?.storeDepartmentId?.name || item.storeDepartmentId?.name}</span>
+                                                </div>
+                                            )}
                                         </div>
-                                        {/* Store Name */}
-                                        {(item.employeeId?.storeId?.name || item.originalShift?.storeId?.name || item.storeId?.name) && (
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <Store className="w-3.5 h-3.5" />
-                                                <span className="text-xs">{item.employeeId?.storeId?.name || item.originalShift?.storeId?.name || item.storeId?.name}</span>
+                                        {/* Reason for Approvals */}
+                                        {(item.reason || item.comments) && (
+                                            <div className="pt-2 text-xs text-muted-foreground italic truncate max-w-[400px]">
+                                                "{item.reason || item.comments}"
                                             </div>
                                         )}
-                                        {/* Department Name */}
-                                        {(item.employeeId?.storeDepartmentId?.name || item.originalShift?.storeDepartmentId?.name || item.storeDepartmentId?.name) && (
-                                            <div className="flex items-center gap-2 text-muted-foreground">
-                                                <MapPin className="w-3.5 h-3.5" />
-                                                <span className="text-xs font-medium">{item.employeeId?.storeDepartmentId?.name || item.originalShift?.storeDepartmentId?.name || item.storeDepartmentId?.name}</span>
-                                            </div>
-                                        )}
-                                    </div>
+                                    </>
                                 ) : type === 'coverage' ? (
                                     <div className="space-y-2 pt-1">
                                         {/* Coverage-specific details for candidates */}
@@ -229,6 +240,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                                 href={url}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
                                                 className="flex items-center gap-1 bg-muted px-2 py-1 rounded-md text-[10px] text-primary hover:underline hover:bg-muted/80 transition-colors"
                                             >
                                                 <Paperclip className="w-3 h-3" />
@@ -246,7 +258,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                         {type === 'schedule' ? (
                                             <Button
                                                 size="sm"
-                                                onClick={() => onAction(item._id, 'review')}
+                                                onClick={(e) => { e.stopPropagation(); onAction(item._id, 'review'); }}
                                                 className="rounded-full bg-primary hover:bg-primary/90 font-bold px-6 h-9 transition-all shadow-lg shadow-primary/20"
                                             >
                                                 <Eye className="w-3.5 h-3.5 mr-2" />
@@ -255,7 +267,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                         ) : type === 'coverage' ? (
                                             <Button
                                                 size="sm"
-                                                onClick={() => onAction(item._id, 'finalize')}
+                                                onClick={(e) => { e.stopPropagation(); onAction(item._id, 'finalize'); }}
                                                 className="rounded-full bg-primary hover:bg-primary/90 font-bold px-6 h-9 transition-all shadow-lg shadow-primary/20"
                                             >
                                                 <Check className="w-3.5 h-3.5 mr-2" />
@@ -266,7 +278,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => onAction(item._id, 'reject')}
+                                                    onClick={(e) => { e.stopPropagation(); onAction(item._id, 'reject'); }}
                                                     className="flex-1 md:flex-none rounded-full border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white font-bold h-9 px-5 transition-all"
                                                 >
                                                     <X className="w-3.5 h-3.5 mr-2" />
@@ -274,7 +286,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                                 </Button>
                                                 <Button
                                                     size="sm"
-                                                    onClick={() => onAction(item._id, 'approve')}
+                                                    onClick={(e) => { e.stopPropagation(); onAction(item._id, 'approve'); }}
                                                     className="flex-1 md:flex-none rounded-full bg-emerald-500 hover:bg-emerald-600 font-bold h-9 px-5 transition-all shadow-lg shadow-emerald-500/10"
                                                 >
                                                     <Check className="w-3.5 h-3.5 mr-2" />
@@ -290,7 +302,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                             <>
                                                 <Button
                                                     size="sm"
-                                                    onClick={() => onAction(item._id, 'accept')}
+                                                    onClick={(e) => { e.stopPropagation(); onAction(item._id, 'accept'); }}
                                                     className="flex-1 md:flex-none rounded-full bg-violet-500 hover:bg-violet-600 font-bold h-9 px-5 transition-all shadow-lg shadow-violet-500/10"
                                                 >
                                                     <Check className="w-3.5 h-3.5 mr-2" />
@@ -299,7 +311,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                                 <Button
                                                     size="sm"
                                                     variant="outline"
-                                                    onClick={() => onAction(item._id, 'decline')}
+                                                    onClick={(e) => { e.stopPropagation(); onAction(item._id, 'decline'); }}
                                                     className="flex-1 md:flex-none rounded-full border-red-500/20 text-red-500 hover:bg-red-500 hover:text-white font-bold h-9 px-5 transition-all"
                                                 >
                                                     <X className="w-3.5 h-3.5 mr-2" />
@@ -313,7 +325,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                             <Button
                                                 size="sm"
                                                 variant="outline"
-                                                onClick={() => onAction(item._id, 'edit')}
+                                                onClick={(e) => { e.stopPropagation(); onAction(item._id, 'edit'); }}
                                                 className="flex-1 md:flex-none rounded-full border-border/60 hover:border-primary/40 hover:bg-primary/5 font-bold h-9 px-5 transition-all"
                                             >
                                                 <Edit3 className="w-3.5 h-3.5 mr-2 text-primary" />
@@ -326,7 +338,7 @@ export function ActionItemCard({ item, type, isApproval, onAction, loading, user
                                             <Button
                                                 size="sm"
                                                 variant="ghost"
-                                                onClick={() => onAction(item._id, 'cancel')}
+                                                onClick={(e) => { e.stopPropagation(); onAction(item._id, 'cancel'); }}
                                                 className="flex-1 md:flex-none rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/5 font-bold h-9 px-5 transition-all"
                                             >
                                                 <X className="w-3.5 h-3.5 mr-2" />

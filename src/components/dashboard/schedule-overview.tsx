@@ -29,21 +29,21 @@ export function ScheduleOverview({ schedules }: { schedules: ScheduleSummary[] }
         <div className="space-y-6">
             <h3 className="text-lg font-medium text-white">{t('title')}</h3>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="flex items-center gap-4 rounded-lg bg-slate-900/50 p-4 border border-zinc-800">
+                <div className="flex items-center gap-4 rounded-lg bg-muted p-4 border border-border">
                     <CheckCircle2 className="h-8 w-8 text-white" />
                     <div>
                         <div className="text-2xl font-bold text-white">{approvedCount}</div>
                         <div className="text-xs text-slate-500">{t('approved')}</div>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 rounded-lg bg-slate-900/50 p-4 border border-zinc-800">
+                <div className="flex items-center gap-4 rounded-lg bg-muted p-4 border border-border">
                     <Clock className="h-8 w-8 text-white" />
                     <div>
                         <div className="text-2xl font-bold text-white">{pendingCount}</div>
                         <div className="text-xs text-slate-500">{t('pending')}</div>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 rounded-lg bg-slate-900/50 p-4 border border-zinc-800 md:col-span-2">
+                <div className="flex items-center gap-4 rounded-lg bg-muted p-4 border border-border md:col-span-2">
                     <PlayCircle className="h-8 w-8 text-white" />
                     <div>
                         <div className="text-2xl font-bold text-white">{inProgressCount}</div>
@@ -60,7 +60,7 @@ export function ScheduleOverview({ schedules }: { schedules: ScheduleSummary[] }
                     <div className="p-4 text-center text-sm text-slate-500">{t('empty')}</div>
                 ) : (
                     schedules.map((schedule) => (
-                        <div key={schedule._id} className="rounded-lg border border-zinc-800 bg-slate-900 p-4">
+                        <div key={schedule._id} className="rounded-lg border border-border bg-muted p-4">
                             <div className="flex items-start justify-between">
                                 <div className="flex gap-3">
                                     <div className="mt-1 grid h-8 w-8 place-items-center rounded bg-purple-500/10 text-purple-400">
@@ -90,7 +90,7 @@ export function ScheduleOverview({ schedules }: { schedules: ScheduleSummary[] }
                             </div>
 
                             <div className="mt-4 flex justify-end gap-2">
-                                <Button variant="outline" size="sm" className="h-8 border-zinc-700 bg-transparent text-slate-300 hover:bg-slate-800" asChild>
+                                <Button variant="outline" size="sm" className="h-8" asChild>
                                     <Link href={`/dashboard/schedules/${schedule.slug || schedule._id}`}>{t('viewSchedule')}</Link>
                                 </Button>
                             </div>

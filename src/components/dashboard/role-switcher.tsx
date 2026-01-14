@@ -8,29 +8,27 @@ import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-export function RoleSwitcher({ currentUserRole }: { currentUserRole: string }) {
+export function RoleSwitcher({ currentUserRole, allRoles = [] }: { currentUserRole: string, allRoles?: string[] }) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const currentTestRole = searchParams.get("testRole") || currentUserRole;
     const t = useTranslations("RoleSwitcher");
     const tCommon = useTranslations("Common");
 
-    // Only 'owner' or 'admin' (mapped to owner) should see this generally, but we'll control visibility at usage site.
-
-    // List of roles to test
-    const roles = [
+    // List of roles to test, filtered by user's actual roles
+    const availableRoles = [
         { value: "super_user", label: tCommon('roleTypes.super_user') },
         { value: "owner", label: tCommon('roleTypes.owner') },
         { value: "admin", label: tCommon('roleTypes.admin') },
         { value: "hr", label: tCommon('roleTypes.hr') },
-        { value: "store_manager", label: tCommon('roleTypes.store_manager') },
+        { value: "tech", label: tCommon('roleTypes.tech') },
         { value: "department_head", label: tCommon('roleTypes.department_head') },
+        { value: "store_manager", label: tCommon('roleTypes.store_manager') },
         { value: "store_department_head", label: tCommon('roleTypes.store_department_head') },
         { value: "employee", label: tCommon('roleTypes.employee') }
-    ];
+    ].filter(r => allRoles.includes(r.value));
 
     const handleRoleChange = (role: string) => {
-        // We'll use a query param 'testRole' to override the view
         const params = new URLSearchParams(searchParams.toString());
         if (role === currentUserRole) {
             params.delete("testRole");
@@ -41,25 +39,24 @@ export function RoleSwitcher({ currentUserRole }: { currentUserRole: string }) {
         router.refresh();
     };
 
+    if (availableRoles.length <= 1) return null;
+
     return (
-        <div className="flex items-center gap-2 p-2 bg-primary/10 border border-primary/20 rounded-lg">
-            <Users className="h-4 w-4 text-primary" />
-            <Label className="text-primary text-xs font-semibold whitespace-nowrap">{t('testView')}</Label>
+        <div className="flex items-center gap-2 p-1.5 px-3 bg-muted/40 border border-border/50 rounded-2xl backdrop-blur-sm">
+            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('viewAs') || "View As"}</Label>
             <Select value={currentTestRole} onValueChange={handleRoleChange}>
-                <SelectTrigger className="h-8 w-[180px] bg-background border-border text-xs text-foreground">
+                <SelectTrigger className="h-7 w-[160px] bg-background border-border/50 text-[10px] font-bold uppercase tracking-wider text-foreground rounded-xl shadow-none focus:ring-0">
                     <SelectValue placeholder={t('selectRole')} />
                 </SelectTrigger>
-                <SelectContent>
-                    {roles.map(role => (
-                        <SelectItem key={role.value} value={role.value} className="text-xs">
+                <SelectContent className="rounded-xl border-border/50">
+                    {availableRoles.map(role => (
+                        <SelectItem key={role.value} value={role.value} className="text-[10px] font-bold uppercase tracking-wider">
                             {role.label}
                         </SelectItem>
                     ))}
                 </SelectContent>
             </Select>
-            <Badge variant="outline" className="ml-auto text-xs text-primary border-primary/50">
-                {t('testingMode')}
-            </Badge>
         </div>
     );
 }

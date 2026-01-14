@@ -430,17 +430,10 @@ const VacationTrackerSchema = new Schema({
     usedDays: { type: Number, default: 0 },
     pendingRequests: { type: Number, default: 0 },
     year: { type: Number, default: new Date().getFullYear() },
-    // Yield / Doses
-    numberOfDoses: { type: Number, default: 1 }, // Kept for legacy/generic
-    yieldAmount: { type: Number }, // Total output (e.g. 5)
-    yieldUnit: { type: String }, // Unit (e.g. kg, liters)
-    portionsInHouse: { type: Number },
-    portionsTakeAway: { type: Number },
-}, { _id: false, toJSON: { virtuals: true }, toObject: { virtuals: true } });
+}, { _id: false, toJSON: { virtuals: true }, toObject: { virtuals: true }, id: false });
 
-// Virtual for remaining days
 VacationTrackerSchema.virtual('remainingDays').get(function () {
-    return (this.defaultDays + this.rolloverDays) - this.usedDays;
+    return (this.defaultDays || 0) + (this.rolloverDays || 0) - (this.usedDays || 0);
 });
 
 const CompanySchema = new Schema<ICompany>({

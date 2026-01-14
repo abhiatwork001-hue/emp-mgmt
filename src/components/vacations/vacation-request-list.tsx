@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Calendar as CalendarIcon, User, Search, Filter, LayoutGrid, List as ListIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { approveVacationRequest, rejectVacationRequest } from "@/lib/actions/vacation.actions";
+import { RequestDetailsDialog } from "@/components/dashboard/request-details-dialog";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useRouter, usePathname } from "next/navigation";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -23,6 +25,7 @@ interface VacationRequestListProps {
     stores?: any[];
     departments?: any[];
     initialAbsences?: any[];
+    year?: number;
 }
 
 interface CalendarEvent {
@@ -39,13 +42,18 @@ interface CalendarEvent {
     title: string;
     storeName?: string;
     deptName?: string;
+    originalRequest?: any;
 }
 
-export function VacationRequestList({ initialRequests, stores = [], departments = [], initialAbsences = [] }: VacationRequestListProps) {
+export function VacationRequestList({ initialRequests, stores = [], departments = [], initialAbsences = [], year }: VacationRequestListProps) {
     const { data: session } = useSession();
+    const router = useRouter();
+    const pathname = usePathname();
     const [requests, setRequests] = useState(initialRequests);
     const [absences, setAbsences] = useState(initialAbsences);
     const [loadingMap, setLoadingMap] = useState<Record<string, boolean>>({});
+    const [selectedRequest, setSelectedRequest] = useState<any>(null);
+    const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [viewMode, setViewMode] = useState<"list" | "calendar">("calendar");
 
     // Filters
@@ -54,7 +62,15 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
     const [filterDept, setFilterDept] = useState("all");
     const [filterPosition, setFilterPosition] = useState("all");
     const [filterStatus, setFilterStatus] = useState("all");
-    const [currentMonth, setCurrentMonth] = useState(new Date());
+
+    // Initialize current month based on Year prop if provided
+    const [currentMonth, setCurrentMonth] = useState(() => {
+        const now = new Date();
+        if (year && year !== now.getFullYear()) {
+            return new Date(year, 0, 1);
+        }
+        return now;
+    });
 
     const t = useTranslations("Vacation");
     const tc = useTranslations("Common");
@@ -142,7 +158,8 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                 end: new Date(r.requestedTo),
                 title: `${name} (${t('list.approvedVacation')})`,
                 storeName: store,
-                deptName: dept
+                deptName: dept,
+                originalRequest: r
             });
         });
 
@@ -157,9 +174,6 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
             if (filterPosition !== "all" && a.employeeId?.position !== filterPosition) return;
             if (filterStatus !== "all" && filterStatus !== 'absence') return; // Absences only show if filter is All or Absence
 
-            // Absence "date" is usually single day, but model might have range?
-            // Checking VerifySeed, absence has `date`. Assuming single day for simplicity or check model.
-            // Model: date: Date.
             const start = new Date(a.date);
             const end = new Date(a.date); // Single day
 
@@ -174,7 +188,8 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                 },
                 start: start,
                 end: end,
-                title: `${name} (${t('list.absenceRecord')})`
+                title: `${name} (${t('list.absenceRecord')})`,
+                originalRequest: a
             });
         });
 
@@ -373,12 +388,52 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <div className="flex items-center bg-muted/30 border rounded-md px-2 h-9">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}>
+                    {/* Month Year Selectors */}
+                    <Select
+                        value={currentMonth.getMonth().toString()}
+                        onValueChange={(val) => {
+                            const newDate = new Date(currentMonth);
+                            newDate.setMonth(parseInt(val));
+                            setCurrentMonth(newDate);
+                        }}
+                    >
+                        <SelectTrigger className="w-[120px] h-9 bg-muted/50 text-xs font-medium">
+                            <SelectValue>{format(currentMonth, "MMMM")}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {Array.from({ length: 12 }).map((_, i) => (
+                                <SelectItem key={i} value={i.toString()}>
+                                    {format(new Date(2000, i, 1), "MMMM")}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <Select
+                        value={currentMonth.getFullYear().toString()}
+                        onValueChange={(val) => {
+                            const newYear = parseInt(val);
+                            router.push(`${pathname}?year=${newYear}`);
+                            const newDate = new Date(currentMonth);
+                            newDate.setFullYear(newYear);
+                            setCurrentMonth(newDate);
+                        }}
+                    >
+                        <SelectTrigger className="w-[80px] h-9 bg-muted/50 text-xs font-medium">
+                            <SelectValue>{currentMonth.getFullYear()}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {[year ? year - 1 : 2024, year || 2025, year ? year + 1 : 2026].map(y => (
+                                <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
+                    <div className="flex items-center bg-muted/30 border rounded-md px-1 h-9 ml-2">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentMonth(prev => subMonths(prev, 1))}>
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
-                        <span className="text-sm font-medium w-32 text-center">{format(currentMonth, "MMMM yyyy")}</span>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentMonth(prev => addMonths(prev, 1))}>
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                     </div>
@@ -515,6 +570,13 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                                                                 marginLeft: '1px'
                                                             }}
                                                             title={`${ev.employee.firstName} ${ev.employee.lastName} | ${ev.storeName} - ${ev.deptName}`}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (canManage && ev.status === 'pending') {
+                                                                    setSelectedRequest(ev.originalRequest);
+                                                                    setIsDetailsOpen(true);
+                                                                }
+                                                            }}
                                                         >
                                                             <div className="font-bold text-xs md:text-sm truncate leading-tight">
                                                                 {ev.employee.firstName} {ev.employee.lastName}
@@ -549,8 +611,29 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                             <span className="w-3 h-3 rounded bg-red-500 shadow-sm"></span> {t('list.absenceRecord')}
                         </div>
                     </div>
-                </Card>
-            )}
+
+                    {/* Interactive Approval Dialog */}
+                    <RequestDetailsDialog
+                        open={isDetailsOpen}
+                        onOpenChange={setIsDetailsOpen}
+                        item={selectedRequest}
+                        canEdit={false} // Managers don't edit others' requests here usually
+                        userId={session?.user?.id || ""}
+                        onCancel={() => setIsDetailsOpen(false)}
+                        onSaveEdit={async () => { }}
+                        onApprove={async (id) => {
+                            await updateStatus(id, 'approve');
+                            setIsDetailsOpen(false);
+                        }}
+                        onReject={async (id) => {
+                            await updateStatus(id, 'reject');
+                            setIsDetailsOpen(false);
+                        }}
+                        isProcessing={loadingMap[selectedRequest?._id] || false}
+                    />
+                </Card >
+            )
+            }
 
             {/* Day Details Dialog */}
             {/* <Dialog open={!!selectedDate} onOpenChange={(open) => !open && setSelectedDate(null)}>
@@ -594,7 +677,7 @@ export function VacationRequestList({ initialRequests, stores = [], departments 
                     </div>
                 </DialogContent>
             </Dialog> */}
-        </div>
+        </div >
     );
 }
 

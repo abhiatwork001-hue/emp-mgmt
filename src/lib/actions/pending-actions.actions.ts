@@ -98,7 +98,7 @@ export async function getPendingActions() {
 
     // 2. Approvals (for Managers)
     const isApprover = userRoles.some((r: string) =>
-        ["owner", "hr", "admin", "super_user", "tech", "store_manager"].includes(r.toLowerCase())
+        ["owner", "hr", "admin", "super_user", "tech"].includes(r.toLowerCase())
     );
 
     let approvals: any = {
@@ -122,9 +122,15 @@ export async function getPendingActions() {
             const manager = await Employee.findById(userId).select("storeId");
             if (manager?.storeId) {
                 const employeesInStore = await Employee.find({ storeId: manager.storeId }).select("_id");
-                const empIds = employeesInStore.map(e => e._id);
+                // Exclude self from approvals list
+                const empIds = employeesInStore.map(e => e._id).filter(id => id.toString() !== userId);
                 query.employeeId = { $in: empIds };
+            } else {
+                query.employeeId = { $in: [] };
             }
+        } else {
+            // Global approver: See all, but exclude self
+            query.employeeId = { $ne: userId };
         }
 
         const [pendingVacations, pendingAbsences, pendingOvertime] = await Promise.all([
@@ -139,8 +145,11 @@ export async function getPendingActions() {
         approvals.overtime = pendingOvertime;
 
         // Coverage Approvals (Pending HR/Admin review after acceptance)
-        // Or strictly 'pending_hr' status requests
-        const pendingCoverage = await ShiftCoverageRequest.find({ status: 'pending_hr' }) // adjust query for RBAC if needed
+        // Or strictly 'pending_hr' status requests, excluding own requests
+        const pendingCoverage = await ShiftCoverageRequest.find({
+            status: 'pending_hr',
+            originalEmployeeId: { $ne: userId }
+        }) // adjust query for RBAC if needed
             .populate('originalEmployeeId', 'firstName lastName')
             .populate('acceptedBy', 'firstName lastName')
             .populate('originalShift') // Need shift details
@@ -149,15 +158,17 @@ export async function getPendingActions() {
         approvals.coverage = pendingCoverage;
 
         // Schedules check
+        const scheduleQuery: any = { status: 'draft', createdBy: { $ne: userId } };
+
         if (isGlobalApprover) {
-            approvals.schedules = await Schedule.find({ status: 'draft' })
+            approvals.schedules = await Schedule.find(scheduleQuery)
                 .populate('storeId', 'name')
                 .populate('storeDepartmentId', 'name')
                 .lean();
         } else {
             const manager = await Employee.findById(userId).select("storeId");
             if (manager?.storeId) {
-                approvals.schedules = await Schedule.find({ storeId: manager.storeId, status: 'draft' })
+                approvals.schedules = await Schedule.find({ ...scheduleQuery, storeId: manager.storeId })
                     .populate('storeId', 'name')
                     .populate('storeDepartmentId', 'name')
                     .lean();
