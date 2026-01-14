@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { assignEvaluationToStore, getEvaluationTemplates } from "@/lib/actions/evaluation.actions";
-import { getAllStores } from "@/lib/actions/store.actions";
+import { getAllStores, getStoreById } from "@/lib/actions/store.actions";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 import { Calendar as CalendarIcon, Loader2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -28,17 +29,31 @@ export function EvaluationAssignmentDialog({ onSuccess }: { onSuccess?: () => vo
     const [selectedStore, setSelectedStore] = useState("");
     const [dueDate, setDueDate] = useState<Date>();
 
+    const { data: session } = useSession();
+
     useEffect(() => {
-        if (open) {
+        if (open && session?.user) {
+            const user = session.user as any;
+            const isAdmin = user.roles.some((r: string) => ['admin', 'hr', 'owner', 'super_user'].includes(r));
+
+            const fetchStores = isAdmin
+                ? getAllStores()
+                : (user.storeId ? getStoreById(user.storeId).then(s => s ? [s] : []) : Promise.resolve([]));
+
             Promise.all([
                 getEvaluationTemplates(),
-                getAllStores()
+                fetchStores
             ]).then(([t, s]) => {
                 setTemplates(t);
                 setStores(s);
+
+                // Auto-select if only one store
+                if (s.length === 1) {
+                    setSelectedStore(s[0]._id);
+                }
             });
         }
-    }, [open]);
+    }, [open, session]);
 
     const handleAssign = async () => {
         if (!selectedTemplate || !selectedStore || !dueDate) {

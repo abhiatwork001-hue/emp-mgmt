@@ -8,7 +8,8 @@ import { revalidatePath } from "next/cache";
 export async function createCredential(data: {
     storeId: string;
     serviceName: string;
-    username: string;
+    type?: 'standard' | 'simple';
+    username?: string;
     passwordRaw: string;
     description: string;
     userId: string;
@@ -21,6 +22,7 @@ export async function createCredential(data: {
         const cred = await StoreCredential.create({
             storeId: data.storeId,
             serviceName: data.serviceName,
+            type: data.type || 'standard',
             username: data.username,
             encryptedPassword: encryptedData,
             iv: iv,
@@ -42,7 +44,10 @@ export async function createCredential(data: {
 
 export async function updateCredential(data: {
     credentialId: string;
-    passwordRaw: string;
+    serviceName?: string;
+    username?: string;
+    description?: string;
+    passwordRaw?: string;
     userId: string;
 }) {
     try {
@@ -50,25 +55,40 @@ export async function updateCredential(data: {
         const cred = await StoreCredential.findById(data.credentialId);
         if (!cred) return { success: false, error: "Not found" };
 
-        const { encryptedData, iv } = encrypt(data.passwordRaw);
+        // Track changes
+        const changes: string[] = [];
+        if (data.serviceName && cred.serviceName !== data.serviceName) changes.push('serviceName');
+        if (data.username !== undefined && cred.username !== data.username) changes.push('username'); // Check undefined for optional
+        if (data.description !== undefined && cred.description !== data.description) changes.push('description');
 
-        // Push current to history
-        cred.history.push({
-            encryptedPassword: cred.encryptedPassword,
-            iv: cred.iv,
-            changedBy: data.userId,
-            changedAt: new Date()
-        });
+        if (data.serviceName) cred.serviceName = data.serviceName;
+        if (data.username !== undefined) cred.username = data.username;
+        if (data.description !== undefined) cred.description = data.description;
 
-        // Update with new
-        cred.encryptedPassword = encryptedData;
-        cred.iv = iv;
+        if (data.passwordRaw) {
+            const { encryptedData, iv } = encrypt(data.passwordRaw);
+
+            // Push current to history
+            cred.history.push({
+                encryptedPassword: cred.encryptedPassword,
+                iv: cred.iv,
+                changedBy: data.userId,
+                changedAt: new Date()
+            });
+
+            // Update with new
+            cred.encryptedPassword = encryptedData;
+            cred.iv = iv;
+            changes.push('password');
+        }
+
         cred.updatedBy = data.userId;
 
         // Audit
         cred.auditLog.push({
             action: 'update',
-            userId: data.userId
+            userId: data.userId,
+            details: `Updated fields: ${changes.join(', ')}`
         });
 
         await cred.save();

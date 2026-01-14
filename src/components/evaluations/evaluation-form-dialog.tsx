@@ -120,7 +120,7 @@ export function EvaluationFormDialog({ assignment, onComplete }: { assignment: a
                             <div key={q.id} className="space-y-3 border-t pt-4">
                                 <Label className="text-base">{i + 1}. {q.text} {q.required && "*"}</Label>
 
-                                {q.type === 'scale' && (
+                                {q.type === 'rating' && (
                                     <div className="px-2">
                                         <div className="flex justify-between text-xs text-muted-foreground mb-2">
                                             <span>Poor (1)</span>

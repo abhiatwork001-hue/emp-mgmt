@@ -97,9 +97,24 @@ export function Sidebar({
 
             if (route.label === "Tips") {
                 // STRICT Allowlist: Only Store Manager and Tech
-                // STRICT Allowlist: Only Store Manager and Tech
-                const isAllowed = effectiveRoles.some((r: string) => ["store_manager", "tech"].includes(r));
+                const isAllowed = effectiveRoles.some((r: string) => ["store_manager", "manager", "tech"].includes(r));
                 if (!isAllowed) return null;
+            }
+
+            // HIDE Global Employees for Store Managers
+            if (route.label === "Employees") {
+                const isGlobalAuth = effectiveRoles.some((r: string) => ["admin", "hr", "owner", "tech", "super_user"].includes(r));
+                if (!isGlobalAuth) return null;
+            }
+
+            // SHOW StaffViewer for Store Managers (and hide for Globals, or keep as shortcut?)
+            if (route.label === "StaffViewer") {
+                // Only for mid-level management who lost access to "Employees"
+                const isMidLevel = effectiveRoles.some((r: string) => ["store_manager", "manager", "store_department_head", "department_head"].includes(r));
+                const isGlobalAuth = effectiveRoles.some((r: string) => ["admin", "hr", "owner", "tech", "super_user"].includes(r));
+
+                // If they are global, they use "Employees". If they are mid-level AND NOT global, use Viewer.
+                if (!isMidLevel || isGlobalAuth) return null;
             }
 
             if (route.label === "Recipes" && !hasRecipes) return null;

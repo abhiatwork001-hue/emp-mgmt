@@ -3,11 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getEmployeeById } from "@/lib/actions/employee.actions";
 import { redirect } from "next/navigation";
-import { TemplateBuilder } from "@/components/evaluations/template-builder";
+import { Link } from "@/i18n/routing";
 import { EvaluationAssignmentDialog } from "@/components/evaluations/evaluation-assignment-dialog";
 import { ManagerEvaluationList } from "@/components/evaluations/manager-evaluation-list";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { getAllAssignments } from "@/lib/actions/evaluation.actions";
 
 export default async function EvaluationsPage() {
@@ -44,8 +45,18 @@ export default async function EvaluationsPage() {
                 {isHR && (
                     <TabsContent value="manage" className="space-y-6">
                         <div className="grid md:grid-cols-2 gap-6">
-                            {/* Left: Template Builder */}
-                            <TemplateBuilder />
+                            {/* Left: Templates Link */}
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Templates</CardTitle>
+                                    <CardDescription>Create and modify evaluation forms.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <Button asChild className="w-full">
+                                        <Link href="/dashboard/evaluations/templates">Manage Templates</Link>
+                                    </Button>
+                                </CardContent>
+                            </Card>
 
                             {/* Right: Active Assignments */}
                             <Card>

@@ -238,7 +238,7 @@ export function StoreManagerDashboard({
         ),
 
         "credential-manager": (
-            <CredentialManager storeId={effectiveStoreId || ""} userId={employee._id} canEdit={["admin", "hr", "owner", "super_user", "tech"].includes(currentUserRole)} />
+            <CredentialManager storeId={effectiveStoreId || ""} userId={employee._id} canEdit={["admin", "hr", "owner", "super_user", "tech", "store_manager"].includes(currentUserRole)} />
         ),
 
         "management-suite": (

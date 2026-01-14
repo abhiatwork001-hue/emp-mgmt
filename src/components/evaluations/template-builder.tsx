@@ -1,33 +1,48 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash, Save, Loader2 } from "lucide-react";
-import { createEvaluationTemplate } from "@/lib/actions/evaluation.actions";
+import { createEvaluationTemplate, updateEvaluationTemplate } from "@/lib/actions/evaluation.actions";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 
 interface Question {
     id: string;
     text: string;
-    type: 'scale' | 'text' | 'boolean';
+    type: 'rating' | 'text' | 'boolean';
     required: boolean;
+    weight?: number;
+    category?: string;
 }
 
-export function TemplateBuilder({ onSuccess }: { onSuccess?: () => void }) {
+interface TemplateBuilderProps {
+    initialData?: any;
+    onSuccess?: () => void;
+}
+
+export function TemplateBuilder({ initialData, onSuccess }: TemplateBuilderProps) {
     const { data: session } = useSession();
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [questions, setQuestions] = useState<Question[]>([
-        { id: crypto.randomUUID(), text: "", type: "scale", required: true }
-    ]);
+    const [title, setTitle] = useState(initialData?.title || "");
+    const [description, setDescription] = useState(initialData?.description || "");
+    const [questions, setQuestions] = useState<Question[]>(
+        initialData?.questions || [{ id: crypto.randomUUID(), text: "", type: "rating", required: true }]
+    );
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    useEffect(() => {
+        if (initialData) {
+            setTitle(initialData.title);
+            setDescription(initialData.description || "");
+            setQuestions(initialData.questions || []);
+        }
+    }, [initialData]);
+
     const addQuestion = () => {
-        setQuestions([...questions, { id: crypto.randomUUID(), text: "", type: "scale", required: true }]);
+        setQuestions([...questions, { id: crypto.randomUUID(), text: "", type: "rating", required: true }]);
     };
 
     const updateQuestion = (id: string, field: keyof Question, value: any) => {
@@ -50,19 +65,31 @@ export function TemplateBuilder({ onSuccess }: { onSuccess?: () => void }) {
 
         setIsSubmitting(true);
         try {
-            await createEvaluationTemplate({
+            const payload = {
                 title,
                 description,
                 questions,
                 createdBy: (session?.user as any).id
-            });
-            toast.success("Success", { description: "Template created successfully" });
-            setTitle("");
-            setDescription("");
-            setQuestions([{ id: crypto.randomUUID(), text: "", type: "scale", required: true }]);
+            };
+
+            if (initialData?._id) {
+                await updateEvaluationTemplate(initialData._id, payload);
+                toast.success("Success", { description: "Template updated successfully" });
+            } else {
+                await createEvaluationTemplate(payload);
+                toast.success("Success", { description: "Template created successfully" });
+            }
+
+            if (!initialData) {
+                // Reset only on create
+                setTitle("");
+                setDescription("");
+                setQuestions([{ id: crypto.randomUUID(), text: "", type: "rating", required: true }]);
+            }
             onSuccess?.();
         } catch (error) {
-            toast.error("Error", { description: "Failed to create template" });
+            console.error(error);
+            toast.error("Error", { description: "Failed to save template" });
         } finally {
             setIsSubmitting(false);
         }
@@ -71,7 +98,7 @@ export function TemplateBuilder({ onSuccess }: { onSuccess?: () => void }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Create New Evaluation Template</CardTitle>
+                <CardTitle>{initialData ? "Edit Template" : "Create New Evaluation Template"}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -105,12 +132,17 @@ export function TemplateBuilder({ onSuccess }: { onSuccess?: () => void }) {
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="scale">Rating Scale (1-5)</SelectItem>
+                                                <SelectItem value="rating">Rating Scale (1-5)</SelectItem>
                                                 <SelectItem value="text">Text Input</SelectItem>
                                                 <SelectItem value="boolean">Yes/No</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        {/* Future: Required toggle */}
+                                        <Input
+                                            className="w-[150px]"
+                                            placeholder="Category (optional)"
+                                            value={q.category || ""}
+                                            onChange={(e) => updateQuestion(q.id, 'category', e.target.value)}
+                                        />
                                     </div>
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => removeQuestion(q.id)} className="text-destructive">
@@ -124,7 +156,7 @@ export function TemplateBuilder({ onSuccess }: { onSuccess?: () => void }) {
                 <div className="pt-4 flex justify-end">
                     <Button onClick={handleSave} disabled={isSubmitting}>
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Save Template
+                        {initialData ? "Update Template" : "Save Template"}
                     </Button>
                 </div>
             </CardContent>

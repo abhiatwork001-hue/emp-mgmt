@@ -57,7 +57,7 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
     // Credentials: "none can add storeCredentials for the store, just the manager... hr, tech, admin, owner"
     // Clarification: Request said "just the manager" BUT later "storeManager... cannot add".
     // "but storeManager, storeDepartmentHead can see... hr, tech, admin and owner can edit and see"
-    const canEditCredentials = isGlobalAdmin; // Tech/Admin/Owner/HR
+    const canEditCredentials = isGlobalAdmin || isStoreManager; // Tech/Admin/Owner/HR + StoreManager
 
     const employees = await getStoreEmployeesWithTodayStatus(storeId);
     const storeDepartments = await getStoreDepartments(storeId);

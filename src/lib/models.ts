@@ -1441,7 +1441,8 @@ const NoticeSchema = new Schema<INotice>({
 export interface IStoreCredential extends Document {
     storeId: ObjectId;
     serviceName: string;
-    username: string;
+    type: 'standard' | 'simple'; // standard = user+pass, simple = name+pass
+    username?: string;
     encryptedPassword: string;
     iv: string;
     description?: string;
@@ -1468,7 +1469,8 @@ export interface IStoreCredential extends Document {
 const StoreCredentialSchema = new Schema<IStoreCredential>({
     storeId: { type: Schema.Types.ObjectId, ref: 'Store', required: true },
     serviceName: { type: String, required: true },
-    username: { type: String, required: true },
+    type: { type: String, enum: ['standard', 'simple'], default: 'standard' },
+    username: { type: String }, // Optional now
     encryptedPassword: { type: String, required: true },
     iv: { type: String, required: true },
     description: { type: String },
@@ -1495,14 +1497,20 @@ const StoreCredentialSchema = new Schema<IStoreCredential>({
 export interface IEvaluationTemplate extends Document {
     title: string;
     description?: string;
-    type: 'review' | 'survey';
+    sections?: {
+        title: string;
+        order?: number;
+    }[];
     questions: {
         id: string;
         text: string;
-        type: 'scale' | 'text' | 'boolean';
+        type: 'rating' | 'text' | 'boolean';
+        category?: string; // Corresponds to section title or tag
+        options?: string[]; // For selectable
+        weight?: number;
         required: boolean;
-        options?: string[]; // For future use
     }[];
+    roles?: string[]; // Roles this template is applicable for
     createdBy: ObjectId;
     isActive: boolean;
     createdAt: Date;
@@ -1512,15 +1520,21 @@ export interface IEvaluationTemplate extends Document {
 const EvaluationTemplateSchema = new Schema<IEvaluationTemplate>({
     title: { type: String, required: true },
     description: { type: String },
-    type: { type: String, enum: ['review', 'survey'], default: 'review' },
-    questions: [{
-        id: { type: String, required: true }, // FE generated UUID
-        text: { type: String, required: true },
-        type: { type: String, enum: ['scale', 'text', 'boolean'], required: true },
-        required: { type: Boolean, default: true },
-        options: [String]
+    sections: [{
+        title: { type: String },
+        order: { type: Number }
     }],
-    createdBy: { type: Schema.Types.ObjectId, ref: 'Employee', required: true },
+    questions: [{
+        id: { type: String, required: true },
+        text: { type: String, required: true },
+        type: { type: String, enum: ['rating', 'text', 'boolean'], default: 'rating' },
+        category: { type: String },
+        options: [{ type: String }],
+        weight: { type: Number, default: 1 },
+        required: { type: Boolean, default: true }
+    }],
+    roles: [{ type: String }],
+    createdBy: { type: Schema.Types.ObjectId, ref: 'Employee' },
     isActive: { type: Boolean, default: true }
 }, { timestamps: true });
 
@@ -1902,5 +1916,7 @@ const ApiUsageSchema = new Schema<IApiUsage>({
 ApiUsageSchema.index({ service: 1, date: 1 }, { unique: true });
 
 export const ApiUsage = mongoose.models.ApiUsage || mongoose.model<IApiUsage>('ApiUsage', ApiUsageSchema);
+
+
 
 

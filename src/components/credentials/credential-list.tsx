@@ -5,12 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Eye, EyeOff, Plus, Lock, History, ClipboardCopy } from "lucide-react";
+import { Eye, EyeOff, Plus, Lock, ClipboardCopy } from "lucide-react";
 import { getCredentialsForStore, createCredential, revealPassword, updateCredential } from "@/lib/actions/credential.actions";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Badge } from "@/components/ui/badge";
 
 interface CredentialManagerProps {
     storeId: string;
@@ -49,7 +51,8 @@ export function CredentialManager({ storeId, userId, canEdit }: CredentialManage
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Service</TableHead>
+                            <TableHead>Service / Title</TableHead>
+                            <TableHead>Type</TableHead>
                             <TableHead>Username</TableHead>
                             <TableHead>Password</TableHead>
                             <TableHead>Last Updated</TableHead>
@@ -62,7 +65,7 @@ export function CredentialManager({ storeId, userId, canEdit }: CredentialManage
                         ))}
                         {creds.length === 0 && !loading && (
                             <TableRow>
-                                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                                     No credentials stored yet.
                                 </TableCell>
                             </TableRow>
@@ -101,10 +104,26 @@ function CredentialRow({ credential, userId, onUpdate, canEdit }: { credential: 
         }
     };
 
+    const isSimple = credential.type === 'simple';
+
     return (
         <TableRow>
-            <TableCell className="font-medium">{credential.serviceName}</TableCell>
-            <TableCell>{credential.username}</TableCell>
+            <TableCell className="font-medium">
+                {credential.serviceName}
+                {credential.description && <div className="text-xs text-muted-foreground">{credential.description}</div>}
+            </TableCell>
+            <TableCell>
+                <Badge variant="outline" className="text-xs font-normal">
+                    {isSimple ? "Name + Pass" : "Standard"}
+                </Badge>
+            </TableCell>
+            <TableCell>
+                {isSimple ? (
+                    <span className="text-muted-foreground text-xs italic">N/A</span>
+                ) : (
+                    credential.username
+                )}
+            </TableCell>
             <TableCell>
                 <div className="flex items-center gap-2">
                     <div className="font-mono bg-muted px-2 py-1 rounded text-xs min-w-[100px]">
@@ -121,7 +140,7 @@ function CredentialRow({ credential, userId, onUpdate, canEdit }: { credential: 
                 </div>
             </TableCell>
             <TableCell className="text-xs text-muted-foreground">
-                {format(new Date(credential.updatedAt), "yyyy-MM-dd")}
+                {format(new Date(credential.updatedAt || credential.createdAt), "yyyy-MM-dd")}
             </TableCell>
             {canEdit && (
                 <TableCell className="text-right">
@@ -135,17 +154,30 @@ function CredentialRow({ credential, userId, onUpdate, canEdit }: { credential: 
 function AddCredentialDialog({ storeId, userId, onSuccess }: any) {
     const [open, setOpen] = useState(false);
     const [service, setService] = useState("");
+    const [type, setType] = useState<"standard" | "simple">("standard");
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [desc, setDesc] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
-        if (!service || !username || !password) return;
+        if (!service || !password) return;
+        if (type === 'standard' && !username) return;
+
         setLoading(true);
-        await createCredential({ storeId, userId, serviceName: service, username, passwordRaw: password, description: desc });
+        await createCredential({
+            storeId,
+            userId,
+            serviceName: service,
+            type,
+            username: type === 'standard' ? username : undefined,
+            passwordRaw: password,
+            description: desc
+        });
         setLoading(false);
         setOpen(false);
+        // Reset
+        setService(""); setUsername(""); setPassword(""); setDesc(""); setType("standard");
         onSuccess();
         toast.success("Credential created");
     };
@@ -156,10 +188,31 @@ function AddCredentialDialog({ storeId, userId, onSuccess }: any) {
             <DialogContent>
                 <DialogHeader><DialogTitle>Add Credential</DialogTitle></DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <div className="grid gap-2"><Label>Service Name</Label><Input placeholder="e.g. UberEats" value={service} onChange={e => setService(e.target.value)} /></div>
-                    <div className="grid gap-2"><Label>Username/Email</Label><Input value={username} onChange={e => setUsername(e.target.value)} /></div>
+                    <div className="space-y-2">
+                        <Label>Credential Type</Label>
+                        <RadioGroup defaultValue="standard" value={type} onValueChange={(v: any) => setType(v)}>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="standard" id="std" />
+                                <Label htmlFor="std">Standard (Username + Password)</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="simple" id="simp" />
+                                <Label htmlFor="simp">Simple (Name/Title + Password)</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
+
+                    <div className="grid gap-2">
+                        <Label>{type === 'standard' ? "Service / Website Name" : "Credential Title (e.g. WiFi)"}</Label>
+                        <Input placeholder={type === 'standard' ? "e.g. UberEats" : "e.g. Staff WiFi"} value={service} onChange={e => setService(e.target.value)} />
+                    </div>
+
+                    {type === 'standard' && (
+                        <div className="grid gap-2"><Label>Username/Email</Label><Input value={username} onChange={e => setUsername(e.target.value)} /></div>
+                    )}
+
                     <div className="grid gap-2"><Label>Password</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
-                    <div className="grid gap-2"><Label>Notes</Label><Input value={desc} onChange={e => setDesc(e.target.value)} /></div>
+                    <div className="grid gap-2"><Label>Notes (Optional)</Label><Input value={desc} onChange={e => setDesc(e.target.value)} /></div>
                 </div>
                 <DialogFooter><Button onClick={handleSubmit} disabled={loading}>Save</Button></DialogFooter>
             </DialogContent>
@@ -169,27 +222,46 @@ function AddCredentialDialog({ storeId, userId, onSuccess }: any) {
 
 function UpdateCredentialDialog({ credential, userId, onSuccess }: any) {
     const [open, setOpen] = useState(false);
+    const [service, setService] = useState(credential.serviceName);
+    const [username, setUsername] = useState(credential.username || "");
+    const [desc, setDesc] = useState(credential.description || "");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
-        if (!password) return;
         setLoading(true);
-        await updateCredential({ credentialId: credential._id, passwordRaw: password, userId });
+        await updateCredential({
+            credentialId: credential._id,
+            serviceName: service,
+            username: username,
+            description: desc,
+            passwordRaw: password || undefined,
+            userId
+        });
         setLoading(false);
         setOpen(false);
         onSuccess();
-        toast.success("Password Updated");
+        toast.success("Credential Updated");
     };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button variant="ghost" size="sm">Edit</Button></DialogTrigger>
             <DialogContent>
-                <DialogHeader><DialogTitle>Update Password for {credential.serviceName}</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>Edit Credential</DialogTitle></DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <div className="text-sm text-muted-foreground">Changes will be logged in audit history.</div>
-                    <div className="grid gap-2"><Label>New Password</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
+                    <div className="grid gap-2"><Label>Service Name / Title</Label><Input value={service} onChange={e => setService(e.target.value)} /></div>
+
+                    {credential.type !== 'simple' && (
+                        <div className="grid gap-2"><Label>Username</Label><Input value={username} onChange={e => setUsername(e.target.value)} /></div>
+                    )}
+
+                    <div className="grid gap-2"><Label>Notes</Label><Input value={desc} onChange={e => setDesc(e.target.value)} /></div>
+
+                    <div className="pt-4 border-t mt-2">
+                        <Label className="text-muted-foreground">Change Password (leave blank to keep current)</Label>
+                        <Input className="mt-2" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="New password..." />
+                    </div>
                 </div>
                 <DialogFooter><Button onClick={handleSubmit} disabled={loading}>Update</Button></DialogFooter>
             </DialogContent>

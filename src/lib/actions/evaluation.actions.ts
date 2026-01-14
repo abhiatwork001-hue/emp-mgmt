@@ -11,13 +11,39 @@ import { pusherServer } from "../pusher";
 export async function createEvaluationTemplate(data: any) {
     await dbConnect();
 
-    // Ensure unique or clean data if needed
+    // Ensure we have questions formatted correctly
+    if (!data.questions || !Array.isArray(data.questions)) {
+        throw new Error("Invalid questions data.");
+    }
+
     const template = await EvaluationTemplate.create({
         ...data,
         isActive: true
     });
 
+    revalidatePath("/dashboard/evaluations/templates");
     return JSON.parse(JSON.stringify(template));
+}
+
+export async function updateEvaluationTemplate(id: string, data: any) {
+    await dbConnect();
+
+    const template = await EvaluationTemplate.findByIdAndUpdate(
+        id,
+        { ...data },
+        { new: true }
+    );
+
+    revalidatePath("/dashboard/evaluations/templates");
+    return JSON.parse(JSON.stringify(template));
+}
+
+export async function deleteEvaluationTemplate(id: string) {
+    await dbConnect();
+    // Soft delete
+    await EvaluationTemplate.findByIdAndUpdate(id, { isActive: false });
+    revalidatePath("/dashboard/evaluations/templates");
+    return { success: true };
 }
 
 export async function getEvaluationTemplates() {
@@ -29,6 +55,7 @@ export async function getEvaluationTemplates() {
 export async function getTemplateById(id: string) {
     await dbConnect();
     const template = await EvaluationTemplate.findById(id);
+    if (!template) throw new Error("Template not found");
     return JSON.parse(JSON.stringify(template));
 }
 

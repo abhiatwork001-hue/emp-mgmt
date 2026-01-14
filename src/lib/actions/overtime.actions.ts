@@ -1,9 +1,10 @@
 "use server";
 
 import connectToDB from "@/lib/db";
-import { OvertimeRequest, Employee, Notification, Schedule } from "@/lib/models";
+import { OvertimeRequest, Employee, Notification, Schedule, ActionLog } from "@/lib/models";
 import { pusherServer } from "../pusher";
 import { revalidatePath } from "next/cache";
+import { logAction } from "./log.actions";
 
 function addHoursToTime(time: string, hoursToAdd: number): string {
     const [h, m] = time.split(':').map(Number);
@@ -70,6 +71,14 @@ export async function createOvertimeRequest(data: {
         await pusherServer.trigger("global", "overtime:updated", {
             requestId: request._id,
             status: 'created'
+        });
+
+        await logAction({
+            action: 'REQUEST_OVERTIME',
+            performedBy: data.employeeId,
+            targetId: request._id,
+            targetModel: 'OvertimeRequest',
+            details: { hours: data.hoursRequested, date: data.dayDate, reason: data.reason }
         });
 
         return { success: true, request: JSON.parse(JSON.stringify(request)) };
@@ -163,6 +172,14 @@ export async function respondToOvertimeRequest(requestId: string, reviewerId: st
             employeeId: request.employeeId
         });
 
+        await logAction({
+            action: action === 'approved' ? 'APPROVE_OVERTIME' : 'REJECT_OVERTIME',
+            performedBy: reviewerId,
+            targetId: requestId,
+            targetModel: 'OvertimeRequest',
+            details: { reason: rejectionReason }
+        });
+
         return { success: true };
     } catch (error) {
         return { success: false, error: "Failed to process request" };
@@ -194,5 +211,43 @@ export async function getPendingOvertimeRequests(filters: any = {}) {
         return JSON.parse(JSON.stringify(requests));
     } catch (e) {
         return [];
+    }
+}
+
+export async function cancelOvertimeRequest(requestId: string, userId: string) {
+    try {
+        await connectToDB();
+        const request = await OvertimeRequest.findOne({ _id: requestId, employeeId: userId });
+        if (!request) return { success: false, error: "Request not found" };
+        if (request.status !== 'pending') return { success: false, error: "Cannot cancel processed request" };
+
+        await OvertimeRequest.deleteOne({ _id: requestId });
+
+        revalidatePath("/dashboard");
+        await pusherServer.trigger("global", "overtime:updated", { requestId, status: 'cancelled' });
+
+        return { success: true };
+    } catch (e) {
+        return { success: false, error: "Failed to cancel request" };
+    }
+}
+
+export async function editOvertimeRequest(requestId: string, userId: string, data: { hoursRequested: number; reason: string }) {
+    try {
+        await connectToDB();
+        const request = await OvertimeRequest.findOne({ _id: requestId, employeeId: userId });
+        if (!request) return { success: false, error: "Request not found" };
+        if (request.status !== 'pending') return { success: false, error: "Cannot edit processed request" };
+
+        request.hoursRequested = data.hoursRequested;
+        request.reason = data.reason;
+        await request.save();
+
+        revalidatePath("/dashboard");
+        await pusherServer.trigger("global", "overtime:updated", { requestId, status: 'updated' });
+
+        return { success: true };
+    } catch (e) {
+        return { success: false, error: "Failed to update request" };
     }
 }

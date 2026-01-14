@@ -71,13 +71,13 @@ export async function reportAbsenceForCoverage(data: ReportAbsenceData) {
         status: 'pending_hr'
     });
 
-    // Notify HR/Admins (Global) and Store Admins
+    // Notify HR/Admins (Global) and Store Admins/Managers
     const managers = await Employee.find({
         $or: [
             { roles: { $in: ['admin', 'hr', 'owner', 'tech', 'super_user'] } }, // Global Privileged Roles
             {
                 storeId: data.storeId,
-                roles: { $in: ['admin', 'hr', 'owner', 'tech'] } // Support legacy store-specific admin if any
+                roles: { $in: ['admin', 'hr', 'owner', 'tech', 'store_manager', 'manager'] } // Store-specific admins & managers
             }
         ],
         active: true
