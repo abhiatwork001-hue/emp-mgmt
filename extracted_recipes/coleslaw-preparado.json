@@ -1,0 +1,70 @@
+{
+    "name": "Coleslaw - Preparado",
+    "name_en": "Prepared Coleslaw",
+    "slug": "coleslaw-preparado",
+    "categoryName": "Transformados",
+    "description": "Salada coleslaw preparada.",
+    "description_en": "Prepared coleslaw salad.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 1,
+    "yieldUnit": "KG",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Descascador",
+        "Mandolina",
+        "Taça Inox Grande",
+        "Tupperware 6LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Couve Roxa",
+            "name_en": "Red Cabbage",
+            "amount": 410,
+            "unit": "gr"
+        },
+        {
+            "name": "Cenoura",
+            "name_en": "Carrot",
+            "amount": 250,
+            "unit": "gr"
+        },
+        {
+            "name": "Cebola Roxa",
+            "name_en": "Red Onion",
+            "amount": 40,
+            "unit": "gr"
+        },
+        {
+            "name": "Molho Coleslaw",
+            "name_en": "Coleslaw Sauce",
+            "amount": 300,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Com ajuda da mandolina, cortar a couve e a cenoura em juliana não maior do que meio centímetro.",
+        "Colocar numa taça.",
+        "Picar a cebola em pedaços pequenos.",
+        "Juntar a couve e cenoura e misturar bem.",
+        "Juntar o molho.",
+        "Colocar luvas e envolver bem com as mãos limpas até ficar bem misturado.",
+        "Colocar num tupperware.",
+        "Colocar etiqueta com data de preparação e validade."
+    ],
+    "instructions_en": [
+        "Using mandoline, cut cabbage and carrot into julienne no larger than half a centimeter.",
+        "Place in a bowl.",
+        "Chop onion into small pieces.",
+        "Add to cabbage and carrot and mix well.",
+        "Add sauce.",
+        "Put on gloves and mix well with clean hands until well combined.",
+        "Place in a tupperware.",
+        "Place label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

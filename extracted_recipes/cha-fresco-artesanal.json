@@ -1,0 +1,75 @@
+{
+    "name": "Chá Fresco Artesanal",
+    "name_en": "Artisan Iced Tea",
+    "slug": "cha-fresco-artesanal",
+    "categoryName": "Refrigerantes",
+    "description": "Chá fresco de frutos vermelhos e hortelã.",
+    "description_en": "Fresh red berries and mint tea.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 1,
+    "yieldUnit": "Litro",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Panela 10LT",
+        "Balança",
+        "Tupperware 10LT",
+        "Coador",
+        "Descascador"
+    ],
+    "ingredients": [
+        {
+            "name": "Saquetas Chá Frutos Vermelhos",
+            "name_en": "Red Berries Tea Bags",
+            "amount": 2,
+            "unit": "un"
+        },
+        {
+            "name": "Hortelã Fresca",
+            "name_en": "Fresh Mint",
+            "amount": 10,
+            "unit": "gr"
+        },
+        {
+            "name": "Casca de Limão",
+            "name_en": "Lemon Peel",
+            "amount": 15,
+            "unit": "gr"
+        },
+        {
+            "name": "Açúcar Branco",
+            "name_en": "White Sugar",
+            "amount": 50,
+            "unit": "gr"
+        },
+        {
+            "name": "Água",
+            "name_en": "Water",
+            "amount": 1,
+            "unit": "LT"
+        }
+    ],
+    "instructions": [
+        "Colocar a água na panela.",
+        "Com o descascador retirar a casca de limão e juntar na panela.",
+        "Juntar as saquetas de chá, o hortelã e o açúcar.",
+        "Levar a panela a placa colocar a tampa e ligar a temperatura média-alta.",
+        "Deixar ferver durante 10 minutos.",
+        "Desligar a placa e deixar arrefecer.",
+        "Coar para um tupperware / jarro.",
+        "Fechar o tupperware, colocar etiqueta e armazenar no frigorífico."
+    ],
+    "instructions_en": [
+        "Place water in the pot.",
+        "Peel lemon skin using peeler and add to pot.",
+        "Add tea bags, mint, and sugar.",
+        "Place pot on stove, cover, and turn to medium-high heat.",
+        "Boil for 10 minutes.",
+        "Turn off heat and let cool.",
+        "Strain into a tupperware / pitcher.",
+        "Close tupperware, label, and store in fridge."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

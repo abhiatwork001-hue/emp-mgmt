@@ -1,0 +1,76 @@
+{
+    "name": "Pico de Gallo",
+    "name_en": "Pico de Gallo",
+    "slug": "pico-de-gallo",
+    "categoryName": "Transformados",
+    "description": "Molho fresco de tomate e vegetais.",
+    "description_en": "Fresh tomato and vegetable salsa.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 1,
+    "yieldUnit": "KG",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Tupperware 2,6LT",
+        "Colher de Sopa"
+    ],
+    "ingredients": [
+        {
+            "name": "Tomate Chucha",
+            "name_en": "Plum Tomato",
+            "amount": 600,
+            "unit": "gr"
+        },
+        {
+            "name": "Cebola Roxa",
+            "name_en": "Red Onion",
+            "amount": 350,
+            "unit": "gr"
+        },
+        {
+            "name": "Coentros",
+            "name_en": "Cilantro",
+            "amount": 15,
+            "unit": "gr"
+        },
+        {
+            "name": "Sumo de Limão",
+            "name_en": "Lemon Juice",
+            "amount": 60,
+            "unit": "ml"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 20,
+            "unit": "gr"
+        },
+        {
+            "name": "Pimenta Preta Moída",
+            "name_en": "Ground Black Pepper",
+            "amount": 1,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Cortar o tomate em pedaços pequenos e colocar num tupperware.",
+        "Cortar a cebola em pedaços pequenos e juntar ao tomate.",
+        "Picar os coentros e juntar ao tomate e cebola.",
+        "Juntar o sal, o sumo de limão e a pimenta.",
+        "Envolver todo com a colher até ficar bem misturado.",
+        "Fechar o tupperware e colocar etiqueta com data de confecção e validade."
+    ],
+    "instructions_en": [
+        "Cut tomato into small pieces and place in a tupperware.",
+        "Cut onion into small pieces and add to tomato.",
+        "Chop cilantro and add to tomato and onion.",
+        "Add salt, lemon juice, and pepper.",
+        "Mix well with a spoon.",
+        "Close tupperware and label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

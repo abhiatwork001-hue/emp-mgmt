@@ -1,0 +1,129 @@
+{
+    "name": "Caril - Molho Base",
+    "name_en": "Curry - Base Sauce",
+    "slug": "caril-molho-base",
+    "categoryName": "Transformados",
+    "description": "Base para molho de caril.",
+    "description_en": "Base for curry sauce.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Panela 4LT",
+        "Placa Elétrica",
+        "Varinha",
+        "Espátula de Borracha",
+        "Tupperware 6LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Cebola Roxa",
+            "name_en": "Red Onion",
+            "amount": 120,
+            "unit": "gr"
+        },
+        {
+            "name": "Tomate Chucha",
+            "name_en": "Plum Tomato",
+            "amount": 260,
+            "unit": "gr"
+        },
+        {
+            "name": "Pimento Vermelho",
+            "name_en": "Red Bell Pepper",
+            "amount": 110,
+            "unit": "gr"
+        },
+        {
+            "name": "Alho Fresco",
+            "name_en": "Fresh Garlic",
+            "amount": 30,
+            "unit": "gr"
+        },
+        {
+            "name": "Gengibre Fresco",
+            "name_en": "Fresh Ginger",
+            "amount": 15,
+            "unit": "gr"
+        },
+        {
+            "name": "Azeite",
+            "name_en": "Olive Oil",
+            "amount": 80,
+            "unit": "ml"
+        },
+        {
+            "name": "Leite de Coco",
+            "name_en": "Coconut Milk",
+            "amount": 1.2,
+            "unit": "LT"
+        },
+        {
+            "name": "Polpa de Manga",
+            "name_en": "Mango Pulp",
+            "amount": 250,
+            "unit": "gr"
+        },
+        {
+            "name": "Cominhos",
+            "name_en": "Cumin",
+            "amount": 0.5,
+            "unit": "colher"
+        },
+        {
+            "name": "Caril em Pó",
+            "name_en": "Curry Powder",
+            "amount": 1.5,
+            "unit": "colher"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 15,
+            "unit": "gr"
+        },
+        {
+            "name": "Raspa de Lima",
+            "name_en": "Lime Zest",
+            "amount": 1,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Cortar a cebola, tomate, pimento, gengibre e alho em pedaços pequenos e colocar na panela.",
+        "Colocar o azeite.",
+        "Colocar a panela na placa e ligar a temperatura média-alta.",
+        "Cozinhar durante 5-7 minutos.",
+        "Quando tudo estiver cozinhado juntar o sal e retirar da placa.",
+        "Juntar a polpa de manga.",
+        "Juntar os cominhos e o caril em pó.",
+        "Juntar leite de coco e mexer.",
+        "Colocar a panela na placa e ligar a temperatura média-alta até ferver.",
+        "Retirar da placa.",
+        "Com ajuda da varinha triturar tudo muito bem.",
+        "Deixar arrefecer e colocar num tupperware.",
+        "Colocar etiqueta com data de confecção e validade"
+    ],
+    "instructions_en": [
+        "Cut onion, tomato, pepper, ginger, and garlic into small pieces and place in the pot.",
+        "Add olive oil.",
+        "Place pot on stove on medium-high heat.",
+        "Cook for 5-7 minutes.",
+        "When cooked, add salt and remove from stove.",
+        "Add mango pulp.",
+        "Add cumin and curry powder.",
+        "Add coconut milk and stir.",
+        "Place pot back on stove on medium-high heat until boiling.",
+        "Remove from stove.",
+        "Blend well using a hand blender.",
+        "Let cool down and place in a tupperware.",
+        "Place label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

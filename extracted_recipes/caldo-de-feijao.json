@@ -1,0 +1,118 @@
+{
+    "name": "Caldo de Feijão",
+    "name_en": "Bean Broth",
+    "slug": "caldo-de-feijao",
+    "categoryName": "Transformados",
+    "description": "Caldo rico de feijão.",
+    "description_en": "Rich bean broth.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Tupperware 6LT",
+        "Panela 10LT",
+        "Placa Elétrica",
+        "Espátula de Borracha"
+    ],
+    "ingredients": [
+        {
+            "name": "Tomate Triturado",
+            "name_en": "Crushed Tomato",
+            "amount": 1.17,
+            "unit": "LT"
+        },
+        {
+            "name": "Feijão Encarnado",
+            "name_en": "Red Kidney Beans",
+            "amount": 2.5,
+            "unit": "LT"
+        },
+        {
+            "name": "Bacon",
+            "name_en": "Bacon",
+            "amount": 120,
+            "unit": "gr"
+        },
+        {
+            "name": "Cebola Roxa",
+            "name_en": "Red Onion",
+            "amount": 250,
+            "unit": "gr"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 30,
+            "unit": "gr"
+        },
+        {
+            "name": "Alho Picado",
+            "name_en": "Minced Garlic",
+            "amount": 60,
+            "unit": "gr"
+        },
+        {
+            "name": "Coentros Picados",
+            "name_en": "Chopped Cilantro",
+            "amount": 60,
+            "unit": "gr"
+        },
+        {
+            "name": "Água",
+            "name_en": "Water",
+            "amount": 750,
+            "unit": "ml"
+        },
+        {
+            "name": "Pimenta Preta Moída",
+            "name_en": "Ground Black Pepper",
+            "amount": 5,
+            "unit": "gr"
+        },
+        {
+            "name": "Azeite",
+            "name_en": "Olive Oil",
+            "amount": 100,
+            "unit": "ml"
+        }
+    ],
+    "instructions": [
+        "Cortar a cebola roxa em pedaços pequenos e colocar na panela.",
+        "Juntar o bacon cortado em pedaços pequenos.",
+        "Juntar o alho picado.",
+        "Juntar o sal e pimenta.",
+        "Juntar o azeite e ligar a placa a temperatura média-baixa.",
+        "Refogar durante 8-10 minutos sem deixar queimar.",
+        "Quando o refogado estiver pronto, juntar os coentros picados e refogar mais 5 minutos.",
+        "Juntar o tomate e a água.",
+        "Deixar ferver durante 10 minutos.",
+        "Juntar o feijão.",
+        "Baixar a temperatura da placa e cozinhar por mais 10 minutos.",
+        "Mexer para evitar o feijão colar no fundo.",
+        "Deixar arrefecer e transferir para um tupperware.",
+        "Etiquetar com data de confecção e validade."
+    ],
+    "instructions_en": [
+        "Cut red onion into small pieces and place in the pot.",
+        "Add chopped bacon.",
+        "Add minced garlic.",
+        "Add salt and pepper.",
+        "Add olive oil and turn on medium-low heat.",
+        "Sauté for 8-10 minutes without burning.",
+        "When sauté is ready, add chopped cilantro and sauté for another 5 minutes.",
+        "Add tomato and water.",
+        "Let boil for 10 minutes.",
+        "Add beans.",
+        "Lower heat and cook for 10 more minutes.",
+        "Stir to prevent beans from sticking to the bottom.",
+        "Let cool and transfer to a tupperware.",
+        "Label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

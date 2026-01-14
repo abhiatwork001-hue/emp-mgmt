@@ -1,0 +1,65 @@
+{
+    "name": "Maionese de Alho",
+    "name_en": "Garlic Mayonnaise",
+    "slug": "maionese-de-alho",
+    "categoryName": "Molhos",
+    "description": "Maionese rica aromatizada com alho.",
+    "description_en": "Rich mayonnaise flavored with garlic.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0ºC e 4ºC",
+    "cookware": [
+        "Tupperware 2,6LT",
+        "Balança",
+        "Varinha"
+    ],
+    "ingredients": [
+        {
+            "name": "Maionese",
+            "name_en": "Mayonnaise",
+            "amount": 1.15,
+            "unit": "Kg"
+        },
+        {
+            "name": "Alho Inteiro",
+            "name_en": "Whole Garlic",
+            "amount": 20,
+            "unit": "gr"
+        },
+        {
+            "name": "Coentros",
+            "name_en": "Cilantro",
+            "amount": 5,
+            "unit": "gr"
+        },
+        {
+            "name": "Sumo de Limão",
+            "name_en": "Lemon Juice",
+            "amount": 35,
+            "unit": "ml"
+        }
+    ],
+    "instructions": [
+        "Colocar a maionese no tupperware.",
+        "Colocar os coentros lavados.",
+        "Juntar o alho.",
+        "Juntar o sumo de limão.",
+        "Triturar e envolver com a varinha até ficar bem misturado.",
+        "Quando estiver finalizado, colocar no recipiente para ir ao frigorífico.",
+        "Colocar a etiqueta com data de confecção e data de validade."
+    ],
+    "instructions_en": [
+        "Place mayonnaise in the tupperware.",
+        "Add washed cilantro.",
+        "Add garlic.",
+        "Add lemon juice.",
+        "Blend and mix well with hand blender until well combined.",
+        "When finished, place in container for fridge.",
+        "Place label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

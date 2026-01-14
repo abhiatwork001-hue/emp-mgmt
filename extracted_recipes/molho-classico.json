@@ -1,0 +1,103 @@
+{
+    "name": "Molho Clássico",
+    "name_en": "Classic Sauce",
+    "slug": "molho-classico",
+    "categoryName": "Molhos",
+    "description": "Molho clássico utilizado para temperar frangos.",
+    "description_en": "Classic sauce used for seasoning chicken.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Temperatura ambiente",
+    "cookware": [
+        "Panela 10LT",
+        "Coador",
+        "Funil",
+        "Balança",
+        "Tábua Branca",
+        "Faca Branca",
+        "Placa Elétrica",
+        "Garrafão Vazio 5LT",
+        "Varinha"
+    ],
+    "ingredients": [
+        {
+            "name": "Margarina",
+            "name_en": "Margarine",
+            "amount": 500,
+            "unit": "gr"
+        },
+        {
+            "name": "Alho Fresco",
+            "name_en": "Fresh Garlic",
+            "amount": 75,
+            "unit": "gr"
+        },
+        {
+            "name": "Pimenta Preta Grão",
+            "name_en": "Black Pepper Corns",
+            "amount": 25,
+            "unit": "gr"
+        },
+        {
+            "name": "Orégãos",
+            "name_en": "Oregano",
+            "amount": 20,
+            "unit": "gr"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 32,
+            "unit": "gr"
+        },
+        {
+            "name": "Louro",
+            "name_en": "Bay Leaf",
+            "amount": 4,
+            "unit": "gr"
+        },
+        {
+            "name": "Óleo de Girassol",
+            "name_en": "Sunflower Oil",
+            "amount": 5,
+            "unit": "LT"
+        },
+        {
+            "name": "Sumo de Limão",
+            "name_en": "Lemon Juice",
+            "amount": 150,
+            "unit": "ml"
+        }
+    ],
+    "instructions": [
+        "Colocar a margarina na panela.",
+        "Juntar o alho, pimenta, louro, orégãos e o sal grosso.",
+        "Juntar o óleo de girassol.",
+        "Colocar na placa a temperatura média-baixa sem deixar ferver durante 15 minutos.",
+        "Após os 15 minutos, quando a margarina estiver derretida, acrescentar sumo de limão.",
+        "Triturar tudo muito bem com a varinha.",
+        "Colocar o coador no tupperware.",
+        "Coar o líquido para o tupperware.",
+        "Colocar o molho no garrafão vazio.",
+        "Retirar a etiqueta do garrafão e colocar a etiqueta com a data de confecção e data de validade.",
+        "AGITAR ANTES DE USAR"
+    ],
+    "instructions_en": [
+        "Place margarine in the pot.",
+        "Add garlic, pepper, bay leaf, oregano, and salt.",
+        "Add sunflower oil.",
+        "Place on stove on medium-low heat without boiling for 15 minutes.",
+        "After 15 minutes, when margarine is melted, add lemon juice.",
+        "Blend everything very well with the hand blender.",
+        "Place strainer on tupperware.",
+        "Strain liquid into tupperware.",
+        "Pour sauce into empty jug.",
+        "Remove label from jug and label with preparation date and expiry date.",
+        "SHAKE BEFORE USE"
+    ],
+    "isPublished": true,
+    "isActive": true
+}

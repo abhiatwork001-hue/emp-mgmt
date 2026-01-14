@@ -1,0 +1,79 @@
+{
+    "name": "Couve Roxa Pickled",
+    "name_en": "Pickled Red Cabbage",
+    "slug": "couve-roxa-pickled",
+    "categoryName": "Transformados",
+    "description": "Conservas de couve roxa.",
+    "description_en": "Preserved red cabbage.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Panela 2LT",
+        "Placa Elétrica",
+        "Tupperware 2,6LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Couve Roxa",
+            "name_en": "Red Cabbage",
+            "amount": 500,
+            "unit": "gr"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 15,
+            "unit": "gr"
+        },
+        {
+            "name": "Açúcar Branco",
+            "name_en": "White Sugar",
+            "amount": 25,
+            "unit": "gr"
+        },
+        {
+            "name": "Vinagre",
+            "name_en": "Vinegar",
+            "amount": 250,
+            "unit": "ml"
+        },
+        {
+            "name": "Água",
+            "name_en": "Water",
+            "amount": 250,
+            "unit": "ml"
+        }
+    ],
+    "instructions": [
+        "Retirar as folhas exteriores da couve que possam estar menos frescas.",
+        "Cortar a couve em 2 metades na vertical.",
+        "Cortar novamente obtendo 4 quartos.",
+        "Cortar os talos brancos da base da couve.",
+        "Numa panela colocar o vinagre e a água.",
+        "Juntar o sal e açúcar.",
+        "Colocar na placa e ligar.",
+        "Quando ferver, misturar bem e colocar a cima da couve.",
+        "Fechar o tupperware e deixar arrefecer antes de armazenar.",
+        "Colocar etiqueta com data de confecção e validade."
+    ],
+    "instructions_en": [
+        "Remove fresh outer leaves from cabbage if less fresh.",
+        "Cut cabbage vertically into 2 halves.",
+        "Cut again to get 4 quarters.",
+        "Cut the white stalks from the base.",
+        "In a pot put vinegar and water.",
+        "Add salt and sugar.",
+        "Place on stove and turn on.",
+        "When boiling, mix well and pour over cabbage.",
+        "Close tupperware and let cool before storing.",
+        "Place label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

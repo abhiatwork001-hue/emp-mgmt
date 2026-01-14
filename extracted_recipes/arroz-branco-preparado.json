@@ -1,0 +1,65 @@
+{
+    "name": "Arroz Branco Preparado",
+    "name_en": "Prepared White Rice",
+    "slug": "arroz-branco-preparado",
+    "categoryName": "Transformados",
+    "description": "Arroz branco Thai simples.",
+    "description_en": "Simple Thai white rice.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 2,
+    "storingTemperature": "N/A",
+    "cookware": [
+        "Balança",
+        "Arrozeira",
+        "Colher de Plástico"
+    ],
+    "ingredients": [
+        {
+            "name": "Arroz Thai",
+            "name_en": "Thai Rice",
+            "amount": 1,
+            "unit": "KG"
+        },
+        {
+            "name": "Água",
+            "name_en": "Water",
+            "amount": 1.35,
+            "unit": "LT"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 30,
+            "unit": "gr"
+        },
+        {
+            "name": "Azeite",
+            "name_en": "Olive Oil",
+            "amount": 30,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Colocar a água na panela da arrozeira.",
+        "Juntar o sal e azeite.",
+        "Ligar a arrozeira.",
+        "Pesar o arroz.",
+        "Quando começar a ferver, juntar o arroz e misturar bem.",
+        "Fechar a arrozeira e deixar cozinhar.",
+        "Quando a arrozeira finalizar, mexer o arroz."
+    ],
+    "instructions_en": [
+        "Place water in the rice cooker pot.",
+        "Add salt and olive oil.",
+        "Turn on rice cooker.",
+        "Weigh the rice.",
+        "When it starts boiling, add rice and mix well.",
+        "Close rice cooker and let cook.",
+        "When rice cooker finishes, fluff the rice."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

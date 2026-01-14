@@ -1,0 +1,99 @@
+{
+    "name": "Molho Cucurico",
+    "name_en": "Cucurico Sauce",
+    "slug": "molho-cucurico",
+    "categoryName": "Molhos",
+    "description": "Molho de ervas e manteiga.",
+    "description_en": "Herb and butter sauce.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Espátula de Borracha",
+        "Panela 2LT",
+        "Placa Elétrica",
+        "Coador",
+        "Tupperware 1,7LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Manteiga s/Sal",
+            "name_en": "Unsalted Butter",
+            "amount": 250,
+            "unit": "gr"
+        },
+        {
+            "name": "Azeite",
+            "name_en": "Olive Oil",
+            "amount": 110,
+            "unit": "ml"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 20,
+            "unit": "gr"
+        },
+        {
+            "name": "Alecrim Fresco",
+            "name_en": "Fresh Rosemary",
+            "amount": 10,
+            "unit": "gr"
+        },
+        {
+            "name": "Tomilho Fresco",
+            "name_en": "Fresh Thyme",
+            "amount": 10,
+            "unit": "gr"
+        },
+        {
+            "name": "Alho Fresco",
+            "name_en": "Fresh Garlic",
+            "amount": 30,
+            "unit": "gr"
+        },
+        {
+            "name": "Sumo de Limão",
+            "name_en": "Lemon Juice",
+            "amount": 80,
+            "unit": "ml"
+        },
+        {
+            "name": "Brandy Mel",
+            "name_en": "Honey Brandy",
+            "amount": 25,
+            "unit": "ml"
+        }
+    ],
+    "instructions": [
+        "Numa panela colocar a manteiga e o azeite.",
+        "Juntar o alecrim e tomilho.",
+        "Juntar o alho picado e o sal.",
+        "Levar a panela a placa e ligar a temperatura mínima durante 15 minutos.",
+        "Não deixar ferver.",
+        "Passados os 15 minutos juntar o sumo de limão e brandy mel.",
+        "Ligar a placa por mais 5 minutos.",
+        "Retirar da placa e coar o molho para um tupperware.",
+        "Deixar arrefecer e armazenar.",
+        "Colocar etiqueta com data de confecção e validade."
+    ],
+    "instructions_en": [
+        "Place butter and olive oil in a pot.",
+        "Add rosemary and thyme.",
+        "Add minced garlic and salt.",
+        "Place pot on stove on minimum heat for 15 minutes.",
+        "Do not let boil.",
+        "After 15 minutes add lemon juice and honey brandy.",
+        "Turn on heat for 5 more minutes.",
+        "Remove from heat and strain sauce into a tupperware.",
+        "Let cool and store.",
+        "Place label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

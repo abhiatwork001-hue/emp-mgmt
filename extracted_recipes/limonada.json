@@ -1,0 +1,58 @@
+{
+    "name": "Limonada",
+    "name_en": "Lemonade",
+    "slug": "limonada",
+    "categoryName": "Refrigerantes",
+    "description": "Limonada fresca caseira.",
+    "description_en": "Fresh homemade lemonade.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 5.8,
+    "yieldUnit": "Litros",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tupperware 10LT",
+        "Varas",
+        "Balança",
+        "Coador"
+    ],
+    "ingredients": [
+        {
+            "name": "Sumo de Limão",
+            "name_en": "Lemon Juice",
+            "amount": 1,
+            "unit": "emb"
+        },
+        {
+            "name": "Açúcar Branco",
+            "name_en": "White Sugar",
+            "amount": 350,
+            "unit": "gr"
+        },
+        {
+            "name": "Água",
+            "name_en": "Water",
+            "amount": 4.5,
+            "unit": "LT"
+        }
+    ],
+    "instructions": [
+        "Pesar o açúcar e colocar no taça.",
+        "Juntar a água.",
+        "Com as varas mexer até o açúcar ficar dissolvido.",
+        "Passar o sumo de limão pelo coador e juntar na água.",
+        "Misturar bem.",
+        "Fechar o tupperware, colocar etiqueta e armazenar dentro do frigorífico."
+    ],
+    "instructions_en": [
+        "Weigh sugar and place in bowl.",
+        "Add water.",
+        "Mix with whisk until sugar is dissolved.",
+        "Strain lemon juice and add to water.",
+        "Mix well.",
+        "Close tupperware, label, and store inside fridge."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

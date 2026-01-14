@@ -1699,9 +1699,11 @@ export interface ICategory extends Document {
 
 export interface IFood extends Document {
     name: string;
+    name_en?: string; // Added
     slug: string;
     category: ObjectId; // Ref to Category
     description?: string; // Briefing
+    description_en?: string; // Added
     heroImg?: string;
     numberOfDoses?: number;
     yieldAmount?: number;
@@ -1714,6 +1716,7 @@ export interface IFood extends Document {
     // Ingredients
     ingredients: {
         name: string;
+        name_en?: string; // Added
         amount: number;
         unit: string;
         costPerUnit: number; // e.g. price per Kg
@@ -1736,6 +1739,7 @@ export interface IFood extends Document {
     storingTemperature: string;
     cookware: string[];
     instructions: string[];
+    instructions_en?: string[]; // Added
     platingImages?: string[];
 
     // Access and Status
@@ -1763,9 +1767,11 @@ const CategorySchema = new Schema<ICategory>({
 
 const FoodSchema = new Schema<IFood>({
     name: { type: String, required: true, unique: true },
+    name_en: { type: String }, // Added
     slug: { type: String, required: true, unique: true },
     category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
     description: { type: String },
+    description_en: { type: String }, // Added
     heroImg: { type: String },
     numberOfDoses: { type: Number, default: 1 },
     yieldAmount: { type: Number },
@@ -1775,6 +1781,7 @@ const FoodSchema = new Schema<IFood>({
     expirationDays: { type: Number, required: true },
     ingredients: [{
         name: { type: String, required: true },
+        name_en: { type: String }, // Added
         amount: { type: Number, required: true },
         unit: { type: String, required: true },
         costPerUnit: { type: Number, default: 0 },
@@ -1795,6 +1802,7 @@ const FoodSchema = new Schema<IFood>({
     storingTemperature: { type: String },
     cookware: [{ type: String }],
     instructions: [{ type: String }],
+    instructions_en: [{ type: String }], // Added
     platingImages: [{ type: String }],
 
     isPublished: { type: Boolean, default: false },

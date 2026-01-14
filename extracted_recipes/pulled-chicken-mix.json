@@ -1,0 +1,95 @@
+{
+    "name": "Pulled Chicken Mix",
+    "name_en": "Pulled Chicken Mix",
+    "slug": "pulled-chicken-mix",
+    "categoryName": "Transformados",
+    "description": "Mistura de frango desfiado com molho BBQ.",
+    "description_en": "Shredded chicken mix with BBQ sauce.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Panela 4LT",
+        "Espátula de Borracha",
+        "Placa Elétrica",
+        "Varas",
+        "Tupperware 2,6LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Frango Grelhado",
+            "name_en": "Grilled Chicken",
+            "amount": 2,
+            "unit": "un"
+        },
+        {
+            "name": "Cebola Roxa",
+            "name_en": "Red Onion",
+            "amount": 200,
+            "unit": "gr"
+        },
+        {
+            "name": "Alho Picado",
+            "name_en": "Minced Garlic",
+            "amount": 50,
+            "unit": "gr"
+        },
+        {
+            "name": "Molho BBQ",
+            "name_en": "BBQ Sauce",
+            "amount": 100,
+            "unit": "ml"
+        },
+        {
+            "name": "Azeite",
+            "name_en": "Olive Oil",
+            "amount": 30,
+            "unit": "ml"
+        },
+        {
+            "name": "Água",
+            "name_en": "Water",
+            "amount": 150,
+            "unit": "ml"
+        }
+    ],
+    "instructions": [
+        "Grelhar o frango e separar a pele e a carne.",
+        "Descartar os ossos.",
+        "Picar a pele em pedaços pequenos.",
+        "Cortar a cebola em juliana e colocar na panela.",
+        "Juntar o alho picado e o azeite.",
+        "Ligar a placa a temperatura média-baixa.",
+        "Refogar a cebola e o alho durante 5 minutos aprox.",
+        "Juntar a pele ao refogado.",
+        "Refogar por mais 3 minutos sem deixar de mexer.",
+        "Juntar a água na panela e mexer bem.",
+        "Juntar a carne do frango e o molho BBQ.",
+        "Baixar a temperatura da placa e envolver bem.",
+        "Com ajuda das varas, esmagar o frango até ficar desfiado.",
+        "Colocar no tupperware com etiqueta com data de confecção e validade."
+    ],
+    "instructions_en": [
+        "Grill the chicken and separate skin from meat.",
+        "Discard bones.",
+        "Chop skin into small pieces.",
+        "Cut onion into julienne and place in pot.",
+        "Add minced garlic and olive oil.",
+        "Turn plate to medium-low heat.",
+        "Sauté onion and garlic for approx 5 minutes.",
+        "Add skin to sauté.",
+        "Sauté for 3 more minutes stirring constantly.",
+        "Add water to pot and stir well.",
+        "Add chicken meat and BBQ sauce.",
+        "Lower heat and mix well.",
+        "With whisks, crush chicken until shredded.",
+        "Place in tupperware with label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

@@ -1,0 +1,79 @@
+{
+    "name": "Farinha Temperada",
+    "name_en": "Seasoned Flour",
+    "slug": "farinha-temperada",
+    "categoryName": "Transformados",
+    "description": "Mistura de farinha e especiarias.",
+    "description_en": "Mix of flour and spices.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 15,
+    "storingTemperature": "Temperatura ambiente",
+    "cookware": [
+        "Taça de Inox Grande",
+        "Varas",
+        "Tupperware 6LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Farinha de Trigo",
+            "name_en": "Wheat Flour",
+            "amount": 1,
+            "unit": "Kg"
+        },
+        {
+            "name": "Alho Moído",
+            "name_en": "Ground Garlic",
+            "amount": 100,
+            "unit": "gr"
+        },
+        {
+            "name": "Pimentão Doce",
+            "name_en": "Sweet Paprika",
+            "amount": 20,
+            "unit": "gr"
+        },
+        {
+            "name": "Paprika Fumada",
+            "name_en": "Smoked Paprika",
+            "amount": 30,
+            "unit": "gr"
+        },
+        {
+            "name": "Cominhos Moídos",
+            "name_en": "Ground Cumin",
+            "amount": 5,
+            "unit": "gr"
+        },
+        {
+            "name": "Sal Fino",
+            "name_en": "Fine Salt",
+            "amount": 50,
+            "unit": "gr"
+        },
+        {
+            "name": "Pimenta Preta Moída",
+            "name_en": "Ground Black Pepper",
+            "amount": 20,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Pesar todos os ingredientes.",
+        "Juntar tudo na taça de inox.",
+        "Misturar bem com as varas.",
+        "Armazenar num tupperware.",
+        "Colocar etiqueta com data de preparação e validade."
+    ],
+    "instructions_en": [
+        "Weigh all ingredients.",
+        "Combine everything in the stainless steel bowl.",
+        "Mix well with the whisk.",
+        "Store in a tupperware.",
+        "Place label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

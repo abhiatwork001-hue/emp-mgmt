@@ -1,0 +1,115 @@
+{
+    "name": "Molho Escaldante",
+    "name_en": "Scalding Sauce",
+    "slug": "molho-escaldante",
+    "categoryName": "Molhos",
+    "description": "Molho picante escaldante.",
+    "description_en": "Scalding hot spicy sauce.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Temperatura ambiente",
+    "cookware": [
+        "Panela 10LT",
+        "Coador",
+        "Funil",
+        "Balança",
+        "Tábua Branca",
+        "Faca Branca",
+        "Placa Elétrica",
+        "Garrafão Vazio 5LT",
+        "Varinha"
+    ],
+    "ingredients": [
+        {
+            "name": "Margarina",
+            "name_en": "Margarine",
+            "amount": 500,
+            "unit": "gr"
+        },
+        {
+            "name": "Alho Fresco",
+            "name_en": "Fresh Garlic",
+            "amount": 75,
+            "unit": "gr"
+        },
+        {
+            "name": "Pimenta Preta Grão",
+            "name_en": "Black Pepper Corns",
+            "amount": 25,
+            "unit": "gr"
+        },
+        {
+            "name": "Orégãos",
+            "name_en": "Oregano",
+            "amount": 20,
+            "unit": "gr"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 32,
+            "unit": "gr"
+        },
+        {
+            "name": "Louro",
+            "name_en": "Bay Leaf",
+            "amount": 4,
+            "unit": "gr"
+        },
+        {
+            "name": "Óleo de Girassol",
+            "name_en": "Sunflower Oil",
+            "amount": 5,
+            "unit": "LT"
+        },
+        {
+            "name": "Sumo de Limão",
+            "name_en": "Lemon Juice",
+            "amount": 150,
+            "unit": "ml"
+        },
+        {
+            "name": "Malagueta Fresca",
+            "name_en": "Fresh Chili",
+            "amount": 500,
+            "unit": "gr"
+        },
+        {
+            "name": "Piri Piri Seco",
+            "name_en": "Dried Piri Piri",
+            "amount": 150,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Colocar a margarina na panela.",
+        "Juntar o alho, a pimenta, folhas de louro, sal, orégão, piri piri seco, malaguetas frescas.",
+        "Juntar o óleo de girassol.",
+        "Colocar na placa a temperatura média-baixa durante 15 minutos sem deixar ferver.",
+        "Após os 15 minutos, quando a margarina estiver derretida juntar o sumo de limão.",
+        "Triturar tudo muito bem com a varinha.",
+        "Colocar o coador no tupperware.",
+        "Colocar o líquido para o tupperware.",
+        "Transferir o molho para o garrafão vazio.",
+        "Retirar etiqueta do garrafão e colocar etiqueta com data de confecção.",
+        "AGITAR ANTES DE USAR"
+    ],
+    "instructions_en": [
+        "Place margarine in the pot.",
+        "Add garlic, pepper, bay leaves, salt, oregano, dried piri piri, fresh chilies.",
+        "Add sunflower oil.",
+        "Place on stove on medium-low heat for 15 minutes without boiling.",
+        "After 15 minutes, when margarine is melted add lemon juice.",
+        "Blend everything very well with the hand blender.",
+        "Place strainer on tupperware.",
+        "Pour liquid into tupperware.",
+        "Transfer sauce to empty jug.",
+        "Remove label from jug and label with preparation date.",
+        "SHAKE BEFORE USE"
+    ],
+    "isPublished": true,
+    "isActive": true
+}

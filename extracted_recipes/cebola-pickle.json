@@ -1,0 +1,91 @@
+{
+    "name": "Cebola Pickle",
+    "name_en": "Pickled Onion",
+    "slug": "cebola-pickle",
+    "categoryName": "Transformados",
+    "description": "Cebola roxa em conserva.",
+    "description_en": "Pickled red onion.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 1,
+    "yieldUnit": "KG",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Balança",
+        "Tacho 3LT",
+        "Tupperware 2,8LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Cebola Roxa",
+            "name_en": "Red Onion",
+            "amount": 1,
+            "unit": "KG"
+        },
+        {
+            "name": "Alho Fresco",
+            "name_en": "Fresh Garlic",
+            "amount": 30,
+            "unit": "gr"
+        },
+        {
+            "name": "Pimenta Preta Grão",
+            "name_en": "Black Pepper Corns",
+            "amount": 10,
+            "unit": "gr"
+        },
+        {
+            "name": "Louro",
+            "name_en": "Bay Leaf",
+            "amount": 1,
+            "unit": "folha"
+        },
+        {
+            "name": "Vinagre",
+            "name_en": "Vinegar",
+            "amount": 1,
+            "unit": "LT"
+        },
+        {
+            "name": "Água",
+            "name_en": "Water",
+            "amount": 500,
+            "unit": "ml"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 40,
+            "unit": "gr"
+        },
+        {
+            "name": "Açúcar Branco",
+            "name_en": "White Sugar",
+            "amount": 80,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Cortar a cebola em juliana.",
+        "Soltar com as mãos e colocar no tupperware.",
+        "Juntar o vinagre, água, sal, açúcar, pimenta, alho e louro no tacho e colocar na placa.",
+        "Ligar a temperatura média-alta.",
+        "Deixar ferver durante 5 minutos e desligar.",
+        "Colocar a mistura no tupperware com a cebola e colocar a tampa.",
+        "Colocar etiqueta e deixar arrefecer antes de colocar no frigorífico."
+    ],
+    "instructions_en": [
+        "Cut onion into julienne strips.",
+        "Separate with hands and place in tupperware.",
+        "Add vinegar, water, salt, sugar, pepper, garlic, and bay leaf to pot and place on stove.",
+        "Turn on medium-high heat.",
+        "Boil for 5 minutes and turn off.",
+        "Pour mixture into tupperware with onion and cover.",
+        "Label and let cool before placing in fridge."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

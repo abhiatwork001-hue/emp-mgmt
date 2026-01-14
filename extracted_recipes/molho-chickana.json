@@ -1,0 +1,126 @@
+{
+    "name": "Molho Chickana",
+    "name_en": "Chickana Sauce",
+    "slug": "molho-chickana",
+    "categoryName": "Transformados",
+    "description": "Molho especial Chickana.",
+    "description_en": "Special Chickana sauce.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 1,
+    "yieldUnit": "LT",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Balança",
+        "Tupperware 1,7LT",
+        "Espátula",
+        "Tacho 3LT",
+        "Placa Inducção",
+        "Varinha Mágica"
+    ],
+    "ingredients": [
+        {
+            "name": "Pimentão Doce",
+            "name_en": "Sweet Paprika",
+            "amount": 0.5,
+            "unit": "colher"
+        },
+        {
+            "name": "Pimenta Preta Moída",
+            "name_en": "Ground Black Pepper",
+            "amount": 0.5,
+            "unit": "colher"
+        },
+        {
+            "name": "Cominhos Moídos",
+            "name_en": "Ground Cumin",
+            "amount": 0.25,
+            "unit": "colher"
+        },
+        {
+            "name": "Alho Moído",
+            "name_en": "Ground Garlic",
+            "amount": 0.5,
+            "unit": "colher"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 20,
+            "unit": "gr"
+        },
+        {
+            "name": "Louro",
+            "name_en": "Bay Leaf",
+            "amount": 1,
+            "unit": "folha"
+        },
+        {
+            "name": "Piri Piri Fresco",
+            "name_en": "Fresh Chili",
+            "amount": 1,
+            "unit": "UN"
+        },
+        {
+            "name": "Alho Fresco",
+            "name_en": "Fresh Garlic",
+            "amount": 30,
+            "unit": "gr"
+        },
+        {
+            "name": "Cerveja Clara",
+            "name_en": "Light Beer",
+            "amount": 660,
+            "unit": "ml"
+        },
+        {
+            "name": "Tomate Chucha",
+            "name_en": "Plum Tomato",
+            "amount": 520,
+            "unit": "gr"
+        },
+        {
+            "name": "Cebola Branca",
+            "name_en": "White Onion",
+            "amount": 200,
+            "unit": "gr"
+        },
+        {
+            "name": "Azeite",
+            "name_en": "Olive Oil",
+            "amount": 40,
+            "unit": "ml"
+        }
+    ],
+    "instructions": [
+        "Cortar a cebola, o alho e o tomate em pedaços grossos.",
+        "Retirar as sementes do piri piri.",
+        "Colocar o tacho na placa e ligar a temperatura média-alta.",
+        "Colocar o azeite e juntar a cebola. Refogar durante 2 minutos.",
+        "Juntar o alho e refogar mais 1 minuto.",
+        "Juntar o piri piri e a folha de louro, refogar mais 1 minuto.",
+        "Juntar o tomate e o sal. Refogar durante 5 minutos até o tomate estar cozinhado.",
+        "Juntar a pimenta preta, pimentão doce, alho moído, cominhos e a cerveja.",
+        "Deixar ferver durante 5 minutos e triturar bem.",
+        "Deixar cozinhar durante mais 5 minutos a temperatura média-baixa sem deixar de mexer.",
+        "Colocar num tupperware com etiqueta."
+    ],
+    "instructions_en": [
+        "Cut onion, garlic, and tomato into large chunks.",
+        "Remove seeds from chili.",
+        "Place pot on stove on medium-high heat.",
+        "Add olive oil and onion. Sauté for 2 minutes.",
+        "Add garlic and sauté for 1 more minute.",
+        "Add chili and bay leaf, sauté for 1 more minute.",
+        "Add tomato and salt. Sauté for 5 minutes until tomato is cooked.",
+        "Add black pepper, sweet paprika, ground garlic, cumin, and beer.",
+        "Boil for 5 minutes and blend well.",
+        "Cook for 5 more minutes on medium-low heat, stirring constantly.",
+        "Place in a labeled tupperware."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

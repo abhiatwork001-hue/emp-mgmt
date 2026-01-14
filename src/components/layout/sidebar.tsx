@@ -267,7 +267,7 @@ export function MobileSidebar({
                     departmentName={departmentName}
                     storeSlug={storeSlug}
                     deptSlug={deptSlug}
-                    isMobile={false} // Force desktop view inside sheet
+                    isMobile={true} // Enabled for mobile view (shows Search)
                     onNavItemClick={() => setOpen(false)}
                     hasRecipes={hasRecipes}
                     hasCoverage={hasCoverage}

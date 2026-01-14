@@ -1,0 +1,106 @@
+{
+    "name": "Canja de Galinha",
+    "name_en": "Chicken Soup",
+    "slug": "canja-de-galinha",
+    "categoryName": "Transformados",
+    "description": "Base de canja de galinha tradicional.",
+    "description_en": "Traditional chicken soup base.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0ºC e 4ºC",
+    "cookware": [
+        "Panela 10LT",
+        "Coador",
+        "Balança",
+        "Placa Elétrica",
+        "Faca Verde",
+        "Tábua Verde",
+        "Descascador",
+        "Tupperware 6LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Canjinha",
+            "name_en": "Small Pasta/Orzo",
+            "amount": 1,
+            "unit": "un"
+        },
+        {
+            "name": "Cebola Branca",
+            "name_en": "White Onion",
+            "amount": 200,
+            "unit": "gr"
+        },
+        {
+            "name": "Cenoura",
+            "name_en": "Carrot",
+            "amount": 130,
+            "unit": "gr"
+        },
+        {
+            "name": "Hortelã",
+            "name_en": "Mint",
+            "amount": 20,
+            "unit": "gr"
+        },
+        {
+            "name": "Salsa",
+            "name_en": "Parsley",
+            "amount": 30,
+            "unit": "gr"
+        },
+        {
+            "name": "Pimenta Preta Grão",
+            "name_en": "Black Pepper Corns",
+            "amount": 10,
+            "unit": "gr"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 20,
+            "unit": "gr"
+        },
+        {
+            "name": "Alho Inteiro",
+            "name_en": "Whole Garlic",
+            "amount": 35,
+            "unit": "gr"
+        },
+        {
+            "name": "Água",
+            "name_en": "Water",
+            "amount": 3.5,
+            "unit": "lt"
+        }
+    ],
+    "instructions": [
+        "Descascar a cebola, a cenoura e colocar na panela.",
+        "Juntar o alho, a pimenta e o sal.",
+        "Juntar a embalagem de canjinha e a água.",
+        "Levar a placa, ligar a temperatura média-alta durante 40 minutos.",
+        "Após os 40 minutos, juntar a salsa e cozinhar durante 20 minutos.",
+        "Após os 20 minutos juntar a hortelã e cozinhar por mais 20 minutos.",
+        "Coar o líquido e colocar num tupperware.",
+        "Reservar a cenoura, cebola e o frango.",
+        "Separar a carne do frango.",
+        "Desfiar o frango sem esmagá-lo e guardar num tupperware etiquetado."
+    ],
+    "instructions_en": [
+        "Peel the onion and carrot and place in the pot.",
+        "Add garlic, pepper, and salt.",
+        "Add the pasta package and water.",
+        "Place on the stove, turn to medium-high heat for 40 minutes.",
+        "After 40 minutes, add parsley and cook for 20 minutes.",
+        "After 20 minutes add mint and cook for another 20 minutes.",
+        "Strain the liquid and place in a tupperware.",
+        "Reserve the carrot, onion, and chicken.",
+        "Separate the chicken meat.",
+        "Shred the chicken without crushing it and store in a labeled tupperware."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

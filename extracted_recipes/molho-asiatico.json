@@ -1,0 +1,50 @@
+{
+    "name": "Molho Asiatico",
+    "name_en": "Asian Sauce",
+    "slug": "molho-asiatico",
+    "categoryName": "Molhos",
+    "description": "Molho de estilo asiático.",
+    "description_en": "Asian style sauce.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 500,
+    "yieldUnit": "gr",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0ºC e 4ºC",
+    "cookware": [
+        "Panela para Molhos",
+        "Balança",
+        "Pincel",
+        "Biberão / Frasco para Molhos"
+    ],
+    "ingredients": [
+        {
+            "name": "Molho Teriyaki",
+            "name_en": "Teriyaki Sauce",
+            "amount": 250,
+            "unit": "gr"
+        },
+        {
+            "name": "Molho Sweet Chilli",
+            "name_en": "Sweet Chilli Sauce",
+            "amount": 250,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Colocar o molho teriyaki numa panela.",
+        "Juntar o molho sweet chilli.",
+        "Envolver até ficar bem misturado.",
+        "Transferir para um biberão/frasco.",
+        "Servir."
+    ],
+    "instructions_en": [
+        "Place teriyaki sauce in a pan.",
+        "Add sweet chilli sauce.",
+        "Mix well until combined.",
+        "Transfer to a bottle/jar.",
+        "Serve."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

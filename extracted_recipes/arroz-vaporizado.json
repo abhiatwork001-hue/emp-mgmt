@@ -1,0 +1,87 @@
+{
+    "name": "Arroz Vaporizado",
+    "name_en": "Steamed Rice",
+    "slug": "arroz-vaporizado",
+    "categoryName": "Transformados",
+    "description": "Arroz vaporizado solto.",
+    "description_en": "Loose steamed rice.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 2,
+    "storingTemperature": "N/A",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Panela 2LT",
+        "Placa Elétrica",
+        "Espátula de Borracha",
+        "Arrozeira",
+        "Balança"
+    ],
+    "ingredients": [
+        {
+            "name": "Arroz Vaporizado",
+            "name_en": "Parboiled Rice",
+            "amount": 1,
+            "unit": "KG"
+        },
+        {
+            "name": "Cebola Branca",
+            "name_en": "White Onion",
+            "amount": 100,
+            "unit": "gr"
+        },
+        {
+            "name": "Alho Picado",
+            "name_en": "Minced Garlic",
+            "amount": 5,
+            "unit": "gr"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 35,
+            "unit": "gr"
+        },
+        {
+            "name": "Azeite",
+            "name_en": "Olive Oil",
+            "amount": 55,
+            "unit": "ml"
+        },
+        {
+            "name": "Água",
+            "name_en": "Water",
+            "amount": 2.58,
+            "unit": "LT"
+        }
+    ],
+    "instructions": [
+        "Cortar a cebola em pedaços pequenos e colocar na panela.",
+        "Juntar o alho e o azeite.",
+        "Colocar a panela na placa.",
+        "Refogar a temperatura média-baixa durante 5 minutos.",
+        "Pesar o arroz e lavar 3-4 vezes.",
+        "Escorrer a água e colocar o arroz na arrozeira.",
+        "Juntar o refogado.",
+        "Juntar a água e o sal.",
+        "Ligar a arrozeira.",
+        "Quando a arrozeira finalizar, mexer o arroz."
+    ],
+    "instructions_en": [
+        "Cut the onion into small pieces and place in the pot.",
+        "Add garlic and olive oil.",
+        "Place pot on stove.",
+        "Sauté on medium-low heat for 5 minutes.",
+        "Weigh the rice and wash 3-4 times.",
+        "Drain water and place rice in rice cooker.",
+        "Add the sautéed mixture.",
+        "Add water and salt.",
+        "Turn on rice cooker.",
+        "When rice cooker finishes, fluff the rice."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

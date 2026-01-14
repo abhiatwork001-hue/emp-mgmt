@@ -1,0 +1,47 @@
+{
+    "name": "Cenoura e Cebola para Canja",
+    "name_en": "Carrot and Onion for Soup",
+    "slug": "cenoura-e-cebola-para-canja",
+    "categoryName": "Transformados",
+    "description": "Vegetais preparados para a canja.",
+    "description_en": "Prepared vegetables for the soup.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0ºC e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Tupperware 0.5LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Cenoura",
+            "name_en": "Carrot",
+            "amount": 0,
+            "unit": "a gosto",
+            "observation": "Ver instruções"
+        },
+        {
+            "name": "Cebola",
+            "name_en": "Onion",
+            "amount": 0,
+            "unit": "a gosto",
+            "observation": "Ver instruções"
+        }
+    ],
+    "instructions": [
+        "Deixar a cebola e cenoura arrefecer.",
+        "Cortar em cubos pequenos.",
+        "Guardar num tupperware com etiqueta."
+    ],
+    "instructions_en": [
+        "Let the onion and carrot cool down.",
+        "Cut into small cubes.",
+        "Store in a tupperware with a label."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

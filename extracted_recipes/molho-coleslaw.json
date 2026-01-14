@@ -1,0 +1,82 @@
+{
+    "name": "Molho Coleslaw",
+    "name_en": "Coleslaw Sauce",
+    "slug": "molho-coleslaw",
+    "categoryName": "Molhos",
+    "description": "Molho cremoso para salada coleslaw.",
+    "description_en": "Creamy sauce for coleslaw salad.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Taça de Inox",
+        "Varas",
+        "Balança",
+        "Tábua Verde",
+        "Faca Verde",
+        "Tupperware 2,6LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Maionese",
+            "name_en": "Mayonnaise",
+            "amount": 440,
+            "unit": "gr"
+        },
+        {
+            "name": "Mostarda Amarela",
+            "name_en": "Yellow Mustard",
+            "amount": 66,
+            "unit": "gr"
+        },
+        {
+            "name": "Vinagre",
+            "name_en": "Vinegar",
+            "amount": 30,
+            "unit": "ml"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 12,
+            "unit": "gr"
+        },
+        {
+            "name": "Açúcar Branco",
+            "name_en": "White Sugar",
+            "amount": 55,
+            "unit": "gr"
+        },
+        {
+            "name": "Pimenta Preta Moída",
+            "name_en": "Ground Black Pepper",
+            "amount": 2,
+            "unit": "gr"
+        },
+        {
+            "name": "Folhas de Tomilho Fresco",
+            "name_en": "Fresh Thyme Leaves",
+            "amount": 2,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Separar as folhas de tomilho e picar finamente.",
+        "Num taça de inox juntar todos os ingredientes.",
+        "Misturar bem com as varas até o açúcar dissolver.",
+        "Colocar num tupperware.",
+        "Colocar etiqueta com data de preparação e validade."
+    ],
+    "instructions_en": [
+        "Separate thyme leaves and chop finely.",
+        "In a stainless steel bowl add all ingredients.",
+        "Mix well with whisk until sugar dissolves.",
+        "Place in a tupperware.",
+        "Place label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

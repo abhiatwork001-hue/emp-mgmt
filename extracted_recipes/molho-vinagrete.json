@@ -1,0 +1,73 @@
+{
+    "name": "Molho Vinagrete",
+    "name_en": "Vinaigrette Sauce",
+    "slug": "molho-vinagrete",
+    "categoryName": "Molhos",
+    "description": "Vinagrete clássico.",
+    "description_en": "Classic vinaigrette.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0ºC e 4ºC",
+    "cookware": [
+        "Tupperware 2,6LT",
+        "Balança",
+        "Biberão/Frasco para Molhos"
+    ],
+    "ingredients": [
+        {
+            "name": "Azeite",
+            "name_en": "Olive Oil",
+            "amount": 850,
+            "unit": "gr"
+        },
+        {
+            "name": "Vinagre",
+            "name_en": "Vinegar",
+            "amount": 250,
+            "unit": "gr"
+        },
+        {
+            "name": "Sal Fino",
+            "name_en": "Fine Salt",
+            "amount": 5,
+            "unit": "gr"
+        },
+        {
+            "name": "Pimenta Preta Moída",
+            "name_en": "Ground Black Pepper",
+            "amount": 3,
+            "unit": "gr"
+        },
+        {
+            "name": "Mostarda Dijon",
+            "name_en": "Dijon Mustard",
+            "amount": 22,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Colocar o azeite no tupperware.",
+        "Juntar o vinagre.",
+        "Juntar o sal e a pimenta preta.",
+        "Juntar a mostarda Dijon.",
+        "Fechar o tupperware e abanar até os ingredientes estarem bem misturados.",
+        "Colocar a mistura no frasco para molhos.",
+        "Colocar etiqueta com data de confecção e data de validade.",
+        "AGITAR ANTES DE USAR"
+    ],
+    "instructions_en": [
+        "Place olive oil in tupperware.",
+        "Add vinegar.",
+        "Add salt and black pepper.",
+        "Add Dijon mustard.",
+        "Close tupperware and shake until ingredients are well mixed.",
+        "Pour mixture into sauce bottle.",
+        "Place label with preparation date and expiry date.",
+        "SHAKE BEFORE USE"
+    ],
+    "isPublished": true,
+    "isActive": true
+}

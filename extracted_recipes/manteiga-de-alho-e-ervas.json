@@ -1,0 +1,70 @@
+{
+    "name": "Manteiga de Alho e Ervas",
+    "name_en": "Garlic and Herb Butter",
+    "slug": "manteiga-de-alho-e-ervas",
+    "categoryName": "Transformados",
+    "description": "Manteiga aromatizada com alho e ervas.",
+    "description_en": "Butter flavored with garlic and herbs.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Faca Verde",
+        "Taça Inox Grande",
+        "Tupperware 1LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Manteiga s/Sal",
+            "name_en": "Unsalted Butter",
+            "amount": 250,
+            "unit": "gr"
+        },
+        {
+            "name": "Alho Fresco",
+            "name_en": "Fresh Garlic",
+            "amount": 8,
+            "unit": "gr"
+        },
+        {
+            "name": "Alecrim Fresco",
+            "name_en": "Fresh Rosemary",
+            "amount": 2,
+            "unit": "gr"
+        },
+        {
+            "name": "Tomilho Fresco",
+            "name_en": "Fresh Thyme",
+            "amount": 2,
+            "unit": "gr"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 5,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Colocar a manteiga à temperatura ambiente durante 1 hora para amolecer.",
+        "Separar as folhas do alecrim, do tomilho e picar finamente.",
+        "Juntar à manteiga.",
+        "Picar o alho e juntar a manteiga.",
+        "Juntar o sal.",
+        "Colocar luvas limpas e envolver com as mãos até todos os ingredientes estarem bem misturados."
+    ],
+    "instructions_en": [
+        "Leave butter at room temperature for 1 hour to soften.",
+        "Separate leaves from rosemary and thyme and chop finely.",
+        "Add to butter.",
+        "Mince garlic and add to butter.",
+        "Add salt.",
+        "Put on clean gloves and mix with hands until all ingredients are well combined."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

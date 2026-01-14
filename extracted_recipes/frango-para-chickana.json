@@ -1,0 +1,80 @@
+{
+    "name": "Frango para Chickana",
+    "name_en": "Chicken for Chickana",
+    "slug": "frango-para-chickana",
+    "categoryName": "Transformados",
+    "description": "Coxas de frango preparadas para Chickana.",
+    "description_en": "Chicken thighs prepared for Chickana.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tábua Verde",
+        "Tábua Amarela",
+        "Faca Verde",
+        "Taça Inox Grande",
+        "Balança",
+        "Grelha Pequena",
+        "Grelhador",
+        "Pinça"
+    ],
+    "ingredients": [
+        {
+            "name": "Coxas Desossadas",
+            "name_en": "Boneless Thighs",
+            "amount": 1,
+            "unit": "KG"
+        },
+        {
+            "name": "Alho Fresco",
+            "name_en": "Fresh Garlic",
+            "amount": 15,
+            "unit": "gr"
+        },
+        {
+            "name": "Azeite",
+            "name_en": "Olive Oil",
+            "amount": 30,
+            "unit": "ml"
+        },
+        {
+            "name": "Sal Grosso",
+            "name_en": "Coarse Salt",
+            "amount": 20,
+            "unit": "gr"
+        },
+        {
+            "name": "Louro",
+            "name_en": "Bay Leaf",
+            "amount": 1,
+            "unit": "folha"
+        }
+    ],
+    "instructions": [
+        "Retirar a pele e colocar o frango num bowl de inox.",
+        "Juntar o sal, o alho picado, o azeite e o louro esmagado.",
+        "Deixar marinar durante 1 hora minimo dentro do frio.",
+        "Colocar na grelha, polvilhar sal.",
+        "Grelhar a 250ºC durante 15 minutos.",
+        "Aquecer num tacho o molho e colocar o frango grelhado.",
+        "Deixar ferver durante 3 minutos.",
+        "Colocar dentro do banho maria.",
+        "Manter com tampa."
+    ],
+    "instructions_en": [
+        "Remove skin and place chicken in a stainless steel bowl.",
+        "Add salt, minced garlic, olive oil, and crushed bay leaf.",
+        "Marinate for at least 1 hour in the fridge.",
+        "Place on grill, sprinkle with salt.",
+        "Grill at 250ºC for 15 minutes.",
+        "Heat sauce in a pan and add grilled chicken.",
+        "Boil for 3 minutes.",
+        "Place in bain-marie.",
+        "Keep covered."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

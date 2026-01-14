@@ -1,0 +1,85 @@
+{
+    "name": "Panado Popcorn",
+    "name_en": "Popcorn Breaded Chicken",
+    "slug": "panado-popcorn",
+    "categoryName": "Transformados",
+    "description": "Panado de frango tipo pipoca.",
+    "description_en": "Popcorn-style breaded chicken.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0ºC e 4ºC",
+    "cookware": [
+        "3 Tupperware 2LT",
+        "1 Tupperware 6LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Peito de Frango",
+            "name_en": "Chicken Breast",
+            "amount": 80,
+            "unit": "gr"
+        },
+        {
+            "name": "Corn Flakes",
+            "name_en": "Corn Flakes",
+            "amount": 30,
+            "unit": "gr"
+        },
+        {
+            "name": "Farinha Temperada",
+            "name_en": "Seasoned Flour",
+            "amount": 5,
+            "unit": "gr",
+            "observation": "Ver receita"
+        },
+        {
+            "name": "Pimenta Preta Moída",
+            "name_en": "Ground Black Pepper",
+            "amount": 1,
+            "unit": "gr"
+        },
+        {
+            "name": "Orégãos",
+            "name_en": "Oregano",
+            "amount": 2,
+            "unit": "gr"
+        },
+        {
+            "name": "Ovos Inteiros",
+            "name_en": "Whole Eggs",
+            "amount": 7,
+            "unit": "ml"
+        },
+        {
+            "name": "Sal Fino",
+            "name_en": "Fine Salt",
+            "amount": 2,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Colocar os Corn Flakes num tupperware e juntar os orégãos.",
+        "Esmagar com a mão até ficar bem desfeito em pedaços pequenos.",
+        "Colocar a farinha temperada noutro tupperware.",
+        "Colocar o ovo noutro tupperware e juntar o sal.",
+        "Colocar uma fatia de peito na farinha e envolver bem os dois lados.",
+        "Mergulhe a fatia no ovo e retirar.",
+        "Colocar a fatia de peito nos corn flakes e envolver dos dois lados.",
+        "Pressionar bem até estar pronto."
+    ],
+    "instructions_en": [
+        "Place Corn Flakes in a tupperware and add oregano.",
+        "Crush with your hand until broken into small pieces.",
+        "Place seasoned flour in another tupperware.",
+        "Place egg in another tupperware and add salt.",
+        "Place a slice of chicken breast in the flour and coat both sides well.",
+        "Dip the slice in the egg and remove.",
+        "Place the chicken slice in the corn flakes and coat both sides.",
+        "Press well until ready."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

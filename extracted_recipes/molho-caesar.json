@@ -1,0 +1,79 @@
+{
+    "name": "Molho Caesar",
+    "name_en": "Caesar Sauce",
+    "slug": "molho-caesar",
+    "categoryName": "Molhos",
+    "description": "Molho Caesar cremoso.",
+    "description_en": "Creamy Caesar sauce.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0ºC e 4ºC",
+    "cookware": [
+        "Tupperware 2,6LT",
+        "Balança",
+        "Varinha"
+    ],
+    "ingredients": [
+        {
+            "name": "Maionese",
+            "name_en": "Mayonnaise",
+            "amount": 1.15,
+            "unit": "Kg"
+        },
+        {
+            "name": "Manjericão",
+            "name_en": "Basil",
+            "amount": 50,
+            "unit": "gr"
+        },
+        {
+            "name": "Queijo Parmesão",
+            "name_en": "Parmesan Cheese",
+            "amount": 200,
+            "unit": "gr"
+        },
+        {
+            "name": "Coentros",
+            "name_en": "Cilantro",
+            "amount": 50,
+            "unit": "gr"
+        },
+        {
+            "name": "Leite Meio Gordo",
+            "name_en": "Semi-Skimmed Milk",
+            "amount": 125,
+            "unit": "ml"
+        },
+        {
+            "name": "Sumo Limão",
+            "name_en": "Lemon Juice",
+            "amount": 50,
+            "unit": "ml"
+        }
+    ],
+    "instructions": [
+        "Colocar a maionese no tupperware.",
+        "Juntar as folhas de manjericão.",
+        "Juntar o queijo parmesão.",
+        "Juntar os coentros.",
+        "Juntar o sumo de limão.",
+        "Triturar e envolver bem com a varinha até ficar tudo bem misturado.",
+        "Quando estiver finalizado, colocar no recipiente para ir ao frigorífico.",
+        "Colocar a etiqueta com data de confecção e data de validade."
+    ],
+    "instructions_en": [
+        "Place mayonnaise in the tupperware.",
+        "Add basil leaves.",
+        "Add parmesan cheese.",
+        "Add cilantro.",
+        "Add lemon juice.",
+        "Blend and mix well with hand blender until well combined.",
+        "When finished, place in container for fridge.",
+        "Place label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

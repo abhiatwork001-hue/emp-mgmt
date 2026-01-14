@@ -1,0 +1,57 @@
+{
+    "name": "Nachos",
+    "name_en": "Nachos",
+    "slug": "nachos",
+    "categoryName": "Transformados",
+    "description": "Nachos caseiros feitos de tortilla.",
+    "description_en": "Homemade nachos made from tortilla.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "1 dose",
+    "expirationDays": 3,
+    "storingTemperature": "Temperatura ambiente",
+    "cookware": [
+        "Tábua Branca",
+        "Faca Branca",
+        "Pinça",
+        "Fritadeira",
+        "Tupperware 6LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Tortilla",
+            "name_en": "Tortilla",
+            "amount": 1,
+            "unit": "un"
+        }
+    ],
+    "instructions": [
+        "Colocar a tortilla sobre a tábua.",
+        "Cortar ao meio.",
+        "Cortar novamente para quartos.",
+        "Cortar mais uma vez.",
+        "Cortar novamente para obter os triângulos conforme a fotografia.",
+        "Continuar a cortar para obter triângulos com aprox. 5 cm de lado.",
+        "Fritar os triângulos durante 1 minuto a 175ºC.",
+        "Com a pinça virar delicadamente os triângulos dentro da fritadeira.",
+        "Quando ficarem dourados, retirar da fritadeira e deixar escorrer.",
+        "Uma vez frios, colocar num tupperware bem fechado.",
+        "Colocar etiqueta com data de preparação e validade"
+    ],
+    "instructions_en": [
+        "Place the tortilla on the board.",
+        "Cut in half.",
+        "Cut again into quarters.",
+        "Cut once more.",
+        "Cut again to get triangles as shown in the photo.",
+        "Continue cutting to get triangles with approx. 5 cm sides.",
+        "Fry the triangles for 1 minute at 175ºC.",
+        "Gently turn the triangles in the fryer with tongs.",
+        "When golden brown, remove from fryer and let drain.",
+        "Once cold, place in a tightly closed tupperware.",
+        "Place label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

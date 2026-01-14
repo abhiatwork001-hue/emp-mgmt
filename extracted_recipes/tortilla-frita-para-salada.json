@@ -1,0 +1,49 @@
+{
+    "name": "Tortilla Frita para Salada",
+    "name_en": "Fried Tortilla for Salad",
+    "slug": "tortilla-frita-para-salada",
+    "categoryName": "Transformados",
+    "description": "Tiras de tortilla frita crocante.",
+    "description_en": "Crispy fried tortilla strips.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 0,
+    "yieldUnit": "Variável",
+    "expirationDays": 5,
+    "storingTemperature": "Temperatura ambiente",
+    "cookware": [
+        "Tábua Branca",
+        "Faca Branca",
+        "Fritadeira",
+        "Coador para Fritos",
+        "Tupperware 2,6LT"
+    ],
+    "ingredients": [
+        {
+            "name": "Tortilla",
+            "name_en": "Tortilla",
+            "amount": 1,
+            "unit": "un"
+        }
+    ],
+    "instructions": [
+        "Cortar a tortilla ao médio.",
+        "Juntar as 2 metades.",
+        "Cortar fatias não maiores do que ½ centímetro.",
+        "Fritar a 175ºC até ficar dourado.",
+        "Deixar escorrer e arrefecer.",
+        "Colocar num tupperware bem fechado.",
+        "Colocar etiqueta com data de preparação e validade."
+    ],
+    "instructions_en": [
+        "Cut tortilla in half.",
+        "Stack the 2 halves.",
+        "Cut slices no larger than ½ cm.",
+        "Fry at 175ºC until golden.",
+        "Let drain and cool.",
+        "Place in a tightly closed tupperware.",
+        "Place label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}

@@ -1,0 +1,67 @@
+{
+    "name": "Guacamole Preparado",
+    "name_en": "Prepared Guacamole",
+    "slug": "guacamole-preparado",
+    "categoryName": "Transformados",
+    "description": "Guacamole fresco preparado.",
+    "description_en": "Freshly prepared guacamole.",
+    "heroImg": "",
+    "numberOfDoses": 1,
+    "yieldAmount": 1,
+    "yieldUnit": "KG",
+    "expirationDays": 3,
+    "storingTemperature": "Entre 0 e 4ºC",
+    "cookware": [
+        "Tupperware 2,6LT",
+        "Faca Verde",
+        "Tábua Verde",
+        "Colher de Sopa",
+        "Varas"
+    ],
+    "ingredients": [
+        {
+            "name": "Abacate",
+            "name_en": "Avocado",
+            "amount": 425,
+            "unit": "gr"
+        },
+        {
+            "name": "Guacamole Congelado",
+            "name_en": "Frozen Guacamole",
+            "amount": 250,
+            "unit": "gr"
+        },
+        {
+            "name": "Pico de Gallo",
+            "name_en": "Pico de Gallo",
+            "amount": 500,
+            "unit": "gr"
+        },
+        {
+            "name": "Pimenta Preta Moída",
+            "name_en": "Ground Black Pepper",
+            "amount": 3,
+            "unit": "gr"
+        }
+    ],
+    "instructions": [
+        "Cortar os abacates, retirar o interior e colocar no tupperware com ajuda da colher.",
+        "Esmagar com ajuda das varas.",
+        "Juntar o guacamole.",
+        "Juntar o pico de gallo.",
+        "Juntar a pimenta.",
+        "Misturar bem.",
+        "Colocar etiqueta com data de preparação e validade."
+    ],
+    "instructions_en": [
+        "Cut the avocados, remove the inside and place in the tupperware using a spoon.",
+        "Mash with the help of the whisk.",
+        "Add the guacamole.",
+        "Add the pico de gallo.",
+        "Add the pepper.",
+        "Mix well.",
+        "Place label with preparation date and expiry date."
+    ],
+    "isPublished": true,
+    "isActive": true
+}
