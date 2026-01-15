@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { Employee, Schedule, AbsenceRecord, Message } from '@/lib/models';
+import { Employee, Schedule, AbsenceRecord, Message, ActionLog, VacationRequest } from '@/lib/models';
 import archiver from 'archiver';
 import dbConnect from '@/lib/db';
 
@@ -16,11 +16,13 @@ export async function GET(request: Request) {
   await dbConnect();
 
   // Fetch data from DB (parallel queries)
-  const [employee, schedules, absences, messages] = await Promise.all([
+  const [employee, schedules, absences, messages, actionLogs, vacationRequests] = await Promise.all([
     Employee.findById(userId).lean(),
-    Schedule.find({ employee: userId }).lean(),
-    AbsenceRecord.find({ employee: userId }).lean(),
+    Schedule.find({ "days.shifts.employees": userId }).sort({ "dateRange.startDate": -1 }).lean(),
+    AbsenceRecord.find({ employeeId: userId }).lean(), // Fix: employee -> employeeId
     Message.find({ $or: [{ from: userId }, { to: userId }] }).lean(),
+    ActionLog.find({ performedBy: userId }).sort({ createdAt: -1 }).lean(),
+    VacationRequest.find({ employeeId: userId }).sort({ createdAt: -1 }).lean(),
   ]);
 
   const documents = (employee as any)?.documents || [];
@@ -30,6 +32,8 @@ export async function GET(request: Request) {
     { name: 'employee.json', content: JSON.stringify(employee, null, 2) },
     { name: 'schedules.json', content: JSON.stringify(schedules, null, 2) },
     { name: 'absences.json', content: JSON.stringify(absences, null, 2) },
+    { name: 'vacation_requests.json', content: JSON.stringify(vacationRequests, null, 2) },
+    { name: 'action_logs.json', content: JSON.stringify(actionLogs, null, 2) },
     { name: 'documents.json', content: JSON.stringify(documents, null, 2) },
     { name: 'messages.json', content: JSON.stringify(messages, null, 2) },
   ];

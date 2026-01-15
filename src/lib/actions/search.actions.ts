@@ -39,8 +39,19 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
 
     if (!query || query.length < 2) return [];
 
+    // Fuzzy/Zigzag Search Logic
+    // Escape special regex chars
+    const escapeRegExp = (string: string) => {
+        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Split by space to get keywords
     const keywords = query.trim().split(/\s+/).filter(k => k.length > 0);
-    const regex = new RegExp(query, 'i');
+
+    // Construct Lookahead Regex to match ALL keywords in any order
+    // e.g. "chick sauce" -> (?=.*chick)(?=.*sauce)
+    const pattern = keywords.map(k => `(?=.*${escapeRegExp(k)})`).join('');
+    const regex = new RegExp(pattern, 'i');
 
     const employeeFilter: any = {
         $or: [
@@ -153,21 +164,21 @@ export async function globalSearch(query: string, locale: string = "en"): Promis
             id: s._id.toString(),
             name: s.name,
             subtext: s.category || "Supplier",
-            url: `/dashboard/suppliers`, // Direct to list for now as detail page route is uncertain or purely modal based on current file structure
+            url: `/dashboard/suppliers/${s._id}`, // Fixed redirect to details page
         });
     });
 
     // Map Supplier Items
     supplierItems.forEach((s: any) => {
         // Find matching items
-        const matchingItems = s.items.filter((i: any) => new RegExp(query, 'i').test(i.name));
+        const matchingItems = s.items.filter((i: any) => new RegExp(pattern, 'i').test(i.name)); // Re-use pattern for filter
         matchingItems.forEach((item: any) => {
             results.push({
                 type: 'supplier', // Reuse supplier icon/type
                 id: `${s._id}-${item.name}`,
                 name: item.name,
                 subtext: `From ${s.name}`,
-                url: `/dashboard/suppliers`, // Ideally open detail dialog?
+                url: `/dashboard/suppliers/${s._id}?highlight=${encodeURIComponent(item.name)}`, // Fixed redirect + highlight param
             });
         });
     });

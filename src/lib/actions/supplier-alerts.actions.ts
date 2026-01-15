@@ -38,12 +38,21 @@ export async function getAvailableSuppliersForToday(storeId: string) {
     today.setHours(0, 0, 0, 0);
 
     const SupplierOrderCheck = (await import("@/lib/models")).SupplierOrderCheck;
+    const Store = (await import("@/lib/models")).Store;
+
+    // Fetch store settings for overrides (Offsets & Ignores)
+    const store = await Store.findById(storeId).select('settings').lean();
+    const storeAlertPreferences = store?.settings?.supplierAlertPreferences || { defaultAlertOffset: 0, exceptions: [] };
 
     // Get active suppliers
     const suppliers = await getSuppliers(storeId);
     const alerts: any[] = [];
 
     for (const supplier of suppliers) {
+        // 0. Check for "Ignored" preference First
+        const preference = storeAlertPreferences.exceptions?.find((e: any) => e.supplierId.toString() === supplier._id.toString());
+        if (preference?.ignored) continue;
+
         // 1. Determine active schedule
         let activeSchedule = supplier.deliverySchedule || [];
         if (supplier.temporarySchedules && supplier.temporarySchedules.length > 0) {
@@ -57,16 +66,18 @@ export async function getAvailableSuppliersForToday(storeId: string) {
 
         if (!activeSchedule || activeSchedule.length === 0) continue;
 
-        // Check Store Preference
+        // Check Supplier-Specific Store Preference (Preferred Day)
         const storePref = supplier.storePreferences?.find((p: any) => p.storeId?.toString() === storeId);
 
         let shouldCheck = false;
         let referenceDate: Date | null = null;
         let isPreferenceBased = false;
 
-        // Logic A: Preference Set
+        // Logic A: Preferred Order Day Set (Overrides calculation logic entirely?)
+        // If user says "I order on Monday", we respect that strict day.
         if (storePref && storePref.preferredOrderDay !== undefined) {
             if (today.getDay() === storePref.preferredOrderDay) {
+                // It is the preferred day. Find the SOONEST valid delivery that is >= Lead Time.
                 shouldCheck = true;
                 isPreferenceBased = true;
 
@@ -93,9 +104,21 @@ export async function getAvailableSuppliersForToday(storeId: string) {
             }
         }
 
-        // Logic B: No Preference (Use Default Window Logic)
-        if (!shouldCheck && !isPreferenceBased && !storePref) {
-            const customLeadTime = supplier.alertSettings?.customLeadTime;
+        // Logic B: No Preference (Use Default Window Logic with Store Offsets)
+        // Only run if not handled by Logic A
+        if (!shouldCheck && !isPreferenceBased) {
+
+            // Determine Alert Offset
+            // Priority: Store Exception > Supplier Global > Default
+            let alertOffset: number | undefined = undefined;
+
+            if (preference && preference.alertOffset !== undefined) {
+                alertOffset = preference.alertOffset;
+            } else {
+                alertOffset = supplier.alertSettings?.customLeadTime;
+            }
+
+            // Look ahead 14 days
             for (let i = 0; i < 14; i++) {
                 const potentialDeliveryDate = new Date(today);
                 potentialDeliveryDate.setDate(today.getDate() + i);
@@ -109,9 +132,10 @@ export async function getAvailableSuppliersForToday(storeId: string) {
                     hardDeadlineDate.setDate(potentialDeliveryDate.getDate() - hardLeadDays);
                     hardDeadlineDate.setHours(0, 0, 0, 0);
 
-                    const alertLeadDays = customLeadTime !== undefined ? customLeadTime : hardLeadDays;
+                    // If alertOffset is undefined, we use hardLeadDays (alert on deadline day)
+                    const effectiveAlertOffset = alertOffset !== undefined ? alertOffset : hardLeadDays;
                     const alertDate = new Date(potentialDeliveryDate);
-                    alertDate.setDate(potentialDeliveryDate.getDate() - alertLeadDays);
+                    alertDate.setDate(potentialDeliveryDate.getDate() - effectiveAlertOffset);
                     alertDate.setHours(0, 0, 0, 0);
 
                     if (today.getTime() >= alertDate.getTime() && today.getTime() <= hardDeadlineDate.getTime()) {

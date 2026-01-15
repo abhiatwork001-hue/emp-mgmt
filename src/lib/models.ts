@@ -126,7 +126,7 @@ export interface IStore extends Document {
     settings?: {
         supplierAlertPreferences: {
             defaultAlertOffset: number;
-            exceptions: { supplierId: ObjectId; alertOffset: number }[];
+            exceptions: { supplierId: ObjectId; alertOffset: number; ignored?: boolean }[];
         };
     };
 

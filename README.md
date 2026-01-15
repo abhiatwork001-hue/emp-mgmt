@@ -1,115 +1,78 @@
-# Chick - Modern Workforce Management System
+# LaGasy - Chick-fil-A Employee Management System
 
-[![Next.js](https://img.shields.io/badge/Next.js-14-black)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.0-38B2AC)](https://tailwindcss.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248)](https://www.mongodb.com/)
+Developed by **LaGasy**. Licensed to **Chick-fil-A**.
 
-**Chick** is a premium, enterprise-grade workforce management application designed for modern restaurant chains and retail businesses. It unifies scheduling, communication, and HR tasks into a single, beautiful "Glassmorphic" interface.
+## Overview
+A comprehensive Employee Management System designed to handle complex staffing requirements, shift scheduling, absence management, and store operations. Built with Next.js 14, MongoDB, and modern web technologies.
 
-## 🚀 Key Features
+## Tech Stack
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Database**: MongoDB (Mongoose)
+- **UI Components**: Shadcn UI (Radix Primitives) + Tailwind CSS
+- **Authentication**: NextAuth.js
+- **State Management**: React Server Components + Client Hooks
+- **Icons**: Lucide React
+- **Internationalization**: next-intl
+- **Notifications**: Web Push (PWA) + Novu (optional integration)
+- **Uploads**: UploadThing
+- **Charts**: Recharts
+- **Animation**: Framer Motion
 
-### 📅 Advanced Scheduling
-- **Shift Management:** Drag-and-drop schedule builder with conflict detection.
-- **Templates:** Save and reuse weekly schedules.
-- **Availability:** Employee availability tracking and time-off requests.
-- **Multi-Department:** Manage shifts across "Kitchen", "Service", "Bar", etc.
+## Key Features
 
-### 📦 Smart Supplier Management
-- **Just-in-Time Ordering:** Automated alerts for Store Managers based on supplier delivery schedules (e.g., "Order by 5 PM today for Tuesday delivery").
-- **Flexible Scheduling:** Supports temporary schedules for holidays/festivals.
-- **Ordering Dashboard:** Dedicated widget showing exactly what needs to be ordered today.
+### 1. Role-Based Access Control
+- **Roles**: Super User, Admin, HR, Owner, Tech, Store Manager, Department Head, Employee.
+- **Granular Permissions**: Custom visibility and action scopes per role.
+- **Role Switching**: View the dashboard as different roles for testing or management.
 
-### 🔍 Enhanced Global Search
-- **Unified Search:** Search across Employees, Stores, Recipes, Suppliers, Departments, and Directory Resources.
-- **Scoped Access:** Search results are context-aware and respect role-based permissions (e.g., Managers see their store's data, Global Heads see department-wide data).
-- **Rich Results:** Visual indicators for result types (Trucks for suppliers, User icons for employees).
+### 2. Dashboard
+- **Dynamic Widgets**: Role-specific widgets (e.g., Pending Approvals, Staff Shortage, Operations Radar).
+- **KPIs & Analytics**: Real-time stats on workforce, vacancies, and performance.
+- **Notices & Reminders**: Sticky notes and bulletin board for internal communication.
 
-### 💬 Real-Time Communication
-- **Instant Messaging:** Direct and Group chats with real-time delivery.
-- **Rich Media:** Send images, voice notes, and file attachments.
-- **Notifications & Reminders:** Push notifications for messages, shift updates, and urgent ordering deadlines.
-- **Announcements:** Broadcast important updates to specific roles or stores.
+### 3. Schedule Management ("Shift Planner")
+- **Big Calendar Interface**: Visual drag-and-drop scheduling.
+- **Coverage Logic**: Automatic checks for staff shortage, max headcount, and shift gaps.
+- **Shift Definitions**: Customizable shift templates (Morning, Night, etc.).
+- **Swaps**: Employee-initiated shift swaps with approval workflow.
 
-### 🛡️ Role-Based Access Control (RBAC)
-- **Granular Permissions:** Custom views for Owners, HR, Managers, Dept Heads, and Staff.
-- **Recipe Control:** Strict access control for Recipe creation (restricted to Global Kitchen Head & Tech).
-- **Audit Logs:** Track every critical action (Schedule Publish, Profile Edit, Supplier Changes) with detailed history.
-- **Secure:** Middleware-protected routes and API endpoints.
+### 4. Absence & Vacation
+- **Request Workflows**: 
+    - Vacation requests with conflict checking (capacity constraints).
+    - Absence reporting (Sick, Personal, etc.) with proof upload.
+- **Analytics**: 
+    - Visual trends for absenteeism and vacation usage.
+    - Comparisons between Stores and Departments.
+    - Heatmaps for high-absence days.
+- **Balances**: Automatic calculation of used/remaining days.
 
-### 🌍 Application Features
-- **Internationalization:** Native support for multiple languages (en, de).
-- **Dark Mode:** Sleek visual design that adapts to user preference.
-- **PWA Ready:** Designed for mobile-first usage.
+### 5. Employee Profiles
+- **Comprehensive Data**: Personal info, contract details, banking, documents, and emergency contacts.
+- **History**: Tracking position changes, salary updates, and discipline records.
+- **Evaluation**: Performance review system (Assignments, Templates, Scoring).
 
-## 🛠️ Technology Stack
+### 6. Store Operations
+- **Supplier Ordering**: Supplier management, order constraints, alert logic for late orders.
+- **Action Logs**: Audit trail of all critical actions performed in the system.
+- **Legal & Compliance**: Privacy Policy, Terms, and Data Processing Agreement templates.
 
-- **Framework:** [Next.js 14](https://nextjs.org/) (App Router, Server Actions)
-- **Language:** [TypeScript](https://www.typescriptlang.org/)
-- **Database:** [MongoDB](https://www.mongodb.com/) (Mongoose ODM)
-- **Authentication:** [NextAuth.js](https://next-auth.js.org/)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/)
-- **Real-time:** [Pusher](https://pusher.com/)
-- **File Storage:** [UploadThing](https://uploadthing.com/)
-- **Validation:** [Zod](https://zod.dev/)
+### 7. Mobile Experience (PWA)
+- **Responsive Design**: Tailored views for mobile vs. desktop.
+- **Quick Actions**: "Report Absence" and "Request Vacation" specific flows for mobile users.
+- **Installable**: Manifest for adding to home screen.
 
-## 📦 Getting Started
+## Minor/Internal Features
+- **Weather Widget**: Real-time weather integration for store location.
+- **Holiday Greetings**: Automated birthday and holiday widgets.
+- **Translations**: Multi-language support (English/Portuguese setup).
+- **Tips Distribution**: Calculation and tracking of tips allocation.
+- **Credentials Manager**: Securely share store credentials (Wi-Fi, Safe codes, etc.).
 
-### Prerequisites
-- Node.js 18+
-- MongoDB Database (Atlas or Local)
-- Pusher Account (for realtime features)
-- UploadThing Account (for file uploads)
+## Setup & installation
+1. `npm install`
+2. Configure `.env.local` (MongoDB URI, Auth Secret, etc.)
+3. `npm run dev`
 
-### Installation
-
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/abhiatwork001-hue/emp-mgmt.git]
-    cd emp-mgmt
-    ```
-
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
-
-3.  **Environment Setup**
-    Create a `.env` file in the root directory:
-    ```env
-    # Database
-    MONGODB_URI=mongodb+srv://...
-
-    # Auth
-    NEXTAUTH_URL=http://localhost:3000
-    NEXTAUTH_SECRET=your_super_secret_key
-
-    # Pusher (Realtime)
-    NEXT_PUBLIC_PUSHER_KEY=...
-    NEXT_PUBLIC_PUSHER_CLUSTER=...
-    PUSHER_APP_ID=...
-    PUSHER_SECRET=...
-
-    # UploadThing (Files)
-    UPLOADTHING_SECRET=...
-    UPLOADTHING_APP_ID=...
-
-    # Email (Optional)
-    EMAIL_SERVER_HOST=...
-    EMAIL_SERVER_PORT=...
-    EMAIL_SERVER_USER=...
-    EMAIL_SERVER_PASSWORD=...
-    EMAIL_FROM=...
-    ```
-
-4.  **Run Development Server**
-    ```bash
-    npm run dev
-    ```
-    Open [http://localhost:3000](http://localhost:3000) to view the app.
-
-## 🤝 Contributing
-Contributions are welcome! Please fork the repository and create a pull request for any feature enhancements or bug fixes.
-
-## 📄 License
-This project is licensed under the MIT License.
+## License
+Proprietary software. Developed by LaGasy. All rights reserved.

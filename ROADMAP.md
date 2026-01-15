@@ -1,35 +1,27 @@
-# Project Roadmap
+# Roadmap
 
-## 🚀 Immediate Fixes & Improvements
-These items should be addressed to improve the stability and user experience of the current features.
+## Q1 2026: Optimization & Stability
+- [ ] **Performance Audit**: Optimize large data queries (Scheduling/Employee lists).
+- [ ] **Mobile Refinement**: Further enhance PWA touch interactions and offline capabilities.
+- [ ] **Advanced Reporting**: Exportable PDF/Excel reports for HR monthly summaries.
+- [ ] **Calendar Sync**: Google/Outlook Calendar integration for shifts.
 
-- [ ] **Skeleton Loading States**: Replace generic "Loading..." text with proper skeleton screens for Dashboard, Employee List, and Schedule Editor.
-- [ ] **Error Boundaries**: Implement React Error Boundaries to catch and display graceful error messages instead of crashing the app.
-- [ ] **Form Validation Feedback**: Enhance visual feedback (red borders, tailored messages) for invalid form inputs in all dialogs.
-- [ ] **Mobile Responsiveness**: Refine padding and layout for smaller screens (e.g., Schedule Editor, Shift Dialog).
-- [ ] **Static Placeholders**: Create empty states with illustrations for "No Shifts", "No Employees", etc. (Currently text-only).
+## Q2 2026: Automation & AI
+- [ ] **Smart Scheduling**: AI-suggested rosters based on historical traffic/sales.
+- [ ] **Prediction**: Absence risk prediction model.
+- [ ] **Chatbot**: HR assistant for common employee queries (Policy, Balances).
 
-## ✨ Planned Features
-Future enhancements to expand functionality.
+## Q3 2026: Expansion
+- [ ] **Multi-Brand Support**: Architecture support for managing multiple restaurant brands under one company.
+- [ ] **Franchise View**: Aggregated view for franchise owners with multiple clusters.
+- [ ] **Inventory Integration**: Linking Supplier Ordering directly with inventory levels.
 
-### 1. Advanced Scheduling
-- **Shift Swapping**: Allow employees to request shift changes with colleagues.
-- **Conflict Detection**: Warn managers if an employee is double-booked or exceeds contract hours.
-- **Templates**: Save complex weekly structures as templates for one-click application.
+## Q4 2026: Enterprise Features
+- [ ] **SSO**: Single Sign-On (Okta/Azure AD) integration.
+- [ ] **Payroll Integration**: Direct connector to payroll software (SAGE, etc.).
+- [ ] **Audit Compliance**: ISO 27001 readiness features.
 
-### 2. Notifications System
-- **Real-time Alerts**: In-app notifications for schedule publication, vacation approvals, and shift changes.
-- **Push Notifications**: Leverage PWA capabilities to send push alerts to mobile devices.
-- **Email Digest**: Weekly summary of upcoming shifts for employees.
-
-### 3. Offline Capabilities
-- **Service Worker**: Implement a service worker to cache the app shell and critical data.
-- **Offline Actions**: Allow basic read-only access to schedule and profile when offline.
-
-### 4. Reporting & Analytics
-- **Labor Cost Tracking**: Visualize estimated labor costs vs. sales (if integration allows).
-- **Attendance Reporting**: Compare scheduled hours vs. actual worked hours.
-
-### 5. Role Granularity
-- **Custom Permissions**: Allow fine-grained control over what Store Managers vs. Department Heads can do.
-- **Audit Logs**: Track who changed what and when for critical actions (schedule publishing, employee deletion).
+## Backlog / Minor Improvements
+- [ ] Dark Mode perfection (fixing varied contrast issues).
+- [ ] Gamification elements for attendance/performance.
+- [ ] Peer-to-Peer recognition system.

@@ -76,7 +76,7 @@ export function DashboardHeader({
                 )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
 
                 {["admin", "hr", "owner", "super_user", "store_manager", "department_head", "store_department_head"].includes(viewRole) && (
                     <div className="flex items-center gap-2 bg-muted/30 p-1.5 rounded-2xl border border-border/40 backdrop-blur-sm">

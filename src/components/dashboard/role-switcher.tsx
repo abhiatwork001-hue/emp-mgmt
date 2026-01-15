@@ -25,8 +25,8 @@ export function RoleSwitcher({ currentUserRole, allRoles = [] }: { currentUserRo
         { value: "department_head", label: tCommon('roleTypes.department_head') },
         { value: "store_manager", label: tCommon('roleTypes.store_manager') },
         { value: "store_department_head", label: tCommon('roleTypes.store_department_head') },
-        { value: "employee", label: tCommon('roleTypes.employee') }
-    ].filter(r => allRoles.includes(r.value));
+        // Expanded to all roles except basic employee as viewing as employee is default/redundant usually
+    ].filter(r => allRoles.includes(r.value) && r.value !== 'employee');
 
     const handleRoleChange = (role: string) => {
         const params = new URLSearchParams(searchParams.toString());

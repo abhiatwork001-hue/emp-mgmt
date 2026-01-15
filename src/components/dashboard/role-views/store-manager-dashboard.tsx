@@ -11,6 +11,9 @@ import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import { WidgetSkeleton } from "@/components/dashboard/widget-skeleton";
+import { RequestVacationDialog } from "@/components/vacations/request-vacation-dialog";
+import { ReportAbsenceDialog } from "@/components/absences/report-absence-dialog";
+import { SmartOrderPlanner } from "@/components/suppliers/smart-order-planner";
 
 const PendingApprovalsWidget = dynamic(() => import("@/components/dashboard/pending-approvals-widget").then(mod => mod.PendingApprovalsWidget), {
     loading: () => <WidgetSkeleton />,
@@ -321,6 +324,52 @@ export function StoreManagerDashboard({
         ) : null,
         "supplier-alerts": effectiveStoreId && supplierAlerts.length > 0 ? (
             <SupplierAlertWidget alerts={supplierAlerts} storeId={effectiveStoreId.toString()} />
+        ) : null,
+
+        "quick-requests": (
+            <Card className="shadow-sm border-l-4 border-l-sky-500">
+                <CardHeader className="py-3 px-4 bg-muted/5">
+                    <CardTitle className="text-md font-semibold flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4 text-sky-600" />
+                        {t('widgets.quickActions') || "Quick Requests"}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 flex flex-col gap-3">
+                    <RequestVacationDialog
+                        employeeId={employee._id}
+                        remainingDays={employee.vacationTracker?.remainingDays || 0}
+                        trigger={
+                            <Button variant="outline" className="w-full justify-start gap-3 h-12 bg-card hover:bg-sky-50 hover:text-sky-700 hover:border-sky-200">
+                                <div className="h-8 w-8 rounded-full bg-sky-100 flex items-center justify-center text-sky-600 shrink-0">
+                                    <Palmtree className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col items-start">
+                                    <span className="text-sm font-bold">Request Vacation</span>
+                                    <span className="text-[10px] text-muted-foreground">Plan your time off</span>
+                                </div>
+                            </Button>
+                        }
+                    />
+                    <ReportAbsenceDialog
+                        employeeId={employee._id}
+                        trigger={
+                            <Button variant="outline" className="w-full justify-start gap-3 h-12 bg-card hover:bg-red-50 hover:text-red-700 hover:border-red-200">
+                                <div className="h-8 w-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 shrink-0">
+                                    <AlertCircle className="h-4 w-4" />
+                                </div>
+                                <div className="flex flex-col items-start">
+                                    <span className="text-sm font-bold">Report Absence</span>
+                                    <span className="text-[10px] text-muted-foreground">Sick leave or emergency</span>
+                                </div>
+                            </Button>
+                        }
+                    />
+                </CardContent>
+            </Card>
+        ),
+
+        "smart-planner": effectiveStoreId ? (
+            <SmartOrderPlanner storeId={effectiveStoreId.toString()} />
         ) : null
     };
 
@@ -445,6 +494,10 @@ export function StoreManagerDashboard({
                     </div>
                 )}
 
+                <div className="w-full lg:hidden">
+                    {widgets["quick-requests"]}
+                </div>
+
                 <div className="w-full">
                     {widgets["problem-stats"]}
                 </div>
@@ -456,6 +509,10 @@ export function StoreManagerDashboard({
                     <div className="h-full">
                         {widgets["pending-approvals-card"]}
                     </div>
+                </div>
+
+                <div className="w-full">
+                    {widgets["smart-planner"]}
                 </div>
 
                 <div className="w-full">

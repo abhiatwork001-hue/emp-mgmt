@@ -356,5 +356,62 @@ export async function getStoreManagedByUser(userId: string | any) {
         active: true
     }).select("_id").lean();
 
-    return store ? (store._id as any).toString() : null;
+    return JSON.parse(JSON.stringify(store));
 }
+/**
+ * Update store's supplier alert preferences
+ */
+export async function updateStoreSupplierSettings(
+    storeId: string,
+    supplierId: string,
+    alertOffset: number,
+    ignored: boolean
+) {
+    await dbConnect();
+    const session = await getServerSession(authOptions);
+    if (!session?.user) throw new Error("Unauthorized");
+
+    // 1. Fetch current settings
+    const store = await Store.findById(storeId);
+    if (!store) throw new Error("Store not found");
+
+    const settings = store.settings || {
+        supplierAlertPreferences: {
+            defaultAlertOffset: 0,
+            exceptions: []
+        }
+    };
+    if (!settings.supplierAlertPreferences) {
+        settings.supplierAlertPreferences = {
+            defaultAlertOffset: 0,
+            exceptions: []
+        };
+    }
+
+    // 2. Update exception list
+    const exceptions = settings.supplierAlertPreferences.exceptions || [];
+    const index = exceptions.findIndex((e: any) => e.supplierId.toString() === supplierId);
+
+    if (index > -1) {
+        exceptions[index].alertOffset = alertOffset;
+        exceptions[index].ignored = ignored;
+    } else {
+        exceptions.push({
+            supplierId: new Types.ObjectId(supplierId),
+            alertOffset,
+            ignored
+        });
+    }
+
+    settings.supplierAlertPreferences.exceptions = exceptions;
+
+    const updated = await Store.findByIdAndUpdate(storeId, {
+        $set: { settings: settings }
+    }, { new: true });
+
+    revalidatePath("/dashboard");
+    revalidatePath(`/dashboard/stores/${store.slug}`);
+
+    return JSON.parse(JSON.stringify(updated));
+}
+

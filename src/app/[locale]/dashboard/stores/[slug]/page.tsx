@@ -23,6 +23,8 @@ import { StoreReviewsWidget } from "@/components/stores/store-reviews-widget";
 import { StoreWeatherWidget } from "@/components/stores/store-weather-widget";
 import { getStoreWeather } from "@/lib/actions/weather.actions";
 import { StoreAnalyticsWidget } from "@/components/dashboard/analytics/store-analytics-widget";
+import { StoreSupplierPreferences } from "@/components/stores/store-supplier-preferences";
+import { getSuppliers } from "@/lib/actions/supplier.actions";
 
 
 export default async function StoreDetailsPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -70,6 +72,9 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
     // Fetch weather data
     const weatherResult = await getStoreWeather(storeId);
     const weather = weatherResult.success ? weatherResult.weather : null;
+
+    // Fetch Suppliers for preferences
+    const suppliers = await getSuppliers(storeId);
 
     // Calculate rating change from history
     const ratingHistory = store.ratingHistory || [];
@@ -222,6 +227,16 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
 
                     {/* Credentials Section */}
                     <CredentialManager storeId={store._id.toString()} userId={(session.user as any).id} canEdit={canEditCredentials} />
+
+                    {/* Supplier Preferences Section (Store Managers & Global Admins) */}
+                    {(canEditCredentials || isStoreManager) && (
+                        <StoreSupplierPreferences
+                            storeId={storeId}
+                            suppliers={suppliers}
+                            storeSettings={store.settings}
+                            canEdit={canEditCredentials} // Reuse same permission or stricter? "Store Manager can set preference" -> Yes.
+                        />
+                    )}
 
                     {/* Monthly Analytics & History */}
                     <div id="analytics" className="pt-6 border-t">

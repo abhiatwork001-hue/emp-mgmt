@@ -187,18 +187,21 @@ export async function getAvailableSuppliersForToday(storeId: string) {
     today.setHours(0, 0, 0, 0);
 
     const SupplierOrderCheck = (await import("@/lib/models")).SupplierOrderCheck;
+    const Store = (await import("@/lib/models")).Store;
+
+    // Fetch store settings for overrides
+    const store = await Store.findById(storeId).select('settings').lean();
+    const storePreferences = store?.settings?.supplierAlertPreferences || { defaultAlertOffset: 0, exceptions: [] };
 
     // Get active suppliers
     const suppliers = await getSuppliers(storeId);
     const alerts: any[] = [];
 
-    // Fetch existing checks for today (or potential order days? Ideally we check specifically per potential alert)
-    // We will check dynamically inside loop or fetch all relevant for optimization?
-    // Optimization: Fetch all checks for this store >= today?
-    // Actually, checks are date-specific. Let's query as needed or bulk fetch if performance issue arises.
-    // For now, let's just do one-by-one or optimizations later.
-
     for (const supplier of suppliers) {
+        // 0. Check for "Ignored" preference
+        const preference = storePreferences.exceptions?.find((e: any) => e.supplierId.toString() === supplier._id.toString());
+        if (preference?.ignored) continue;
+
         // 1. Determine active schedule
         let activeSchedule = supplier.deliverySchedule || [];
         if (supplier.temporarySchedules && supplier.temporarySchedules.length > 0) {
@@ -213,16 +216,12 @@ export async function getAvailableSuppliersForToday(storeId: string) {
         if (!activeSchedule || activeSchedule.length === 0) continue;
 
         // 2. Alert Settings (Custom Lead Time)
-        // If alertSettings.customLeadTime is set, we use THAT to calculate "Is Today the Alert Day?"
-        // Original Logic: deadline = deliveryDate - leadDays. If deadline == today, alert.
-        // New Logic:
-        // We want to order for a delivery on Date X.
-        // The HARD deadline is Date X - supplier.leadDays.
-        // The ALERT day is:
-        //    If customized: Date X - customLeadTime
-        //    Else: Date X - supplier.leadDays (Same as hard deadline)
+        // PRIORITY: Store Preference > Supplier Global Preference > Default (Hard Lead Time)
 
-        const customLeadTime = supplier.alertSettings?.customLeadTime;
+        let customLeadTime = supplier.alertSettings?.customLeadTime;
+        if (preference && preference.alertOffset !== undefined) {
+            customLeadTime = preference.alertOffset;
+        }
 
         // Look ahead 14 days for delivery slots
         for (let i = 0; i < 14; i++) {
@@ -245,21 +244,8 @@ export async function getAvailableSuppliersForToday(storeId: string) {
                 alertDate.setDate(potentialDeliveryDate.getDate() - alertLeadDays);
                 alertDate.setHours(0, 0, 0, 0);
 
-                // If TODAY is the Alert Date (or if missed alert and before/on hard deadline? User said "Day before vs Day of")
-                // Usually sticky: if today >= alertDate && today <= hardDeadlineDate?
-                // "Manage preferences to alert me X days before".
-                // Let's make it a window: [Alert Date, Hard Deadline Date].
+                // If TODAY is within the Alert Window [Alert Date, Hard Deadline Date]
                 if (today.getTime() >= alertDate.getTime() && today.getTime() <= hardDeadlineDate.getTime()) {
-
-                    // Check if already handled for this DELIVERY DATE (or Reference Date?)
-                    // If we order "For Delivery on X", we should tag the check with "Date X" or "Order Date"?
-                    // Usually we track "Did I do the task for today?".
-                    // But if I order today for tomorrow, and tomorrow I see it again?
-                    // Let's recur on the "Target Delivery Date" as the unique key?
-                    // Or track "SupplierOrderCheck" by "Date of Action" but referenced to "Target"?
-                    // Simpler: Track "Date of Order Window Start" or just "Target Date".
-                    // Let's use `potentialDeliveryDate` as the key for `SupplierOrderCheck`.
-                    // "I have handled the order for Delivery on 2024-01-20".
 
                     const isChecked = await SupplierOrderCheck.exists({
                         storeId: storeId,
@@ -276,7 +262,8 @@ export async function getAvailableSuppliersForToday(storeId: string) {
                             cutoffTime: deliveryOption.orderCutoff?.time || "17:00",
                             leadDays: hardLeadDays,
                             isCustomAlert: customLeadTime !== undefined,
-                            hardDeadline: hardDeadlineDate // To show "Due on..."
+                            hardDeadline: hardDeadlineDate, // To show "Due on..."
+                            alertOffset: alertLeadDays // Return used offset for UI info
                         });
                     }
                 }
