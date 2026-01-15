@@ -23,8 +23,10 @@ import { Mail, Lock, ArrowRight, ChevronLeft, Loader2, Eye, EyeOff } from "lucid
 import { requestPasswordReset } from "@/lib/actions/employee.actions";
 import { useParams } from "next/navigation";
 import { cn, DASHBOARD_URL } from "@/lib/utils";
+import { useTranslations } from 'next-intl';
 
 export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
+    const t = useTranslations('Login');
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -48,10 +50,10 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
             });
 
             if (result?.error) {
-                setError("Invalid email or password");
-                toast.error("Login failed. Check your credentials.");
+                setError(t('invalidCredentials'));
+                toast.error(t('loginFailed'));
             } else {
-                toast.success("Welcome back!");
+                toast.success(t('welcome'));
 
                 // Construct explicit localized path for maximum reliability
                 const targetPath = `/${locale}${DASHBOARD_URL}`;
@@ -70,12 +72,12 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 
     const handleForgot = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!email) return toast.error("Please enter your email");
+        if (!email) return toast.error(t('enterEmail'));
 
         setIsLoading(true);
         try {
             await requestPasswordReset(email);
-            toast.success("Reset request sent to HR. They will notify you shortly.");
+            toast.success(t('resetSent'));
             setView("login");
         } catch (err: any) {
             toast.error(err.message || "Failed to request reset");
@@ -120,12 +122,12 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
 
                 <CardHeader className="text-center pt-10 pb-6">
                     <CardTitle className="text-lg font-black tracking-tight uppercase">
-                        {view === "login" ? "Identity Verification" : "Identity Recovery"}
+                        {view === "login" ? t('title') : t('titleRecovery')}
                     </CardTitle>
                     <CardDescription className="text-xs font-medium px-4">
                         {view === "login"
-                            ? "Authenticate to manage real-time store logistics and workforce data."
-                            : "HR will receive a security notification to verify your identity request."
+                            ? t('subtitle')
+                            : t('subtitleRecovery')
                         }
                     </CardDescription>
                 </CardHeader>
@@ -142,13 +144,13 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                             <form onSubmit={handleLogin}>
                                 <CardContent className="space-y-6 px-8">
                                     <div className="space-y-2">
-                                        <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Universal Identity (Email)</Label>
+                                        <Label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t('emailLabel')}</Label>
                                         <div className="relative group flex items-center">
                                             <Mail className="absolute left-5 h-4 w-4 text-muted-foreground group-focus-within:text-primary group-focus-within:opacity-0 transition-opacity z-20 pointer-events-none" />
                                             <Input
                                                 id="email"
                                                 type="email"
-                                                placeholder="name@chickinho.com"
+                                                placeholder={t('emailPlaceholder')}
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 className="pl-14 focus:pl-6 bg-white/5 border-white/5 text-foreground focus:ring-primary/20 focus:border-primary/40 h-14 rounded-2xl transition-all relative z-10"
@@ -158,13 +160,13 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                                     </div>
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between ml-1">
-                                            <Label htmlFor="password" title="Password" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Credentials</Label>
+                                            <Label htmlFor="password" title="Password" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('credentials')}</Label>
                                             <button
                                                 type="button"
                                                 onClick={() => setView("forgot")}
                                                 className="text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary/80 transition-colors"
                                             >
-                                                RECOVER
+                                                {t('recover')}
                                             </button>
                                         </div>
                                         <div className="relative group flex items-center">
@@ -191,7 +193,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                                     <div className="flex items-center space-x-3 ml-1">
                                         <Checkbox id="remember" className="border-white/20 data-[state=checked]:bg-primary rounded-md h-5 w-5" />
                                         <label htmlFor="remember" className="text-[11px] font-bold text-muted-foreground/80 cursor-pointer select-none">
-                                            Maintain active session for 30 cycles
+                                            {t('remember')}
                                         </label>
                                     </div>
 
@@ -212,7 +214,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                                         disabled={isLoading}
                                     >
                                         {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                                            <span className="flex items-center gap-3">AUTHORIZE ACCESS <ArrowRight className="h-4 w-4" /></span>
+                                            <span className="flex items-center gap-3">{t('authorize')} <ArrowRight className="h-4 w-4" /></span>
                                         )}
                                     </Button>
                                 </CardFooter>
@@ -229,13 +231,13 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                             <form onSubmit={handleForgot}>
                                 <CardContent className="space-y-6 px-8">
                                     <div className="space-y-2">
-                                        <Label htmlFor="forgot-email" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Recovery Target (Email)</Label>
+                                        <Label htmlFor="forgot-email" className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">{t('recoveryTarget')}</Label>
                                         <div className="relative group flex items-center">
                                             <Mail className="absolute left-5 h-4 w-4 text-muted-foreground group-focus-within:text-primary group-focus-within:opacity-0 transition-all z-20 pointer-events-none" />
                                             <Input
                                                 id="forgot-email"
                                                 type="email"
-                                                placeholder="Enter your registered email"
+                                                placeholder={t('enterRegistered')}
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 className="pl-14 focus:pl-6 bg-white/5 border-white/5 text-foreground h-14 rounded-2xl transition-all relative z-10"
@@ -246,7 +248,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                                 </CardContent>
                                 <CardFooter className="flex flex-col gap-4 pb-12 pt-6 px-8">
                                     <Button type="submit" className="w-full h-14 bg-foreground text-background hover:bg-foreground/90 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl" disabled={isLoading}>
-                                        {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : "SIGNAL HR DEPARTMENT"}
+                                        {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : t('signalHR')}
                                     </Button>
                                     <Button
                                         type="button"
@@ -254,7 +256,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                                         className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground hover:bg-transparent"
                                         onClick={() => setView("login")}
                                     >
-                                        <ChevronLeft className="h-4 w-4 mr-2" /> DISMISS RECOVERY
+                                        <ChevronLeft className="h-4 w-4 mr-2" /> {t('dismiss')}
                                     </Button>
                                 </CardFooter>
                             </form>
@@ -270,7 +272,7 @@ export function LoginForm({ className, ...props }: React.ComponentPropsWithoutRe
                 transition={{ delay: 0.8 }}
                 className="text-center"
             >
-                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground/30">V1.4 // SECURE-PROTOCOL ENFORCED</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.5em] text-muted-foreground/30">{t('version')}</p>
             </motion.div>
         </div>
     );

@@ -39,6 +39,10 @@ export function RoleSwitcher({ currentUserRole, allRoles = [] }: { currentUserRo
         router.refresh();
     };
 
+    // Only show role switcher for tech users to improve dashboard performance
+    const isTech = allRoles.includes('tech');
+    if (!isTech) return null;
+
     if (availableRoles.length <= 1) return null;
 
     return (

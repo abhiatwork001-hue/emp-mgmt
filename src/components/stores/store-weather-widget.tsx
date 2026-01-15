@@ -51,7 +51,7 @@ export function StoreWeatherWidget({ weather, storeName, compact = false }: Weat
                 {getWeatherIcon(weather.condition)}
                 <div>
                     <p className="text-lg font-bold">{weather.temp}°C</p>
-                    <p className="text-xs text-muted-foreground">{weather.condition}</p>
+                    <p className="text-xs text-muted-foreground">{t(weather.condition.toLowerCase())}</p>
                 </div>
             </div>
         );
@@ -71,7 +71,7 @@ export function StoreWeatherWidget({ weather, storeName, compact = false }: Weat
                         {getWeatherIcon(weather.condition)}
                         <div>
                             <p className="text-3xl font-bold">{weather.temp}°C</p>
-                            <p className="text-sm text-muted-foreground capitalize">{weather.description || weather.condition}</p>
+                            <p className="text-sm text-muted-foreground capitalize">{t(weather.condition.toLowerCase())}</p>
                         </div>
                     </div>
                     <div className="text-right space-y-1">

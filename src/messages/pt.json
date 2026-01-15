@@ -1,8 +1,12 @@
 {
     "Common": {
         "dashboard": "Painel",
+        "all": "Todos",
         "home": "Início",
         "stores": "Lojas",
+        "store": "Loja",
+        "department": "Departamento",
+        "global": "Global",
         "departments": "Departamentos",
         "recipes": "Receitas",
         "schedule": "Escalas",
@@ -27,6 +31,9 @@
         "search": "Procurar",
         "active": "Ativo",
         "inactive": "Inativo",
+        "actions": "Ações",
+        "view": "Ver",
+        "today": "Hoje",
         "save": "Guardar",
         "cancel": "Cancelar",
         "edit": "Editar",
@@ -84,13 +91,39 @@
             "store_manager": "Gerente de Loja",
             "department_head": "Chefe de Dep. Global",
             "store_department_head": "Chefe de Dep. Loja",
-            "employee": "Funcionário"
+            "employee": "Funcionário",
+            "tech": "Técnico"
         }
     },
     "RoleSwitcher": {
         "testView": "Vista de Teste:",
         "selectRole": "Selecionar função",
-        "testingMode": "Modo de Teste"
+        "testingMode": "Modo de Teste",
+        "viewAs": "Ver Como"
+    },
+    "Login": {
+        "title": "Verificação de Identidade",
+        "titleRecovery": "Recuperação de Identidade",
+        "subtitle": "Autentique-se para gerir a logística da loja e dados da força de trabalho em tempo real.",
+        "subtitleRecovery": "Os RH receberão uma notificação de segurança para verificar o seu pedido de identidade.",
+        "emailLabel": "Identidade Universal (Email)",
+        "emailPlaceholder": "nome@chickinho.com",
+        "credentials": "Credenciais",
+        "recover": "RECUPERAR",
+        "dismiss": "DISPENSAR RECUPERAÇÃO",
+        "signalHR": "ALERTAR DEPARTAMENTO DE RH",
+        "passwordLabel": "Palavra-passe",
+        "remember": "Manter sessão ativa por 30 ciclos",
+        "authorize": "AUTORIZAR ACESSO",
+        "loading": "A carregar...",
+        "version": "V1.4 // PROTOCOLO-SEGURO APLICADO",
+        "enterEmail": "Por favor introduza o seu email",
+        "welcome": "Bem-vindo de volta!",
+        "resetSent": "Pedido de reposição enviado para os RH. Irão notificá-lo em breve.",
+        "loginFailed": "Login falhou. Verifique as suas credenciais.",
+        "invalidCredentials": "Email ou palavra-passe inválidos",
+        "recoveryTarget": "Alvo de Recuperação (Email)",
+        "enterRegistered": "Introduza o seu email registado"
     },
     "PendingActions": {
         "vacationRequest": "Pedido de Férias",
@@ -132,8 +165,69 @@
             "cancel": "Cancelar"
         }
     },
+    "ScheduleEditor": {
+        "saveChanges": "Guardar Alterações",
+        "saved": "Guardado",
+        "discardChangesConfirm": "Tem alterações não guardadas. Descartá-las?",
+        "cancelEdit": "Cancelar Edição",
+        "cancelEditFailed": "Falha ao cancelar edição",
+        "sendForApproval": "Enviar para Aprovação",
+        "approve": "Aprovar Escala",
+        "downloadPdf": "Descarregar PDF",
+        "scheduleActions": "Ações da Escala",
+        "copyPrevious": "Copiar Semana Anterior",
+        "scheduledOnly": "Apenas Agendados",
+        "employee": "Funcionário",
+        "shiftTime": "Hora do Turno",
+        "daySettings": "Definições do Dia",
+        "storeClosed": "Loja Fechada",
+        "underHours": "{hours} / {contract} h",
+        "underDays": "{days} / {contract} dias",
+        "dayOff": "Folga",
+        "copyScheduleConfirm": "Copiar Semana Anterior?",
+        "copyScheduleDescription": "Isto irá substituir a escala atual com os turnos da semana anterior.",
+        "deleteShift": "Apagar Turno?",
+        "deleteShiftDescription": "Tem a certeza que quer apagar este turno?",
+        "publishScheduleDescription": "Isto tornará a escala visível para todos os funcionários.",
+        "rejectConfirm": "Rejeitar Escala?",
+        "rejectDescription": "Por favor forneça uma razão para a rejeição.",
+        "reject": "Rejeitar Escala",
+        "rejectReason": "Razão da Rejeição",
+        "rejectPlaceholder": "ex. Falta de cobertura na Sexta...",
+        "deleteScheduleConfirm": "Apagar Escala?",
+        "cover": "Cobrir",
+        "extra": "Extra",
+        "deleteScheduleDescription": "Esta ação não pode ser desfeita.",
+        "scheduleUpdatedExternally": "Escala atualizada externamente. A atualizar...",
+        "overlapConflict": "Não é possível atribuir {name}: Sobrepõe-se a um turno existente ({start} - {end})",
+        "crossStoreConflict": "Conflito entre Lojas Detetado: {names}",
+        "saveSuccess": "Alterações guardadas com sucesso",
+        "saveError": "Falha ao guardar alterações",
+        "deleteSuccess": "Escala apagada com sucesso",
+        "deleteError": "Falha ao apagar escala",
+        "pdfDownloadSuccess": "PDF descarregado com sucesso",
+        "pdfGenerateError": "Falha ao gerar PDF",
+        "csvExportSuccess": "Escala exportada para CSV",
+        "csvExportError": "Falha ao exportar CSV",
+        "exitEditMode": "Saiu do modo de edição",
+        "historyLoadError": "Falha ao carregar histórico",
+        "copyFailed": "Falha ao copiar escala. A semana anterior pode estar vazia ou ocorreu um erro.",
+        "completeScheduleMsg": "Por favor complete a escala para os seguintes dias ou marque-os como fechados: {days}",
+        "csvEmployeeName": "Nome do Funcionário",
+        "csvPosition": "Cargo",
+        "csvTotalHours": "Total Horas",
+        "csvTotalShifts": "Total Turnos"
+    },
     "Dashboard": {
         "title": "Painel de Controlo",
+        "alerts": {
+            "missingSchedulesTitle": "Horários em Falta",
+            "missingSchedulesMessage": "Horário da próxima semana em falta para {entity}: {list}.",
+            "createAction": "Criar",
+            "highPendingTitle": "Volume Pendente Elevado",
+            "highPendingMessage": "{count} pedidos a aguardar revisão.",
+            "reviewAction": "Rever"
+        },
         "welcome": "Bem-vindo de volta, {name}",
         "greetings": {
             "morning": "Bom Dia",
@@ -157,6 +251,29 @@
             "myWeeklySchedule": "O Meu Horário Semanal",
             "workingWithYou": "A trabalhar consigo hoje",
             "workingToday": "A Trabalhar Hoje",
+            "noTeamMembers": "Nenhum membro da equipa de turno hoje. Verifique o horário para ver os próximos turnos.",
+            "opsDataUnavailable": "Dados Operacionais Indisponíveis",
+            "systemRotas": "Rotas do sistema",
+            "staffDirectory": "Diretório de pessoal",
+            "settingsDetails": "Definições e Detalhes",
+            "quickActions": "Pedidos Rápidos",
+            "planTimeOff": "Planeie a sua folga",
+            "sickLeaveDesc": "Baixa médica ou emergência",
+            "complianceMessage": "O prazo para submissão do horário da próxima semana passou. As seguintes {entity} ainda não publicaram as suas rotas:",
+            "allEntities": "Todas as entidades",
+            "monthlyAnalytics": "Analítica Mensal",
+            "vacationAnalytics": "Analítica de Férias",
+            "globalWorkforce": "Força de Trabalho Global",
+            "todaysStatus": "Estado de Hoje",
+            "vacationLeft": "Férias Restantes",
+            "onShift": "No Turno",
+            "offDuty": "Fora de Serviço",
+            "noEmployeesFoundGlobal": "Nenhum funcionário encontrado neste departamento global.",
+            "showingOf": "A mostrar {start}-{end} de {total}",
+            "previous": "Anterior",
+            "next": "Seguinte",
+            "noSchedule": "Sem Horário",
+            "noneScheduled": "Nenhum Agendado",
             "viewSchedule": "Ver Horário",
             "itsJustYou": "É apenas você hoje!",
             "holdingFort": "Você está a segurar o forte. Tenha um ótimo turno!",
@@ -849,7 +966,22 @@
         "feelsLike": "Sensação",
         "humidity": "Humidade",
         "wind": "Vento",
-        "updated": "Atualizado"
+        "updated": "Atualizado",
+        "clear": "Limpo",
+        "clouds": "Nuvens",
+        "rain": "Chuva",
+        "drizzle": "Chuvisco",
+        "thunderstorm": "Trovoada",
+        "snow": "Neve",
+        "mist": "Névoa",
+        "smoke": "Fumo",
+        "haze": "Neblina",
+        "dust": "Poeira",
+        "fog": "Nevoeiro",
+        "sand": "Areia",
+        "ash": "Cinza",
+        "squall": "Vendaval",
+        "tornado": "Tornado"
     },
     "Reviews": {
         "title": "Avaliações Google",
@@ -880,6 +1012,56 @@
         "avg": "Média",
         "noRatings": "Nenhuma avaliação disponível ainda.",
         "viewFullReport": "Ver relatório completo"
+    },
+    "Legal": {
+        "terms": {
+            "title": "Termos de Serviço | Chick-fil-A Helper",
+            "heading": "Termos de Serviço",
+            "acceptableUse": {
+                "title": "Política de Utilização Aceitável",
+                "content": "Os funcionários não devem partilhar contas. Todas as ações são registadas. O uso indevido para fins não comerciais é proibido."
+            },
+            "accountSecurity": {
+                "title": "Segurança da Conta",
+                "content": "É responsável por manter a confidencialidade das suas credenciais. Reporte qualquer acesso não autorizado imediatamente."
+            },
+            "dataAccuracy": {
+                "title": "Precisão dos Dados",
+                "content": "Escalas e folhas de horas devem refletir as horas reais trabalhadas. A falsificação é motivo para ação disciplinar."
+            },
+            "liability": {
+                "title": "Responsabilidade",
+                "content": "O sistema é fornecido 'como está'. Não somos responsáveis por perda de dados ou interrupções de serviço."
+            }
+        },
+        "privacy": {
+            "title": "Política de Privacidade | Chick-fil-A Helper",
+            "heading": "Política de Privacidade",
+            "dataProcessing": {
+                "title": "1. Informação de Processamento de Dados",
+                "basisLabel": "Base Legal:",
+                "basisValue": "Interesse Legítimo + Necessidade Contratual.",
+                "text": "\"Os dados são processados para fins de gestão de força de trabalho necessários para a execução do seu contrato de trabalho e operações comerciais legítimas.\""
+            },
+            "collection": {
+                "title": "2. O Que Recolhemos",
+                "identityData": "Dados de Identidade: Nome, Email, Detalhes de Contacto, NIF, Data de Nascimento.",
+                "employmentData": "Dados de Emprego: Função, Cargo, Atribuição de Loja, Histórico de Escalas.",
+                "logs": "Registos de Atividade: Ações do sistema, tempos de login e operações críticas."
+            },
+            "retention": {
+                "title": "3. Política de Retenção de Dados",
+                "hrRecords": "Registos de RH",
+                "hrText": "Retidos por 5-10 anos após o fim do emprego, conforme exigido pelas leis laborais e fiscais portuguesas.",
+                "logsRecords": "Registos do Sistema",
+                "logsText": "Retidos por 1-2 anos para auditoria de segurança e resolução de problemas operacionais."
+            },
+            "rights": {
+                "title": "4. Os Seus Direitos",
+                "intro": "Ao abrigo do RGPD, tem o direito de aceder, retificar ou solicitar a eliminação dos seus dados (sujeito aos requisitos legais de retenção).",
+                "contact": "Para exercer estes direitos ou solicitar uma exportação de dados, contacte o Encarregado de Proteção de Dados ou o Administrador do Sistema em:"
+            }
+        }
     },
     "Analytics": {
         "title": "Análise Mensal",

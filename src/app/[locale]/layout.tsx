@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Outfit, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import "./mobile-compat.css";
+import "@/styles/print.css";
 import { Providers } from "./providers";
 import { getMessages, getLocale } from 'next-intl/server';
 import { getServerSession } from "next-auth";

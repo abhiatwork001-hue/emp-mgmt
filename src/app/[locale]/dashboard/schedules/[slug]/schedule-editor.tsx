@@ -49,16 +49,18 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { format } from "date-fns";
+import { pt } from "date-fns/locale";
 
 import { pusherClient } from "@/lib/pusher-client";
 import { useEffect } from "react";
 
 export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [], userStoreId, userDepartmentId }: { initialSchedule: any, userId: string, canEdit: boolean, userRoles: string[], userStoreId?: string, userDepartmentId?: string }) {
     const router = useRouter();
-    const t = useTranslations("Schedule");
+    const t = useTranslations("ScheduleEditor");
     const tc = useTranslations("Common");
+    const locale = useLocale();
     const [schedule, setSchedule] = useState(initialSchedule);
     const [weekDays, setWeekDays] = useState<any[]>(initialSchedule.days || []);
 
@@ -77,7 +79,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
 
         channel.bind("schedule:updated", (data: any) => {
             if (data.scheduleId === schedule._id) {
-                toast.info("Schedule updated externally. Refreshing...", { duration: 2000 });
+                toast.info(t('scheduleUpdatedExternally'), { duration: 2000 });
                 router.refresh();
             }
         });
@@ -328,7 +330,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                     );
 
                     if (conflictingShift) {
-                        toast.error(`Cannot assign ${emp.firstName} ${emp.lastName}: Overlaps with existing shift (${conflictingShift.startTime} - ${conflictingShift.endTime})`);
+                        toast.error(t('overlapConflict', { name: `${emp.firstName} ${emp.lastName}`, start: conflictingShift.startTime, end: conflictingShift.endTime }));
                         return day; // Return unchanged day
                     }
                 }
@@ -400,7 +402,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                     return `${emp.firstName} ${emp.lastName} is at ${c.storeName}`;
                                 }).join(' & ');
 
-                                toast.error(`Cross-Store Conflict Detected: ${names}`, { duration: 5000 });
+                                toast.error(t('crossStoreConflict', { names }), { duration: 5000 });
                             }
                         }
                     }).catch(err => console.error("Conflict check failed", err));
@@ -426,10 +428,10 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
             await updateSchedule(schedule._id, { days: weekDays });
             setLastSaved(new Date());
             setHasUnsavedChanges(false);
-            toast.success("Changes saved successfully");
+            toast.success(t('saveSuccess'));
         } catch (error) {
             console.error("Save failed", error);
-            toast.error("Failed to save changes");
+            toast.error(t('saveError'));
         } finally {
             setIsSaving(false);
         }
@@ -468,7 +470,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
             setLastSaved(new Date());
         } catch (error) {
             console.error("Copy failed", error);
-            setValidationMessage("Failed to copy schedule. The previous week might be empty or an error occurred.");
+            setValidationMessage(t('copyFailed'));
             setValidationAlertOpen(true);
         } finally {
             setActionLoading(false);
@@ -480,8 +482,8 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
         const incompleteDays = weekDays.filter(day => !day.isHoliday && day.shifts.length === 0);
 
         if (incompleteDays.length > 0) {
-            const dayNames = incompleteDays.map(d => new Date(d.date).toLocaleDateString('en-US', { weekday: 'long' })).join(', ');
-            setValidationMessage(`Please complete the schedule for the following days or mark them as closed: ${dayNames}`);
+            const dayNames = incompleteDays.map(d => new Date(d.date).toLocaleDateString(locale, { weekday: 'long' })).join(', ');
+            setValidationMessage(t('completeScheduleMsg', { days: dayNames }));
             setValidationAlertOpen(true);
             return false;
         }
@@ -541,11 +543,11 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
         setActionLoading(true);
         try {
             await deleteSchedule(schedule._id, userId);
-            toast.success("Schedule deleted successfully");
+            toast.success(t('deleteSuccess'));
             router.push("/dashboard/schedules");
         } catch (error) {
             console.error("Delete failed", error);
-            toast.error("Failed to delete schedule");
+            toast.error(t('deleteError'));
         } finally {
             setActionLoading(false);
         }
@@ -679,15 +681,131 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
     };
 
     // --- Export Handlers ---
-    const handlePrint = () => {
-        window.print();
+    const handleExportPDF = async () => {
+        try {
+            // Dynamic import to avoid SSR issues
+            const jsPDF = (await import('jspdf')).default;
+            const autoTable = (await import('jspdf-autotable')).default;
+
+            const doc = new jsPDF({
+                orientation: 'landscape',
+                unit: 'mm',
+                format: 'a4'
+            });
+
+            // Header
+            const storeName = typeof schedule.storeId === 'object' ? schedule.storeId.name : 'Store';
+            const deptName = schedule.storeDepartmentId?.name || 'Department';
+
+            doc.setFontSize(16);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`${storeName} - ${deptName}`, 14, 15);
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Week ${schedule.weekNumber}, ${schedule.year}`, 14, 22);
+            doc.text(`${format(new Date(schedule.dateRange.startDate), "MMM d")} - ${format(new Date(schedule.dateRange.endDate), "MMM d, yyyy")}`, 14, 27);
+
+            // Status badge
+            doc.setFontSize(8);
+            doc.text(`Status: ${schedule.status.toUpperCase()}`, 240, 15);
+
+            // Prepare table data
+            const dayHeaders = weekDays.map(d => {
+                const date = new Date(d.date);
+                return `${date.toLocaleDateString(locale, { weekday: 'short' })}\n${date.getDate()}/${date.getMonth() + 1}`;
+            });
+
+            const tableHeaders = [t('csvEmployeeName'), ...dayHeaders, t('csvTotalHours').replace(' ', '\n')];
+
+            const tableData = uniqueEmployees.map((emp: any) => {
+                let totalMinutes = 0;
+                const rowData: string[] = [];
+
+                // Employee name
+                rowData.push(`${emp.firstName} ${emp.lastName}\n${emp.positionId?.name || 'Staff'}`);
+
+                // Shifts for each day
+                weekDays.forEach((day: any) => {
+                    const shiftsForEmp = day.shifts.filter((s: any) =>
+                        s.employees.some((e: any) => e._id === emp._id)
+                    );
+
+                    if (day.isHoliday) {
+                        rowData.push('HOLIDAY');
+                    } else if (shiftsForEmp.length > 0) {
+                        const shiftStrs = shiftsForEmp.map((s: any) => {
+                            if (s.shiftName === "Day Off") return "OFF";
+
+                            // Calculate duration
+                            const getM = (t: string) => {
+                                if (!t) return 0;
+                                const [h, m] = t.split(':').map(Number);
+                                return h * 60 + (m || 0);
+                            };
+                            let dur = getM(s.endTime) - getM(s.startTime);
+                            if (dur < 0) dur += 24 * 60;
+                            if (s.breakMinutes) dur -= s.breakMinutes;
+                            totalMinutes += dur;
+
+                            return `${s.startTime}-\n${s.endTime}`;
+                        }).join('\n');
+                        rowData.push(shiftStrs);
+                    } else {
+                        rowData.push('-');
+                    }
+                });
+
+                // Total hours
+                const totalHours = (totalMinutes / 60).toFixed(1);
+                rowData.push(totalHours + 'h');
+
+                return rowData;
+            });
+
+            // Generate table using autoTable
+            autoTable(doc, {
+                startY: 32,
+                head: [tableHeaders],
+                body: tableData,
+                theme: 'grid',
+                styles: {
+                    fontSize: 7,
+                    cellPadding: 2,
+                    lineColor: [200, 200, 200],
+                    lineWidth: 0.1,
+                },
+                headStyles: {
+                    fillColor: [66, 66, 66],
+                    textColor: [255, 255, 255],
+                    fontStyle: 'bold',
+                    halign: 'center',
+                },
+                columnStyles: {
+                    0: { cellWidth: 35, fontStyle: 'bold' },
+                    [weekDays.length + 1]: { halign: 'center', fontStyle: 'bold' }
+                },
+                alternateRowStyles: {
+                    fillColor: [245, 245, 245]
+                },
+            });
+
+            // Save PDF
+            const filename = `schedule_${storeName.replace(/\s+/g, '_')}_week${schedule.weekNumber}_${schedule.year}.pdf`;
+            doc.save(filename);
+
+            toast.success(t('pdfDownloadSuccess'));
+        } catch (error) {
+            console.error(error);
+            toast.error(t('pdfGenerateError'));
+        }
     };
 
     const handleExportCSV = () => {
         try {
             // 1. Headers
-            const dayHeaders = weekDays.map(d => new Date(d.date).toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }));
-            const headers = ["Employee Name", "Position", ...dayHeaders, "Total Hours", "Total Shifts"];
+            const dayHeaders = weekDays.map(d => new Date(d.date).toLocaleDateString(locale, { weekday: 'short', month: 'numeric', day: 'numeric' }));
+            const headers = [t('csvEmployeeName'), t('csvPosition'), ...dayHeaders, t('csvTotalHours'), t('csvTotalShifts')];
 
             // 2. Rows
             const rows = uniqueEmployees.map((emp: any) => {
@@ -758,10 +876,10 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
             link.click();
             document.body.removeChild(link);
 
-            toast.success("Schedule exported to CSV");
+            toast.success(t('csvExportSuccess'));
         } catch (error) {
             console.error("Export failed", error);
-            toast.error("Failed to export CSV");
+            toast.error(t('csvExportError'));
         }
     };
 
@@ -866,7 +984,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                 // We need a specific action that allows managers to revert to published
                                 // even if they don't have "publish" permission generally.
                                 await updateScheduleStatus(schedule._id, 'published', userId, "Reverted edit mode (no changes)", false);
-                                toast.success("Exited edit mode");
+                                toast.success(t('exitEditMode'));
                                 window.location.reload();
                             } catch (error) {
                                 console.error("Cancel failed", error);
@@ -938,15 +1056,15 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
 
                 <Separator orientation="vertical" className="h-6 mx-2 hidden sm:block" />
 
-                {/* Print Button - Moved to Top Level */}
+                {/* PDF Export Button - Moved to Top Level */}
                 <Button
                     variant="outline"
                     className="gap-2 print:hidden hidden sm:flex bg-background"
-                    onClick={handlePrint}
-                    title="Print Schedule or Save as PDF"
+                    onClick={handleExportPDF}
+                    title="Download Schedule as PDF"
                 >
-                    <Printer className="h-4 w-4" />
-                    <span className="hidden lg:inline">{t('printPdf') || "Print PDF"}</span>
+                    <FileDown className="h-4 w-4" />
+                    <span className="hidden lg:inline">{t('downloadPdf') || "Download PDF"}</span>
                 </Button>
 
                 {/* Consolidated Settings Menu */}
@@ -977,7 +1095,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                 setLogs(data);
                             } catch (e) {
                                 console.error("Failed to fetch logs", e);
-                                toast.error("Failed to load history");
+                                toast.error(t('historyLoadError'));
                             } finally {
                                 setLogsLoading(false);
                             }
@@ -1067,20 +1185,19 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                             <thead className="bg-muted/50 text-muted-foreground">
                                 <tr className="divide-x divide-border">
                                     <th className="p-4 min-w-[200px] font-medium sticky left-0 bg-background/95 backdrop-blur z-10 border-r border-border">
-                                        {viewMode === 'employees' ? t('employee') : "Shift Time"}
+                                        {viewMode === 'employees' ? t('employee') : t('shiftTime')}
                                     </th>
                                     {weekDays.map((day: any, i: number) => {
                                         const isCurrentDay = isToday(new Date(day.date));
                                         return (
                                             <th key={i} className={`p-4 min-w-[150px] font-medium border-r border-border last:border-r-0 text-center group relative transition-colors ${day.isHoliday ? 'bg-muted/50' : isCurrentDay ? 'bg-primary/10' : 'hover:bg-muted/80'}`}>
                                                 <div className="flex flex-col items-center">
-                                                    <span className={`uppercase text-xs font-bold ${isCurrentDay ? 'text-primary' : ''}`}>{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}</span>
+                                                    <span className={`uppercase text-xs font-bold ${isCurrentDay ? 'text-primary' : ''}`}>{new Date(day.date).toLocaleDateString(locale, { weekday: 'short' })}</span>
                                                     <div className={`text-xs font-normal w-6 h-6 flex items-center justify-center rounded-full mt-1 ${isCurrentDay ? 'bg-primary text-primary-foreground' : ''}`}>
                                                         {new Date(day.date).getDate()}
                                                     </div>
-                                                    {day.isHoliday && <span className="text-[10px] text-red-500 font-bold mt-1 max-w-[100px] truncate">{day.holidayName || "Closed"}</span>}
+                                                    {day.isHoliday && <span className="text-[10px] text-red-500 font-bold mt-1 max-w-[100px] truncate">{day.holidayName || t('storeClosed')}</span>}
                                                 </div>
-
                                                 {/* Day Actions Popover */}
                                                 {isEditMode && (
                                                     <Popover>
@@ -1352,6 +1469,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                                                     // Coverage Check
                                                                     const coverageInfo = shift.meta?.coverages?.find((c: any) => c.coveringEmployeeId === emp._id);
                                                                     const isCovering = !!coverageInfo;
+                                                                    const isOvertime = dur > (8 * 60) || shift.isExtra;
 
                                                                     // Combined Classes
                                                                     let wrapperClasses = `p-2 rounded text-xs border border-border/50 transition-all group relative `;
@@ -1402,6 +1520,13 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                                                                 const [eH, eM] = shift.endTime.split(':').map(Number);
                                                                                 const startMinutes = sH * 60 + sM;
                                                                                 const endMinutes = eH * 60 + eM;
+
+                                                                                // Calculate Overtime (Example logic: > 8h or marked as extra)
+                                                                                // Shift duration calculation is redundant but good for validation
+                                                                                let durationM = endMinutes - startMinutes;
+                                                                                if (durationM < 0) durationM += 24 * 60;
+                                                                                if (shift.breakMinutes) durationM -= shift.breakMinutes;
+                                                                                const isOvertime = durationM > (8 * 60) || shift.isExtra; // Example condition
 
                                                                                 if (isOwnRow) {
                                                                                     if (isEditMode) {
@@ -1468,7 +1593,13 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                                                             {/* Cover Indicator */}
                                                                             {isCovering && (
                                                                                 <div className="absolute top-1 right-1 text-violet-600 bg-violet-100 rounded-full px-1 py-0.5 text-[8px] font-bold uppercase tracking-tighter">
-                                                                                    Cover
+                                                                                    {t('cover')}
+                                                                                </div>
+                                                                            )}
+                                                                            {/* Overtime Indicator */}
+                                                                            {isOvertime && !isCovering && !absence && (
+                                                                                <div className="absolute top-1 right-1 text-amber-600 bg-amber-100 rounded-full px-1 py-0.5 text-[8px] font-bold uppercase tracking-tighter">
+                                                                                    {t('extra')}
                                                                                 </div>
                                                                             )}
 

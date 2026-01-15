@@ -13,8 +13,12 @@ const intlMiddleware = createMiddleware({
 export default async function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
+    // Public routes that don't require authentication
+    const publicRoutes = ['/privacy', '/terms', '/login', '/api-docs'];
+    const isPublicRoute = publicRoutes.some(route => pathname.includes(route));
+
     // Check if route is protected (Dashboard)
-    if (/\/dashboard(\/|$)/.test(pathname)) {
+    if (/\/dashboard(\/|$)/.test(pathname) && !isPublicRoute) {
         const cookies = req.cookies.getAll();
 
         const secret = process.env.NEXTAUTH_SECRET;

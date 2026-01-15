@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { getEmployeesByStore, getAllEmployees, getEmployeeStats } from "@/lib/actions/employee.actions";
 import { getAllVacationRequests } from "@/lib/actions/vacation.actions";
 import { getAllAbsenceRequests } from "@/lib/actions/absence.actions";
@@ -36,6 +37,8 @@ function mergeRequests(vacations: any[], absences: any[], overtime: any[], sched
 }
 
 export async function AsyncDashboard({ employee, viewRole, stores, depts, managers, allRoles, storeRatings, weather }: any) {
+    const t = await getTranslations('Dashboard.alerts');
+    const tc = await getTranslations('Common');
     const { GlobalDepartment, StoreDepartment } = require("@/lib/models");
 
     // --- Task System Data Fetching ---
@@ -429,15 +432,15 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
             operationsScore -= 15;
             radarStatus = radarStatus === "optimal" ? "warning" : radarStatus;
             const isManager = ["store_manager", "department_head", "store_department_head"].includes(viewRole);
-            const entityLabel = did ? "Department" : (storeId ? "Departments" : "Stores");
+            const entityLabel = did ? tc('department') : (storeId ? tc('departments') : tc('stores'));
             const listStr = missingEntityNames.slice(0, 3).join(", ") + (missingEntityNames.length > 3 ? ` +${missingEntityNames.length - 3} more` : "");
-            alerts.push({ id: "sched-overdue", type: "warning", title: "Missing Schedules", message: `Next week's schedule missing for ${entityLabel}: ${listStr || "All"}.`, actionLabel: isManager ? "Create" : undefined, actionUrl: isManager ? "/dashboard/schedules" : undefined, meta: { missingEntities: missingEntityNames } });
+            alerts.push({ id: "sched-overdue", type: "warning", title: t('missingSchedulesTitle'), message: t('missingSchedulesMessage', { entity: entityLabel, list: listStr || tc('all') }), actionLabel: isManager ? t('createAction') : undefined, actionUrl: isManager ? "/dashboard/schedules" : undefined, meta: { missingEntities: missingEntityNames } });
         }
 
         const pendingRequests = mergeRequests(pendingVacations, pendingAbsences, pendingOvertime, pendingSchedules, pendingCoverage);
         if (pendingRequests.length > 5) {
             operationsScore -= 10;
-            alerts.push({ id: "approval-queue", type: "info", title: "High Pending Volume", message: `${pendingRequests.length} requests waiting review.`, actionLabel: "Review", actionUrl: "#approvals" });
+            alerts.push({ id: "approval-queue", type: "info", title: t('highPendingTitle'), message: t('highPendingMessage', { count: pendingRequests.length }), actionLabel: t('reviewAction'), actionUrl: "#approvals" });
         }
 
 

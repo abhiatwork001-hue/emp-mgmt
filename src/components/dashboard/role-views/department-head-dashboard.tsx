@@ -129,6 +129,7 @@ export function DepartmentHeadDashboard({
 }: DepartmentHeadDashboardProps) {
     const [showScheduleAlert, setShowScheduleAlert] = useState(false);
     const t = useTranslations("Dashboard");
+    const tc = useTranslations("Common");
 
 
 
@@ -173,7 +174,7 @@ export function DepartmentHeadDashboard({
                         <div className="space-y-0.5">
                             <div className="text-lg font-bold tracking-tight">{format(new Date(nextVacation.from), "MMM dd, yyyy")}</div>
                             <Badge variant="secondary" className="text-[9px] py-0 px-2 font-bold uppercase">
-                                {Math.ceil((new Date(nextVacation.from).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} days away
+                                {t('widgets.inDays', { days: Math.ceil((new Date(nextVacation.from).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)) })}
                             </Badge>
                         </div>
                     ) : (
@@ -191,9 +192,9 @@ export function DepartmentHeadDashboard({
                 <CardContent className="px-4 pb-4 pt-0">
                     <div className="flex items-baseline gap-1">
                         <span className="text-3xl font-black italic">
-                            {daysUntilNextDayOff === null ? "No Schedule" :
-                                daysUntilNextDayOff === 0 ? "Today" :
-                                    daysUntilNextDayOff === -1 ? "None Scheduled" :
+                            {daysUntilNextDayOff === null ? t('widgets.noSchedule') :
+                                daysUntilNextDayOff === 0 ? tc('today') :
+                                    daysUntilNextDayOff === -1 ? t('widgets.noneScheduled') :
                                         daysUntilNextDayOff}
                         </span>
                         {daysUntilNextDayOff !== null && daysUntilNextDayOff > 0 && <span className="text-[10px] font-bold text-muted-foreground uppercase">{t('widgets.daysAway')}</span>}
@@ -267,7 +268,7 @@ export function DepartmentHeadDashboard({
                 scheduleHealth={operationsData.scheduleHealth}
                 role={currentUserRole}
             />
-        ) : <div className="p-4 text-center text-muted-foreground">Operations Data Unavailable</div>,
+        ) : <div className="p-4 text-center text-muted-foreground">{t('widgets.opsDataUnavailable')}</div>,
 
         "stats-cards": (
             <StatsCards stats={extendedStats} />
@@ -305,7 +306,7 @@ export function DepartmentHeadDashboard({
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
                             <span className="text-sm font-black italic text-foreground truncate">{t('widgets.manageSchedules')}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">System rotas</span>
+                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{t('widgets.systemRotas')}</span>
                         </div>
                     </Link>
 
@@ -315,7 +316,7 @@ export function DepartmentHeadDashboard({
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
                             <span className="text-sm font-black italic text-foreground truncate">{t('widgets.manageTeam')}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">Staff directory</span>
+                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{t('widgets.staffDirectory')}</span>
                         </div>
                     </Link>
                 </CardContent>
@@ -361,7 +362,7 @@ export function DepartmentHeadDashboard({
                 <Card className="border shadow-sm flex flex-col h-full bg-card/50 backdrop-blur-sm">
                     <CardHeader className="py-3 px-4 border-b shrink-0 flex flex-row items-center justify-between">
                         <CardTitle className="text-md font-black italic flex items-center gap-2 text-primary uppercase tracking-tight">
-                            <Globe className="h-4 w-4" /> Global Workforce
+                            <Globe className="h-4 w-4" /> {t('widgets.globalWorkforce')}
                         </CardTitle>
                         <Link href="/dashboard/employees" className="text-[10px] font-bold text-primary hover:underline uppercase tracking-tight">
                             {t('widgets.manageTeam')} &rarr;
@@ -371,11 +372,11 @@ export function DepartmentHeadDashboard({
                         <table className="w-full text-left">
                             <thead className="bg-muted/30 text-[9px] font-black uppercase tracking-widest text-muted-foreground border-b italic">
                                 <tr>
-                                    <th className="px-4 py-3">Employee</th>
-                                    <th className="px-4 py-3">Store</th>
-                                    <th className="px-4 py-3">Today's Status</th>
-                                    <th className="px-4 py-3">Vacation Left</th>
-                                    <th className="px-4 py-3">Actions</th>
+                                    <th className="px-4 py-3">{tc('employee')}</th>
+                                    <th className="px-4 py-3">{tc('store')}</th>
+                                    <th className="px-4 py-3">{t('widgets.todaysStatus')}</th>
+                                    <th className="px-4 py-3">{t('widgets.vacationLeft')}</th>
+                                    <th className="px-4 py-3">{tc('actions')}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/50">
@@ -401,9 +402,9 @@ export function DepartmentHeadDashboard({
                                             <td className="px-4 py-3 whitespace-nowrap">
                                                 <div className="flex flex-col">
                                                     <span className="text-[10px] font-black uppercase text-foreground truncate max-w-[120px]">
-                                                        {emp.storeId?.name || "Global"}
+                                                        {emp.storeId?.name || tc('global')}
                                                     </span>
-                                                    <span className="text-[8px] text-muted-foreground uppercase font-bold tracking-widest">{emp.storeDepartmentId?.name || "All Depts"}</span>
+                                                    <span className="text-[8px] text-muted-foreground uppercase font-bold tracking-widest">{emp.storeDepartmentId?.name || `${tc('all')} ${tc('departments')}`}</span>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3 whitespace-nowrap">
@@ -411,11 +412,11 @@ export function DepartmentHeadDashboard({
                                                     {isWorking ? (
                                                         <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[9px] font-black italic uppercase py-0 px-2 h-5">
                                                             <div className="h-1 w-1 rounded-full bg-emerald-500 mr-1 animate-pulse" />
-                                                            On Shift
+                                                            {t('widgets.onShift')}
                                                         </Badge>
                                                     ) : (
                                                         <Badge variant="outline" className="text-muted-foreground/50 border-border/50 text-[9px] font-black italic uppercase py-0 px-2 h-5">
-                                                            Off Duty
+                                                            {t('widgets.offDuty')}
                                                         </Badge>
                                                     )}
                                                 </div>
@@ -430,7 +431,7 @@ export function DepartmentHeadDashboard({
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <Link href={`/dashboard/employees/${emp.slug || emp._id}`} className="text-[9px] font-black text-primary hover:text-primary/70 transition-colors uppercase tracking-widest flex items-center justify-end gap-1">
-                                                    View <ClipboardList className="h-3 w-3" />
+                                                    {tc('view')} <ClipboardList className="h-3 w-3" />
                                                 </Link>
                                             </td>
                                         </tr>
@@ -440,14 +441,14 @@ export function DepartmentHeadDashboard({
                         </table>
                         {allEmployees.length === 0 && (
                             <div className="p-8 text-center bg-muted/5">
-                                <p className="text-xs font-medium text-muted-foreground italic">No employees found in this global department.</p>
+                                <p className="text-xs font-medium text-muted-foreground italic">{t('widgets.noEmployeesFoundGlobal')}</p>
                             </div>
                         )}
                     </CardContent>
                     {totalPages > 1 && (
                         <div className="border-t px-4 py-3 flex items-center justify-between bg-muted/5">
                             <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight">
-                                Showing {startIndex + 1}-{Math.min(endIndex, allEmployees.length)} of {allEmployees.length}
+                                {t('widgets.showingOf', { start: startIndex + 1, end: Math.min(endIndex, allEmployees.length), total: allEmployees.length })}
                             </div>
                             <div className="flex gap-2">
                                 <Button
@@ -457,7 +458,7 @@ export function DepartmentHeadDashboard({
                                     disabled={currentPage === 1}
                                     className="h-7 px-2 text-[10px] font-bold"
                                 >
-                                    Previous
+                                    {t('widgets.previous')}
                                 </Button>
                                 <div className="flex items-center gap-1">
                                     {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
@@ -479,7 +480,7 @@ export function DepartmentHeadDashboard({
                                     disabled={currentPage === totalPages}
                                     className="h-7 px-2 text-[10px] font-bold"
                                 >
-                                    Next
+                                    {t('widgets.next')}
                                 </Button>
                             </div>
                         </div>
@@ -540,9 +541,9 @@ export function DepartmentHeadDashboard({
                                         <Badge variant="destructive" className="font-bold uppercase tracking-widest text-[10px]">{t('widgets.overdue')}</Badge>
                                     </div>
                                     <p className="text-sm text-red-600/80 font-medium leading-relaxed max-w-2xl">
-                                        The deadline for next week's schedule submission has passed. The following entities have not yet published their rotas:
+                                        {t('widgets.complianceMessage', { entity: tc('stores') })}
                                         <span className="block mt-2 font-bold text-red-700">
-                                            {operationsData.scheduleHealth.missingEntities?.slice(0, 3).join(", ") || "All entities"}
+                                            {operationsData.scheduleHealth.missingEntities?.slice(0, 3).join(", ") || t('widgets.allEntities')}
                                             {(operationsData.scheduleHealth.missingEntities?.length || 0) > 3 && ` + ${(operationsData.scheduleHealth.missingEntities?.length || 0) - 3} more`}
                                         </span>
                                     </p>

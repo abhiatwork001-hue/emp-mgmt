@@ -143,6 +143,7 @@ export function StoreManagerDashboard({
     const [showScheduleAlert, setShowScheduleAlert] = useState(false);
     const [supplierAlerts, setSupplierAlerts] = useState<any[]>([]);
     const t = useTranslations("Dashboard");
+    const tc = useTranslations("Common");
 
     const extendedStats = {
         totalEmployees: storeStats.totalEmployees,
@@ -211,7 +212,7 @@ export function StoreManagerDashboard({
                             <Users className="h-6 w-6 text-muted-foreground/40" />
                         </div>
                         <div className="text-xs font-medium text-muted-foreground italic max-w-[200px]">
-                            No team members found on shift today. Check the schedule to see upcoming shifts.
+                            {t('widgets.noTeamMembers')}
                         </div>
                     </div>
                 )}
@@ -229,7 +230,7 @@ export function StoreManagerDashboard({
                 scheduleHealth={operationsData.scheduleHealth}
                 role={currentUserRole}
             />
-        ) : <div className="p-4 text-center text-muted-foreground">Operations Data Unavailable</div>,
+        ) : <div className="p-4 text-center text-muted-foreground">{t('widgets.opsDataUnavailable')}</div>,
 
         "stats-cards": (
             <StatsCards stats={extendedStats} />
@@ -267,7 +268,7 @@ export function StoreManagerDashboard({
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
                             <span className="text-sm font-black italic text-foreground truncate">{t('widgets.manageSchedules')}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">System rotas</span>
+                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{t('widgets.systemRotas')}</span>
                         </div>
                     </Link>
 
@@ -277,7 +278,7 @@ export function StoreManagerDashboard({
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
                             <span className="text-sm font-black italic text-foreground truncate">{t('widgets.manageTeam')}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">Staff directory</span>
+                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{t('widgets.staffDirectory')}</span>
                         </div>
                     </Link>
 
@@ -288,7 +289,7 @@ export function StoreManagerDashboard({
                             </div>
                             <div className="flex flex-col min-w-0 flex-1">
                                 <span className="text-sm font-black italic text-foreground truncate">{t('widgets.myStore')}</span>
-                                <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">Settings & Details</span>
+                                <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{t('widgets.settingsDetails')}</span>
                             </div>
                         </Link>
                     )}
@@ -331,7 +332,7 @@ export function StoreManagerDashboard({
                 <CardHeader className="py-3 px-4 bg-muted/5">
                     <CardTitle className="text-md font-semibold flex items-center gap-2">
                         <ClipboardList className="h-4 w-4 text-sky-600" />
-                        {t('widgets.quickActions') || "Quick Requests"}
+                        {t('widgets.quickActions')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 flex flex-col gap-3">
@@ -344,8 +345,8 @@ export function StoreManagerDashboard({
                                     <Palmtree className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col items-start">
-                                    <span className="text-sm font-bold">Request Vacation</span>
-                                    <span className="text-[10px] text-muted-foreground">Plan your time off</span>
+                                    <span className="text-sm font-bold">{t('widgets.requestVacation')}</span>
+                                    <span className="text-[10px] text-muted-foreground">{t('widgets.planTimeOff')}</span>
                                 </div>
                             </Button>
                         }
@@ -358,8 +359,8 @@ export function StoreManagerDashboard({
                                     <AlertCircle className="h-4 w-4" />
                                 </div>
                                 <div className="flex flex-col items-start">
-                                    <span className="text-sm font-bold">Report Absence</span>
-                                    <span className="text-[10px] text-muted-foreground">Sick leave or emergency</span>
+                                    <span className="text-sm font-bold">{t('widgets.reportAbsence')}</span>
+                                    <span className="text-[10px] text-muted-foreground">{t('widgets.sickLeaveDesc')}</span>
                                 </div>
                             </Button>
                         }
@@ -425,11 +426,9 @@ export function StoreManagerDashboard({
                                         <Badge variant="destructive" className="font-bold uppercase tracking-widest text-[10px]">{t('widgets.overdue')}</Badge>
                                     </div>
                                     <p className="text-sm text-red-600/80 font-medium leading-relaxed max-w-2xl">
-                                        The deadline for next week's schedule submission has passed. The following
-                                        {currentUserRole === 'store_manager' ? ' departments ' : ' stores '}
-                                        have not yet published their rotas:
+                                        {t('widgets.complianceMessage', { entity: currentUserRole === 'store_manager' ? tc('departments') : tc('stores') })}
                                         <span className="block mt-2 font-bold text-red-700">
-                                            {operationsData.scheduleHealth.missingEntities?.slice(0, 3).join(", ") || "All entities"}
+                                            {operationsData.scheduleHealth.missingEntities?.slice(0, 3).join(", ") || t('widgets.allEntities')}
                                             {(operationsData.scheduleHealth.missingEntities?.length || 0) > 3 && ` + ${(operationsData.scheduleHealth.missingEntities?.length || 0) - 3} more`}
                                         </span>
                                     </p>
@@ -473,7 +472,7 @@ export function StoreManagerDashboard({
                         <div className="flex items-center gap-3 mb-4">
                             <Badge variant="outline" className="px-3 py-1 bg-yellow-500/5 text-yellow-600 border-yellow-500/20 font-bold uppercase tracking-wider text-[10px]">
                                 <TrendingUp className="h-3 w-3 mr-1 inline" />
-                                Monthly Analytics
+                                {t('widgets.monthlyAnalytics')}
                             </Badge>
                             <div className="h-[1px] flex-1 bg-gradient-to-r from-border/50 via-border to-transparent" />
                         </div>
@@ -486,7 +485,7 @@ export function StoreManagerDashboard({
                         <div className="flex items-center gap-3">
                             <Badge variant="outline" className="px-3 py-1 bg-emerald-500/5 text-emerald-600 border-emerald-500/20 font-bold uppercase tracking-wider text-[10px]">
                                 <Palmtree className="h-3 w-3 mr-1 inline" />
-                                Vacation Analytics
+                                {t('widgets.vacationAnalytics')}
                             </Badge>
                             <div className="h-[1px] flex-1 bg-gradient-to-r from-border/50 via-border to-transparent" />
                         </div>

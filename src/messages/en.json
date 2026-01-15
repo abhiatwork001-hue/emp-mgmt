@@ -1,10 +1,14 @@
 {
     "Common": {
         "dashboard": "Dashboard",
+        "all": "All",
         "home": "Home",
         "approvals": "Approvals",
         "pendingactions": "Pending Actions",
         "stores": "Stores",
+        "store": "Store",
+        "department": "Department",
+        "global": "Global",
         "departments": "Departments",
         "recipes": "Recipes",
         "schedule": "Schedule",
@@ -32,6 +36,9 @@
         "search": "Search",
         "active": "Active",
         "inactive": "Inactive",
+        "actions": "Actions",
+        "view": "View",
+        "today": "Today",
         "save": "Save",
         "cancel": "Cancel",
         "draft": "Draft",
@@ -96,6 +103,30 @@
         "selectRole": "Select role",
         "testingMode": "Testing Mode"
     },
+    "Login": {
+        "title": "Identity Verification",
+        "titleRecovery": "Identity Recovery",
+        "subtitle": "Authenticate to manage real-time store logistics and workforce data.",
+        "subtitleRecovery": "HR will receive a security notification to verify your identity request.",
+        "emailLabel": "Universal Identity (Email)",
+        "emailPlaceholder": "name@chickinho.com",
+        "credentials": "Credentials",
+        "recover": "RECOVER",
+        "dismiss": "DISMISS RECOVERY",
+        "signalHR": "SIGNAL HR DEPARTMENT",
+        "passwordLabel": "Password",
+        "remember": "Maintain active session for 30 cycles",
+        "authorize": "AUTHORIZE ACCESS",
+        "loading": "Loading...",
+        "version": "V1.4 // SECURE-PROTOCOL ENFORCED",
+        "enterEmail": "Please enter your email",
+        "welcome": "Welcome back!",
+        "resetSent": "Reset request sent to HR. They will notify you shortly.",
+        "loginFailed": "Login failed. Check your credentials.",
+        "invalidCredentials": "Invalid email or password",
+        "recoveryTarget": "Recovery Target (Email)",
+        "enterRegistered": "Enter your registered email"
+    },
     "PendingActions": {
         "vacationRequest": "Vacation Request",
         "absenceReport": "Absence Report",
@@ -136,8 +167,69 @@
             "cancel": "Cancel"
         }
     },
+    "ScheduleEditor": {
+        "saveChanges": "Save Changes",
+        "saved": "Saved",
+        "discardChangesConfirm": "You have unsaved changes. Discard them?",
+        "cancelEdit": "Cancel Edit",
+        "cancelEditFailed": "Failed to cancel edit",
+        "sendForApproval": "Send for Approval",
+        "approve": "Approve Schedule",
+        "downloadPdf": "Download PDF",
+        "scheduleActions": "Schedule Actions",
+        "copyPrevious": "Copy Previous Week",
+        "scheduledOnly": "Scheduled Only",
+        "employee": "Employee",
+        "shiftTime": "Shift Time",
+        "daySettings": "Day Settings",
+        "storeClosed": "Store Closed",
+        "underHours": "{hours} / {contract} hrs",
+        "underDays": "{days} / {contract} days",
+        "dayOff": "Day Off",
+        "copyScheduleConfirm": "Copy Previous Week?",
+        "copyScheduleDescription": "This will overwrite the current schedule with shifts from the previous week.",
+        "deleteShift": "Delete Shift?",
+        "deleteShiftDescription": "Are you sure you want to delete this shift?",
+        "publishScheduleDescription": "This will make the schedule visible to all employees.",
+        "rejectConfirm": "Reject Schedule?",
+        "rejectDescription": "Please provide a reason for rejection.",
+        "reject": "Reject Schedule",
+        "rejectReason": "Reason for Rejection",
+        "rejectPlaceholder": "e.g. Coverage gaps on Friday...",
+        "deleteScheduleConfirm": "Delete Schedule?",
+        "cover": "Cover",
+        "extra": "Extra",
+        "deleteScheduleDescription": "This action cannot be undone.",
+        "scheduleUpdatedExternally": "Schedule updated externally. Refreshing...",
+        "overlapConflict": "Cannot assign {name}: Overlaps with existing shift ({start} - {end})",
+        "crossStoreConflict": "Cross-Store Conflict Detected: {names}",
+        "saveSuccess": "Changes saved successfully",
+        "saveError": "Failed to save changes",
+        "deleteSuccess": "Schedule deleted successfully",
+        "deleteError": "Failed to delete schedule",
+        "pdfDownloadSuccess": "PDF downloaded successfully",
+        "pdfGenerateError": "Failed to generate PDF",
+        "csvExportSuccess": "Schedule exported to CSV",
+        "csvExportError": "Failed to export CSV",
+        "exitEditMode": "Exited edit mode",
+        "historyLoadError": "Failed to load history",
+        "copyFailed": "Failed to copy schedule. The previous week might be empty or an error occurred.",
+        "completeScheduleMsg": "Please complete the schedule for the following days or mark them as closed: {days}",
+        "csvEmployeeName": "Employee Name",
+        "csvPosition": "Position",
+        "csvTotalHours": "Total Hours",
+        "csvTotalShifts": "Total Shifts"
+    },
     "Dashboard": {
         "title": "Dashboard",
+        "alerts": {
+            "missingSchedulesTitle": "Missing Schedules",
+            "missingSchedulesMessage": "Next week's schedule missing for {entity}: {list}.",
+            "createAction": "Create",
+            "highPendingTitle": "High Pending Volume",
+            "highPendingMessage": "{count} requests waiting review.",
+            "reviewAction": "Review"
+        },
         "welcome": "Welcome back, {name}",
         "greetings": {
             "morning": "Good Morning",
@@ -161,6 +253,29 @@
             "myWeeklySchedule": "My Weekly Schedule",
             "workingWithYou": "Working with you today",
             "workingToday": "Working Today",
+            "noTeamMembers": "No team members found on shift today. Check the schedule to see upcoming shifts.",
+            "opsDataUnavailable": "Operations Data Unavailable",
+            "systemRotas": "System rotas",
+            "staffDirectory": "Staff directory",
+            "settingsDetails": "Settings & Details",
+            "quickActions": "Quick Requests",
+            "planTimeOff": "Plan your time off",
+            "sickLeaveDesc": "Sick leave or emergency",
+            "complianceMessage": "The deadline for next week's schedule submission has passed. The following {entity} have not yet published their rotas:",
+            "allEntities": "All entities",
+            "monthlyAnalytics": "Monthly Analytics",
+            "vacationAnalytics": "Vacation Analytics",
+            "globalWorkforce": "Global Workforce",
+            "todaysStatus": "Today's Status",
+            "vacationLeft": "Vacation Left",
+            "onShift": "On Shift",
+            "offDuty": "Off Duty",
+            "noEmployeesFoundGlobal": "No employees found in this global department.",
+            "showingOf": "Showing {start}-{end} of {total}",
+            "previous": "Previous",
+            "next": "Next",
+            "noSchedule": "No Schedule",
+            "noneScheduled": "None Scheduled",
             "viewSchedule": "View Schedule",
             "itsJustYou": "It's just you today!",
             "holdingFort": "You're holding down the fort. Have a great shift!",
@@ -856,7 +971,22 @@
         "feelsLike": "Feels Like",
         "humidity": "Humidity",
         "wind": "Wind",
-        "updated": "Updated"
+        "updated": "Updated",
+        "clear": "Clear",
+        "clouds": "Clouds",
+        "rain": "Rain",
+        "drizzle": "Drizzle",
+        "thunderstorm": "Thunderstorm",
+        "snow": "Snow",
+        "mist": "Mist",
+        "smoke": "Smoke",
+        "haze": "Haze",
+        "dust": "Dust",
+        "fog": "Fog",
+        "sand": "Sand",
+        "ash": "Ash",
+        "squall": "Squall",
+        "tornado": "Tornado"
     },
     "Reviews": {
         "title": "Google Reviews",
@@ -887,6 +1017,56 @@
         "avg": "Avg",
         "noRatings": "No ratings available yet.",
         "viewFullReport": "View full report"
+    },
+    "Legal": {
+        "terms": {
+            "title": "Terms of Service | Chick-fil-A Helper",
+            "heading": "Terms of Service",
+            "acceptableUse": {
+                "title": "Acceptable Use Policy",
+                "content": "Employees must not share accounts. All actions are logged. Misuse for non-business purposes is prohibited."
+            },
+            "accountSecurity": {
+                "title": "Account Security",
+                "content": "You are responsible for maintaining the confidentiality of your credentials. Report any unauthorized access immediately."
+            },
+            "dataAccuracy": {
+                "title": "Data Accuracy",
+                "content": "Schedules and timesheets must reflect actual worked hours. Falsification is grounds for disciplinary action."
+            },
+            "liability": {
+                "title": "Liability",
+                "content": "The system is provided 'as is'. We are not liable for data loss or service interruptions."
+            }
+        },
+        "privacy": {
+            "title": "Privacy Policy | Chick-fil-A Helper",
+            "heading": "Privacy Policy",
+            "dataProcessing": {
+                "title": "1. Data Processing Information",
+                "basisLabel": "Lawful Basis:",
+                "basisValue": "Legitimate Interest + Contractual Necessity.",
+                "text": "\"Data is processed for workforce management purposes necessary for the performance of your employment contract and legitimate business operations.\""
+            },
+            "collection": {
+                "title": "2. What We Collect",
+                "identityData": "Identity Data: Name, Email, Contact Details, NIF, Date of Birth.",
+                "employmentData": "Employment Data: Role, Position, Store Assignment, Schedule History.",
+                "logs": "Activity Logs: System actions, login times, and critical operations."
+            },
+            "retention": {
+                "title": "3. Data Retention Policy",
+                "hrRecords": "HR Records",
+                "hrText": "Retained for 5-10 years after employment ends, as required by Portuguese labor and tax laws.",
+                "logsRecords": "System Logs",
+                "logsText": "Retained for 1-2 years for security auditing and operational troubleshooting."
+            },
+            "rights": {
+                "title": "4. Your Rights",
+                "intro": "Under GDPR, you have the right to access, rectify, or request deletion of your data (subject to legal retention requirements).",
+                "contact": "To exercise these rights or request a data export, please contact the Data Protection Officer or System Administrator at:"
+            }
+        }
     },
     "Analytics": {
         "title": "Monthly Analytics",

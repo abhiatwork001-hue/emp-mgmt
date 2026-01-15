@@ -1,0 +1,79 @@
+/* Print-specific styles for schedule */
+@media print {
+
+    /* Hide all UI chrome */
+    button,
+    nav,
+    aside,
+    header:not(.print-header),
+    footer,
+    .no-print {
+        display: none !important;
+    }
+
+    /* Page setup */
+    @page {
+        size: landscape;
+        margin: 0.5cm;
+    }
+
+    body {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    /* Container adjustments */
+    .print-container {
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Show print header */
+    .print-header {
+        display: block !important;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #000;
+    }
+
+    /* Table optimizations */
+    table {
+        page-break-inside: avoid;
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th,
+    td {
+        border: 1px solid #333 !important;
+        padding: 4px 6px !important;
+        font-size: 9pt !important;
+    }
+
+    th {
+        background-color: #f0f0f0 !important;
+        font-weight: bold !important;
+    }
+
+    /* Prevent page breaks inside important elements */
+    tr,
+    .shift-cell {
+        page-break-inside: avoid;
+    }
+
+    /* Ensure colors print */
+    .bg-primary,
+    .bg-secondary,
+    .bg-accent {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    /* Scale adjustments for better fit */
+    .print-scale {
+        transform: scale(0.95);
+        transform-origin: top left;
+    }
+}

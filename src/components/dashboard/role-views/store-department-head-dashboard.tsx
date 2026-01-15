@@ -125,6 +125,7 @@ export function StoreDepartmentHeadDashboard({
 }: StoreDepartmentHeadDashboardProps) {
     const [showScheduleAlert, setShowScheduleAlert] = useState(false);
     const t = useTranslations("Dashboard");
+    const tc = useTranslations("Common");
 
     const extendedStats = {
         totalEmployees: storeStats.totalEmployees,
@@ -202,7 +203,7 @@ export function StoreDepartmentHeadDashboard({
                 scheduleHealth={operationsData.scheduleHealth}
                 role={currentUserRole}
             />
-        ) : <div className="p-4 text-center text-muted-foreground">Operations Data Unavailable</div>,
+        ) : <div className="p-4 text-center text-muted-foreground">{t('widgets.opsDataUnavailable')}</div>,
 
         "stats-cards": (
             <StatsCards stats={extendedStats} />
@@ -240,7 +241,7 @@ export function StoreDepartmentHeadDashboard({
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
                             <span className="text-sm font-black italic text-foreground truncate">{t('widgets.manageSchedules')}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">System rotas</span>
+                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{t('widgets.systemRotas')}</span>
                         </div>
                     </Link>
 
@@ -250,7 +251,7 @@ export function StoreDepartmentHeadDashboard({
                         </div>
                         <div className="flex flex-col min-w-0 flex-1">
                             <span className="text-sm font-black italic text-foreground truncate">{t('widgets.manageTeam')}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">Staff directory</span>
+                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-tight">{t('widgets.staffDirectory')}</span>
                         </div>
                     </Link>
                 </CardContent>
@@ -331,9 +332,9 @@ export function StoreDepartmentHeadDashboard({
                                         <Badge variant="destructive" className="font-bold uppercase tracking-widest text-[10px]">{t('widgets.overdue')}</Badge>
                                     </div>
                                     <p className="text-sm text-red-600/80 font-medium leading-relaxed max-w-2xl">
-                                        The deadline for next week's schedule submission has passed. The following departments have not yet published their rotas:
+                                        {t('widgets.complianceMessage', { entity: tc('departments') })}
                                         <span className="block mt-2 font-bold text-red-700">
-                                            {operationsData.scheduleHealth.missingEntities?.slice(0, 3).join(", ") || "All entities"}
+                                            {operationsData.scheduleHealth.missingEntities?.slice(0, 3).join(", ") || t('widgets.allEntities')}
                                             {(operationsData.scheduleHealth.missingEntities?.length || 0) > 3 && ` + ${(operationsData.scheduleHealth.missingEntities?.length || 0) - 3} more`}
                                         </span>
                                     </p>
