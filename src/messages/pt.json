@@ -735,6 +735,8 @@
         "availableToBook": "Disponível",
         "requestHistory": "Histórico de Pedidos",
         "pickDate": "Escolha uma data",
+        "pickDates": "Escolher datas",
+        "selectPeriod": "Selecionar Período",
         "remainingBalance": "Saldo Restante",
         "submitting": "A enviar...",
         "submit": "Enviar",

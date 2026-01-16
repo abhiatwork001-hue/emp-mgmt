@@ -740,6 +740,8 @@
         "availableToBook": "Available to Book",
         "requestHistory": "Request History",
         "pickDate": "Pick a date",
+        "pickDates": "Pick dates",
+        "selectPeriod": "Select Period",
         "remainingBalance": "Remaining Balance",
         "submitting": "Submitting...",
         "submit": "Submit",
@@ -1274,28 +1276,6 @@
                 "noData": "No data available"
             }
         },
-        "EmployeeSchedule": {
-            "title": "Weekly Schedule",
-            "subtitle": "View working hours and shifts",
-            "viewFull": "View Full Schedule",
-            "totalHours": "Total Hours",
-            "totalShifts": "Total Shifts",
-            "newSchedule": "New Schedule Published",
-            "newScheduleDesc": "The schedule for this week has just been published.",
-            "updatedSchedule": "Schedule Updated",
-            "updatedScheduleDesc": "The following changes were made recently:",
-            "today": "Today",
-            "closed": "Closed",
-            "noShift": "No Shift Today",
-            "dayOff": "Day Off",
-            "absent": "Absent",
-            "vacation": "Vacation",
-            "happyVacation": "Happy Vacation! 🌴",
-            "stats": {
-                "hours": "h",
-                "shifts": "Shifts"
-            }
-        },
         "request": "Request Vacation",
         "comments": "Comments (Optional)",
         "reasonPlaceholder": "Reason (optional)...",
@@ -1307,6 +1287,28 @@
         "submitSuccess": "Vacation request submitted",
         "submitError": "Failed to submit request.",
         "pickEndDate": "Pick end date"
+    },
+    "EmployeeSchedule": {
+        "title": "Weekly Schedule",
+        "subtitle": "View working hours and shifts",
+        "viewFull": "View Full Schedule",
+        "totalHours": "Total Hours",
+        "totalShifts": "Total Shifts",
+        "newSchedule": "New Schedule Published",
+        "newScheduleDesc": "The schedule for this week has just been published.",
+        "updatedSchedule": "Schedule Updated",
+        "updatedScheduleDesc": "The following changes were made recently:",
+        "today": "Today",
+        "closed": "Closed",
+        "noShift": "No Shift Today",
+        "dayOff": "Day Off",
+        "absent": "Absent",
+        "vacation": "Vacation",
+        "happyVacation": "Happy Vacation! 🌴",
+        "stats": {
+            "hours": "h",
+            "shifts": "Shifts"
+        }
     },
     "Credentials": {
         "title": "Store Credentials",
