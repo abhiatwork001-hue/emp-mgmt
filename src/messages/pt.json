@@ -71,6 +71,7 @@
         "employee": "Funcionário",
         "selectStore": "Selecionar Loja",
         "selectEmployee": "Selecionar Funcionário",
+        "selectDate": "Selecionar data",
         "description": "Descrição",
         "general": "Geral",
         "level": "Nível",
@@ -772,6 +773,22 @@
         "noHistory": "Sem histórico de ausências.",
         "justified": "Justificado",
         "unjustified": "Injustificado",
+        "other": "Outro",
+        "affectedShift": "Turno Afetado (Opcional)",
+        "foundShifts": "Encontrado {count} turno(s)",
+        "noShiftsFound": "Nenhum turno encontrado para esta data. Uma ausência padrão será registrada.",
+        "selectShift": "Selecione um turno para solicitar cobertura...",
+        "coverageNote": "Selecionar um turno acionará uma solicitação de cobertura para aprovação.",
+        "standardNote": "O relatório padrão registra a ausência sem acionar a lógica de substituição.",
+        "attachmentsProof": "Anexos / Comprovante (Opcional)",
+        "uploadFile": "Carregar Arquivo",
+        "fileLimit": "PDF, IMG até 4MB",
+        "fileUploaded": "Arquivo carregado",
+        "requestCoverage": "Solicitar Cobertura",
+        "coverageRequested": "Cobertura de ausência solicitada. RH notificado.",
+        "absenceReported": "Ausência relatada com sucesso.",
+        "failedSubmit": "Falha ao enviar relatório.",
+        "dateLimitError": "Não é possível relatar ausência para uma data com mais de 7 dias.",
         "approveAbsence": "Aprovar Ausência",
         "confirmDetails": "Confirmar Detalhes",
         "sick": "Baixa Médica",
@@ -849,7 +866,45 @@
         "currentRole": "Função Atual",
         "noHistory": "Nenhum histórico de cargos disponível",
         "noHistoryDescription": "Alterações na carreira aparecerão aqui.",
-        "present": "Presente"
+        "present": "Presente",
+        "emergencyContact": "Contato de Emergência",
+        "contactName": "Nome do Contato",
+        "relationship": "Relacionamento",
+        "placeholders": {
+            "phone": "+351 912 345 678",
+            "address": "Rua Exemplo, 123, Lisboa",
+            "bankName": "Banco Exemplo",
+            "iban": "PT50 1234 5678",
+            "nif": "123456789"
+        },
+        "changePhoto": "Alterar Foto",
+        "uploadPhoto": "Carregar Foto",
+        "recommendedImage": "Recomendado: Imagem quadrada, máx 2MB.",
+        "work": {
+            "today": "Hoje",
+            "thisWeek": "Esta Semana",
+            "thisMonth": "Este Mês",
+            "thisYear": "Este Ano",
+            "periodAnalysis": "Análise do Período",
+            "billableCalculator": "Calculadora de Faturação",
+            "billableDesc": "Estimar ganhos para um período específico",
+            "period": "Período",
+            "seeAnalysis": "Ver Análise do Período",
+            "hourlyRate": "Taxa Horária",
+            "calculate": "Calcular Total",
+            "totalHours": "Total de Horas",
+            "totalPay": "Pagamento Total",
+            "workActivity": "Atividade Laboral",
+            "weeklyTimeline": "Cronograma semanal: {hours}h total",
+            "historyRange": "Intervalo histórico: {hours}h total",
+            "loading": "A carregar horário...",
+            "noShifts": "Nenhum turno encontrado no intervalo selecionado.",
+            "offDuty": "de folga",
+            "weekly": "Semanal",
+            "range": "Intervalo",
+            "borrowed": "Emprestado",
+            "ot": "HE"
+        }
     },
     "Recipes": {
         "title": "Receitas",
@@ -989,7 +1044,8 @@
         "syncing": "A sincronizar...",
         "noReviews": "Ainda sem avaliações.",
         "reviewsCount": "avaliações",
-        "viewMaps": "Ver no Google Maps"
+        "viewMaps": "Ver no Google Maps",
+        "lastUpdated": "Última atualização: {time}"
     },
     "ApiUsage": {
         "title": "Uso da API do Sistema",
@@ -1073,10 +1129,24 @@
         "total": "Total",
         "ratingHistory": "Histórico de Classificação (Mensal)",
         "lastMonth": "mês passado",
-        "na": "N/A"
+        "na": "N/D",
+        "performanceComparison": "Comparação de Performance",
+        "averageRating": "Classificação Média",
+        "thisMonth": "Este Mês",
+        "monthlyNewReviews": "Novas Avaliações Mensais",
+        "insufficientData": "Dados insuficientes para comparação",
+        "monthlyHistory": "Histórico Mensal",
+        "table": {
+            "month": "Mês",
+            "rating": "Classificação",
+            "new": "Novo",
+            "breakdown": "Detalhe"
+        }
     },
     "Comparison": {
-        "title": "Desempenho da Reputação da Loja",
+        "title": "Performance de Reputação da Loja",
+        "reputationManagement": "Gestão de Reputação",
+        "monitorReviews": "Monitorize as avaliações Google e compare a performance das lojas.",
         "topRated": "Lojas Melhor Classificadas",
         "mostReviewed": "Mais Avaliadas",
         "storeName": "Nome da Loja",
@@ -1085,6 +1155,573 @@
         "trend": "Tendência",
         "lastUpdated": "Última Atualização",
         "never": "Nunca",
-        "loading": "A carregar dados de reputação..."
+        "loading": "A carregar dados de reputação...",
+        "historicalComparison": "Comparação Histórica",
+        "storeA": "Loja A",
+        "storeB": "Loja B",
+        "avgRating": "CLASSIFICAÇÃO MÉDIA",
+        "newReviews": "NOVAS AVALIAÇÕES",
+        "comments": "COMENTÁRIOS",
+        "detailedAnalysis": "Análise Mensal Detalhada",
+        "toggleStores": "Selecione lojas para sobrepor no gráfico de tendências abaixo",
+        "finalizeData": "Finalizar Dados do Mês Atual",
+        "processing": "A Processar...",
+        "comparativeTrends": "Tendências Mensais Comparativas ({year})",
+        "overlaidPerformance": "Performance sobreposta das lojas selecionadas",
+        "avgRatingTitle": "Classificação Média",
+        "commentsTitle": "Comentários",
+        "selectStores": "Selecione lojas acima para ver estatísticas lado a lado"
+    },
+    "ActivityLog": {
+        "title": "Registo de Atividade",
+        "viewAll": "Ver Tudo",
+        "noActivity": "Sem atividade recente.",
+        "noMatch": "Nenhum registo de atividade encontrado com os critérios.",
+        "searchPlaceholder": "Pesquisar ator ou detalhes...",
+        "actionType": "Tipo de Ação",
+        "allActions": "Todas as Ações",
+        "store": "Loja",
+        "allStores": "Todas as Lojas",
+        "pickDate": "Selecione um intervalo de datas",
+        "table": {
+            "actor": "Ator (Quem)",
+            "action": "Ação (O Quê)",
+            "where": "Onde (Loja)",
+            "details": "Detalhes",
+            "when": "Quando"
+        },
+        "actions": {
+            "create": "Criar",
+            "update": "Atualizar",
+            "delete": "Apagar",
+            "approve": "Aprovar"
+        },
+        "system": "Sistema",
+        "global": "Global",
+        "globalSystem": "Global / Sistema"
+    },
+    "ScheduleAlert": {
+        "title": "Escalas em Falta",
+        "description": "Os seguintes {type} não publicaram a escala da próxima semana. O prazo expirou.",
+        "overdue": "Atrasado",
+        "close": "Fechar",
+        "alert": "Alertar {type}",
+        "remindersSent": "Lembretes Enviados",
+        "success": "Lembretes enviados a {count} gestores.",
+        "failure": "Falha ao enviar lembretes.",
+        "sending": "A enviar...",
+        "storeManagers": "Gerentes de Loja",
+        "departmentHeads": "Chefes de Departamento",
+        "stores": "lojas",
+        "departments": "departamentos",
+        "errorGeneric": "Ocorreu um erro."
+    },
+    "Vacation": {
+        "analytics": {
+            "kpi": {
+                "liability": "Saldo Pendente",
+                "taken": "Total Gozado",
+                "pending": "Pedidos Pendentes",
+                "active": "Pessoal Ativo",
+                "onVacation": "Em Férias",
+                "sub": {
+                    "liability": "Dias não usados (Alocação - Gozado)",
+                    "taken": "Dias consumidos este ano",
+                    "pending": "A aguardar aprovação do gestor",
+                    "active": "Funcionários a trabalhar atualmente",
+                    "onVacation": "Funcionários ausentes em licença"
+                }
+            },
+            "charts": {
+                "globalDepts": "Departamentos Globais",
+                "globalDeptsDesc": "Dias de férias gozados por função global",
+                "unitPerformance": "Performance da Unidade",
+                "unitPerformanceDesc": "Top Lojas: Gozado vs Saldo",
+                "monthlyTrends": "Tendências Mensais",
+                "monthlyTrendsDesc": "Dias de férias gozados por mês",
+                "unitsBreakdown": "Detalhe por Unidade",
+                "unitsBreakdownDesc": "Uso, Saldo e Disponibilidade por Unidade"
+            },
+            "tabs": {
+                "hierarchical": "Lojas & Depts",
+                "global": "Funções Globais"
+            },
+            "labels": {
+                "approved": "Aprovado",
+                "requested": "Pedido",
+                "taken": "Gozado",
+                "liability": "Saldo",
+                "owed": "Devido",
+                "active": "Ativo",
+                "away": "Ausente",
+                "onLeave": "Em Licença",
+                "noData": "Sem dados disponíveis"
+            }
+        },
+        "request": "Pedir Férias",
+        "comments": "Comentários (Opcional)",
+        "reasonPlaceholder": "Motivo (opcional)...",
+        "submit": "Enviar Pedido",
+        "selectRangeError": "Por favor selecione um intervalo de datas (Início e Fim)",
+        "minNoticeError": "Pedidos de férias devem ser enviados com pelo menos 15 dias de antecedência.",
+        "noWorkingDaysError": "O intervalo selecionado não tem dias úteis.",
+        "insufficientDaysError": "Dias insuficientes. O pedido requer {days} dias úteis.",
+        "submitSuccess": "Pedido de férias enviado",
+        "submitError": "Falha ao enviar pedido.",
+        "pickDates": "Escolha as datas (Máx {days} dias úteis)",
+        "selectPeriod": "Selecionar Período",
+        "selectedDays": "Dias Úteis Selecionados:",
+        "remainingAfter": "Restante Após:",
+        "exceedsBalance": "Excede o saldo restante!",
+        "submitting": "Enviando...",
+        "days": "dias",
+        "loadStoresError": "Falha ao carregar lojas",
+        "loadEmployeesError": "Falha ao carregar funcionários",
+        "fillRequiredFields": "Por favor preencha todos os campos obrigatórios",
+        "invalidDates": "Datas inválidas selecionadas",
+        "endDateError": "A data de fim não pode ser anterior à data de início",
+        "recordedByAdmin": "Registado pelo Admin",
+        "recordSuccess": "Férias registadas com sucesso",
+        "recordError": "Falha ao registar férias.",
+        "pickStartDate": "Escolher data de início",
+        "pickEndDate": "Escolher data de fim"
+    },
+    "EmployeeSchedule": {
+        "title": "Horário Semanal",
+        "subtitle": "Ver horas de trabalho e turnos",
+        "viewFull": "Ver Horário Completo",
+        "totalHours": "Total de Horas",
+        "totalShifts": "Total de Turnos",
+        "newSchedule": "Novo Horário Publicado",
+        "newScheduleDesc": "O horário para esta semana acabou de ser publicado.",
+        "updatedSchedule": "Horário Atualizado",
+        "updatedScheduleDesc": "Foram feitas as seguintes alterações recentemente:",
+        "today": "Hoje",
+        "closed": "Fechado",
+        "noShift": "Sem Turno Hoje",
+        "dayOff": "Folga",
+        "absent": "Ausente",
+        "vacation": "Férias",
+        "happyVacation": "Boas Férias! 🌴",
+        "stats": {
+            "hours": "h",
+            "shifts": "Turnos"
+        }
+    },
+    "Credentials": {
+        "title": "Credenciais da Loja",
+        "subtitle": "Gerir logins partilhados para esta loja de forma segura.",
+        "addNew": "Adicionar Nova",
+        "table": {
+            "service": "Serviço / Título",
+            "type": "Tipo",
+            "username": "Nome de Utilizador",
+            "password": "Palavra-passe",
+            "lastUpdated": "Última Atualização",
+            "actions": "Ações",
+            "empty": "Ainda sem credenciais guardadas.",
+            "types": {
+                "simple": "Nome + Passe",
+                "standard": "Padrão"
+            }
+        },
+        "actions": {
+            "reveal": "Palavra-passe revelada",
+            "copy": "Copiado para a área de transferência",
+            "edit": "Editar",
+            "denied": "Acesso Negado ou Erro"
+        },
+        "dialog": {
+            "addTitle": "Adicionar Credencial",
+            "editTitle": "Editar Credencial",
+            "typeLabel": "Tipo de Credencial",
+            "standard": "Padrão (Utilizador + Passe)",
+            "simple": "Simples (Nome/Título + Passe)",
+            "serviceLabel": "Nome do Serviço / Website",
+            "titleLabel": "Título da Credencial (ex: WiFi)",
+            "servicePlaceholder": "ex: UberEats",
+            "titlePlaceholder": "ex: WiFi Funcionários",
+            "usernameLabel": "Nome de Utilizador/Email",
+            "passwordLabel": "Palavra-passe",
+            "notesLabel": "Notas (Opcional)",
+            "changePasswordLabel": "Alterar Palavra-passe (deixe em branco para manter)",
+            "newPasswordPlaceholder": "Nova palavra-passe...",
+            "save": "Guardar",
+            "update": "Atualizar",
+            "created": "Credencial criada",
+            "updated": "Credencial Atualizada"
+        }
+    },
+    "Stores": {
+        "list": {
+            "searchPlaceholder": "Pesquisar lojas por nome ou morada...",
+            "addStore": "Adicionar Loja",
+            "emptyTitleSearch": "Nenhuma loja encontrada",
+            "emptyDescSearch": "Tente ajustar os termos da pesquisa.",
+            "emptyTitle": "Sem lojas",
+            "emptyDesc": "Comece por criar a sua primeira loja.",
+            "noManager": "Sem Gerente Atribuído",
+            "active": "Ativo",
+            "inactive": "Inativo",
+            "noAddress": "Sem morada fornecida",
+            "employees": "Funcionários",
+            "departments": "Departamentos",
+            "manager": "Gerente",
+            "viewDetails": "Ver Detalhes"
+        },
+        "form": {
+            "tabs": {
+                "general": "Geral",
+                "translations": "Traduções",
+                "departments": "Departamentos"
+            },
+            "labels": {
+                "name": "Nome",
+                "address": "Morada",
+                "phone": "Telefone (Opcional)",
+                "email": "Email (Opcional)",
+                "localizedName": "Nome Localizado",
+                "localizedAddress": "Morada Localizada"
+            },
+            "placeholders": {
+                "name": "ex: Filial Centro",
+                "address": "ex: Rua Principal, 123",
+                "phone": "+351 912 345 678",
+                "email": "loja@exemplo.com",
+                "nameIn": "Nome em {lang}...",
+                "addressIn": "Morada em {lang}..."
+            },
+            "danger": {
+                "title": "Zona de Perigo",
+                "archiveTitle": "Arquivar esta loja",
+                "archiveDesc": "Arquivar uma loja irá escondê-la do painel e impedir a entrada de novos dados. O histórico será preservado.",
+                "archiveButton": "Arquivar Loja"
+            },
+            "departments": {
+                "title": "Departamentos da Loja",
+                "empty": "Não foram encontrados departamentos para esta loja."
+            },
+            "dialogs": {
+                "removeDeptTitle": "Remover Departamento: {name}",
+                "removeDeptDesc": "Tem a certeza que quer remover este departamento? Esta ação não pode ser desfeita.",
+                "impactWarning": "Aviso de Impacto:",
+                "impactEmployees": "{count} funcionários ficarão sem atribuição.",
+                "impactCoverage": "{count} pedidos de cobertura pendentes serão cancelados.",
+                "impactHistory": "Dados históricos (férias, ausências, horários) serão preservados.",
+                "removeButton": "Remover Departamento",
+                "removing": "A remover...",
+                "archiveTitle": "Arquivar Loja",
+                "archiveDesc": "Tem a certeza que quer arquivar esta loja? Isto irá escondê-la do painel e desativar o acesso dos gerentes de loja. Esta ação pode ser revertida por um administrador.",
+                "archiveButton": "Arquivar Loja",
+                "archiving": "A arquivar..."
+            },
+            "toasts": {
+                "updated": "Loja atualizada com sucesso",
+                "created": "Loja criada com sucesso",
+                "error": "Ocorreu um erro",
+                "archived": "Loja arquivada com sucesso",
+                "archiveError": "Falha ao arquivar loja",
+                "removeDeptSuccess": "Departamento removido",
+                "removeDeptError": "Falha ao remover departamento",
+                "genericError": "Ocorreu um erro"
+            }
+        },
+        "suppliers": {
+            "title": "Preferências de Fornecedores",
+            "desc": "Personalize quando recebe alertas para cada fornecedor",
+            "table": {
+                "supplier": "Fornecedor",
+                "deliveryDays": "Dias de Entrega",
+                "alertOffset": "Offset Alerta (Dias)",
+                "preferredDay": "Dia de Encomenda Preferido",
+                "alerts": "Alertas"
+            },
+            "daysBefore": "dias antes",
+            "default": "Padrão",
+            "toasts": {
+                "saved": "Preferências guardadas",
+                "saveError": "Falha ao guardar preferências",
+                "orderDayUpdated": "Dia de encomenda preferido atualizado",
+                "orderDayError": "Falha ao atualizar dia de encomenda"
+            }
+        }
     }
+},
+"Schedules": {
+    "createDialog": {
+        "trigger": "Criar Escala",
+        "title": "Criar/Editar Escala",
+        "desc": "Selecione um departamento e a data de início. Abriremos o editor para essa semana.",
+        "deptLabel": "Departamento",
+        "deptPlaceholder": "Selecione o departamento",
+        "weekLabel": "Semana De",
+        "weekPlaceholder": "Selecione qualquer dia",
+        "weekHint": "Selecione qualquer dia na semana desejada.",
+        "submit": "Abrir Editor de Escala",
+        "loading": "Abrindo..."
+    },
+    "navigation": {
+        "loading": "Carregando...",
+        "noStores": "Nenhuma loja encontrada. Solicite a um administrador para configurar lojas.",
+        "departments": "Departamentos",
+        "noDepts": "Nenhum departamento configurado.",
+        "currentWeek": "Semana Atual",
+        "departmentsLabel": "Departamentos"
+    },
+    "shiftDialog": {
+        "titleAdd": "Criar Turno",
+        "titleEdit": "Editar Turno",
+        "titleDate": "{type} para {date}",
+        "markDayOff": "Marcar como Folga",
+        "setWorkingShift": "Definir Turno de Trabalho",
+        "step1": "1. Detalhes do Turno",
+        "step2": "2. Atribuir Funcionários ({selected} / {max})",
+        "step2NoMax": "2. Atribuir Funcionários ({selected})",
+        "step3": "3. Notas",
+        "tabs": {
+            "templates": "Modelos",
+            "custom": "Personalizado"
+        },
+        "labels": {
+            "templateName": "Nome do Modelo",
+            "break": "Pausa (min)",
+            "start": "Início",
+            "end": "Fim",
+            "maxStaff": "Limite Máx. Staff",
+            "color": "Código de Cor",
+            "name": "Nome",
+            "requiredStaff": "Staff Necessário",
+            "saveTemplate": "Salvar como Modelo do Dept",
+            "extraOvertime": "Hora Extra",
+            "notesPlaceholder": "Instruções..."
+        },
+        "templates": {
+            "edit": "Editar Modelo",
+            "new": "Novo Modelo",
+            "create": "Criar Modelo",
+            "update": "Atualizar Modelo",
+            "save": "Salvar Modelo",
+            "loading": "Carregando modelos...",
+            "max": "Máx {count}"
+        },
+        "employeeFilter": {
+            "department": "Departamento",
+            "global": "Global / Todos",
+            "searchPlaceholder": "Pesquisar funcionários...",
+            "noEmployees": "Nenhum funcionário encontrado.",
+            "onLeave": "De Licença",
+            "scheduled": "Escalado"
+        },
+        "alerts": {
+            "staffLimitTitle": "Limite de Staff Excedido",
+            "staffLimitDesc": "Você selecionou {count} funcionários, mas o limite para este turno é {limit}.",
+            "staffLimitProceed": "Deseja prosseguir mesmo assim?",
+            "staffLimitExceeded": "Limite de Staff Excedido!",
+            "staffLimitAllowed": "Permitido: {limit}, Selecionado: {count}",
+            "deleteTemplateTitle": "Excluir Modelo?",
+            "deleteTemplateDesc": "Isso removerá permanentemente este modelo de turno.",
+            "deleteShiftTitle": "Tem certeza absoluta?",
+            "deleteShiftDesc": "Essa ação não pode ser desfeita. Isso excluirá permanentemente este turno da escala."
+        },
+        "actions": {
+            "proceed": "Prosseguir (Ignorar)",
+            "cancel": "Cancelar",
+            "delete": "Excluir",
+            "changesSaved": "Alterações salvas",
+            "shiftCreated": "Turno criado",
+            "removeShift": "Remover Turno",
+            "saveChanges": "Salvar Alterações",
+            "createShift": "Criar Turno"
+        }
+    },
+    "overtimeDialog": {
+        "title": "Confirmação de Hora Extra",
+        "description": "Confirme as horas extras trabalhadas no turno de {date}.",
+        "shiftLabel": "Turno:",
+        "hoursLabel": "Horas Extras Trabalhadas",
+        "hoursPlaceholder": "ex: 1.5",
+        "reasonLabel": "Motivo / Detalhes",
+        "reasonPlaceholder": "Por que a hora extra foi necessária?",
+        "cancel": "Cancelar",
+        "submit": "Enviar Solicitação",
+        "requestSent": "Solicitação Enviada",
+        "requestSentDesc": "Sua solicitação de hora extra foi enviada para aprovação.",
+        "errorTitle": "Erro",
+        "errorDesc": "Falha ao enviar solicitação.",
+        "genericError": "Algo deu errado."
+    },
+    "shiftDetails": {
+        "title": "Detalhes do Turno",
+        "swapButton": "Solicitar Troca de Turno",
+        "reportAbsenceButton": "Reportar Ausência",
+        "unavailableTitle": "Ações Indisponíveis",
+        "unavailableDesc": "Você não pode trocar ou modificar este turno porque ele já começou, passou ou pertence a outro local."
+    },
+    "swapDialog": {
+        "title": "Solicitar Troca de Turno",
+        "description": "Peça a {name} para trocar o turno com você.",
+        "targetShiftLabel": "Turno Alvo (Deles)",
+        "offerShiftLabel": "Oferecer Seu Turno",
+        "loading": "Carregando seus turnos...",
+        "selectPlaceholder": "Selecione um turno para oferecer",
+        "noShifts": "Você não tem turnos neste dia para oferecer.",
+        "cancel": "Cancelar",
+        "submit": "Enviar Solicitação",
+        "requestSent": "Solicitação Enviada",
+        "requestSentDesc": "Sua solicitação de troca foi enviada."
+    },
+    "viewScheduleButton": {
+        "text": "Ver Escala Atual",
+        "errorAccess": "Não foi possível acessar a escala",
+        "errorNavigate": "Falha ao navegar para a escala"
+    },
+    "editor": {
+        "scheduleUpdatedExternally": "Escala atualizada externamente",
+        "cover": "Cobrir",
+        "extra": "Extra",
+        "copyScheduleConfirm": "Copiar Semana Anterior?",
+        "copyScheduleDescription": "Isso substituirá a escala atual com os turnos da semana anterior. Isso não pode ser desfeito.",
+        "deleteShift": "Excluir Turno?",
+        "deleteShiftDescription": "Tem certeza que deseja excluir este turno? Esta ação não pode ser desfeita.",
+        "publishScheduleDescription": "Tem certeza que deseja alterar o status da escala? Notificações podem ser enviadas aos funcionários.",
+        "reject": "Rejeitar Escala",
+        "rejectReason": "Motivo da Rejeição",
+        "rejectPlaceholder": "Por favor, forneça um motivo...",
+        "overlapConflict": "Conflito: {name} já está escalado(a) das {start} às {end}",
+        "crossStoreConflict": "Usuário está escalado em outra loja: {names}",
+        "saveSuccess": "Escala salva com sucesso",
+        "saveError": "Falha ao salvar escala",
+        "copyFailed": "Falha ao copiar escala",
+        "completeScheduleMsg": "Escala incompleta. Adicione turnos para: {days}",
+        "deleteSuccess": "Escala excluída com sucesso",
+        "deleteError": "Falha ao excluir escala",
+        "unassignedShifts": "Turnos Não Atribuídos",
+        "noEmployees": "Nenhum Funcionário Escalado",
+        "startAdding": "Clique no ícone + em qualquer dia para começar a adicionar turnos!",
+        "noShiftsFound": "Nenhum turno encontrado.",
+        "add": "Adicionar",
+        "attentionNeeded": "Atenção Necessária",
+        "changesHistory": "Histórico de Alterações",
+        "noChanges": "Nenhuma alteração registrada para esta escala.",
+        "confirmDeleteScheduleTitle": "Tem certeza absoluta?",
+        "confirmDeleteScheduleDesc": "Isso excluirá permanentemente a escala da Semana {week}, {year}. Esta ação não pode ser desfeita.",
+        "confirmDelete": "Confirmar Exclusão",
+        "dailyTotal": "Total Diário",
+        "weeklyTotal": "Total Semanal",
+        "legend": {
+            "dayOff": "Folga",
+            "vacation": "Férias",
+            "holiday": "Feriado",
+            "sickLeave": "Atestado"
+        },
+        "viewModes": {
+            "employees": "Funcionários",
+            "shifts": "Turnos"
+        }
+    }
+},
+"Employees": {
+    "form": {
+        "personalInfo": "Informações Pessoais",
+        "firstName": "Nome",
+        "lastName": "Sobrenome",
+        "email": "Endereço de E-mail",
+        "phone": "Número de Telefone",
+        "nif": "NIF / CPF",
+        "dob": "Data de Nascimento",
+        "pickDate": "Escolha uma data",
+        "address": "Endereço Físico",
+        "uploadImage": "Carregar / Arrastar Imagem",
+        "uploadPhoto": "Carregar Foto",
+        "emergencyContact": "Contato de Emergência",
+        "contactName": "Nome do Contato",
+        "relationship": "Relacionamento",
+        "contactPlaceholder": "ex: Cônjuge, Pai/Mãe",
+        "identificationDocuments": "Documentos de Identificação",
+        "noDocuments": "Nenhum documento adicionado ainda.",
+        "addDocument": "Adicionar Documento",
+        "addAnotherDocument": "Adicionar Outro Documento",
+        "docType": "Tipo",
+        "docNumber": "Número / ID",
+        "expiryDate": "Data de Validade",
+        "expiry": "Validade",
+        "securityRoles": "Funções de Segurança e Sistema",
+        "adminOnly": "Apenas Admin",
+        "rolesDescription": "Atribuir permissões de sistema de alto nível. Apenas Proprietário, Superusuário ou Técnico podem modificar isso.",
+        "employmentContract": "Emprego e Contrato",
+        "employmentType": "Tipo de Emprego",
+        "weeklyHours": "Horas Semanais",
+        "vacationEntitlement": "Direito a Férias",
+        "vacationEntitlementDesc": "Permite que o funcionário solicite licença remunerada.",
+        "standardWorkingDays": "Dias Úteis Padrão",
+        "vacationBalance": "Gerenciamento de Saldo de Férias",
+        "overrideOnly": "Apenas Substituição",
+        "annualAllowance": "Subsídio Anual (Ano Atual)",
+        "daysUnit": "DIAS",
+        "allowanceDesc": "Direito padrão para o contrato.",
+        "rollover": "Acumulado (Do Ano Anterior)",
+        "rolloverDesc": "Transportado do último período.",
+        "usedDays": "Dias Usados (Correção)",
+        "usedDesc": "Usado apenas como correção manual.",
+        "totalBalance": "Saldo Total Resultante:",
+        "availableDays": "Dias Disponíveis Restantes",
+        "warning": "Certifique-se de que todos os campos obrigatórios estejam preenchidos antes de salvar.",
+        "cancel": "Cancelar",
+        "saving": "Salvando...",
+        "update": "Atualizar Funcionário",
+        "create": "Criar Funcionário",
+        "successUpdate": "Funcionário atualizado com sucesso",
+        "successCreate": "Funcionário criado com sucesso",
+        "errorSave": "Falha ao salvar funcionário.",
+        "errorImage": "Erro: {message}",
+        "imageUpdated": "Foto de perfil atualizada"
+    },
+    "list": {
+        "searchPlaceholder": "Pesquisar...",
+        "addEmployee": "Adicionar Funcionários",
+        "filterByStore": "Filtrar por Loja",
+        "allStores": "Todas as Lojas",
+        "filterByDept": "Filtrar por Depto",
+        "allDepts": "Todos os Deptos",
+        "filterByPosition": "Filtrar por Cargo",
+        "allPositions": "Todos os Cargos",
+        "clearFilters": "Limpar Filtros",
+        "table": {
+            "employees": "Funcionários",
+            "status": "Status",
+            "positions": "Cargos",
+            "stores": "Lojas",
+            "departments": "Departamentos"
+        },
+        "status": {
+            "active": "Ativo",
+            "inactive": "Inativo",
+            "onVacation": "De Férias",
+            "absent": "Ausente"
+        },
+        "noResults": {
+            "title": "Nenhum funcionário encontrado",
+            "description": "Tente ajustar seus filtros ou pesquisar por outro nome.",
+            "clear": "Limpar todos os filtros"
+        },
+        "pagination": {
+            "pageOf": "Página {current} de {total}",
+            "results": "{count} resultado{s} no registro"
+        },
+        "confirmReset": {
+            "message": "Tem certeza de que deseja redefinir a senha deste funcionário? Um novo OTP será enviado para o e-mail dele.",
+            "success": "Redefinição de senha confirmada e novo OTP enviado.",
+            "error": "Falha ao confirmar redefinição de senha."
+        }
+    },
+    "assignTask": {
+        "button": "Atribuir Tarefa",
+        "individual": "👤 {name}"
+    },
+    "editDialog": {
+        "button": "Editar Perfil",
+        "title": "Editar Perfil de Funcionário",
+        "description": "Atualizar informações pessoais e detalhes do contrato."
+    }
+}
 }

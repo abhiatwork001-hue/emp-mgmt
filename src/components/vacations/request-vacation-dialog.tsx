@@ -13,7 +13,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { format, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { ptBR, enUS } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
 
 import { calculateWorkingDays, isPortugalHoliday, isWeekend } from "@/lib/holidays";
@@ -29,6 +30,8 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
     const [loading, setLoading] = useState(false);
     const t = useTranslations("Vacation");
     const tc = useTranslations("Common");
+    const locale = useLocale();
+    const dateLocale = locale === 'pt' ? ptBR : enUS;
 
     // Unified Range State
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
@@ -51,7 +54,7 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
         e.preventDefault();
 
         if (!dateRange?.from || !dateRange?.to) {
-            toast.error("Please select a date range (Start and End)");
+            toast.error(t('selectRangeError'));
             return;
         }
 
@@ -67,7 +70,7 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
             const minStartDate = addDays(today, 15);
 
             if (startDate < minStartDate) {
-                toast.error("Vacation requests must be submitted at least 15 days in advance.");
+                toast.error(t('minNoticeError'));
                 setLoading(false);
                 return;
             }
@@ -76,13 +79,13 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
             const totalDays = calculateWorkingDays(startDate, endDate);
 
             if (totalDays === 0) {
-                toast.error("Selected range has no working days.");
+                toast.error(t('noWorkingDaysError'));
                 setLoading(false);
                 return;
             }
 
             if (totalDays > remainingDays) {
-                toast.error(`Insufficient days. Request needs ${totalDays} working days.`);
+                toast.error(t('insufficientDaysError', { days: totalDays }));
                 setLoading(false);
                 return;
             }
@@ -95,13 +98,13 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
                 comments
             });
 
-            toast.success("Vacation request submitted");
+            toast.success(t('submitSuccess'));
             setOpen(false);
             setDateRange(undefined);
             setComments("");
         } catch (error) {
             console.error("Submission error:", error);
-            toast.error("Failed to submit request.");
+            toast.error(t('submitError'));
         } finally {
             setLoading(false);
         }
@@ -193,7 +196,7 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4 pt-4">
                     <div className="space-y-2 flex flex-col">
-                        <Label>Select Period</Label>
+                        <Label>{t('selectPeriod')}</Label>
                         <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                             <PopoverTrigger asChild>
                                 <Button
@@ -208,13 +211,13 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
                                     {dateRange?.from ? (
                                         dateRange.to ? (
                                             <>
-                                                {format(dateRange.from, "MMM d, yyyy")} - {format(dateRange.to, "MMM d, yyyy")}
+                                                {format(dateRange.from, "PPP", { locale: dateLocale })} - {format(dateRange.to, "PPP", { locale: dateLocale })}
                                             </>
                                         ) : (
-                                            format(dateRange.from, "MMM d, yyyy")
+                                            format(dateRange.from, "PPP", { locale: dateLocale })
                                         )
                                     ) : (
-                                        <span>Pick dates (Max {remainingDays} working days)</span>
+                                        <span>{t('pickDates', { days: remainingDays })}</span>
                                     )}
                                 </Button>
                             </PopoverTrigger>
@@ -233,6 +236,7 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
                                     }}
                                     numberOfMonths={1}
                                     disabled={isDateDisabled}
+                                    locale={dateLocale}
                                     className="text-foreground"
                                 />
                             </PopoverContent>
@@ -242,21 +246,21 @@ export function RequestVacationDialog({ employeeId, remainingDays, trigger }: Re
                     {dateRange?.from && dateRange?.to && (
                         <div className={cn("p-3 rounded-md border", isOverLimit ? "bg-red-50 border-red-200" : "bg-muted/50 border-border")}>
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-muted-foreground">Selected Working Days:</span>
+                                <span className="text-muted-foreground">{t('selectedDays')}</span>
                                 <span className={cn("font-bold", isOverLimit ? "text-red-500" : "text-foreground")}>
-                                    {currentWorkingDays} days
+                                    {currentWorkingDays} {t('days')}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center text-sm mt-1">
-                                <span className="text-muted-foreground">Remaining After:</span>
+                                <span className="text-muted-foreground">{t('remainingAfter')}</span>
                                 <span className={cn(
                                     "font-bold",
                                     isOverLimit ? "text-red-500" : "text-emerald-500"
                                 )}>
-                                    {remainingDays - currentWorkingDays} days
+                                    {remainingDays - currentWorkingDays} {t('days')}
                                 </span>
                             </div>
-                            {isOverLimit && <p className="text-xs text-red-500 mt-2 font-medium">Exceeds remaining balance!</p>}
+                            {isOverLimit && <p className="text-xs text-red-500 mt-2 font-medium">{t('exceedsBalance')}</p>}
                         </div>
                     )}
 

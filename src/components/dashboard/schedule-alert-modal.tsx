@@ -9,6 +9,8 @@ import { AlertCircle, Bell, CheckCircle2, ChevronRight } from "lucide-react";
 import { notifyScheduleReminders } from "@/lib/actions/schedule.actions";
 import { toast } from "sonner";
 import { Link } from "@/i18n/routing";
+import { useTranslations, useLocale } from "next-intl";
+import { cn } from "@/lib/utils";
 
 interface ScheduleAlertModalProps {
     isOpen: boolean;
@@ -23,6 +25,8 @@ interface ScheduleAlertModalProps {
 }
 
 export function ScheduleAlertModal({ isOpen, onOpenChange, missingEntities, missingEntityObjects, type }: ScheduleAlertModalProps) {
+    const t = useTranslations("ScheduleAlert");
+    const locale = useLocale();
     const [isNotifying, setIsNotifying] = useState(false);
     const [notified, setNotified] = useState(false);
 
@@ -34,13 +38,13 @@ export function ScheduleAlertModal({ isOpen, onOpenChange, missingEntities, miss
             const ids = missingEntityObjects.map(e => e.id);
             const result = await notifyScheduleReminders(ids, type);
             if (result.success) {
-                toast.success(`Sent reminders to ${result.count} managers.`);
+                toast.success(t('success', { count: result.count || 0 }));
                 setNotified(true);
             } else {
-                toast.error("Failed to send reminders.");
+                toast.error(t('failure'));
             }
         } catch (error) {
-            toast.error("An error occurred.");
+            toast.error(t('errorGeneric'));
         } finally {
             setIsNotifying(false);
         }
@@ -52,11 +56,10 @@ export function ScheduleAlertModal({ isOpen, onOpenChange, missingEntities, miss
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-red-600">
                         <AlertCircle className="h-5 w-5" />
-                        Missing Schedules
+                        {t('title')}
                     </DialogTitle>
                     <DialogDescription>
-                        The following {type === 'store' ? 'stores' : 'departments'} have not published next week's schedule.
-                        Deadline has passed.
+                        {t('description', { type: type === 'store' ? t('stores') : t('departments') })}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -65,15 +68,15 @@ export function ScheduleAlertModal({ isOpen, onOpenChange, missingEntities, miss
                         {(missingEntityObjects?.map(e => e.name) || missingEntities).map((name, i) => (
                             <div key={i} className="flex items-center justify-between text-sm p-2 rounded bg-background shadow-sm">
                                 <span className="font-medium">{name}</span>
-                                <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider bg-red-50 px-2 py-0.5 rounded-full">Overdue</span>
+                                <span className="text-[10px] text-red-500 font-bold uppercase tracking-wider bg-red-50 px-2 py-0.5 rounded-full">{t('overdue')}</span>
                             </div>
                         ))}
                     </div>
                 </ScrollArea>
 
-                <DialogFooter className="flex-col sm:flex-row gap-2">
+                <DialogFooter className={cn("gap-2", locale === 'pt' ? "flex flex-col" : "flex flex-col sm:flex-row")}>
                     <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
-                        Close
+                        {t('close')}
                     </Button>
                     {missingEntityObjects && missingEntityObjects.length > 0 && !notified && (
                         <Button
@@ -82,18 +85,18 @@ export function ScheduleAlertModal({ isOpen, onOpenChange, missingEntities, miss
                             className="w-full sm:w-auto bg-destructive border-destructive/50 hover:bg-destructive/90"
                         >
                             {isNotifying ? (
-                                "Sending..."
+                                t('sending')
                             ) : (
                                 <>
                                     <Bell className="mr-2 h-4 w-4" />
-                                    Alert {type === 'store' ? 'Store Managers' : 'Department Heads'}
+                                    {t('alert', { type: type === 'store' ? t('storeManagers') : t('departmentHeads') })}
                                 </>
                             )}
                         </Button>
                     )}
                     {notified && (
                         <Button variant="secondary" disabled className="w-full sm:w-auto text-emerald-600">
-                            <CheckCircle2 className="mr-2 h-4 w-4" /> Reminders Sent
+                            <CheckCircle2 className="mr-2 h-4 w-4" /> {t('remindersSent')}
                         </Button>
                     )}
                 </DialogFooter>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getStoresWithDepartments } from "@/lib/actions/store.actions";
@@ -9,6 +10,7 @@ import { getOrCreateSchedule } from "@/lib/actions/schedule.actions";
 import { Loader2, Store as StoreIcon, Layers, ChevronRight } from "lucide-react";
 
 export default function ScheduleNavigation() {
+    const t = useTranslations("Schedules.navigation");
     const router = useRouter();
     const [stores, setStores] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -61,7 +63,7 @@ export default function ScheduleNavigation() {
             <Card>
                 <CardContent className="flex flex-col items-center justify-center p-12 text-muted-foreground">
                     <StoreIcon className="h-12 w-12 mb-4 opacity-20" />
-                    <p>No stores found. Please ask an administrator to set up stores.</p>
+                    <p>{t('noStores')}</p>
                 </CardContent>
             </Card>
         );
@@ -81,7 +83,7 @@ export default function ScheduleNavigation() {
                     <CardContent>
                         <div className="space-y-2">
                             <h4 className="text-sm font-medium text-muted-foreground mb-3 uppercase tracking-wider flex items-center gap-2">
-                                <Layers className="h-3 w-3" /> Departments
+                                <Layers className="h-3 w-3" /> {t('departmentsLabel')}
                             </h4>
 
                             {store.departments && store.departments.length > 0 ? (
@@ -99,14 +101,14 @@ export default function ScheduleNavigation() {
                                                 <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                                             ) : (
                                                 <div className="flex items-center text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                                                    Current Week <ChevronRight className="h-3 w-3 ml-1" />
+                                                    {t('currentWeek')} <ChevronRight className="h-3 w-3 ml-1" />
                                                 </div>
                                             )}
                                         </Button>
                                     ))}
                                 </div>
                             ) : (
-                                <p className="text-sm text-muted-foreground italic p-2">No departments configured.</p>
+                                <p className="text-sm text-muted-foreground italic p-2">{t('noDepts')}</p>
                             )}
                         </div>
                     </CardContent>

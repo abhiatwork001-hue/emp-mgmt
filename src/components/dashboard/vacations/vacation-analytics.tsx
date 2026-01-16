@@ -44,33 +44,33 @@ export function VacationAnalytics({ data }: { data: AnalyticsData }) {
             {/* KPI Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 <KPICard
-                    title="Total Liability"
+                    title={t('kpi.liability')}
                     value={`${metrics.totalLiability.toFixed(0)} Days`}
-                    subtext="Unused days (Allocation - Taken)"
+                    subtext={t('kpi.sub.liability')}
                     icon={<ArrowDownRight className="h-4 w-4 text-red-500" />}
                 />
                 <KPICard
-                    title="Total Taken"
+                    title={t('kpi.taken')}
                     value={`${metrics.totalTaken.toFixed(0)} Days`}
-                    subtext="Days consumed this year"
+                    subtext={t('kpi.sub.taken')}
                     icon={<ArrowUpRight className="h-4 w-4 text-emerald-500" />}
                 />
                 <KPICard
-                    title="Pending Requests"
+                    title={t('kpi.pending')}
                     value={`${metrics.totalPending.toFixed(0)} Days`}
-                    subtext="Awaiting manager approval"
+                    subtext={t('kpi.sub.pending')}
                     icon={<Users className="h-4 w-4 text-amber-500" />}
                 />
                 <KPICard
-                    title="Active Staff"
+                    title={t('kpi.active')}
                     value={`${metrics.totalActive || 0}`}
-                    subtext="Employees currently working"
+                    subtext={t('kpi.sub.active')}
                     icon={<Building2 className="h-4 w-4 text-blue-500" />}
                 />
                 <KPICard
-                    title="On Vacation"
+                    title={t('kpi.onVacation')}
                     value={`${metrics.totalOnVacation || 0}`}
-                    subtext="Employees away on leave"
+                    subtext={t('kpi.sub.onVacation')}
                     icon={<Globe2 className="h-4 w-4 text-purple-500" />}
                 />
             </div>
@@ -79,8 +79,8 @@ export function VacationAnalytics({ data }: { data: AnalyticsData }) {
             <div className="grid gap-6 md:grid-cols-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Global Departments</CardTitle>
-                        <CardDescription>Vacation days taken by global role</CardDescription>
+                        <CardTitle>{t('charts.globalDepts')}</CardTitle>
+                        <CardDescription>{t('charts.globalDeptsDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -114,8 +114,8 @@ export function VacationAnalytics({ data }: { data: AnalyticsData }) {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Unit Performance</CardTitle>
-                        <CardDescription>Top Stores: Taken vs Liability</CardDescription>
+                        <CardTitle>{t('charts.unitPerformance')}</CardTitle>
+                        <CardDescription>{t('charts.unitPerformanceDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[300px]">
                         <ResponsiveContainer width="100%" height="100%">
@@ -130,8 +130,8 @@ export function VacationAnalytics({ data }: { data: AnalyticsData }) {
                                     labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: '#fff' }}
                                 />
                                 <Legend />
-                                <Bar dataKey="taken" name="Taken" fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
-                                <Bar dataKey="liability" name="Liability" fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
+                                <Bar dataKey="taken" name={t('labels.taken')} fill="#10b981" radius={[0, 4, 4, 0]} barSize={20} />
+                                <Bar dataKey="liability" name={t('labels.liability')} fill="#ef4444" radius={[0, 4, 4, 0]} barSize={20} />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>
@@ -142,8 +142,8 @@ export function VacationAnalytics({ data }: { data: AnalyticsData }) {
                 {/* Trends Chart */}
                 <Card className="md:col-span-4 lg:col-span-4">
                     <CardHeader>
-                        <CardTitle>Monthly Trends</CardTitle>
-                        <CardDescription>Vacation days taken per month</CardDescription>
+                        <CardTitle>{t('charts.monthlyTrends')}</CardTitle>
+                        <CardDescription>{t('charts.monthlyTrendsDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent className="pl-2">
                         <div className="h-[300px] w-full">
@@ -171,8 +171,8 @@ export function VacationAnalytics({ data }: { data: AnalyticsData }) {
                                         labelStyle={{ fontWeight: 'bold', marginBottom: '4px', color: '#fff' }}
                                     />
                                     <Legend verticalAlign="top" height={36} />
-                                    <Bar dataKey="approved" name="Approved" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                    <Bar dataKey="requested" name="Requested" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="approved" name={t('labels.approved')} fill="#10b981" radius={[4, 4, 0, 0]} />
+                                    <Bar dataKey="requested" name={t('labels.requested')} fill="#f59e0b" radius={[4, 4, 0, 0]} />
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -182,14 +182,14 @@ export function VacationAnalytics({ data }: { data: AnalyticsData }) {
                 {/* Hierarchical Breakdowns */}
                 <Card className="md:col-span-3 lg:col-span-3">
                     <CardHeader>
-                        <CardTitle>Units Breakdown</CardTitle>
-                        <CardDescription>Usage, Liability & Availability per Unit</CardDescription>
+                        <CardTitle>{t('charts.unitsBreakdown')}</CardTitle>
+                        <CardDescription>{t('charts.unitsBreakdownDesc')}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Tabs defaultValue="hierarchical" className="w-full">
                             <TabsList className="grid w-full grid-cols-2">
-                                <TabsTrigger value="hierarchical"><Building2 className="h-3 w-3 mr-2" />Stores & Depts</TabsTrigger>
-                                <TabsTrigger value="global"><Globe2 className="h-3 w-3 mr-2" />Global Roles</TabsTrigger>
+                                <TabsTrigger value="hierarchical"><Building2 className="h-3 w-3 mr-2" />{t('tabs.hierarchical')}</TabsTrigger>
+                                <TabsTrigger value="global"><Globe2 className="h-3 w-3 mr-2" />{t('tabs.global')}</TabsTrigger>
                             </TabsList>
 
                             <TabsContent value="hierarchical" className="mt-4 space-y-4 max-h-[400px] overflow-y-auto pr-2">
@@ -222,7 +222,8 @@ function KPICard({ title, value, subtext, icon }: { title: string, value: string
 }
 
 function HierarchicalBreakdown({ data }: { data: any[] }) {
-    if (data.length === 0) return <div className="text-center text-muted-foreground text-sm py-8">No data available</div>;
+    const t = useTranslations("Vacation.analytics");
+    if (data.length === 0) return <div className="text-center text-muted-foreground text-sm py-8">{t('labels.noData')}</div>;
 
     return (
         <div className="space-y-6">
@@ -234,41 +235,43 @@ function HierarchicalBreakdown({ data }: { data: any[] }) {
                             <span className="font-bold text-base">{store.name}</span>
                         </div>
                         <div className="flex gap-4 text-xs uppercase tracking-wider font-semibold text-muted-foreground">
-                            <span>{store.active} Active</span>
-                            <span>{store.vacation} Away</span>
+                            <span>{store.active} {t('labels.active')}</span>
+                            <span>{store.vacation} {t('labels.away')}</span>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div className="bg-emerald-50 dark:bg-emerald-950/20 p-2 rounded-md">
-                            <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-bold">Total Taken</div>
-                            <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{store.taken.toFixed(0)}</div>
-                        </div>
-                        <div className="bg-red-50 dark:bg-red-950/20 p-2 rounded-md">
-                            <div className="text-[10px] text-red-600 dark:text-red-400 uppercase font-bold">Total Owed</div>
-                            <div className="text-lg font-bold text-red-700 dark:text-red-300">{store.liability.toFixed(0)}</div>
-                        </div>
-                    </div>
-
-                    <div className="pl-4 space-y-1 border-l-2 border-muted">
-                        {store.departments.map((dept: any, di: number) => (
-                            <div key={di} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-sm hover:bg-muted/30 group">
-                                <div className="flex items-center gap-2">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30 group-hover:bg-blue-400 Transition-colors" />
-                                    <span className="font-medium text-muted-foreground group-hover:text-foreground">{dept.name}</span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="flex gap-2 text-xs text-muted-foreground mr-2">
-                                        <Badge variant="outline" className="h-5 px-1.5 text-[12px] font-bold bg-background">A: {dept.active}</Badge>
-                                        <Badge variant="outline" className="h-5 px-1.5 text-[12px] font-bold bg-background">V: {dept.vacation}</Badge>
-                                    </div>
-                                    <div className="flex gap-3 min-w-[80px] justify-end font-mono">
-                                        <span className="text-emerald-600">{dept.taken.toFixed(0)}</span>
-                                        <span className="text-red-500">{dept.liability.toFixed(0)}</span>
-                                    </div>
-                                </div>
+                        <div className="space-y-2">
+                            <div className="bg-emerald-50 dark:bg-emerald-950/20 p-2 rounded-md">
+                                <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-bold">{t('labels.taken')}</div>
+                                <div className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{store.taken.toFixed(0)}</div>
                             </div>
-                        ))}
+                            <div className="bg-red-50 dark:bg-red-950/20 p-2 rounded-md">
+                                <div className="text-[10px] text-red-600 dark:text-red-400 uppercase font-bold">{t('labels.owed')}</div>
+                                <div className="text-lg font-bold text-red-700 dark:text-red-300">{store.liability.toFixed(0)}</div>
+                            </div>
+                        </div>
+
+                        <div className="pl-4 space-y-1 border-l-2 border-muted">
+                            {store.departments.map((dept: any, di: number) => (
+                                <div key={di} className="flex items-center justify-between text-xs py-1.5 px-2 rounded-sm hover:bg-muted/30 group">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground/30 group-hover:bg-blue-400 transition-colors" />
+                                        <span className="font-medium text-muted-foreground group-hover:text-foreground">{dept.name}</span>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex gap-2 text-xs text-muted-foreground mr-2">
+                                            <Badge variant="outline" className="h-5 px-1.5 text-[12px] font-bold bg-background">A: {dept.active}</Badge>
+                                            <Badge variant="outline" className="h-5 px-1.5 text-[12px] font-bold bg-background">V: {dept.vacation}</Badge>
+                                        </div>
+                                        <div className="flex gap-3 min-w-[80px] justify-end font-mono">
+                                            <span className="text-emerald-600">{dept.taken.toFixed(0)}</span>
+                                            <span className="text-red-500">{dept.liability.toFixed(0)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             ))}
@@ -277,7 +280,8 @@ function HierarchicalBreakdown({ data }: { data: any[] }) {
 }
 
 function BreakdownTable({ data }: { data: { name: string; taken: number; liability: number, active: number, vacation: number }[] }) {
-    if (data.length === 0) return <div className="text-center text-muted-foreground text-sm py-8">No data available</div>;
+    const t = useTranslations("Vacation.analytics");
+    if (data.length === 0) return <div className="text-center text-muted-foreground text-sm py-8">{t('labels.noData')}</div>;
 
     return (
         <div className="space-y-2">
@@ -286,19 +290,19 @@ function BreakdownTable({ data }: { data: { name: string; taken: number; liabili
                     <div className="space-y-1">
                         <div className="font-semibold">{item.name}</div>
                         <div className="flex gap-2 text-xs text-muted-foreground uppercase tracking-tight">
-                            <span>{item.active} Active</span>
+                            <span>{item.active} {t('labels.active')}</span>
                             <span>•</span>
-                            <span>{item.vacation} On Leave</span>
+                            <span>{item.vacation} {t('labels.onLeave')}</span>
                         </div>
                     </div>
                     <div className="flex gap-4 text-xs font-mono">
                         <div className="flex flex-col items-end">
                             <span className="text-emerald-600 font-bold">{item.taken.toFixed(0)}</span>
-                            <span className="text-[9px] text-muted-foreground uppercase">Taken</span>
+                            <span className="text-[9px] text-muted-foreground uppercase">{t('labels.taken')}</span>
                         </div>
                         <div className="flex flex-col items-end">
                             <span className="text-red-500 font-bold">{item.liability.toFixed(0)}</span>
-                            <span className="text-[9px] text-muted-foreground uppercase">Owed</span>
+                            <span className="text-[9px] text-muted-foreground uppercase">{t('labels.owed')}</span>
                         </div>
                     </div>
                 </div>

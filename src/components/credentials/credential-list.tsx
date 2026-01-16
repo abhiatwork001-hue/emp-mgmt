@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations, useLocale } from "next-intl";
+import { enUS, ptBR } from "date-fns/locale";
 
 interface CredentialManagerProps {
     storeId: string;
@@ -21,6 +23,7 @@ interface CredentialManagerProps {
 }
 
 export function CredentialManager({ storeId, userId, canEdit }: CredentialManagerProps) {
+    const t = useTranslations("Credentials");
     const [creds, setCreds] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -41,9 +44,9 @@ export function CredentialManager({ storeId, userId, canEdit }: CredentialManage
                 <div>
                     <CardTitle className="flex items-center gap-2">
                         <Lock className="h-5 w-5" />
-                        Store Credentials
+                        {t('title')}
                     </CardTitle>
-                    <CardDescription>Securely manage shared logins for this store.</CardDescription>
+                    <CardDescription>{t('subtitle')}</CardDescription>
                 </div>
                 {canEdit && <AddCredentialDialog storeId={storeId} userId={userId} onSuccess={fetchCreds} />}
             </CardHeader>
@@ -51,12 +54,12 @@ export function CredentialManager({ storeId, userId, canEdit }: CredentialManage
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Service / Title</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Username</TableHead>
-                            <TableHead>Password</TableHead>
-                            <TableHead>Last Updated</TableHead>
-                            {canEdit && <TableHead className="text-right">Actions</TableHead>}
+                            <TableHead>{t('table.service')}</TableHead>
+                            <TableHead>{t('table.type')}</TableHead>
+                            <TableHead>{t('table.username')}</TableHead>
+                            <TableHead>{t('table.password')}</TableHead>
+                            <TableHead>{t('table.lastUpdated')}</TableHead>
+                            {canEdit && <TableHead className="text-right">{t('table.actions')}</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -66,7 +69,7 @@ export function CredentialManager({ storeId, userId, canEdit }: CredentialManage
                         {creds.length === 0 && !loading && (
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                                    No credentials stored yet.
+                                    {t('table.empty')}
                                 </TableCell>
                             </TableRow>
                         )}
@@ -78,6 +81,10 @@ export function CredentialManager({ storeId, userId, canEdit }: CredentialManage
 }
 
 function CredentialRow({ credential, userId, onUpdate, canEdit }: { credential: any, userId: string, onUpdate: () => void, canEdit: boolean }) {
+    const t = useTranslations("Credentials");
+    const locale = useLocale();
+    const dateLocale = locale === 'pt' ? ptBR : enUS;
+
     const [revealed, setRevealed] = useState("");
     const [loading, setLoading] = useState(false);
 
@@ -91,16 +98,16 @@ function CredentialRow({ credential, userId, onUpdate, canEdit }: { credential: 
         setLoading(false);
         if (res.success && res.password) {
             setRevealed(res.password);
-            toast.success("Password revealed");
+            toast.success(t('actions.reveal'));
         } else {
-            toast.error("Access Denied or Error");
+            toast.error(t('actions.denied'));
         }
     };
 
     const copyToClipboard = () => {
         if (revealed) {
             navigator.clipboard.writeText(revealed);
-            toast.success("Copied to clipboard");
+            toast.success(t('actions.copy'));
         }
     };
 
@@ -114,7 +121,7 @@ function CredentialRow({ credential, userId, onUpdate, canEdit }: { credential: 
             </TableCell>
             <TableCell>
                 <Badge variant="outline" className="text-xs font-normal">
-                    {isSimple ? "Name + Pass" : "Standard"}
+                    {isSimple ? t('table.types.simple') : t('table.types.standard')}
                 </Badge>
             </TableCell>
             <TableCell>
@@ -140,7 +147,7 @@ function CredentialRow({ credential, userId, onUpdate, canEdit }: { credential: 
                 </div>
             </TableCell>
             <TableCell className="text-xs text-muted-foreground">
-                {format(new Date(credential.updatedAt || credential.createdAt), "yyyy-MM-dd")}
+                {format(new Date(credential.updatedAt || credential.createdAt), "yyyy-MM-dd", { locale: dateLocale })}
             </TableCell>
             {canEdit && (
                 <TableCell className="text-right">
@@ -152,6 +159,7 @@ function CredentialRow({ credential, userId, onUpdate, canEdit }: { credential: 
 }
 
 function AddCredentialDialog({ storeId, userId, onSuccess }: any) {
+    const t = useTranslations("Credentials");
     const [open, setOpen] = useState(false);
     const [service, setService] = useState("");
     const [type, setType] = useState<"standard" | "simple">("standard");
@@ -179,48 +187,50 @@ function AddCredentialDialog({ storeId, userId, onSuccess }: any) {
         // Reset
         setService(""); setUsername(""); setPassword(""); setDesc(""); setType("standard");
         onSuccess();
-        toast.success("Credential created");
+        toast.success(t('dialog.created'));
     };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button size="sm"><Plus className="mr-2 h-4 w-4" /> Add New</Button></DialogTrigger>
+            <DialogTrigger asChild><Button size="sm"><Plus className="mr-2 h-4 w-4" /> {t('addNew')}</Button></DialogTrigger>
             <DialogContent>
-                <DialogHeader><DialogTitle>Add Credential</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t('dialog.addTitle')}</DialogTitle></DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
-                        <Label>Credential Type</Label>
+                        <Label>{t('dialog.typeLabel')}</Label>
                         <RadioGroup defaultValue="standard" value={type} onValueChange={(v: any) => setType(v)}>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="standard" id="std" />
-                                <Label htmlFor="std">Standard (Username + Password)</Label>
+                                <Label htmlFor="std">{t('dialog.standard')}</Label>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <RadioGroupItem value="simple" id="simp" />
-                                <Label htmlFor="simp">Simple (Name/Title + Password)</Label>
+                                <Label htmlFor="simp">{t('dialog.simple')}</Label>
                             </div>
                         </RadioGroup>
                     </div>
 
                     <div className="grid gap-2">
-                        <Label>{type === 'standard' ? "Service / Website Name" : "Credential Title (e.g. WiFi)"}</Label>
-                        <Input placeholder={type === 'standard' ? "e.g. UberEats" : "e.g. Staff WiFi"} value={service} onChange={e => setService(e.target.value)} />
+                        <Label>{type === 'standard' ? t('dialog.serviceLabel') : t('dialog.titleLabel')}</Label>
+                        <Input placeholder={type === 'standard' ? t('dialog.servicePlaceholder') : t('dialog.titlePlaceholder')} value={service} onChange={e => setService(e.target.value)} />
                     </div>
 
                     {type === 'standard' && (
-                        <div className="grid gap-2"><Label>Username/Email</Label><Input value={username} onChange={e => setUsername(e.target.value)} /></div>
+                        <div className="grid gap-2"><Label>{t('dialog.usernameLabel')}</Label><Input value={username} onChange={e => setUsername(e.target.value)} /></div>
                     )}
 
-                    <div className="grid gap-2"><Label>Password</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
-                    <div className="grid gap-2"><Label>Notes (Optional)</Label><Input value={desc} onChange={e => setDesc(e.target.value)} /></div>
+                    <div className="grid gap-2"><Label>{t('dialog.passwordLabel')}</Label><Input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
+                    <div className="grid gap-2"><Label>{t('dialog.notesLabel')}</Label><Input value={desc} onChange={e => setDesc(e.target.value)} /></div>
                 </div>
-                <DialogFooter><Button onClick={handleSubmit} disabled={loading}>Save</Button></DialogFooter>
+                <DialogFooter><Button onClick={handleSubmit} disabled={loading}>{t('dialog.save')}</Button></DialogFooter>
             </DialogContent>
         </Dialog>
     );
 }
 
+
 function UpdateCredentialDialog({ credential, userId, onSuccess }: any) {
+    const t = useTranslations("Credentials");
     const [open, setOpen] = useState(false);
     const [service, setService] = useState(credential.serviceName);
     const [username, setUsername] = useState(credential.username || "");
@@ -241,29 +251,29 @@ function UpdateCredentialDialog({ credential, userId, onSuccess }: any) {
         setLoading(false);
         setOpen(false);
         onSuccess();
-        toast.success("Credential Updated");
+        toast.success(t('dialog.updated'));
     };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button variant="ghost" size="sm">Edit</Button></DialogTrigger>
+            <DialogTrigger asChild><Button variant="ghost" size="sm">{t('actions.edit')}</Button></DialogTrigger>
             <DialogContent>
-                <DialogHeader><DialogTitle>Edit Credential</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{t('dialog.editTitle')}</DialogTitle></DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <div className="grid gap-2"><Label>Service Name / Title</Label><Input value={service} onChange={e => setService(e.target.value)} /></div>
+                    <div className="grid gap-2"><Label>{t('dialog.serviceLabel')}</Label><Input value={service} onChange={e => setService(e.target.value)} /></div>
 
                     {credential.type !== 'simple' && (
-                        <div className="grid gap-2"><Label>Username</Label><Input value={username} onChange={e => setUsername(e.target.value)} /></div>
+                        <div className="grid gap-2"><Label>{t('dialog.usernameLabel')}</Label><Input value={username} onChange={e => setUsername(e.target.value)} /></div>
                     )}
 
-                    <div className="grid gap-2"><Label>Notes</Label><Input value={desc} onChange={e => setDesc(e.target.value)} /></div>
+                    <div className="grid gap-2"><Label>{t('dialog.notesLabel')}</Label><Input value={desc} onChange={e => setDesc(e.target.value)} /></div>
 
                     <div className="pt-4 border-t mt-2">
-                        <Label className="text-muted-foreground">Change Password (leave blank to keep current)</Label>
-                        <Input className="mt-2" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="New password..." />
+                        <Label className="text-muted-foreground">{t('dialog.changePasswordLabel')}</Label>
+                        <Input className="mt-2" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder={t('dialog.newPasswordPlaceholder')} />
                     </div>
                 </div>
-                <DialogFooter><Button onClick={handleSubmit} disabled={loading}>Update</Button></DialogFooter>
+                <DialogFooter><Button onClick={handleSubmit} disabled={loading}>{t('dialog.update')}</Button></DialogFooter>
             </DialogContent>
         </Dialog>
     );

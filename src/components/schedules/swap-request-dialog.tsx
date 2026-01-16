@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -27,6 +28,7 @@ interface SwapRequestDialogProps {
 }
 
 export function SwapRequestDialog({ open, onOpenChange, currentUserId, targetShift, storeId }: SwapRequestDialogProps) {
+    const t = useTranslations("Schedules.swapDialog");
     const [myShifts, setMyShifts] = useState<any[]>([]);
     const [selectedShiftId, setSelectedShiftId] = useState<string>("");
     const [loading, setLoading] = useState(false);
@@ -73,7 +75,7 @@ export function SwapRequestDialog({ open, onOpenChange, currentUserId, targetShi
             });
 
             if (res.success) {
-                toast("Request Sent", { description: "Your swap request has been sent." });
+                toast(t('requestSent'), { description: t('requestSentDesc') });
                 onOpenChange(false);
             } else {
                 toast.error("Error", { description: res.error || "Failed to send request." });
@@ -91,15 +93,15 @@ export function SwapRequestDialog({ open, onOpenChange, currentUserId, targetShi
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Request Shift Swap</DialogTitle>
+                    <DialogTitle>{t('title')}</DialogTitle>
                     <DialogDescription>
-                        Ask {targetShift.employeeName} to swap their shift with yours.
+                        {t('description', { name: targetShift.employeeName })}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
                     <div className="rounded-md border p-3 bg-muted/20">
-                        <p className="text-sm font-medium mb-1">Target Shift (Theirs)</p>
+                        <p className="text-sm font-medium mb-1">{t('targetShiftLabel')}</p>
                         <div className="text-sm">
                             {format(new Date(targetShift.dayDate), "EEE, MMM d")} • {targetShift.startTime} - {targetShift.endTime}
                             {targetShift.shiftName && <span className="ml-2 text-muted-foreground">({targetShift.shiftName})</span>}
@@ -107,15 +109,15 @@ export function SwapRequestDialog({ open, onOpenChange, currentUserId, targetShi
                     </div>
 
                     <div className="space-y-2">
-                        <p className="text-sm font-medium">Offer Your Shift</p>
+                        <p className="text-sm font-medium">{t('offerShiftLabel')}</p>
                         {loading ? (
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Loader2 className="h-4 w-4 animate-spin" /> Loading your shifts...
+                                <Loader2 className="h-4 w-4 animate-spin" /> {t('loading')}
                             </div>
                         ) : myShifts.length > 0 ? (
                             <Select value={selectedShiftId} onValueChange={setSelectedShiftId}>
                                 <SelectTrigger>
-                                    <SelectValue placeholder="Select a shift to offer" />
+                                    <SelectValue placeholder={t('selectPlaceholder')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {myShifts.map(shift => (
@@ -126,16 +128,16 @@ export function SwapRequestDialog({ open, onOpenChange, currentUserId, targetShi
                                 </SelectContent>
                             </Select>
                         ) : (
-                            <p className="text-sm text-muted-foreground">You don't have any shifts on this day to offer.</p>
+                            <p className="text-sm text-muted-foreground">{t('noShifts')}</p>
                         )}
                     </div>
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>{t('cancel')}</Button>
                     <Button onClick={handleSubmit} disabled={!selectedShiftId || submitting || loading}>
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Send Request
+                        {t('submit')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

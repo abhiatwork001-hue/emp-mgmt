@@ -144,7 +144,7 @@ export function StoreAnalyticsWidget({ storeId }: StoreAnalyticsWidgetProps) {
                         <div className="flex gap-2">
                             <div className="flex items-center gap-1.5">
                                 <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                                <span className="text-[10px] text-muted-foreground uppercase font-bold">This Month</span>
+                                <span className="text-[10px] text-muted-foreground uppercase font-bold">{t("thisMonth")}</span>
                             </div>
                         </div>
                     </CardHeader>
@@ -180,7 +180,7 @@ export function StoreAnalyticsWidget({ storeId }: StoreAnalyticsWidgetProps) {
                 <Card className="h-full">
                     <CardHeader className="py-3 px-4">
                         <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <BarChart3 className="h-4 w-4" /> Performance Comparison
+                            <BarChart3 className="h-4 w-4" /> {t("performanceComparison")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="h-[250px] p-4 flex flex-col gap-6">
@@ -189,7 +189,7 @@ export function StoreAnalyticsWidget({ storeId }: StoreAnalyticsWidgetProps) {
                                 {/* Rating Comparison */}
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center px-1">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Average Rating</span>
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t("averageRating")}</span>
                                         <span className={cn(
                                             "text-xs font-black",
                                             data.comparison.ratingDrop >= 0 ? "text-green-600" : "text-red-600"
@@ -215,15 +215,15 @@ export function StoreAnalyticsWidget({ storeId }: StoreAnalyticsWidgetProps) {
                                         </div>
                                     </div>
                                     <div className="flex justify-between text-[9px] font-bold text-muted-foreground/50 px-1 uppercase tracking-tighter">
-                                        <span>Last Month ({data.comparison.lastMonthRating.toFixed(1)})</span>
-                                        <span>Current ({data.currentRating.toFixed(1)})</span>
+                                        <span>{t("lastMonth")} ({data.comparison.lastMonthRating.toFixed(1)})</span>
+                                        <span>{t("thisMonth")} ({data.currentRating.toFixed(1)})</span>
                                     </div>
                                 </div>
 
                                 {/* Review Count Comparison */}
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center px-1">
-                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Monthly New Reviews</span>
+                                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">{t("monthlyNewReviews")}</span>
                                         <span className={cn(
                                             "text-xs font-black",
                                             data.comparison.reviewsCountChange >= 0 ? "text-blue-600" : "text-amber-600"
@@ -246,14 +246,14 @@ export function StoreAnalyticsWidget({ storeId }: StoreAnalyticsWidgetProps) {
                                         </div>
                                     </div>
                                     <div className="flex justify-between text-[9px] font-bold text-muted-foreground/50 px-1 uppercase tracking-tighter">
-                                        <span>Last Month ({data.comparison.lastMonthReviews})</span>
-                                        <span>Current ({data.monthlyNewReviews})</span>
+                                        <span>{t("lastMonth")} ({data.comparison.lastMonthReviews})</span>
+                                        <span>{t("thisMonth")} ({data.monthlyNewReviews})</span>
                                     </div>
                                 </div>
                             </div>
                         ) : (
                             <div className="flex items-center justify-center h-full text-muted-foreground italic text-xs">
-                                Insufficient data for comparison
+                                {t("insufficientData")}
                             </div>
                         )}
                     </CardContent>
@@ -263,17 +263,17 @@ export function StoreAnalyticsWidget({ storeId }: StoreAnalyticsWidgetProps) {
                 <Card className="h-full">
                     <CardHeader className="py-3 px-4 border-b">
                         <CardTitle className="text-sm font-bold flex items-center gap-2">
-                            <BarChart3 className="h-4 w-4" /> Monthly History
+                            <BarChart3 className="h-4 w-4" /> {t("monthlyHistory")}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-0 overflow-auto max-h-[250px]">
                         <table className="w-full text-left border-collapse">
                             <thead className="sticky top-0 bg-muted/50 backdrop-blur-sm shadow-sm z-10">
                                 <tr className="text-[10px] font-bold text-muted-foreground uppercase border-b">
-                                    <th className="px-4 py-2">Month</th>
-                                    <th className="px-4 py-2">Rating</th>
-                                    <th className="px-4 py-2">New</th>
-                                    <th className="px-4 py-2">Breakdown</th>
+                                    <th className="px-4 py-2">{t("table.month")}</th>
+                                    <th className="px-4 py-2">{t("table.rating")}</th>
+                                    <th className="px-4 py-2">{t("table.new")}</th>
+                                    <th className="px-4 py-2">{t("table.breakdown")}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y">

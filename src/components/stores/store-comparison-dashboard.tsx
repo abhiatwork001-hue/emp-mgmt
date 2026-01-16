@@ -216,15 +216,15 @@ export function StoreComparisonDashboard() {
             {/* --- SECTION 0: Reputation Management Summary --- */}
             <div className="space-y-8">
                 <div className="space-y-1">
-                    <h1 className="text-4xl font-black italic tracking-tighter uppercase text-foreground">Reputation Management</h1>
-                    <p className="text-sm font-bold text-foreground uppercase tracking-widest opacity-70">Monitor Google Reviews and compare store performance across the franchise.</p>
+                    <h1 className="text-4xl font-black italic tracking-tighter uppercase text-foreground">{t('reputationManagement')}</h1>
+                    <p className="text-sm font-bold text-foreground uppercase tracking-widest opacity-70">{t('monitorReviews')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Top Rated Stores Chart */}
                     <Card className="shadow-2xl bg-card border-2 border-border">
                         <CardHeader className="pb-2 border-b border-border">
-                            <CardTitle className="text-xs font-black uppercase tracking-widest text-foreground">Top Rated Stores</CardTitle>
+                            <CardTitle className="text-xs font-black uppercase tracking-widest text-foreground">{t('topRated')}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[250px] p-6 pt-4">
                             <ResponsiveContainer width="100%" height="100%">
@@ -254,7 +254,7 @@ export function StoreComparisonDashboard() {
                     {/* Most Reviewed Chart */}
                     <Card className="shadow-2xl bg-card border-2 border-border">
                         <CardHeader className="pb-2 border-b border-border">
-                            <CardTitle className="text-xs font-black uppercase tracking-widest text-foreground">Most Reviewed</CardTitle>
+                            <CardTitle className="text-xs font-black uppercase tracking-widest text-foreground">{t('mostReviewed')}</CardTitle>
                         </CardHeader>
                         <CardContent className="h-[250px] p-6 pt-4">
                             <ResponsiveContainer width="100%" height="100%">
@@ -285,17 +285,17 @@ export function StoreComparisonDashboard() {
                 {/* Performance Table */}
                 <Card className="shadow-2xl bg-card border-2 border-border overflow-hidden">
                     <CardHeader className="pb-4 border-b border-border">
-                        <CardTitle className="text-sm font-black italic tracking-tight text-foreground">Store Reputation Performance</CardTitle>
+                        <CardTitle className="text-sm font-black italic tracking-tight text-foreground">{t('title')}</CardTitle>
                     </CardHeader>
                     <CardContent className="p-0">
                         <Table>
                             <TableHeader className="bg-muted/60">
                                 <TableRow className="hover:bg-transparent border-b border-border">
-                                    <TableHead className="text-[11px] font-black uppercase tracking-widest py-4 text-foreground">Store Name</TableHead>
-                                    <TableHead className="text-[11px] font-black uppercase tracking-widest text-center text-foreground">Rating</TableHead>
-                                    <TableHead className="text-[11px] font-black uppercase tracking-widest text-center text-foreground">Total Reviews</TableHead>
-                                    <TableHead className="text-[11px] font-black uppercase tracking-widest text-center text-foreground">Trend</TableHead>
-                                    <TableHead className="text-[11px] font-black uppercase tracking-widest text-right pr-6 text-foreground">Last Updated</TableHead>
+                                    <TableHead className="text-[11px] font-black uppercase tracking-widest py-4 text-foreground">{t('storeName')}</TableHead>
+                                    <TableHead className="text-[11px] font-black uppercase tracking-widest text-center text-foreground">{t('rating')}</TableHead>
+                                    <TableHead className="text-[11px] font-black uppercase tracking-widest text-center text-foreground">{t('reviews')}</TableHead>
+                                    <TableHead className="text-[11px] font-black uppercase tracking-widest text-center text-foreground">{t('trend')}</TableHead>
+                                    <TableHead className="text-[11px] font-black uppercase tracking-widest text-right pr-6 text-foreground">{t('lastUpdated')}</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -337,7 +337,7 @@ export function StoreComparisonDashboard() {
                 <CardHeader className="border-b border-border pb-4">
                     <div className="flex items-center gap-2">
                         <TrendingUp className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-foreground">Historical Comparison</CardTitle>
+                        <CardTitle className="text-foreground">{t('historicalComparison')}</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -397,7 +397,7 @@ export function StoreComparisonDashboard() {
                             {/* Mini Metrics Comparison */}
                             <div className="grid grid-cols-3 gap-3">
                                 <div className="p-3 rounded-xl bg-muted/60 border-2 border-border text-center">
-                                    <span className="text-[11px] font-bold text-foreground block mb-1">AVG RATING</span>
+                                    <span className="text-[11px] font-bold text-foreground block mb-1">{t('avgRating')}</span>
                                     <div className="flex items-center justify-center gap-2">
                                         <span className="text-xl font-black text-primary">{statsA?.avgRating || "0.0"}</span>
                                         <div className="w-[2px] h-5 bg-border" />
@@ -405,7 +405,7 @@ export function StoreComparisonDashboard() {
                                     </div>
                                 </div>
                                 <div className="p-3 rounded-xl bg-muted/60 border-2 border-border text-center">
-                                    <span className="text-[11px] font-bold text-foreground block mb-1">NEW REVIEWS</span>
+                                    <span className="text-[11px] font-bold text-foreground block mb-1">{t('newReviews')}</span>
                                     <div className="flex items-center justify-center gap-2">
                                         <span className="text-xl font-black text-primary">{statsA?.newReviews || "0"}</span>
                                         <div className="w-[2px] h-5 bg-border" />
@@ -413,7 +413,7 @@ export function StoreComparisonDashboard() {
                                     </div>
                                 </div>
                                 <div className="p-3 rounded-xl bg-muted/60 border-2 border-border text-center">
-                                    <span className="text-[11px] font-bold text-foreground block mb-1">COMMENTS</span>
+                                    <span className="text-[11px] font-bold text-foreground block mb-1">{t('comments')}</span>
                                     <div className="flex items-center justify-center gap-2">
                                         <span className="text-xl font-black text-primary">{statsA?.commentsCount || "0"}</span>
                                         <div className="w-[2px] h-5 bg-border" />
@@ -458,8 +458,8 @@ export function StoreComparisonDashboard() {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                        <h2 className="text-2xl font-black italic tracking-tighter text-foreground">Detailed Monthly Analysis</h2>
-                        <p className="text-xs font-bold text-foreground uppercase tracking-widest opacity-70">Toggle stores to overlay on the trend graph below</p>
+                        <h2 className="text-2xl font-black italic tracking-tighter text-foreground">{t('detailedAnalysis')}</h2>
+                        <p className="text-xs font-bold text-foreground uppercase tracking-widest opacity-70">{t('toggleStores')}</p>
                     </div>
                     <Button
                         variant="outline"
@@ -468,7 +468,7 @@ export function StoreComparisonDashboard() {
                         onClick={() => selectedStoreIds.forEach(id => handleFinalize(id))}
                         disabled={!!isFinalizing}
                     >
-                        {isFinalizing ? "Processing..." : "Finalize Current Month Data"}
+                        {isFinalizing ? t('processing') : t('finalizeData')}
                     </Button>
                 </div>
 
@@ -495,9 +495,9 @@ export function StoreComparisonDashboard() {
                         <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-border">
                             <div>
                                 <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
-                                    <BarChart3 className="h-4 w-4 text-primary" /> Comparative Monthly Trends ({overviewYear})
+                                    <BarChart3 className="h-4 w-4 text-primary" /> {t('comparativeTrends', { year: overviewYear })}
                                 </CardTitle>
-                                <CardDescription className="text-[10px] text-foreground opacity-70">Overlaid performance of selected stores</CardDescription>
+                                <CardDescription className="text-[10px] text-foreground opacity-70">{t('overlaidPerformance')}</CardDescription>
                             </div>
                             <Select value={overviewYear.toString()} onValueChange={(v) => {
                                 const newYear = parseInt(v);
@@ -614,7 +614,7 @@ export function StoreComparisonDashboard() {
                         })}
                         {selectedStoreIds.length === 0 && (
                             <div className="p-8 text-center bg-muted/40 border-2 border-dashed border-border rounded-3xl">
-                                <p className="text-xs font-bold uppercase tracking-widest text-foreground">Select stores above to see side-by-side stats</p>
+                                <p className="text-xs font-bold uppercase tracking-widest text-foreground">{t('selectStores')}</p>
                             </div>
                         )}
                     </div>

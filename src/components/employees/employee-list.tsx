@@ -73,6 +73,7 @@ export function EmployeeList({ initialEmployees, pagination, stores, departments
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const t = useTranslations("Common");
+    const tList = useTranslations("Employees.list");
     const locale = useLocale();
 
     // Local state for search to allow debouncing (or just enter key)
@@ -151,16 +152,16 @@ export function EmployeeList({ initialEmployees, pagination, stores, departments
         e.preventDefault();
         e.stopPropagation();
 
-        if (!confirm("Are you sure you want to reset this employee's password? A new OTP will be sent to their email.")) {
+        if (!confirm(tList("confirmReset.message"))) {
             return;
         }
 
         try {
             await confirmPasswordReset(empId);
-            toast.success("Password reset confirmed and new OTP sent.");
+            toast.success(tList("confirmReset.success"));
             router.refresh();
         } catch (error) {
-            toast.error("Failed to confirm password reset.");
+            toast.error(tList("confirmReset.error"));
         }
     };
 
@@ -231,7 +232,7 @@ export function EmployeeList({ initialEmployees, pagination, stores, departments
 
                     {hasFilters && (
                         <Button variant="ghost" size="sm" onClick={clearFilters} className="ml-auto text-muted-foreground hover:text-foreground">
-                            <X className="h-4 w-4 mr-2" /> Clear All Filters
+                            <X className="h-4 w-4 mr-2" /> {tList("clearFilters")}
                         </Button>
                     )}
                 </div>
@@ -243,7 +244,7 @@ export function EmployeeList({ initialEmployees, pagination, stores, departments
                         {/* Header - Desktop Only */}
                         <div className="hidden md:grid md:grid-cols-12 md:gap-4 p-4 text-xs font-bold uppercase tracking-wider text-muted-foreground bg-muted/30 border-b">
                             <div className="col-span-4 pl-4">{t("employees")}</div>
-                            <div className="col-span-2">Status</div>
+                            <div className="col-span-2">{tList("table.status")}</div>
                             <div className="col-span-2">{t("positions")}</div>
                             <div className="col-span-2">{t("stores")}</div>
                             <div className="col-span-2">{t("departments")}</div>
@@ -268,9 +269,9 @@ export function EmployeeList({ initialEmployees, pagination, stores, departments
                                                     <div className="flex justify-between items-start">
                                                         <h4 className="text-base font-semibold truncate pr-2">{emp.firstName} {emp.lastName}</h4>
                                                         {emp.active ? (
-                                                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-0 text-[10px] uppercase font-bold">Active</Badge>
+                                                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-0 text-[10px] uppercase font-bold">{t("active")}</Badge>
                                                         ) : (
-                                                            <Badge variant="outline" className="bg-red-500/10 text-red-600 border-0 text-[10px] uppercase font-bold">Inactive</Badge>
+                                                            <Badge variant="outline" className="bg-red-500/10 text-red-600 border-0 text-[10px] uppercase font-bold">{t("inactive")}</Badge>
                                                         )}
                                                     </div>
                                                     <p className="text-xs text-muted-foreground truncate">{getLocalized(emp.positionId, "name", locale) || "No Position"}</p>
@@ -309,10 +310,10 @@ export function EmployeeList({ initialEmployees, pagination, stores, departments
                                                         <Badge className="w-fit bg-red-500/10 text-red-600 border-0 text-[10px] font-bold uppercase tracking-tight">{t('inactive')}</Badge>
                                                     )}
                                                     {emp.currentStatus === 'vacation' && (
-                                                        <Badge variant="outline" className="w-fit border-amber-500/30 text-amber-600 bg-amber-500/5 text-[10px] uppercase font-bold tracking-tight">On Vacation</Badge>
+                                                        <Badge variant="outline" className="w-fit border-amber-500/30 text-amber-600 bg-amber-500/5 text-[10px] uppercase font-bold tracking-tight">{tList('status.onVacation')}</Badge>
                                                     )}
                                                     {emp.currentStatus === 'absence' && (
-                                                        <Badge variant="outline" className="w-fit border-red-500/30 text-red-600 bg-red-500/5 text-[10px] uppercase font-bold tracking-tight">Absent</Badge>
+                                                        <Badge variant="outline" className="w-fit border-red-500/30 text-red-600 bg-red-500/5 text-[10px] uppercase font-bold tracking-tight">{tList('status.absent')}</Badge>
                                                     )}
                                                 </div>
 
@@ -340,9 +341,9 @@ export function EmployeeList({ initialEmployees, pagination, stores, departments
                                     <div className="p-6 rounded-full bg-muted/20 mb-6">
                                         <Search className="h-12 w-12 opacity-20" />
                                     </div>
-                                    <p className="text-xl font-bold text-foreground">No matching employees</p>
-                                    <p className="text-sm mt-1">Try adjusting your filters or searching for another name.</p>
-                                    <Button variant="link" onClick={clearFilters} className="mt-4 font-bold text-primary">Clear all filters</Button>
+                                    <p className="text-xl font-bold text-foreground">{tList("noResults.title")}</p>
+                                    <p className="text-sm mt-1">{tList("noResults.description")}</p>
+                                    <Button variant="link" onClick={clearFilters} className="mt-4 font-bold text-primary">{tList("noResults.clear")}</Button>
                                 </div>
                             )}
                         </div>
@@ -365,7 +366,7 @@ export function EmployeeList({ initialEmployees, pagination, stores, departments
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <span className="uppercase tracking-widest text-xs font-bold">
-                            Page {pagination.current} of {pagination.pages}
+                            {tList("pagination.pageOf", { current: pagination.current, total: pagination.pages })}
                         </span>
                         <Button
                             variant="outline"
@@ -381,7 +382,7 @@ export function EmployeeList({ initialEmployees, pagination, stores, departments
             )}
 
             <div className="text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground text-center pt-2">
-                {pagination.total} result{pagination.total !== 1 && 's'} in registry
+                {tList("pagination.results", { count: pagination.total, s: pagination.total !== 1 ? 's' : '' })}
             </div>
         </div>
     );

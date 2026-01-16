@@ -1,6 +1,7 @@
 "use client";
 
 import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -58,6 +59,9 @@ export function ShiftDialog({
     absences?: any[];
     currentDayShifts?: any[];
 }) {
+    const t = useTranslations("Schedules.shiftDialog");
+    const tCommon = useTranslations("Common");
+
     // State
     const [templates, setTemplates] = useState<any[]>([]);
     const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -355,18 +359,18 @@ export function ShiftDialog({
                     <AlertDialogHeader>
                         <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                             <AlertCircle className="h-5 w-5" />
-                            Staffing Limit Exceeded
+                            {t('alerts.staffLimitTitle')}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-foreground">
-                            You have selected <strong>{selectedEmployeeIds.length}</strong> employees, but the limit for this shift is <strong>{maxHeadcount}</strong>.
+                            {t('alerts.staffLimitDesc', { count: selectedEmployeeIds.length, limit: maxHeadcount || 0 })}
                             <br /><br />
-                            Do you want to proceed anyway?
+                            {t('alerts.staffLimitProceed')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setLimitConfirmOpen(false)}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setLimitConfirmOpen(false)}>{t('actions.cancel')}</AlertDialogCancel>
                         <AlertDialogAction onClick={() => { setLimitConfirmOpen(false); executeSave(); }} className="bg-destructive hover:bg-destructive/90">
-                            Proceed (Override)
+                            {t('actions.proceed')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -375,7 +379,7 @@ export function ShiftDialog({
             <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
                     <DialogHeader className="flex flex-row items-center justify-between">
-                        <DialogTitle>{initialData ? "Edit Shift" : "Create Shift"} for {date.toLocaleDateString()}</DialogTitle>
+                        <DialogTitle>{initialData ? t('titleEdit') : t('titleAdd')} {date.toLocaleDateString()}</DialogTitle>
                         <div className="flex gap-2 mr-8">
                             {!isDayOff && (
                                 <Button
@@ -387,7 +391,7 @@ export function ShiftDialog({
                                         setShiftName("Day Off");
                                     }}
                                 >
-                                    Mark as Day Off
+                                    {t('markDayOff')}
                                 </Button>
                             )}
                             {isDayOff && (
@@ -401,7 +405,7 @@ export function ShiftDialog({
                                         setEndTime("17:00");
                                     }}
                                 >
-                                    Set Working Shift
+                                    {t('setWorkingShift')}
                                 </Button>
                             )}
                         </div>
@@ -411,38 +415,38 @@ export function ShiftDialog({
                         {/* Step 1: Time/Template */}
                         {!isDayOff && (
                             <div className="space-y-4">
-                                <Label className="text-base font-semibold">1. Select Shift Details</Label>
+                                <Label className="text-base font-semibold">{t('step1')}</Label>
 
                                 {isCreatingTemplate ? (
                                     <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
                                         <div className="flex items-center justify-between">
-                                            <h4 className="font-medium">{editingTemplateId ? "Edit Template" : "New Template"}</h4>
+                                            <h4 className="font-medium">{editingTemplateId ? t('templates.edit') : t('templates.new')}</h4>
                                             <Button variant="ghost" size="sm" onClick={() => { setIsCreatingTemplate(false); setEditingTemplateId(null); }}><X className="h-4 w-4" /></Button>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-1">
-                                                <Label>Template Name</Label>
+                                                <Label>{t('labels.templateName')}</Label>
                                                 <Input value={newTemplateName} onChange={e => setNewTemplateName(e.target.value)} placeholder="e.g. Morning Shift" />
                                             </div>
                                             <div className="space-y-1">
-                                                <Label>Break (min)</Label>
+                                                <Label>{t('labels.break')}</Label>
                                                 <Input type="number" value={breakMinutes} onChange={e => setBreakMinutes(Number(e.target.value))} />
                                             </div>
                                             <div className="space-y-1">
-                                                <Label>Start</Label>
+                                                <Label>{t('labels.start')}</Label>
                                                 <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
                                             </div>
                                             <div className="space-y-1">
-                                                <Label>End</Label>
+                                                <Label>{t('labels.end')}</Label>
                                                 <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
                                             </div>
                                             <div className="space-y-1">
-                                                <Label>Max Staff Limit</Label>
+                                                <Label>{t('labels.maxStaff')}</Label>
                                                 <Input type="number" value={templateRequiredHeadcount} onChange={e => setTemplateRequiredHeadcount(Number(e.target.value))} placeholder="Optional" />
                                             </div>
                                             {/* Color Picker in Creation */}
                                             <div className="col-span-2 space-y-2">
-                                                <Label>Color Code</Label>
+                                                <Label>{t('labels.color')}</Label>
                                                 <div className="flex flex-wrap gap-2">
                                                     {PRESET_COLORS.map(color => (
                                                         <button
@@ -459,17 +463,17 @@ export function ShiftDialog({
                                             </div>
 
                                         </div>
-                                        <Button className="w-full" onClick={handleCreateTemplate} disabled={!newTemplateName}>{editingTemplateId ? "Update Template" : "Save Template"}</Button>
+                                        <Button className="w-full" onClick={handleCreateTemplate} disabled={!newTemplateName}>{editingTemplateId ? t('templates.update') : t('templates.save')}</Button>
                                     </div>
                                 ) : (
                                     <>
                                         <Tabs defaultValue="template" className="w-full">
                                             <TabsList className="grid w-full grid-cols-2">
-                                                <TabsTrigger value="template">Templates</TabsTrigger>
-                                                <TabsTrigger value="custom">Custom Shift</TabsTrigger>
+                                                <TabsTrigger value="template">{t('tabs.templates')}</TabsTrigger>
+                                                <TabsTrigger value="custom">{t('tabs.custom')}</TabsTrigger>
                                             </TabsList>
                                             <TabsContent value="template">
-                                                {loading ? <p>Loading templates...</p> : (
+                                                {loading ? <p>{t('templates.loading')}</p> : (
                                                     <div className="grid grid-cols-2 gap-4">
                                                         {templates.map(t => (
                                                             <div
@@ -498,11 +502,9 @@ export function ShiftDialog({
                                                                     <div className="pl-2 pr-6">
                                                                         <div className="font-semibold truncate">{t.name}</div>
                                                                         <div className="text-sm text-muted-foreground">{t.startTime} - {t.endTime}</div>
-                                                                        {t.maxAllowedHeadcount && (
-                                                                            <div className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
-                                                                                <Users className="h-3 w-3" /> Max {t.maxAllowedHeadcount}
-                                                                            </div>
-                                                                        )}
+                                                                        <div className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                                                                            <Users className="h-3 w-3" /> {t('templates.max', { count: t.maxAllowedHeadcount })}
+                                                                        </div>
                                                                     </div>
                                                                 </div>
 
@@ -545,23 +547,23 @@ export function ShiftDialog({
                                             <TabsContent value="custom">
                                                 <div className="grid grid-cols-2 gap-4">
                                                     <div className="space-y-1">
-                                                        <Label>Start</Label>
+                                                        <Label>{t('labels.start')}</Label>
                                                         <Input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <Label>End</Label>
+                                                        <Label>{t('labels.end')}</Label>
                                                         <Input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <Label>Name</Label>
+                                                        <Label>{t('labels.name')}</Label>
                                                         <Input value={shiftName} onChange={e => setShiftName(e.target.value)} />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <Label>Break (min)</Label>
+                                                        <Label>{t('labels.break')}</Label>
                                                         <Input type="number" value={breakMinutes} onChange={e => setBreakMinutes(Number(e.target.value))} />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <Label>Required Staff</Label>
+                                                        <Label>{t('labels.requiredStaff')}</Label>
                                                         <Input
                                                             type="number"
                                                             min="0"
@@ -571,7 +573,7 @@ export function ShiftDialog({
                                                     </div>
                                                     {/* Color Picker Custom */}
                                                     <div className="col-span-2 space-y-2">
-                                                        <Label>Color Code</Label>
+                                                        <Label>{t('labels.color')}</Label>
                                                         <div className="flex flex-wrap gap-2">
                                                             {PRESET_COLORS.map(color => (
                                                                 <button
@@ -590,7 +592,7 @@ export function ShiftDialog({
                                                     <div className="col-span-2 flex items-center space-x-2 pt-2">
                                                         <Switch id="save-template" checked={saveAsTemplate} onCheckedChange={setSaveAsTemplate} />
                                                         <Label htmlFor="save-template" className="text-sm font-medium text-muted-foreground">
-                                                            Save as Department Template
+                                                            {t('labels.saveTemplate')}
                                                         </Label>
                                                     </div>
                                                 </div>
@@ -599,7 +601,7 @@ export function ShiftDialog({
 
                                         <div className="flex items-center space-x-2 mt-2">
                                             <Switch id="overtime-mode" checked={isOvertime} onCheckedChange={setIsOvertime} />
-                                            <Label htmlFor="overtime-mode">Extra Overtime</Label>
+                                            <Label htmlFor="overtime-mode">{t('labels.extraOvertime')}</Label>
                                         </div>
                                     </>
                                 )}
@@ -611,7 +613,10 @@ export function ShiftDialog({
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <Label className="text-base font-semibold">
-                                    2. Assign Employees ({selectedEmployeeIds.length} {maxHeadcount && `/ ${maxHeadcount}`})
+                                    {maxHeadcount
+                                        ? t('step2', { selected: selectedEmployeeIds.length, max: maxHeadcount })
+                                        : t('step2NoMax', { selected: selectedEmployeeIds.length })
+                                    }
                                 </Label>
                                 {/* Tabs for filtering */}
                                 <div className="flex items-center gap-2 bg-muted p-1 rounded-md">
@@ -620,14 +625,14 @@ export function ShiftDialog({
                                             onClick={() => setEmployeeFilter("department")}
                                             className={`px-3 py-1 text-xs font-medium rounded-sm transition-all ${employeeFilter === "department" ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                                         >
-                                            Department
+                                            {t('employeeFilter.department')}
                                         </button>
                                     )}
                                     <button
                                         onClick={() => setEmployeeFilter("global")}
                                         className={`px-3 py-1 text-xs font-medium rounded-sm transition-all ${employeeFilter === "global" ? "bg-background shadow text-foreground" : "text-muted-foreground hover:text-foreground"}`}
                                     >
-                                        Global / All
+                                        {t('employeeFilter.global')}
                                     </button>
                                 </div>
                             </div>
@@ -636,7 +641,7 @@ export function ShiftDialog({
                             <div className="relative">
                                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                 <Input
-                                    placeholder="Search employees..."
+                                    placeholder={t('employeeFilter.searchPlaceholder')}
                                     className="pl-9"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -646,8 +651,8 @@ export function ShiftDialog({
                             {isOverLimit && (
                                 <div className="bg-destructive/10 border border-destructive/50 text-destructive text-sm px-3 py-2 rounded-md flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
                                     <AlertCircle className="h-4 w-4" />
-                                    <span className="font-semibold">Staffing Limit Exceeded!</span>
-                                    <span>Allowed: {maxHeadcount}, Selected: {selectedEmployeeIds.length}</span>
+                                    <span className="font-semibold">{t('alerts.staffLimitExceeded')}</span>
+                                    <span>{t('alerts.staffLimitAllowed', { limit: maxHeadcount, count: selectedEmployeeIds.length })}</span>
                                 </div>
                             )}
 
@@ -655,7 +660,7 @@ export function ShiftDialog({
                                 {filteredEmployees.length === 0 ? (
                                     <div className="col-span-full py-12 text-center text-muted-foreground text-sm flex flex-col items-center gap-2">
                                         <Users className="h-8 w-8 opacity-20" />
-                                        <span>No employees found in this view.</span>
+                                        <span>{t('employeeFilter.noEmployees')}</span>
                                     </div>
                                 ) : (
                                     enrichedEmployees.map((emp: any) => {
@@ -685,8 +690,8 @@ export function ShiftDialog({
                                                         {isSelected && <Check className="h-3 w-3 text-primary" />}
                                                     </div>
                                                     <p className="text-xs text-muted-foreground truncate">{emp.positionId?.name || "Staff"}</p>
-                                                    {emp.isAbsent && <span className="text-[10px] text-destructive font-medium flex items-center gap-1"><AlertCircle className="h-3 w-3" /> On Leave</span>}
-                                                    {emp.isBusyInThisSchedule && !isSelected && <span className="text-[10px] text-amber-500 font-medium flex items-center gap-1"><Clock className="h-3 w-3" /> Scheduled</span>}
+                                                    {emp.isAbsent && <span className="text-[10px] text-destructive font-medium flex items-center gap-1"><AlertCircle className="h-3 w-3" /> {t('employeeFilter.onLeave')}</span>}
+                                                    {emp.isBusyInThisSchedule && !isSelected && <span className="text-[10px] text-amber-500 font-medium flex items-center gap-1"><Clock className="h-3 w-3" /> {t('employeeFilter.scheduled')}</span>}
                                                 </div>
                                             </div>
                                         )
@@ -698,8 +703,8 @@ export function ShiftDialog({
 
                         {/* Step 3: Notes */}
                         <div className="space-y-2">
-                            <Label className="text-base font-semibold">3. Notes</Label>
-                            <Input placeholder="Instructions..." value={notes} onChange={e => setNotes(e.target.value)} />
+                            <Label className="text-base font-semibold">{t('step3')}</Label>
+                            <Input placeholder={t('labels.notesPlaceholder')} value={notes} onChange={e => setNotes(e.target.value)} />
                         </div>
                     </div>
 
@@ -708,14 +713,14 @@ export function ShiftDialog({
                             {initialData && onDelete && (
                                 <Button variant="destructive" className="w-full sm:w-auto" onClick={() => setDeleteConfirmOpen(true)}>
                                     <Trash2 className="h-4 w-4 mr-2" />
-                                    Remove Shift
+                                    {t('actions.removeShift')}
                                 </Button>
                             )}
                         </div>
                         <div className="flex gap-2 w-full sm:w-auto justify-end">
-                            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                            <Button variant="outline" onClick={() => onOpenChange(false)}>{t('actions.cancel')}</Button>
                             <Button onClick={handleSave}>
-                                {initialData ? "Save Changes" : "Create Shift"}
+                                {initialData ? t('actions.saveChanges') : t('actions.createShift')}
                             </Button>
                         </div>
                     </DialogFooter>
@@ -725,15 +730,15 @@ export function ShiftDialog({
             <AlertDialog open={!!deleteTemplateId} onOpenChange={(open) => !open && setDeleteTemplateId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Template?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('alerts.deleteTemplateTitle')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently remove this shift template.
+                            {t('alerts.deleteTemplateDesc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setDeleteTemplateId(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setDeleteTemplateId(null)}>{t('actions.cancel')}</AlertDialogCancel>
                         <AlertDialogAction onClick={confirmDeleteTemplate} className="bg-destructive hover:bg-destructive/90">
-                            Delete
+                            {t('actions.delete')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
@@ -742,15 +747,15 @@ export function ShiftDialog({
             <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('alerts.deleteShiftTitle')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete this shift from the schedule.
+                            {t('alerts.deleteShiftDesc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t('actions.cancel')}</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-                            Delete
+                            {t('actions.delete')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

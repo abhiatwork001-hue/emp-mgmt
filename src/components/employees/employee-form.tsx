@@ -16,6 +16,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { UploadDropzone } from "@/lib/uploadthing";
@@ -40,6 +41,7 @@ const DAYS = [
 ];
 
 export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfService = false }: EmployeeFormProps) {
+    const t = useTranslations("Employees.form");
     const isEdit = mode === "edit" || !!employee;
     const [isLoading, setIsLoading] = useState(false);
     const [isDobOpen, setIsDobOpen] = useState(false);
@@ -169,7 +171,7 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                 } : formData;
 
                 const updatedEmp = await updateEmployee(employee._id, submissionData);
-                toast.success("Employee updated successfully");
+                toast.success(t('successUpdate'));
 
                 // Redirect to the new slug (if name changed, slug changed)
                 if (updatedEmp && updatedEmp.slug) {
@@ -179,7 +181,7 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                 }
             } else {
                 const newEmp = await createEmployee(formData);
-                toast.success("Employee created successfully");
+                toast.success(t('successCreate'));
                 if (newEmp && newEmp.slug) {
                     router.push(`/dashboard/employees/${newEmp.slug}`);
                 } else {
@@ -188,7 +190,7 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
             }
         } catch (error) {
             console.error(error);
-            toast.error("Failed to save employee.");
+            toast.error(t('errorSave'));
         } finally {
             setIsLoading(false);
         }
@@ -206,7 +208,7 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                     <div className="bg-primary/5 px-6 py-4 border-b border-primary/10">
                         <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                            Personal Information
+                            {t('personalInfo')}
                         </h3>
                     </div>
                     <CardContent className="p-8 space-y-6">
@@ -240,11 +242,11 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                         onClientUploadComplete={(res) => {
                                             if (res && res[0]) {
                                                 setFormData(prev => ({ ...prev, image: res[0].url }));
-                                                toast.success("Profile picture updated");
+                                                toast.success(t('imageUpdated'));
                                             }
                                         }}
                                         onUploadError={(error: Error) => {
-                                            toast.error(`Error: ${error.message}`);
+                                            toast.error(t('errorImage', { message: error.message }));
                                         }}
                                         appearance={{
                                             button: "bg-primary text-primary-foreground hover:bg-primary/90 text-xs py-2 h-8",
@@ -253,8 +255,8 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                             allowedContent: "hidden"
                                         }}
                                         content={{
-                                            label: "Upload / Drop Image",
-                                            button: "Upload Photo"
+                                            label: t('uploadImage'),
+                                            button: t('uploadPhoto')
                                         }}
                                     />
                                 </div>
@@ -264,31 +266,31 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                             <div className="flex-1 space-y-6 w-full">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="firstName">First Name</Label>
+                                        <Label htmlFor="firstName">{t('firstName')}</Label>
                                         <Input id="firstName" name="firstName" value={formData.firstName} onChange={handleChange} className="h-11 transition-all focus:ring-2 focus:ring-primary/20" required />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="lastName">Last Name</Label>
+                                        <Label htmlFor="lastName">{t('lastName')}</Label>
                                         <Input id="lastName" name="lastName" value={formData.lastName} onChange={handleChange} className="h-11 transition-all focus:ring-2 focus:ring-primary/20" required />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="email">Email Address</Label>
+                                        <Label htmlFor="email">{t('email')}</Label>
                                         <Input id="email" name="email" type="email" value={formData.email} onChange={handleChange} className="h-11 transition-all focus:ring-2 focus:ring-primary/20" required />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="phone">Phone Number</Label>
+                                        <Label htmlFor="phone">{t('phone')}</Label>
                                         <Input id="phone" name="phone" value={formData.phone} onChange={handleChange} className="h-11 transition-all focus:ring-2 focus:ring-primary/20" />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="nif">NIF / Tax ID</Label>
+                                        <Label htmlFor="nif">{t('nif')}</Label>
                                         <Input id="nif" name="nif" value={formData.nif} onChange={handleChange} className="h-11 transition-all focus:ring-2 focus:ring-primary/20" />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Date of Birth</Label>
+                                        <Label>{t('dob')}</Label>
                                         <Popover open={isDobOpen} onOpenChange={setIsDobOpen}>
                                             <PopoverTrigger asChild>
                                                 <Button
@@ -299,7 +301,7 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                                     )}
                                                 >
                                                     <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {formData.dob ? format(formData.dob, "PPP") : <span>Pick a date</span>}
+                                                    {formData.dob ? format(formData.dob, "PPP") : <span>{t('pickDate')}</span>}
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0" align="start">
@@ -320,7 +322,7 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="address">Physical Address</Label>
+                                    <Label htmlFor="address">{t('address')}</Label>
                                     <Input id="address" name="address" value={formData.address} onChange={handleChange} className="h-11 transition-all focus:ring-2 focus:ring-primary/20" />
                                 </div>
                             </div>
@@ -332,13 +334,13 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                     <div className="bg-red-500/5 px-6 py-4 border-b border-red-500/10">
                         <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-                            Emergency Contact
+                            {t('emergencyContact')}
                         </h3>
                     </div>
                     <CardContent className="p-8 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="ec-name">Contact Name</Label>
+                                <Label htmlFor="ec-name">{t('contactName')}</Label>
                                 <Input
                                     id="ec-name"
                                     value={formData.emergencyContact.name}
@@ -348,19 +350,19 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="ec-relation">Relationship</Label>
+                                <Label htmlFor="ec-relation">{t('relationship')}</Label>
                                 <Input
                                     id="ec-relation"
                                     value={formData.emergencyContact.relationship}
                                     onChange={(e) => handleEmergencyContactChange("relationship", e.target.value)}
                                     className="h-11 transition-all focus:ring-2 focus:ring-red-500/20"
-                                    placeholder="e.g. Spouse, Parent"
+                                    placeholder={t('contactPlaceholder')}
                                 />
                             </div>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="ec-phone">Phone Number</Label>
+                                <Label htmlFor="ec-phone">{t('phone')}</Label>
                                 <Input
                                     id="ec-phone"
                                     value={formData.emergencyContact.phoneNumber}
@@ -386,15 +388,15 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                 <Card glass className="p-0 overflow-hidden border-border/40">
                     <div className="bg-muted/30 px-6 py-4 border-b border-border/40">
                         <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                            Identification Documents
+                            {t('identificationDocuments')}
                         </h3>
                     </div>
                     <CardContent className="p-8">
                         {formData.documents.length === 0 ? (
                             <div className="text-center py-10 bg-accent/5 rounded-xl border border-dashed border-border/60">
-                                <p className="text-sm text-muted-foreground">No documents added yet.</p>
+                                <p className="text-sm text-muted-foreground">{t('noDocuments')}</p>
                                 <Button type="button" variant="outline" size="sm" onClick={addDocument} className="mt-4 gap-2">
-                                    <Plus className="h-4 w-4" /> Add Document
+                                    <Plus className="h-4 w-4" /> {t('addDocument')}
                                 </Button>
                             </div>
                         ) : (
@@ -407,20 +409,20 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                         className="grid grid-cols-12 gap-4 items-end bg-accent/10 p-4 rounded-xl border border-border/40 group relative"
                                     >
                                         <div className="col-span-12 md:col-span-4 space-y-2">
-                                            <Label className="text-[10px] uppercase text-muted-foreground tracking-widest font-bold">Type</Label>
+                                            <Label className="text-[10px] uppercase text-muted-foreground tracking-widest font-bold">{t('docType')}</Label>
                                             <Input placeholder="Passport, ID, etc." value={doc.type} onChange={(e) => handleDocumentChange(index, "type", e.target.value)} className="bg-background/50" />
                                         </div>
                                         <div className="col-span-12 md:col-span-4 space-y-2">
-                                            <Label className="text-[10px] uppercase text-muted-foreground tracking-widest font-bold">Number / ID</Label>
+                                            <Label className="text-[10px] uppercase text-muted-foreground tracking-widest font-bold">{t('docNumber')}</Label>
                                             <Input placeholder="Document number" value={doc.value} onChange={(e) => handleDocumentChange(index, "value", e.target.value)} className="bg-background/50" />
                                         </div>
                                         <div className="col-span-10 md:col-span-3 space-y-2">
-                                            <Label className="text-[10px] uppercase text-muted-foreground tracking-widest font-bold">Expiry Date</Label>
+                                            <Label className="text-[10px] uppercase text-muted-foreground tracking-widest font-bold">{t('expiryDate')}</Label>
                                             <Popover open={!!openDocPopovers[index]} onOpenChange={(open) => setOpenDocPopovers(prev => ({ ...prev, [index]: open }))}>
                                                 <PopoverTrigger asChild>
                                                     <Button variant="outline" className={cn("w-full justify-start text-left font-normal bg-background/50", !doc.validity && "text-muted-foreground")}>
                                                         <CalendarIcon className="mr-2 h-4 w-4" />
-                                                        {doc.validity ? format(new Date(doc.validity), "dd/MM/yy") : "Expiry"}
+                                                        {doc.validity ? format(new Date(doc.validity), "dd/MM/yy") : t('expiry')}
                                                     </Button>
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-auto p-0">
@@ -441,7 +443,7 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                     </motion.div>
                                 ))}
                                 <Button type="button" variant="outline" size="sm" onClick={addDocument} className="w-full h-10 border-dashed hover:border-primary/50 hover:bg-primary/5 transition-all">
-                                    <Plus className="h-4 w-4 mr-2" /> Add Another Document
+                                    <Plus className="h-4 w-4 mr-2" /> {t('addAnotherDocument')}
                                 </Button>
                             </div>
                         )}
@@ -452,12 +454,12 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                     <Card glass className="p-0 overflow-hidden border-border/40">
                         <div className="bg-muted/30 px-6 py-4 border-b border-border/40">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold text-foreground">Security & System Roles</h3>
-                                <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest border-primary/20 text-primary">Admin Only</Badge>
+                                <h3 className="text-lg font-semibold text-foreground">{t('securityRoles')}</h3>
+                                <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest border-primary/20 text-primary">{t('adminOnly')}</Badge>
                             </div>
                         </div>
                         <CardContent className="p-8 space-y-6">
-                            <p className="text-xs text-muted-foreground mb-4 italic">Assign high-level system permissions. Only Owner, SuperUser, or Tech can modify these.</p>
+                            <p className="text-xs text-muted-foreground mb-4 italic">{t('rolesDescription')}</p>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                 {[
                                     { id: "owner", label: "Owner", color: "bg-red-500/10 text-red-600 border-red-500/20" },
@@ -496,33 +498,33 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                 {!isSelfService && (
                     <Card glass className="p-0 overflow-hidden border-border/40">
                         <div className="bg-muted/30 px-6 py-4 border-b border-border/40">
-                            <h3 className="text-lg font-semibold text-foreground">Employment & Contract</h3>
+                            <h3 className="text-lg font-semibold text-foreground">{t('employmentContract')}</h3>
                         </div>
                         <CardContent className="p-8 space-y-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-2">
-                                    <Label>Employment Type</Label>
+                                    <Label>{t('employmentType')}</Label>
                                     <Select value={formData.contract.employmentType} onValueChange={(val) => handleContractChange("employmentType", val)}>
                                         <SelectTrigger className="h-11 bg-background/50"><SelectValue /></SelectTrigger>
                                         <SelectContent><SelectItem value="Contracted">Contracted</SelectItem><SelectItem value="Freelancer">Freelancer</SelectItem><SelectItem value="Extra">Extra</SelectItem></SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="weeklyHours">Weekly Hours</Label>
+                                    <Label htmlFor="weeklyHours">{t('weeklyHours')}</Label>
                                     <Input id="weeklyHours" type="number" value={formData.contract.weeklyHours} onChange={(e) => handleContractChange("weeklyHours", Number(e.target.value))} className="h-11 bg-background/50" />
                                 </div>
                             </div>
 
                             <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-between">
                                 <div className="space-y-0.5">
-                                    <Label htmlFor="vacation-allowed" className="text-base">Vacation Entitlement</Label>
-                                    <p className="text-xs text-muted-foreground">Allows the employee to request paid leave.</p>
+                                    <Label htmlFor="vacation-allowed" className="text-base">{t('vacationEntitlement')}</Label>
+                                    <p className="text-xs text-muted-foreground">{t('vacationEntitlementDesc')}</p>
                                 </div>
                                 <Switch id="vacation-allowed" checked={formData.contract.vacationAllowed} onCheckedChange={(checked) => handleContractChange("vacationAllowed", checked)} />
                             </div>
 
                             <div className="space-y-3">
-                                <Label className="text-sm font-medium">Standard Working Days</Label>
+                                <Label className="text-sm font-medium">{t('standardWorkingDays')}</Label>
                                 <div className="flex flex-wrap gap-3">
                                     {DAYS.map((day) => (
                                         <div key={day.value} onClick={() => handleDayToggle(day.value)} className={cn(
@@ -544,14 +546,14 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                     <Card glass className="p-0 overflow-hidden border-border/40">
                         <div className="bg-primary/5 px-6 py-4 border-b border-primary/10">
                             <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
-                                Vacation Balance Management
-                                <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest border-primary/20 text-primary">Override Only</Badge>
+                                {t('vacationBalance')}
+                                <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest border-primary/20 text-primary">{t('overrideOnly')}</Badge>
                             </h3>
                         </div>
                         <CardContent className="p-8">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                 <div className="space-y-2">
-                                    <Label htmlFor="defaultDays">Annual Allowance (Current Year)</Label>
+                                    <Label htmlFor="defaultDays">{t('annualAllowance')}</Label>
                                     <div className="flex items-center gap-2">
                                         <Input
                                             id="defaultDays"
@@ -560,12 +562,12 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                             onChange={(e) => handleVacationTrackerChange("defaultDays", Number(e.target.value))}
                                             className="h-11 bg-background/50"
                                         />
-                                        <span className="text-xs font-bold text-muted-foreground">DAYS</span>
+                                        <span className="text-xs font-bold text-muted-foreground">{t('daysUnit')}</span>
                                     </div>
-                                    <p className="text-[10px] text-muted-foreground italic">Standard entitlement for the contract.</p>
+                                    <p className="text-[10px] text-muted-foreground italic">{t('allowanceDesc')}</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="rolloverDays">Rollover (From Previous Year)</Label>
+                                    <Label htmlFor="rolloverDays">{t('rollover')}</Label>
                                     <div className="flex items-center gap-2">
                                         <Input
                                             id="rolloverDays"
@@ -574,12 +576,12 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                             onChange={(e) => handleVacationTrackerChange("rolloverDays", Number(e.target.value))}
                                             className="h-11 bg-background/50"
                                         />
-                                        <span className="text-xs font-bold text-muted-foreground">DAYS</span>
+                                        <span className="text-xs font-bold text-muted-foreground">{t('daysUnit')}</span>
                                     </div>
-                                    <p className="text-[10px] text-muted-foreground italic">Carry over from the last period.</p>
+                                    <p className="text-[10px] text-muted-foreground italic">{t('rolloverDesc')}</p>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="usedDays">Used Days (Correction)</Label>
+                                    <Label htmlFor="usedDays">{t('usedDays')}</Label>
                                     <div className="flex items-center gap-2">
                                         <Input
                                             id="usedDays"
@@ -588,20 +590,20 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                                             onChange={(e) => handleVacationTrackerChange("usedDays", Number(e.target.value))}
                                             className="h-11 bg-background/50"
                                         />
-                                        <span className="text-xs font-bold text-muted-foreground">DAYS</span>
+                                        <span className="text-xs font-bold text-muted-foreground">{t('daysUnit')}</span>
                                     </div>
-                                    <p className="text-[10px] text-orange-500 font-bold uppercase tracking-tight">Used as manual correction only.</p>
+                                    <p className="text-[10px] text-orange-500 font-bold uppercase tracking-tight">{t('usedDesc')}</p>
                                 </div>
                             </div>
 
                             <div className="mt-6 p-4 rounded-xl bg-muted/50 border border-border flex justify-between items-center">
-                                <div className="text-sm font-medium">Resulting Total Balance:</div>
+                                <div className="text-sm font-medium">{t('totalBalance')}</div>
                                 <div className="flex items-center gap-3">
                                     <div className="flex flex-col items-end">
                                         <div className="text-2xl font-black text-primary">
                                             {(formData.vacationTracker.defaultDays + formData.vacationTracker.rolloverDays) - formData.vacationTracker.usedDays}
                                         </div>
-                                        <div className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">Available Days Remaining</div>
+                                        <div className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">{t('availableDays')}</div>
                                     </div>
                                 </div>
                             </div>
@@ -610,11 +612,11 @@ export function EmployeeForm({ employee, onSuccess, mode = "create", isSelfServi
                 )}
 
                 <div className="flex items-center justify-between pt-4 bg-muted/20 p-6 rounded-2xl border border-border/40">
-                    <p className="text-sm text-muted-foreground">Ensure all required fields are filled before saving.</p>
+                    <p className="text-sm text-muted-foreground">{t('warning')}</p>
                     <div className="flex gap-3">
-                        <Button type="button" variant="ghost" onClick={() => router.back()} disabled={isLoading}>Cancel</Button>
+                        <Button type="button" variant="ghost" onClick={() => router.back()} disabled={isLoading}>{t('cancel')}</Button>
                         <Button type="submit" disabled={isLoading} className="h-11 px-10 font-semibold shadow-xl shadow-primary/20">
-                            {isLoading ? "Saving..." : (isEdit ? "Update Employee" : "Create Employee")}
+                            {isLoading ? t('saving') : (isEdit ? t('update') : t('create'))}
                         </Button>
                     </div>
                 </div>

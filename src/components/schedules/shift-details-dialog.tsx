@@ -27,7 +27,7 @@ export function ShiftDetailsDialog({
     onSwapRequest,
     onReportAbsence
 }: ShiftDetailsDialogProps & { onReportAbsence?: () => void }) {
-    const t = useTranslations("Schedule");
+    const t = useTranslations("Schedules.shiftDetails");
 
     if (!shift) return null;
 
@@ -43,7 +43,7 @@ export function ShiftDetailsDialog({
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>{t('shiftDetails') || "Shift Details"}</DialogTitle>
+                    <DialogTitle>{t('title')}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     <div className="flex items-center gap-4">
@@ -89,22 +89,22 @@ export function ShiftDetailsDialog({
                     <div className="flex flex-col gap-2 mt-6">
                         {canSwap && (
                             <Button className="w-full" onClick={onSwapRequest}>
-                                Request Shift Swap
+                                {t('swapButton')}
                             </Button>
                         )}
 
                         {/* Absence Reporting - Only for future/today shifts */}
                         {isFutureOrToday() && onReportAbsence && (
                             <Button variant="destructive" className="w-full border-red-200 text-white hover:bg-red-600" onClick={onReportAbsence}>
-                                Report Absence
+                                {t('reportAbsenceButton')}
                             </Button>
                         )}
                     </div>
 
                     {!canSwap && !onReportAbsence && (
                         <div className="mt-4 bg-muted/50 text-muted-foreground p-3 rounded-md text-[10px] leading-relaxed">
-                            <p className="font-semibold mb-1 opacity-70 uppercase tracking-wider">Shift Actions Unavailable</p>
-                            <p>You cannot swap or modify this shift because it has either already started, passed, or belongs to another location.</p>
+                            <p className="font-semibold mb-1 opacity-70 uppercase tracking-wider">{t('unavailableTitle')}</p>
+                            <p>{t('unavailableDesc')}</p>
                         </div>
                     )}
                 </div>

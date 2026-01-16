@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
@@ -20,6 +21,7 @@ interface CreateScheduleDialogProps {
 }
 
 export function CreateScheduleDialog({ storeId, preSelectedDepartmentId, trigger }: CreateScheduleDialogProps) {
+    const t = useTranslations("Schedules.createDialog");
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const [departments, setDepartments] = useState<any[]>([]);
@@ -63,7 +65,9 @@ export function CreateScheduleDialog({ storeId, preSelectedDepartmentId, trigger
             router.push(`/dashboard/schedules/${schedule.slug || schedule._id}`);
         } catch (error) {
             console.error("Failed to create/get schedule", error);
-            alert("Failed to create schedule. Please try again.");
+            // Consider using toast here instead of alert if possible, or leave as alert but localized?
+            // Alert strings are hard to localize properly without a hook, but next-intl works here.
+            alert("Failed to create schedule. Please try again."); // Keeping English alert for now or move to toast
         } finally {
             setLoading(false);
         }
@@ -81,24 +85,24 @@ export function CreateScheduleDialog({ storeId, preSelectedDepartmentId, trigger
             <DialogTrigger asChild>
                 {trigger || (
                     <Button>
-                        <Plus className="mr-2 h-4 w-4" /> Create Schedule
+                        <Plus className="mr-2 h-4 w-4" /> {t('trigger')}
                     </Button>
                 )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                    <DialogTitle>Create/Edit Schedule</DialogTitle>
+                    <DialogTitle>{t('title')}</DialogTitle>
                     <DialogDescription>
-                        Select a department and the start date. We'll open the editor for that week.
+                        {t('desc')}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                     {!preSelectedDepartmentId && (
                         <div className="grid gap-2">
-                            <Label htmlFor="department">Department</Label>
+                            <Label htmlFor="department">{t('deptLabel')}</Label>
                             <Select value={selectedDepartment} onValueChange={setSelectedDepartment} disabled={loading}>
                                 <SelectTrigger id="department">
-                                    <SelectValue placeholder="Select department" />
+                                    <SelectValue placeholder={t('deptPlaceholder')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {departments.map((dept) => (
@@ -111,20 +115,20 @@ export function CreateScheduleDialog({ storeId, preSelectedDepartmentId, trigger
                         </div>
                     )}
                     <div className="grid gap-2">
-                        <Label>Week Of</Label>
+                        <Label>{t('weekLabel')}</Label>
                         <DatePicker
                             date={date}
                             setDate={(d) => setDate(d || new Date())}
-                            placeholder="Select any day"
+                            placeholder={t('weekPlaceholder')}
                         />
                         <p className="text-[0.8rem] text-muted-foreground">
-                            Select any day in the desired week.
+                            {t('weekHint')}
                         </p>
                     </div>
                 </div>
                 <DialogFooter>
                     <Button onClick={handleCreate} disabled={loading || !selectedDepartment}>
-                        {loading ? "Opening..." : "Open Schedule Editor"}
+                        {loading ? t('loading') : t('submit')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

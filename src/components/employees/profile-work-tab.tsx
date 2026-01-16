@@ -17,6 +17,8 @@ import { cn } from "@/lib/utils";
 import { getEmployeeWorkStatistics } from "@/lib/actions/employee.actions";
 import { WorkStatisticsCard } from "@/components/statistics/work-statistics-card";
 import { DatePickerWithRange } from "@/components/statistics/date-range-picker";
+import { useTranslations, useLocale } from "next-intl";
+import { ptBR, enUS } from "date-fns/locale";
 
 interface ProfileWorkTabProps {
     employee: any;
@@ -24,6 +26,9 @@ interface ProfileWorkTabProps {
 }
 
 export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkTabProps) {
+    const t = useTranslations("Profile.work");
+    const locale = useLocale();
+    const dateLocale = locale === 'pt' ? ptBR : enUS;
     const [stats, setStats] = useState<any>({ day: 0, week: 0, month: 0, year: 0 });
     const [history, setHistory] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -136,17 +141,17 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
 
             {/* 1. Stats Overview - Sleek Dashboard Look */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatsCard title="Today" value={stats.day} unit="h" icon={Clock} color="text-emerald-500" bg="bg-emerald-500/10" />
-                <StatsCard title="This Week" value={stats.week} unit="h" icon={CalendarIcon} color="text-blue-500" bg="bg-blue-500/10" />
-                <StatsCard title="This Month" value={stats.month} unit="h" icon={CalendarIcon} color="text-purple-500" bg="bg-purple-500/10" />
-                <StatsCard title="This Year" value={stats.year} unit="h" icon={CalendarIcon} color="text-amber-500" bg="bg-amber-500/10" />
+                <StatsCard title={t('today')} value={stats.day} unit="h" icon={Clock} color="text-emerald-500" bg="bg-emerald-500/10" />
+                <StatsCard title={t('thisWeek')} value={stats.week} unit="h" icon={CalendarIcon} color="text-blue-500" bg="bg-blue-500/10" />
+                <StatsCard title={t('thisMonth')} value={stats.month} unit="h" icon={CalendarIcon} color="text-purple-500" bg="bg-purple-500/10" />
+                <StatsCard title={t('thisYear')} value={stats.year} unit="h" icon={CalendarIcon} color="text-amber-500" bg="bg-amber-500/10" />
             </div>
 
             {/* Detailed Statistics Card */}
             {detailedStats && (
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold tracking-tight">Period Analysis</h3>
+                        <h3 className="text-lg font-semibold tracking-tight">{t('periodAnalysis')}</h3>
                         <div className="w-auto">
                             <DatePickerWithRange date={calcRange} setDate={setCalcRange} />
                         </div>
@@ -166,21 +171,21 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                                     <div className="p-2 bg-primary/10 rounded-md text-primary">
                                         <Calculator className="w-4 h-4" />
                                     </div>
-                                    Billable Calculator
+                                    {t('billableCalculator')}
                                 </CardTitle>
-                                <CardDescription>Estimate earnings for a specific period</CardDescription>
+                                <CardDescription>{t('billableDesc')}</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6 pt-4">
                                 <div className="space-y-5">
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Period</Label>
+                                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('period')}</Label>
                                         <div className="text-sm text-muted-foreground px-3 py-2 border rounded-md bg-muted/50 font-medium">
-                                            See Period Analysis
+                                            {t('seeAnalysis')}
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Hourly Rate</Label>
+                                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t('hourlyRate')}</Label>
                                         <div className="relative">
                                             <div className="absolute left-3 top-2.5 text-muted-foreground font-medium">
                                                 {employee.country === "US" ? "$" : "€"}
@@ -196,18 +201,18 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                                     </div>
 
                                     <Button onClick={handleCalculate} className="w-full shadow-lg shadow-primary/20 transition-all hover:scale-[1.02]">
-                                        Calculate Total
+                                        {t('calculate')}
                                     </Button>
                                 </div>
 
                                 <div className="bg-muted/30 rounded-xl p-5 border border-border/50 space-y-4 backdrop-blur-sm">
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground font-medium">Total Hours</span>
+                                        <span className="text-muted-foreground font-medium">{t('totalHours')}</span>
                                         <span className="font-mono font-bold">{calculatedHours.toFixed(2)}h</span>
                                     </div>
                                     <Separator className="bg-border/60" />
                                     <div className="flex justify-between items-end">
-                                        <span className="font-semibold text-muted-foreground pb-1">Total Pay</span>
+                                        <span className="font-semibold text-muted-foreground pb-1">{t('totalPay')}</span>
                                         <span className="text-3xl font-bold text-primary tracking-tight leading-none">
                                             {new Intl.NumberFormat(employee.country === 'US' ? 'en-US' : 'de-DE', {
                                                 style: 'currency',
@@ -227,7 +232,7 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                         <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/40">
                             <div>
                                 <CardTitle className="text-lg font-medium flex items-center gap-3">
-                                    Work Activity
+                                    {t('workActivity')}
                                     <div className="flex p-0.5 bg-muted rounded-lg border border-border">
                                         <Button
                                             variant={viewMode === 'week' ? 'secondary' : 'ghost'}
@@ -235,7 +240,7 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                                             className="h-6 text-xs px-2"
                                             onClick={() => setViewMode('week')}
                                         >
-                                            Weekly
+                                            {t('weekly')}
                                         </Button>
                                         <Button
                                             variant={viewMode === 'range' ? 'secondary' : 'ghost'}
@@ -243,14 +248,14 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                                             className="h-6 text-xs px-2"
                                             onClick={() => setViewMode('range')}
                                         >
-                                            Range
+                                            {t('range')}
                                         </Button>
                                     </div>
                                 </CardTitle>
                                 <CardDescription>
                                     {viewMode === 'week'
-                                        ? `Weekly timeline: ${weeklyTotal.toFixed(1)}h total`
-                                        : `History range: ${rangeTotal.toFixed(1)}h total`}
+                                        ? t('weeklyTimeline', { hours: weeklyTotal.toFixed(1) })
+                                        : t('historyRange', { hours: rangeTotal.toFixed(1) })}
                                 </CardDescription>
                             </div>
 
@@ -260,7 +265,7 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                                         <ChevronLeft className="h-4 w-4" />
                                     </Button>
                                     <div className="px-3 text-sm font-medium w-36 text-center cursor-pointer hover:text-primary transition-colors select-none" onClick={handleResetWeek}>
-                                        {format(startOfCurrentWeek, "MMM dd")} - {format(addDays(startOfCurrentWeek, 6), "MM dd")}
+                                        {format(startOfCurrentWeek, "MMM dd", { locale: dateLocale })} - {format(addDays(startOfCurrentWeek, 6), "MM dd", { locale: dateLocale })}
                                     </div>
                                     <Button variant="ghost" size="icon" onClick={handleNextWeek} className="h-7 w-7 hover:bg-background rounded-md">
                                         <ChevronRight className="h-4 w-4" />
@@ -274,7 +279,7 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                         </CardHeader>
                         <CardContent className="pt-6">
                             {loading ? (
-                                <div className="h-64 flex items-center justify-center text-muted-foreground animate-pulse">Loading schedule...</div>
+                                <div className="h-64 flex items-center justify-center text-muted-foreground animate-pulse">{t('loading')}</div>
                             ) : (
                                 viewMode === 'week' ? (
                                     <div className="relative space-y-8 pl-2">
@@ -291,7 +296,7 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                                                     {/* Date Column */}
                                                     <div className="flex flex-row md:flex-col items-center md:items-center gap-3 md:gap-1 pt-2 md:pt-0">
                                                         <div className={cn("text-xs font-bold uppercase tracking-wider", isToday ? "text-primary" : "text-muted-foreground", !isToday && dayShifts.length > 0 && "text-foreground")}>
-                                                            {format(dayDate, "EEE")}
+                                                            {format(dayDate, "EEE", { locale: dateLocale })}
                                                         </div>
                                                         <div className={cn(
                                                             "text-xl md:text-2xl font-bold flex items-center justify-center w-10 h-10 rounded-full transition-all",
@@ -312,7 +317,7 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                                                         ) : (
                                                             <div className="h-full flex items-center">
                                                                 <div className="h-px w-8 bg-border/60 mr-3 hidden md:block"></div>
-                                                                <span className="text-muted-foreground/30 text-xs italic font-medium">off duty</span>
+                                                                <span className="text-muted-foreground/30 text-xs italic font-medium">{t('offDuty')}</span>
                                                             </div>
                                                         )}
                                                     </div>
@@ -327,7 +332,7 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                                                 {rangeShifts.map((shift, idx) => (
                                                     <div key={idx} className="flex gap-4 items-start">
                                                         <div className="w-24 pt-3 text-right text-xs text-muted-foreground font-medium shrink-0">
-                                                            {format(new Date(shift.date), "EEE, MMM d")}
+                                                            {format(new Date(shift.date), "EEE, MMM d", { locale: dateLocale })}
                                                         </div>
                                                         <div className="flex-1">
                                                             <ShiftCard shift={shift} employee={employee} showStoreAlways />
@@ -337,7 +342,7 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
                                             </div>
                                         ) : (
                                             <div className="py-12 text-center text-muted-foreground border border-dashed rounded-xl">
-                                                No shifts found in selected range.
+                                                {t('noShifts')}
                                             </div>
                                         )}
                                     </div>
@@ -354,6 +359,7 @@ export function ProfileWorkTab({ employee, currentUserRoles = [] }: ProfileWorkT
 function ShiftCard({ shift, employee, showStoreAlways }: any) {
     const isBorrowed = shift.storeName && employee.storeId?.name && shift.storeName !== employee.storeId.name;
     const isExtra = shift.type === 'extra';
+    const t = useTranslations("Profile.work");
 
     return (
         <div className={cn(
@@ -379,8 +385,8 @@ function ShiftCard({ shift, employee, showStoreAlways }: any) {
                         <span className={cn("font-semibold text-sm", isExtra ? "text-amber-700 dark:text-amber-500" : "text-foreground")}>
                             {shift.shiftName}
                         </span>
-                        {isExtra && <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-amber-500/30 text-amber-600 bg-amber-500/5">OT</Badge>}
-                        {isBorrowed && <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-blue-500/30 text-blue-600 bg-blue-500/5">Borrowed</Badge>}
+                        {isExtra && <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-amber-500/30 text-amber-600 bg-amber-500/5">{t('ot')}</Badge>}
+                        {isBorrowed && <Badge variant="outline" className="text-[10px] h-4 px-1.5 border-blue-500/30 text-blue-600 bg-blue-500/5">{t('borrowed')}</Badge>}
                     </div>
 
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground/80">

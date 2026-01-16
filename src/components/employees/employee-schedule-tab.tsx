@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useTranslations, useLocale } from "next-intl";
 import { format, addDays, startOfWeek, addWeeks, subWeeks, endOfWeek } from "date-fns";
+import { enUS, ptBR } from "date-fns/locale";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +24,10 @@ interface EmployeeScheduleTabProps {
 }
 
 export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeScheduleTabProps) {
-    // const { data: session } = useSession(); // Removed to fix provider issue
+    const t = useTranslations("EmployeeSchedule");
+    const locale = useLocale();
+    const dateLocale = locale === 'pt' ? ptBR : enUS;
+
     const [currentDate, setCurrentDate] = useState(new Date());
     const [scheduleData, setScheduleData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -86,12 +91,12 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                     )}
                     <div className="flex-1 space-y-1">
                         <p className="font-bold text-sm">
-                            {scheduleData.isNew ? "New Schedule Published" : "Schedule Updated"}
+                            {scheduleData.isNew ? t('newSchedule') : t('updatedSchedule')}
                         </p>
                         <div className="text-xs opacity-90">
                             {scheduleData.isNew
-                                ? "The schedule for this week has just been published."
-                                : "The following changes were made recently:"
+                                ? t('newScheduleDesc')
+                                : t('updatedScheduleDesc')
                             }
                         </div>
                         {scheduleData.isUpdated && scheduleData.lastChanges && scheduleData.lastChanges.length > 0 && (
@@ -108,8 +113,8 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
             <Card className="bg-card border-border">
                 <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 pb-2">
                     <div>
-                        <CardTitle className="text-lg">Weekly Schedule</CardTitle>
-                        <p className="text-sm text-muted-foreground">View working hours and shifts</p>
+                        <CardTitle className="text-lg">{t('title')}</CardTitle>
+                        <p className="text-sm text-muted-foreground">{t('subtitle')}</p>
                     </div>
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                         {scheduleData?.primaryScheduleSlug && (
@@ -121,7 +126,7 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                             >
                                 <Link href={`/dashboard/schedules/${scheduleData.primaryScheduleSlug}`}>
                                     <Calendar className="h-4 w-4 mr-2" />
-                                    View Full Schedule
+                                    {t('viewFull')}
                                 </Link>
                             </Button>
                         )}
@@ -129,8 +134,8 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                             <Button variant="ghost" size="icon" onClick={handlePrevWeek} className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0">
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <span className="text-sm font-medium flex-1 sm:w-48 text-center truncate px-2">
-                                {format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d, yyyy')}
+                            <span className="text-sm font-medium flex-1 sm:w-48 text-center truncate px-2 capitalize">
+                                {format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d', { locale: dateLocale })} - {format(endOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d, yyyy', { locale: dateLocale })}
                             </span>
                             <Button variant="ghost" size="icon" onClick={handleNextWeek} className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0">
                                 <ChevronRight className="h-4 w-4" />
@@ -157,8 +162,8 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                         <ClockIcon className="h-5 w-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Total Hours</p>
-                                        <p className="text-2xl font-bold">{(totalMinutes / 60).toFixed(1)}h</p>
+                                        <p className="text-sm text-muted-foreground">{t('totalHours')}</p>
+                                        <p className="text-2xl font-bold">{(totalMinutes / 60).toFixed(1)}{t('stats.hours')}</p>
                                     </div>
                                 </div>
                                 <div className="bg-muted/50 p-4 rounded-lg border border-border flex items-center gap-4">
@@ -166,7 +171,7 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                         <Calculator className="h-5 w-5" />
                                     </div>
                                     <div>
-                                        <p className="text-sm text-muted-foreground">Total Shifts</p>
+                                        <p className="text-sm text-muted-foreground">{t('totalShifts')}</p>
                                         <p className="text-2xl font-bold">{totalShifts}</p>
                                     </div>
                                 </div>
@@ -184,22 +189,22 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                         <div key={idx} className={`p-4 rounded-lg border ${isToday ? 'border-primary/50 bg-primary/5' : 'border-border bg-muted/30'} flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors`}>
                                             <div className="flex items-center gap-4 w-40 shrink-0">
                                                 <div className={`text-center p-2 rounded w-14 ${isToday ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
-                                                    <div className="text-xs font-bold uppercase">{format(date, 'MMM')}</div>
+                                                    <div className="text-xs font-bold uppercase">{format(date, 'MMM', { locale: dateLocale })}</div>
                                                     <div className="text-lg font-bold">{format(date, 'd')}</div>
                                                 </div>
                                                 <div>
-                                                    <div className="flex items-center gap-2 font-semibold">
-                                                        {format(date, 'EEEE')}
+                                                    <div className="flex items-center gap-2 font-semibold capitalize">
+                                                        {format(date, 'EEEE', { locale: dateLocale })}
                                                         {day.isBirthday && <span title="Birthday!"><Cake className="h-4 w-4 text-pink-500 animate-pulse" /></span>}
                                                     </div>
-                                                    {isToday && <Badge variant="secondary" className="text-[10px] h-5">Today</Badge>}
+                                                    {isToday && <Badge variant="secondary" className="text-[10px] h-5">{t('today')}</Badge>}
                                                 </div>
                                             </div>
 
                                             <div className="flex-1">
                                                 {isHoliday ? (
                                                     <div className="flex items-center gap-2 text-destructive bg-destructive/10 p-2 rounded w-fit">
-                                                        <span className="font-bold text-xs uppercase">Closed</span>
+                                                        <span className="font-bold text-xs uppercase">{t('closed')}</span>
                                                         <span className="text-sm">{day.holidayName}</span>
                                                     </div>
                                                 ) : hasShifts ? (
@@ -234,9 +239,9 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                                                         <div className="space-y-1">
                                                                             <div className="flex items-center gap-2">
                                                                                 {isAbsent ? (
-                                                                                    <Badge variant="destructive" className="text-[10px] h-5 uppercase font-bold tracking-wider">Absent</Badge>
+                                                                                    <Badge variant="destructive" className="text-[10px] h-5 uppercase font-bold tracking-wider">{t('absent')}</Badge>
                                                                                 ) : isVacation ? (
-                                                                                    <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] h-5 uppercase font-bold tracking-wider">Vacation</Badge>
+                                                                                    <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] h-5 uppercase font-bold tracking-wider">{t('vacation')}</Badge>
                                                                                 ) : (
                                                                                     <span className="text-sm font-bold font-mono text-foreground">{shift.startTime} - {shift.endTime}</span>
                                                                                 )}
@@ -248,7 +253,7 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                                                                 ) : isVacation ? (
                                                                                     <span className="text-emerald-600 font-bold flex items-center gap-1.5 animate-pulse">
                                                                                         <PlaneIcon className="w-3 h-3" />
-                                                                                        Happy Vacation! 🌴
+                                                                                        {t('happyVacation')}
                                                                                     </span>
                                                                                 ) : (
                                                                                     <>
@@ -287,14 +292,14 @@ export function EmployeeScheduleTab({ employeeId, currentUser }: EmployeeSchedul
                                                                 <div className="p-1.5 bg-muted rounded-full">
                                                                     <ClockIcon className="h-4 w-4 opacity-50" />
                                                                 </div>
-                                                                <span className="font-medium">No Shift Today</span>
+                                                                <span className="font-medium">{t('noShift')}</span>
                                                             </>
                                                         ) : (
                                                             <>
                                                                 <div className="p-1.5 bg-muted rounded-full">
                                                                     <Calendar className="h-4 w-4 opacity-50" />
                                                                 </div>
-                                                                <span className="font-medium">Day Off</span>
+                                                                <span className="font-medium">{t('dayOff')}</span>
                                                             </>
                                                         )}
                                                     </div>

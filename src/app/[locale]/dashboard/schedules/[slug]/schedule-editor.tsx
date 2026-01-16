@@ -58,7 +58,7 @@ import { useEffect } from "react";
 
 export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [], userStoreId, userDepartmentId }: { initialSchedule: any, userId: string, canEdit: boolean, userRoles: string[], userStoreId?: string, userDepartmentId?: string }) {
     const router = useRouter();
-    const t = useTranslations("ScheduleEditor");
+    const t = useTranslations("Schedules.editor");
     const tc = useTranslations("Common");
     const locale = useLocale();
     const [schedule, setSchedule] = useState(initialSchedule);
@@ -389,23 +389,18 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                             });
 
                             if (relevantConflicts.length > 0) {
-                                const msg = relevantConflicts.map((c: any) =>
-                                    `${c.employeeIds[0]} at ${c.storeName} (${c.startTime}-${c.endTime})`
-                                ).join(', ');
-                                // We need names, but conflict returned filtered ID or populated obj?
-                                // action returns: employeeIds: affectedEmployees (which are objects if populated in shift, or strings)
-                                // checking action: affectedEmployees = shift.employees.filter... 
-                                // schedule.find... populate('days.shifts.employees') -> yes they are full objects
-
                                 const names = relevantConflicts.map((c: any) => {
-                                    const emp = c.employeeIds[0]; // The conflict logic pushed the matching employee object(s)
+                                    const emp = c.employeeIds[0];
                                     return `${emp.firstName} ${emp.lastName} is at ${c.storeName}`;
                                 }).join(' & ');
 
                                 toast.error(t('crossStoreConflict', { names }), { duration: 5000 });
                             }
+
+
                         }
-                    }).catch(err => console.error("Conflict check failed", err));
+                    }
+                    ).catch(err => console.error("Conflict check failed", err));
                 }
                 // ----------------------------------
 
@@ -1690,7 +1685,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                             <div className="h-8 w-8 rounded-full bg-amber-500/20 flex items-center justify-center">
                                                 <AlertTriangle className="h-4 w-4" />
                                             </div>
-                                            Unassigned Shifts
+                                            {t('unassignedShifts')}
                                         </td>
                                         {weekDays.map((day: any, i: number) => {
                                             const unassignedShifts = day.shifts.filter((s: any) => s.employees.length === 0);
@@ -1738,8 +1733,8 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                     <tr>
                                         <td colSpan={9} className="p-12 text-center text-muted-foreground">
                                             <div className="flex flex-col items-center gap-2">
-                                                <p className="text-lg font-medium">No Employees Scheduled</p>
-                                                <p className="text-sm">Click the <Plus className="w-4 h-4 inline" /> icon on any day to start adding shifts!</p>
+                                                <p className="text-lg font-medium">{t('noEmployees')}</p>
+                                                <p className="text-sm">{t('startAdding') /* Note: Icon support in translation is tricky, assuming text only or separating */}</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -1751,7 +1746,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                             <tbody className={`divide-y divide-border ${viewMode === 'shifts' ? '' : 'hidden'}`}>
                                 {uniqueShiftTimes.length === 0 ? (
                                     <tr>
-                                        <td colSpan={9} className="p-12 text-center text-muted-foreground italic">No shifts found.</td>
+                                        <td colSpan={9} className="p-12 text-center text-muted-foreground italic">{t('noShiftsFound')}</td>
                                     </tr>
                                 ) : (
                                     uniqueShiftTimes.map((timeKey) => {
@@ -1821,7 +1816,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                                                                                 handleAddClick(day.date);
                                                                             }}
                                                                         >
-                                                                            <Plus className="h-3 w-3 mr-1" /> Add
+                                                                            <Plus className="h-3 w-3 mr-1" /> {t('add')}
                                                                         </Button>
                                                                     )}
                                                                 </div>
@@ -1907,7 +1902,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
             <AlertDialog open={validationAlertOpen} onOpenChange={setValidationAlertOpen}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Attention Needed</AlertDialogTitle>
+                        <AlertDialogTitle>{t('attentionNeeded')}</AlertDialogTitle>
                         <AlertDialogDescription>
                             {validationMessage}
                         </AlertDialogDescription>
@@ -2016,7 +2011,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
             <Dialog open={showLogs} onOpenChange={setShowLogs}>
                 <DialogContent className="max-w-2xl bg-card border-border">
                     <DialogHeader>
-                        <DialogTitle>Schedule Changes History</DialogTitle>
+                        <DialogTitle>{t('changesHistory')}</DialogTitle>
                     </DialogHeader>
                     <ScrollArea className="h-[400px] border rounded-md p-4">
                         {logsLoading ? (
@@ -2025,7 +2020,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                             </div>
                         ) : logs.length === 0 ? (
                             <div className="text-center text-muted-foreground py-8">
-                                No recorded changes for this schedule.
+                                {t('noChanges')}
                             </div>
                         ) : (
                             <div className="space-y-4">
@@ -2071,9 +2066,9 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
             <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
                 <AlertDialogContent className="bg-popover border-border text-popover-foreground">
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>{t('confirmDeleteScheduleTitle')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the schedule for Week {schedule.weekNumber}, {schedule.year}. This action cannot be undone.
+                            {t('confirmDeleteScheduleDesc', { week: schedule.weekNumber, year: schedule.year })}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -2087,7 +2082,7 @@ export function ScheduleEditor({ initialSchedule, userId, canEdit, userRoles = [
                             disabled={actionLoading}
                         >
                             {actionLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
-                            Confirm Delete
+                            {t('confirmDelete')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

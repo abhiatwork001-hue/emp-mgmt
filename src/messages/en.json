@@ -74,6 +74,7 @@
         "employee": "Employee",
         "selectStore": "Select Store",
         "selectEmployee": "Select Employee",
+        "selectDate": "Select date",
         "description": "Description",
         "general": "General",
         "level": "Level",
@@ -777,6 +778,22 @@
         "noHistory": "No absence history found.",
         "justified": "Justified",
         "unjustified": "Unjustified",
+        "other": "Other",
+        "affectedShift": "Affected Shift (Optional)",
+        "foundShifts": "Found {count} shift(s)",
+        "noShiftsFound": "No shifts found for this date. A standard absence will be logged.",
+        "selectShift": "Select a shift to request coverage...",
+        "coverageNote": "Selecting a shift will trigger a coverage request for approval.",
+        "standardNote": "Standard reporting logs the absence without triggering replacement Logic.",
+        "attachmentsProof": "Attachments / Proof (Optional)",
+        "uploadFile": "Upload File",
+        "fileLimit": "PDF, IMG up to 4MB",
+        "fileUploaded": "File uploaded",
+        "requestCoverage": "Request Coverage",
+        "coverageRequested": "Absence coverage requested. HR notified.",
+        "absenceReported": "Absence reported successfully.",
+        "failedSubmit": "Failed to submit report.",
+        "dateLimitError": "Cannot report absence for a date older than 7 days.",
         "approveAbsence": "Approve Absence",
         "confirmDetails": "Confirm Details",
         "sick": "Sick Leave",
@@ -854,7 +871,45 @@
         "currentRole": "Current Role",
         "noHistory": "No position history available",
         "noHistoryDescription": "Career changes will appear here.",
-        "present": "Present"
+        "present": "Present",
+        "emergencyContact": "Emergency Contact",
+        "contactName": "Contact Name",
+        "relationship": "Relationship",
+        "placeholders": {
+            "phone": "+1 234 567 890",
+            "address": "123 Main St, City",
+            "bankName": "Bank Name Example",
+            "iban": "US12 3456 7890",
+            "nif": "123456789"
+        },
+        "changePhoto": "Change Photo",
+        "uploadPhoto": "Upload Photo",
+        "recommendedImage": "Recommended: Square image, max 2MB.",
+        "work": {
+            "today": "Today",
+            "thisWeek": "This Week",
+            "thisMonth": "This Month",
+            "thisYear": "This Year",
+            "periodAnalysis": "Period Analysis",
+            "billableCalculator": "Billable Calculator",
+            "billableDesc": "Estimate earnings for a specific period",
+            "period": "Period",
+            "seeAnalysis": "See Period Analysis",
+            "hourlyRate": "Hourly Rate",
+            "calculate": "Calculate Total",
+            "totalHours": "Total Hours",
+            "totalPay": "Total Pay",
+            "workActivity": "Work Activity",
+            "weeklyTimeline": "Weekly timeline: {hours}h total",
+            "historyRange": "History range: {hours}h total",
+            "loading": "Loading schedule...",
+            "noShifts": "No shifts found in selected range.",
+            "offDuty": "off duty",
+            "weekly": "Weekly",
+            "range": "Range",
+            "borrowed": "Borrowed",
+            "ot": "OT"
+        }
     },
     "Recipes": {
         "title": "Recipes",
@@ -994,7 +1049,8 @@
         "syncing": "Syncing...",
         "noReviews": "No reviews yet.",
         "reviewsCount": "reviews",
-        "viewMaps": "View on Google Maps"
+        "viewMaps": "View on Google Maps",
+        "lastUpdated": "Last updated: {time}"
     },
     "ApiUsage": {
         "title": "System API Usage",
@@ -1082,6 +1138,8 @@
     },
     "Comparison": {
         "title": "Store Reputation Performance",
+        "reputationManagement": "Reputation Management",
+        "monitorReviews": "Monitor Google Reviews and compare store performance across the franchise.",
         "topRated": "Top Rated Stores",
         "mostReviewed": "Most Reviewed",
         "storeName": "Store Name",
@@ -1090,6 +1148,580 @@
         "trend": "Trend",
         "lastUpdated": "Last Updated",
         "never": "Never",
-        "loading": "Loading reputation data..."
+        "loading": "Loading reputation data...",
+        "historicalComparison": "Historical Comparison",
+        "storeA": "Store A",
+        "storeB": "Store B",
+        "avgRating": "AVG RATING",
+        "newReviews": "NEW REVIEWS",
+        "comments": "COMMENTS",
+        "detailedAnalysis": "Detailed Monthly Analysis",
+        "toggleStores": "Toggle stores to overlay on the trend graph below",
+        "finalizeData": "Finalize Current Month Data",
+        "processing": "Processing...",
+        "comparativeTrends": "Comparative Monthly Trends ({year})",
+        "overlaidPerformance": "Overlaid performance of selected stores",
+        "avgRatingTitle": "AVG Rating",
+        "commentsTitle": "Comments",
+        "selectStores": "Select stores above to see side-by-side stats"
+    },
+    "ActivityLog": {
+        "title": "Activity Log",
+        "viewAll": "View All",
+        "noActivity": "No recent activity.",
+        "noMatch": "No activity logs found matching the criteria.",
+        "searchPlaceholder": "Search actor or details...",
+        "actionType": "Action Type",
+        "allActions": "All Actions",
+        "store": "Store",
+        "allStores": "All Stores",
+        "pickDate": "Pick a date range",
+        "table": {
+            "actor": "Actor (Who)",
+            "action": "Action (What)",
+            "where": "Where (Store)",
+            "details": "Details",
+            "when": "When"
+        },
+        "actions": {
+            "create": "Create",
+            "update": "Update",
+            "delete": "Delete",
+            "approve": "Approve"
+        },
+        "system": "System",
+        "global": "Global",
+        "globalSystem": "Global / System"
+    },
+    "ScheduleAlert": {
+        "title": "Missing Schedules",
+        "description": "The following {type} have not published next week's schedule. Deadline has passed.",
+        "overdue": "Overdue",
+        "close": "Close",
+        "alert": "Alert {type}",
+        "remindersSent": "Reminders Sent",
+        "success": "Sent reminders to {count} managers.",
+        "failure": "Failed to send reminders.",
+        "sending": "Sending...",
+        "storeManagers": "Store Managers",
+        "departmentHeads": "Department Heads",
+        "stores": "stores",
+        "departments": "departments",
+        "errorGeneric": "An error occurred."
+    },
+    "Analytics": {
+        "avgRating": "Avg Rating",
+        "lastMonth": "Last Month",
+        "reviewTrend": "Review Trend",
+        "new": "New",
+        "total": "Total",
+        "latestActivity": "Latest Activity",
+        "lastReview": "Last Review",
+        "na": "N/A",
+        "ratingHistory": "Rating History",
+        "performanceComparison": "Performance Comparison",
+        "averageRating": "Average Rating",
+        "thisMonth": "This Month",
+        "monthlyNewReviews": "Monthly New Reviews",
+        "insufficientData": "Insufficient data for comparison",
+        "monthlyHistory": "Monthly History",
+        "table": {
+            "month": "Month",
+            "rating": "Rating",
+            "new": "New",
+            "breakdown": "Breakdown"
+        }
+    },
+    "Vacation": {
+        "analytics": {
+            "kpi": {
+                "liability": "Total Liability",
+                "taken": "Total Taken",
+                "pending": "Pending Requests",
+                "active": "Active Staff",
+                "onVacation": "On Vacation",
+                "sub": {
+                    "liability": "Unused days (Allocation - Taken)",
+                    "taken": "Days consumed this year",
+                    "pending": "Awaiting manager approval",
+                    "active": "Employees currently working",
+                    "onVacation": "Employees away on leave"
+                }
+            },
+            "charts": {
+                "globalDepts": "Global Departments",
+                "globalDeptsDesc": "Vacation days taken by global role",
+                "unitPerformance": "Unit Performance",
+                "unitPerformanceDesc": "Top Stores: Taken vs Liability",
+                "monthlyTrends": "Monthly Trends",
+                "monthlyTrendsDesc": "Vacation days taken per month",
+                "unitsBreakdown": "Units Breakdown",
+                "unitsBreakdownDesc": "Usage, Liability & Availability per Unit"
+            },
+            "tabs": {
+                "hierarchical": "Stores & Depts",
+                "global": "Global Roles"
+            },
+            "labels": {
+                "approved": "Approved",
+                "requested": "Requested",
+                "taken": "Taken",
+                "liability": "Liability",
+                "owed": "Owed",
+                "active": "Active",
+                "away": "Away",
+                "onLeave": "On Leave",
+                "noData": "No data available"
+            }
+        },
+        "EmployeeSchedule": {
+            "title": "Weekly Schedule",
+            "subtitle": "View working hours and shifts",
+            "viewFull": "View Full Schedule",
+            "totalHours": "Total Hours",
+            "totalShifts": "Total Shifts",
+            "newSchedule": "New Schedule Published",
+            "newScheduleDesc": "The schedule for this week has just been published.",
+            "updatedSchedule": "Schedule Updated",
+            "updatedScheduleDesc": "The following changes were made recently:",
+            "today": "Today",
+            "closed": "Closed",
+            "noShift": "No Shift Today",
+            "dayOff": "Day Off",
+            "absent": "Absent",
+            "vacation": "Vacation",
+            "happyVacation": "Happy Vacation! 🌴",
+            "stats": {
+                "hours": "h",
+                "shifts": "Shifts"
+            }
+        },
+        "request": "Request Vacation",
+        "comments": "Comments (Optional)",
+        "reasonPlaceholder": "Reason (optional)...",
+        "submit": "Submit Request",
+        "selectRangeError": "Please select a date range (Start and End)",
+        "minNoticeError": "Vacation requests must be submitted at least 15 days in advance.",
+        "noWorkingDaysError": "Selected range has no working days.",
+        "insufficientDaysError": "Insufficient days. Request needs {days} working days.",
+        "submitSuccess": "Vacation request submitted",
+        "submitError": "Failed to submit request.",
+        "pickEndDate": "Pick end date"
+    },
+    "Credentials": {
+        "title": "Store Credentials",
+        "subtitle": "Securely manage shared logins for this store.",
+        "addNew": "Add New",
+        "table": {
+            "service": "Service / Title",
+            "type": "Type",
+            "username": "Username",
+            "password": "Password",
+            "lastUpdated": "Last Updated",
+            "actions": "Actions",
+            "empty": "No credentials stored yet.",
+            "types": {
+                "simple": "Name + Pass",
+                "standard": "Standard"
+            }
+        },
+        "actions": {
+            "reveal": "Password revealed",
+            "copy": "Copied to clipboard",
+            "edit": "Edit",
+            "denied": "Access Denied or Error"
+        },
+        "dialog": {
+            "addTitle": "Add Credential",
+            "editTitle": "Edit Credential",
+            "typeLabel": "Credential Type",
+            "standard": "Standard (Username + Password)",
+            "simple": "Simple (Name/Title + Password)",
+            "serviceLabel": "Service / Website Name",
+            "titleLabel": "Credential Title (e.g. WiFi)",
+            "servicePlaceholder": "e.g. UberEats",
+            "titlePlaceholder": "e.g. Staff WiFi",
+            "usernameLabel": "Username/Email",
+            "passwordLabel": "Password",
+            "notesLabel": "Notes (Optional)",
+            "changePasswordLabel": "Change Password (leave blank to keep current)",
+            "newPasswordPlaceholder": "New password...",
+            "save": "Save",
+            "update": "Update",
+            "created": "Credential created",
+            "updated": "Credential Updated"
+        }
+    },
+    "Stores": {
+        "list": {
+            "searchPlaceholder": "Search stores by name or address...",
+            "addStore": "Add Store",
+            "emptyTitleSearch": "No stores found",
+            "emptyDescSearch": "Try adjusting your search terms.",
+            "emptyTitle": "No stores",
+            "emptyDesc": "Get started by creating your first store.",
+            "noManager": "No Manager Assigned",
+            "active": "Active",
+            "inactive": "Inactive",
+            "noAddress": "No address provided",
+            "employees": "Employees",
+            "departments": "Departments",
+            "manager": "Manager",
+            "viewDetails": "View Details"
+        },
+        "form": {
+            "tabs": {
+                "general": "General",
+                "translations": "Translations",
+                "departments": "Departments"
+            },
+            "labels": {
+                "name": "Name",
+                "address": "Address",
+                "phone": "Phone (Optional)",
+                "email": "Email (Optional)",
+                "localizedName": "Localized Name",
+                "localizedAddress": "Localized Address"
+            },
+            "placeholders": {
+                "name": "e.g. Downtown Branch",
+                "address": "e.g. 123 Main St, Springfield",
+                "phone": "+1 234 567 890",
+                "email": "store@example.com",
+                "nameIn": "Name in {lang}...",
+                "addressIn": "Address in {lang}..."
+            },
+            "danger": {
+                "title": "Danger Zone",
+                "archiveTitle": "Archive this store",
+                "archiveDesc": "Archiving a store will hide it from the dashboard and prevent new data entry. Historical data will be preserved.",
+                "archiveButton": "Archive Store"
+            },
+            "departments": {
+                "title": "Store Departments",
+                "empty": "No departments found for this store."
+            },
+            "dialogs": {
+                "removeDeptTitle": "Remove Department: {name}",
+                "removeDeptDesc": "Are you sure you want to remove this department? This action cannot be undone.",
+                "impactWarning": "Impact Warning:",
+                "impactEmployees": "{count} employees will be unassigned.",
+                "impactCoverage": "{count} pending coverage requests will be cancelled.",
+                "impactHistory": "Historical data (vacations, absences, schedules) will be preserved.",
+                "removeButton": "Remove Department",
+                "removing": "Removing...",
+                "archiveTitle": "Archive Store",
+                "archiveDesc": "Are you sure you want to archive this store? This will hide it from the dashboard and disable access for store managers. This action can be reversed by an administrator.",
+                "archiveButton": "Archive Store",
+                "archiving": "Archiving..."
+            },
+            "toasts": {
+                "updated": "Store updated successfully",
+                "created": "Store created successfully",
+                "error": "Something went wrong",
+                "archived": "Store archived successfully",
+                "archiveError": "Failed to archive store",
+                "removeDeptSuccess": "Department removed",
+                "removeDeptError": "Failed to remove department",
+                "genericError": "An error occurred"
+            }
+        },
+        "suppliers": {
+            "title": "Supplier Preferences",
+            "desc": "Customize when you receive alerts for each supplier",
+            "table": {
+                "supplier": "Supplier",
+                "deliveryDays": "Delivery Days",
+                "alertOffset": "Alert Offset (Days)",
+                "preferredDay": "Preferred Order Day",
+                "alerts": "Alerts"
+            },
+            "daysBefore": "days before",
+            "default": "Default",
+            "toasts": {
+                "saved": "Preferences saved",
+                "saveError": "Failed to save preferences",
+                "orderDayUpdated": "Preferred order day updated",
+                "orderDayError": "Failed to update order day"
+            }
+        }
     }
+},
+"Schedules": {
+    "createDialog": {
+        "trigger": "Create Schedule",
+        "title": "Create/Edit Schedule",
+        "desc": "Select a department and the start date. We'll open the editor for that week.",
+        "deptLabel": "Department",
+        "deptPlaceholder": "Select department",
+        "weekLabel": "Week Of",
+        "weekPlaceholder": "Select any day",
+        "weekHint": "Select any day in the desired week.",
+        "submit": "Open Schedule Editor",
+        "loading": "Opening..."
+    },
+    "navigation": {
+        "loading": "Loading...",
+        "noStores": "No stores found. Please ask an administrator to set up stores.",
+        "departments": "Departments",
+        "noDepts": "No departments configured.",
+        "currentWeek": "Current Week",
+        "departmentsLabel": "Departments"
+    },
+    "shiftDialog": {
+        "titleAdd": "Create Shift",
+        "titleEdit": "Edit Shift",
+        "titleDate": "{type} for {date}",
+        "markDayOff": "Mark as Day Off",
+        "setWorkingShift": "Set Working Shift",
+        "step1": "1. Select Shift Details",
+        "step2": "2. Assign Employees ({selected} / {max})",
+        "step2NoMax": "2. Assign Employees ({selected})",
+        "step3": "3. Notes",
+        "tabs": {
+            "templates": "Templates",
+            "custom": "Custom Shift"
+        },
+        "labels": {
+            "templateName": "Template Name",
+            "break": "Break (min)",
+            "start": "Start",
+            "end": "End",
+            "maxStaff": "Max Staff Limit",
+            "color": "Color Code",
+            "name": "Name",
+            "requiredStaff": "Required Staff",
+            "saveTemplate": "Save as Department Template",
+            "extraOvertime": "Extra Overtime",
+            "notesPlaceholder": "Instructions..."
+        },
+        "templates": {
+            "edit": "Edit Template",
+            "new": "New Template",
+            "create": "Create Template",
+            "update": "Update Template",
+            "save": "Save Template",
+            "loading": "Loading templates...",
+            "max": "Max {count}"
+        },
+        "employeeFilter": {
+            "department": "Department",
+            "global": "Global / All",
+            "searchPlaceholder": "Search employees...",
+            "noEmployees": "No employees found in this view.",
+            "onLeave": "On Leave",
+            "scheduled": "Scheduled"
+        },
+        "alerts": {
+            "staffLimitTitle": "Staffing Limit Exceeded",
+            "staffLimitDesc": "You have selected {count} employees, but the limit for this shift is {limit}.",
+            "staffLimitProceed": "Do you want to proceed anyway?",
+            "staffLimitExceeded": "Staffing Limit Exceeded!",
+            "staffLimitAllowed": "Allowed: {limit}, Selected: {count}",
+            "deleteTemplateTitle": "Delete Template?",
+            "deleteTemplateDesc": "This will permanently remove this shift template.",
+            "deleteShiftTitle": "Are you absolutely sure?",
+            "deleteShiftDesc": "This action cannot be undone. This will permanently delete this shift from the schedule."
+        },
+        "actions": {
+            "proceed": "Proceed (Override)",
+            "cancel": "Cancel",
+            "delete": "Delete",
+            "changesSaved": "Changes saved",
+            "shiftCreated": "Shift created",
+            "removeShift": "Remove Shift",
+            "saveChanges": "Save Changes",
+            "createShift": "Create Shift"
+        }
+    },
+    "overtimeDialog": {
+        "title": "Request Overtime Confirmation",
+        "description": "Confirm extra hours worked for the shift on {date}.",
+        "shiftLabel": "Shift:",
+        "hoursLabel": "Extra Hours Worked",
+        "hoursPlaceholder": "e.g. 1.5",
+        "reasonLabel": "Reason / Details",
+        "reasonPlaceholder": "Why was overtime needed?",
+        "cancel": "Cancel",
+        "submit": "Send Request",
+        "requestSent": "Request Sent",
+        "requestSentDesc": "Your overtime request has been sent for approval.",
+        "errorTitle": "Error",
+        "errorDesc": "Failed to send request.",
+        "genericError": "Something went wrong."
+    },
+    "shiftDetails": {
+        "title": "Shift Details",
+        "swapButton": "Request Shift Swap",
+        "reportAbsenceButton": "Report Absence",
+        "unavailableTitle": "Shift Actions Unavailable",
+        "unavailableDesc": "You cannot swap or modify this shift because it has either already started, passed, or belongs to another location."
+    },
+    "swapDialog": {
+        "title": "Request Shift Swap",
+        "description": "Ask {name} to swap their shift with yours.",
+        "targetShiftLabel": "Target Shift (Theirs)",
+        "offerShiftLabel": "Offer Your Shift",
+        "loading": "Loading your shifts...",
+        "selectPlaceholder": "Select a shift to offer",
+        "noShifts": "You don't have any shifts on this day to offer.",
+        "cancel": "Cancel",
+        "submit": "Send Request",
+        "requestSent": "Request Sent",
+        "requestSentDesc": "Your swap request has been sent."
+    },
+    "viewScheduleButton": {
+        "text": "View Current Schedule",
+        "errorAccess": "Could not access schedule",
+        "errorNavigate": "Failed to navigate to schedule"
+    },
+    "editor": {
+        "scheduleUpdatedExternally": "Schedule updated externally",
+        "cover": "Cover",
+        "extra": "Extra",
+        "copyScheduleConfirm": "Copy Previous Week?",
+        "copyScheduleDescription": "This will overwrite the current schedule with shifts from the previous week. This cannot be undone.",
+        "deleteShift": "Delete Shift?",
+        "deleteShiftDescription": "Are you sure you want to delete this shift? This action cannot be undone.",
+        "publishScheduleDescription": "Are you sure you want to change the schedule status? Notifications may be sent to employees.",
+        "reject": "Reject Schedule",
+        "rejectReason": "Rejection Reason",
+        "rejectPlaceholder": "Please provide a reason...",
+        "overlapConflict": "Conflict: {name} is already scheduled at {start}-{end}",
+        "crossStoreConflict": "User is scheduled at another store: {names}",
+        "saveSuccess": "Schedule saved successfully",
+        "saveError": "Failed to save schedule",
+        "copyFailed": "Failed to copy schedule",
+        "completeScheduleMsg": "Schedule is incomplete. Please add shifts for: {days}",
+        "deleteSuccess": "Schedule deleted successfully",
+        "deleteError": "Failed to delete schedule",
+        "unassignedShifts": "Unassigned Shifts",
+        "noEmployees": "No Employees Scheduled",
+        "startAdding": "Click the + icon on any day to start adding shifts!",
+        "noShiftsFound": "No shifts found.",
+        "add": "Add",
+        "attentionNeeded": "Attention Needed",
+        "changesHistory": "Schedule Changes History",
+        "noChanges": "No recorded changes for this schedule.",
+        "confirmDeleteScheduleTitle": "Are you absolutely sure?",
+        "confirmDeleteScheduleDesc": "This will permanently delete the schedule for Week {week}, {year}. This action cannot be undone.",
+        "confirmDelete": "Confirm Delete",
+        "dailyTotal": "Daily Total",
+        "weeklyTotal": "Weekly Total",
+        "legend": {
+            "dayOff": "Day Off",
+            "vacation": "Vacation",
+            "holiday": "Holiday",
+            "sickLeave": "Sick Leave"
+        },
+        "viewModes": {
+            "employees": "Employees",
+            "shifts": "Shifts"
+        }
+    }
+},
+"Employees": {
+    "form": {
+        "personalInfo": "Personal Information",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email Address",
+        "phone": "Phone Number",
+        "nif": "NIF / Tax ID",
+        "dob": "Date of Birth",
+        "pickDate": "Pick a date",
+        "address": "Physical Address",
+        "uploadImage": "Upload / Drop Image",
+        "uploadPhoto": "Upload Photo",
+        "emergencyContact": "Emergency Contact",
+        "contactName": "Contact Name",
+        "relationship": "Relationship",
+        "contactPlaceholder": "e.g. Spouse, Parent",
+        "identificationDocuments": "Identification Documents",
+        "noDocuments": "No documents added yet.",
+        "addDocument": "Add Document",
+        "addAnotherDocument": "Add Another Document",
+        "docType": "Type",
+        "docNumber": "Number / ID",
+        "expiryDate": "Expiry Date",
+        "expiry": "Expiry",
+        "securityRoles": "Security & System Roles",
+        "adminOnly": "Admin Only",
+        "rolesDescription": "Assign high-level system permissions. Only Owner, SuperUser, or Tech can modify these.",
+        "employmentContract": "Employment & Contract",
+        "employmentType": "Employment Type",
+        "weeklyHours": "Weekly Hours",
+        "vacationEntitlement": "Vacation Entitlement",
+        "vacationEntitlementDesc": "Allows the employee to request paid leave.",
+        "standardWorkingDays": "Standard Working Days",
+        "vacationBalance": "Vacation Balance Management",
+        "overrideOnly": "Override Only",
+        "annualAllowance": "Annual Allowance (Current Year)",
+        "daysUnit": "DAYS",
+        "allowanceDesc": "Standard entitlement for the contract.",
+        "rollover": "Rollover (From Previous Year)",
+        "rolloverDesc": "Carry over from the last period.",
+        "usedDays": "Used Days (Correction)",
+        "usedDesc": "Used as manual correction only.",
+        "totalBalance": "Resulting Total Balance:",
+        "availableDays": "Available Days Remaining",
+        "warning": "Ensure all required fields are filled before saving.",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "update": "Update Employee",
+        "create": "Create Employee",
+        "successUpdate": "Employee updated successfully",
+        "successCreate": "Employee created successfully",
+        "errorSave": "Failed to save employee.",
+        "errorImage": "Error: {message}",
+        "imageUpdated": "Profile picture updated"
+    },
+    "list": {
+        "searchPlaceholder": "Search...",
+        "addEmployee": "Add Employees",
+        "filterByStore": "Filter by Store",
+        "allStores": "All Stores",
+        "filterByDept": "Filter by Dept",
+        "allDepts": "All Depts",
+        "filterByPosition": "Filter by Position",
+        "allPositions": "All Positions",
+        "clearFilters": "Clear All Filters",
+        "table": {
+            "employees": "Employees",
+            "status": "Status",
+            "positions": "Positions",
+            "stores": "Stores",
+            "departments": "Departments"
+        },
+        "status": {
+            "active": "Active",
+            "inactive": "Inactive",
+            "onVacation": "On Vacation",
+            "absent": "Absent"
+        },
+        "noResults": {
+            "title": "No matching employees",
+            "description": "Try adjusting your filters or searching for another name.",
+            "clear": "Clear all filters"
+        },
+        "pagination": {
+            "pageOf": "Page {current} of {total}",
+            "results": "{count} result{s} in registry"
+        },
+        "confirmReset": {
+            "message": "Are you sure you want to reset this employee's password? A new OTP will be sent to their email.",
+            "success": "Password reset confirmed and new OTP sent.",
+            "error": "Failed to confirm password reset."
+        }
+    },
+    "assignTask": {
+        "button": "Assign Task",
+        "individual": "👤 {name}"
+    },
+    "editDialog": {
+        "button": "Edit Profile",
+        "title": "Edit Employee Profile",
+        "description": "Update personal information and contract details."
+    }
+}
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Link } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 import { Search, Plus, MapPin, Phone, Users, Building2, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ interface Store {
 }
 
 export function StoreList({ initialStores, currentUserRoles = [] }: { initialStores: Store[], currentUserRoles?: string[] }) {
+    const t = useTranslations("Stores.list");
     const [searchTerm, setSearchTerm] = useState("");
 
 
@@ -49,7 +51,7 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                 <div className="relative w-full max-w-xl">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search stores by name or address..."
+                        placeholder={t('searchPlaceholder')}
                         className="pl-9"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
@@ -59,7 +61,7 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                     {currentUserRoles.some(role => ['owner', 'admin', 'tech'].includes(role)) && (
                         <Link href="/dashboard/stores/new">
                             <Button>
-                                <Plus className="mr-2 h-4 w-4" /> Add Store
+                                <Plus className="mr-2 h-4 w-4" /> {t('addStore')}
                             </Button>
                         </Link>
                     )}
@@ -70,10 +72,10 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                 {filteredStores.length === 0 && (
                     <div className="col-span-full">
                         <EmptyState
-                            title={searchTerm ? "No stores found" : "No stores"}
-                            description={searchTerm ? "Try adjusting your search terms." : "Get started by creating your first store."}
+                            title={searchTerm ? t('emptyTitleSearch') : t('emptyTitle')}
+                            description={searchTerm ? t('emptyDescSearch') : t('emptyDesc')}
                             icon={Building2}
-                            actionLabel={!searchTerm ? "Add Store" : undefined}
+                            actionLabel={!searchTerm ? t('addStore') : undefined}
                             actionHref="/dashboard/stores/new"
                         />
                     </div>
@@ -91,7 +93,7 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                                             <h3 className="font-semibold text-lg text-foreground">{store.name}</h3>
                                             <div className="flex items-center gap-2">
                                                 <p className="text-xs text-muted-foreground">
-                                                    {store.manager ? `${store.manager.firstName} ${store.manager.lastName}` : "No Manager Assigned"}
+                                                    {store.manager ? `${store.manager.firstName} ${store.manager.lastName}` : t('noManager')}
                                                 </p>
                                                 {store.googleRating && store.googleRating > 0 && (
                                                     <div className="flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded text-[10px] font-medium text-yellow-700 dark:text-yellow-400">
@@ -103,9 +105,9 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                                         </div>
                                     </div>
                                     {store.active ? (
-                                        <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-0">Active</Badge>
+                                        <Badge className="bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-0">{t('active')}</Badge>
                                     ) : (
-                                        <Badge className="bg-red-500/10 text-red-500 border-0">Inactive</Badge>
+                                        <Badge className="bg-red-500/10 text-red-500 border-0">{t('inactive')}</Badge>
                                     )}
                                 </div>
                                 {/*                                 <div className="absolute top-6 right-6" onClick={(e) => e.preventDefault()}>
@@ -115,7 +117,7 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                                 <div className="space-y-2 text-sm text-muted-foreground">
                                     <div className="flex items-center gap-2">
                                         <MapPin className="h-4 w-4" />
-                                        <span>{store.address || "No address provided"}</span>
+                                        <span>{store.address || t('noAddress')}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Phone className="h-4 w-4" />
@@ -129,7 +131,7 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                                             <Users className="h-4 w-4" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-xs text-muted-foreground">Employees</span>
+                                            <span className="text-xs text-muted-foreground">{t('employees')}</span>
                                             <span className="font-bold text-foreground">{store.employeeCount}</span>
                                         </div>
                                     </div>
@@ -138,16 +140,16 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                                             <Building2 className="h-4 w-4" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-xs text-muted-foreground">Departments</span>
+                                            <span className="text-xs text-muted-foreground">{t('departments')}</span>
                                             <span className="font-bold text-foreground">{store.departmentCount}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center justify-between pt-2 border-t border-zinc-700/50 mt-2">
-                                    <span className="text-sm text-muted-foreground">Manager</span>
+                                    <span className="text-sm text-muted-foreground">{t('manager')}</span>
                                     <div className="flex items-center text-sm text-foreground hover:underline">
-                                        View Details <ChevronRight className="h-3 w-3 ml-1" />
+                                        {t('viewDetails')} <ChevronRight className="h-3 w-3 ml-1" />
                                     </div>
                                 </div>
                             </CardContent>

@@ -69,11 +69,11 @@ export function EditProfileDialog({ employee, open, onOpenChange }: EditProfileD
                         <div className="grid gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="phone">{t("phone")}</Label>
-                                <Input id="phone" name="phone" value={formData.phone} onChange={handleChange} placeholder="+1 234 567 890" />
+                                <Input id="phone" name="phone" value={formData.phone} onChange={handleChange} placeholder={t('placeholders.phone')} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="address">{t("address")}</Label>
-                                <Input id="address" name="address" value={formData.address} onChange={handleChange} placeholder="123 Main St" />
+                                <Input id="address" name="address" value={formData.address} onChange={handleChange} placeholder={t('placeholders.address')} />
                             </div>
                             <div className="space-y-3">
                                 <Label>{t("profilePicture")}</Label>
@@ -113,13 +113,13 @@ export function EditProfileDialog({ employee, open, onOpenChange }: EditProfileD
                                             }}
                                             content={{
                                                 button({ ready }) {
-                                                    if (ready) return <div className="flex items-center gap-2"><ImagePlus className="w-3 h-3" /> {formData.image ? "Change Photo" : "Upload Photo"}</div>;
+                                                    if (ready) return <div className="flex items-center gap-2"><ImagePlus className="w-3 h-3" /> {formData.image ? t('changePhoto') : t('uploadPhoto')}</div>;
                                                     return <Loader2 className="w-3 h-3 animate-spin" />;
                                                 }
                                             }}
                                         />
                                         <p className="text-[10px] text-muted-foreground leading-relaxed">
-                                            Recommended: Square image, max 2MB.
+                                            {t('recommendedImage')}
                                         </p>
                                     </div>
                                 </div>
@@ -132,15 +132,15 @@ export function EditProfileDialog({ employee, open, onOpenChange }: EditProfileD
                         <div className="grid gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="bankName">{t("bankName")}</Label>
-                                <Input id="bankName" name="bankName" value={formData.bankName} onChange={handleChange} placeholder="Bank of America" />
+                                <Input id="bankName" name="bankName" value={formData.bankName} onChange={handleChange} placeholder={t('placeholders.bankName')} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="iban">{t("iban")}</Label>
-                                <Input id="iban" name="iban" value={formData.iban} onChange={handleChange} placeholder="US12 3456..." />
+                                <Input id="iban" name="iban" value={formData.iban} onChange={handleChange} placeholder={t('placeholders.iban')} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="nif">{t("nif")}</Label>
-                                <Input id="nif" name="nif" value={formData.nif} onChange={handleChange} placeholder="123456789" />
+                                <Input id="nif" name="nif" value={formData.nif} onChange={handleChange} placeholder={t('placeholders.nif')} />
                             </div>
                         </div>
                     </div>

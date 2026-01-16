@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +27,7 @@ interface OvertimeRequestDialogProps {
 }
 
 export function OvertimeRequestDialog({ open, onOpenChange, userId, shift }: OvertimeRequestDialogProps) {
+    const t = useTranslations("Schedules.overtimeDialog");
     const [hours, setHours] = useState("");
     const [reason, setReason] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -50,15 +52,15 @@ export function OvertimeRequestDialog({ open, onOpenChange, userId, shift }: Ove
             });
 
             if (res.success) {
-                toast("Request Sent", { description: "Your overtime request has been sent for approval." });
+                toast(t('requestSent'), { description: t('requestSentDesc') });
                 onOpenChange(false);
                 setHours("");
                 setReason("");
             } else {
-                toast.error("Error", { description: "Failed to send request." });
+                toast.error(t('errorTitle'), { description: t('errorDesc') });
             }
         } catch (error) {
-            toast.error("Error", { description: "Something went wrong." });
+            toast.error(t('errorTitle'), { description: t('genericError') });
         } finally {
             setSubmitting(false);
         }
@@ -70,45 +72,45 @@ export function OvertimeRequestDialog({ open, onOpenChange, userId, shift }: Ove
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Request Overtime Confirmation</DialogTitle>
+                    <DialogTitle>{t('title')}</DialogTitle>
                     <DialogDescription>
-                        Confirm extra hours worked for the shift on {format(new Date(shift.dayDate), "MMM d, yyyy")}.
+                        {shift && t('description', { date: format(new Date(shift.dayDate), "MMM d, yyyy") })}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
                     <div className="rounded-md border p-3 bg-muted/20 text-sm">
-                        <span className="font-medium">Shift:</span> {shift.startTime} - {shift.endTime} {shift.shiftName && `(${shift.shiftName})`}
+                        <span className="font-medium">{t('shiftLabel')}</span> {shift.startTime} - {shift.endTime} {shift.shiftName && `(${shift.shiftName})`}
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="hours">Extra Hours Worked</Label>
+                        <Label htmlFor="hours">{t('hoursLabel')}</Label>
                         <Input
                             id="hours"
                             type="number"
                             step="0.5"
-                            placeholder="e.g. 1.5"
+                            placeholder={t('hoursPlaceholder')}
                             value={hours}
                             onChange={(e) => setHours(e.target.value)}
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="reason">Reason / Details</Label>
+                        <Label htmlFor="reason">{t('reasonLabel')}</Label>
                         <Textarea
                             id="reason"
-                            placeholder="Why was overtime needed?"
+                            placeholder={t('reasonPlaceholder')}
                             value={reason}
-                            onChange={(e) => setReason(e.target.value)}
+                            onChange={e => setReason(e.target.value)}
                         />
                     </div>
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>{t('cancel')}</Button>
                     <Button onClick={handleSubmit} disabled={!hours || !reason || submitting}>
                         {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Send Request
+                        {t('submit')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { getActionLogs } from "@/lib/actions/log.actions";
 import { getAllStores } from "@/lib/actions/store.actions";
 import { format, endOfDay } from "date-fns";
+import { useTranslations } from "next-intl";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DateRange } from "react-day-picker";
 import {
@@ -47,6 +48,7 @@ interface ActivityLogProps {
 }
 
 export function ActivityLog({ userId, userRoles, variant = "default" }: ActivityLogProps) {
+    const t = useTranslations("ActivityLog");
     const [logs, setLogs] = useState<any[]>([]);
     const [stores, setStores] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -93,10 +95,10 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
     };
 
     const getActionBadge = (action: string) => {
-        if (action.includes("CREATE")) return <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-[10px] h-5 px-1.5">Create</Badge>;
-        if (action.includes("UPDATE")) return <Badge variant="secondary" className="bg-blue-500 text-white hover:bg-blue-600 text-[10px] h-5 px-1.5">Update</Badge>;
-        if (action.includes("DELETE") || action.includes("ARCHIVE") || action.includes("REJECT")) return <Badge variant="destructive" className="text-[10px] h-5 px-1.5">Delete</Badge>;
-        if (action.includes("APPROVE") || action.includes("PUBLISH")) return <Badge variant="outline" className="border-green-500 text-green-500 text-[10px] h-5 px-1.5">Approve</Badge>;
+        if (action.includes("CREATE")) return <Badge variant="default" className="bg-green-500 hover:bg-green-600 text-[10px] h-5 px-1.5">{t('actions.create')}</Badge>;
+        if (action.includes("UPDATE")) return <Badge variant="secondary" className="bg-blue-500 text-white hover:bg-blue-600 text-[10px] h-5 px-1.5">{t('actions.update')}</Badge>;
+        if (action.includes("DELETE") || action.includes("ARCHIVE") || action.includes("REJECT")) return <Badge variant="destructive" className="text-[10px] h-5 px-1.5">{t('actions.delete')}</Badge>;
+        if (action.includes("APPROVE") || action.includes("PUBLISH")) return <Badge variant="outline" className="border-green-500 text-green-500 text-[10px] h-5 px-1.5">{t('actions.approve')}</Badge>;
         return <Badge variant="outline" className="text-[10px] h-5 px-1.5">{action.toLowerCase().replace(/_/g, " ")}</Badge>;
     };
 
@@ -109,7 +111,7 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
 
     const filteredLogs = logs.filter(log => {
         if (!searchTerm) return true;
-        const actorName = log.performedBy ? `${log.performedBy.firstName} ${log.performedBy.lastName}` : "System";
+        const actorName = log.performedBy ? `${log.performedBy.firstName} ${log.performedBy.lastName}` : t('system');
         return (
             actorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -122,10 +124,10 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
             <div className="h-full flex flex-col bg-card rounded-xl border shadow-sm overflow-hidden">
                 <div className="p-3 border-b bg-muted/5 font-semibold text-sm flex items-center justify-between">
                     <span className="flex items-center gap-2">
-                        <RotateCcw className="h-3 w-3 text-muted-foreground" /> Activity Log
+                        <RotateCcw className="h-3 w-3 text-muted-foreground" /> {t('title')}
                     </span>
                     <Link href="/dashboard/activity-log" className="text-[10px] text-primary hover:underline">
-                        View All
+                        {t('viewAll')}
                     </Link>
                 </div>
                 <div className="flex-1 overflow-y-auto p-0">
@@ -134,7 +136,7 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
                             {[1, 2, 3].map(i => <div key={i} className="h-8 bg-muted animate-pulse rounded-md" />)}
                         </div>
                     ) : logs.length === 0 ? (
-                        <div className="p-8 text-center text-xs text-muted-foreground italic">No recent activity.</div>
+                        <div className="p-8 text-center text-xs text-muted-foreground italic">{t('noActivity')}</div>
                     ) : (
                         <div className="flex flex-col">
                             {logs.map((log) => (
@@ -148,16 +150,16 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-1.5 flex-wrap">
                                             <span className="font-semibold text-foreground">
-                                                {log.storeId?.name || "Global"}
+                                                {log.storeId?.name || t('global')}
                                             </span>
                                             <span className="text-muted-foreground text-[10px]">•</span>
                                             <span className="text-muted-foreground">
-                                                {log.performedBy ? `${log.performedBy.firstName}` : "System"}
+                                                {log.performedBy ? `${log.performedBy.firstName}` : t('system')}
                                             </span>
                                             {getActionBadge(log.action)}
                                         </div>
                                         <div className="text-muted-foreground mt-0.5 truncate">
-                                            {log.details?.systemActor ? `System: ${log.details.systemActor}` : formatActionText(log)}
+                                            {log.details?.systemActor ? `${t('system')}: ${log.details.systemActor}` : formatActionText(log)}
                                         </div>
                                     </div>
                                     <div className="text-[10px] text-muted-foreground whitespace-nowrap">
@@ -181,7 +183,7 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
                     <div className="relative">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                         <Input
-                            placeholder="Search actor or details..."
+                            placeholder={t('searchPlaceholder')}
                             className="pl-9"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -190,10 +192,10 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
 
                     <Select value={action} onValueChange={setAction}>
                         <SelectTrigger>
-                            <SelectValue placeholder="Action Type" />
+                            <SelectValue placeholder={t('actionType')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Actions</SelectItem>
+                            <SelectItem value="all">{t('allActions')}</SelectItem>
                             {ACTION_TYPES.map(a => (
                                 <SelectItem key={a} value={a}>{a.replace(/_/g, " ")}</SelectItem>
                             ))}
@@ -202,10 +204,10 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
 
                     <Select value={storeId} onValueChange={setStoreId}>
                         <SelectTrigger>
-                            <SelectValue placeholder="Store" />
+                            <SelectValue placeholder={t('store')} />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All Stores</SelectItem>
+                            <SelectItem value="all">{t('allStores')}</SelectItem>
                             {stores.map(s => (
                                 <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
                             ))}
@@ -227,7 +229,7 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
                                             format(date.from, "LLL dd, y")
                                         )
                                     ) : (
-                                        <span>Pick a date range</span>
+                                        <span>{t('pickDate')}</span>
                                     )}
                                 </Button>
                             </PopoverTrigger>
@@ -254,11 +256,11 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
                 <Table>
                     <TableHeader className="bg-muted/50">
                         <TableRow>
-                            <TableHead className="w-[180px]">Actor (Who)</TableHead>
-                            <TableHead>Action (What)</TableHead>
-                            <TableHead>Where (Store)</TableHead>
-                            <TableHead>Details</TableHead>
-                            <TableHead className="text-right">When</TableHead>
+                            <TableHead className="w-[180px]">{t('table.actor')}</TableHead>
+                            <TableHead>{t('table.action')}</TableHead>
+                            <TableHead>{t('table.where')}</TableHead>
+                            <TableHead>{t('table.details')}</TableHead>
+                            <TableHead className="text-right">{t('table.when')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -273,7 +275,7 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
                         ) : filteredLogs.length === 0 ? (
                             <TableRow>
                                 <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                                    No activity logs found matching the criteria.
+                                    {t('noMatch')}
                                 </TableCell>
                             </TableRow>
                         ) : (
@@ -289,7 +291,7 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
                                             </Avatar>
                                             <div className="flex flex-col">
                                                 <span className="text-sm font-medium leading-none">
-                                                    {log.performedBy ? `${log.performedBy.firstName} ${log.performedBy.lastName}` : "System"}
+                                                    {log.performedBy ? `${log.performedBy.firstName} ${log.performedBy.lastName}` : t('system')}
                                                 </span>
                                                 {log.performedBy?.email && (
                                                     <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
@@ -310,7 +312,7 @@ export function ActivityLog({ userId, userRoles, variant = "default" }: Activity
                                                 {log.storeId.name}
                                             </Badge>
                                         ) : (
-                                            <span className="text-muted-foreground text-xs italic">Global / System</span>
+                                            <span className="text-muted-foreground text-xs italic">{t('globalSystem')}</span>
                                         )}
                                     </TableCell>
                                     <TableCell>

@@ -44,7 +44,7 @@ export function AdminRecordVacationDialog() {
                     const data = await getAllStores();
                     setStores(data);
                 } catch (e) {
-                    toast.error("Failed to load stores");
+                    toast.error(t('loadStoresError'));
                 }
             };
             loadStores();
@@ -60,7 +60,7 @@ export function AdminRecordVacationDialog() {
                     const data = await getEmployeesByStore(selectedStore);
                     setEmployees(data);
                 } catch (e) {
-                    toast.error("Failed to load employees");
+                    toast.error(t('loadEmployeesError'));
                 } finally {
                     setLoading(false);
                 }
@@ -88,7 +88,7 @@ export function AdminRecordVacationDialog() {
         e.preventDefault();
 
         if (!selectedEmployee || !formData.startDate || !formData.endDate) {
-            toast.error("Please fill in all required fields");
+            toast.error(t('fillRequiredFields'));
             return;
         }
 
@@ -99,13 +99,13 @@ export function AdminRecordVacationDialog() {
             const end = new Date(formData.endDate);
 
             if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-                toast.error("Invalid dates selected");
+                toast.error(t('invalidDates'));
                 setLoading(false);
                 return;
             }
 
             if (end < start) {
-                toast.error("End date cannot be before start date");
+                toast.error(t('endDateError'));
                 setLoading(false);
                 return;
             }
@@ -117,11 +117,11 @@ export function AdminRecordVacationDialog() {
                 requestedFrom: start,
                 requestedTo: end,
                 totalDays,
-                comments: formData.comments || "Recorded by Admin",
+                comments: formData.comments || t('recordedByAdmin'),
                 bypassValidation: true
             });
 
-            toast.success("Vacation recorded successfully");
+            toast.success(t('recordSuccess'));
             setOpen(false);
             setFormData({ startDate: "", endDate: "", comments: "" });
             setSelectedStore("");
@@ -129,7 +129,7 @@ export function AdminRecordVacationDialog() {
             router.refresh();
         } catch (error) {
             console.error("Submission error:", error);
-            toast.error("Failed to record vacation.");
+            toast.error(t('recordError'));
         } finally {
             setLoading(false);
         }
@@ -186,7 +186,7 @@ export function AdminRecordVacationDialog() {
                             <DatePicker
                                 date={formData.startDate}
                                 setDate={(d) => setFormData(prev => ({ ...prev, startDate: d ? d.toISOString().split('T')[0] : "" }))}
-                                placeholder="Pick start date"
+                                placeholder={t('pickStartDate')}
                             />
                         </div>
                         <div className="space-y-2">
@@ -194,7 +194,7 @@ export function AdminRecordVacationDialog() {
                             <DatePicker
                                 date={formData.endDate}
                                 setDate={(d) => setFormData(prev => ({ ...prev, endDate: d ? d.toISOString().split('T')[0] : "" }))}
-                                placeholder="Pick end date"
+                                placeholder={t('pickEndDate')}
                             />
                         </div>
                     </div>

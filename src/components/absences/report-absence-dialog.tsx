@@ -165,7 +165,7 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                     reason: `${formData.type.toUpperCase()}: ${formData.reason}`, // Prefix type
                     attachments: files
                 });
-                toast.success("Absence coverage requested. HR notified.");
+                toast.success(t('coverageRequested'));
 
             } else {
                 // 2. Standard Absence Workflow
@@ -176,7 +176,7 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                     reason: formData.reason,
                     attachments: files // Pass attachments
                 });
-                toast.success("Absence reported successfully.");
+                toast.success(t('absenceReported'));
             }
 
             setOpen(false);
@@ -189,7 +189,7 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
             }
             router.refresh();
         } catch (error) {
-            toast.error("Failed to submit report.");
+            toast.error(t('failedSubmit'));
             console.error(error);
         } finally {
             setLoading(false);
@@ -266,13 +266,13 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                                     const diffDays = diffTime / (1000 * 3600 * 24);
 
                                     if (diffDays > 7) {
-                                        toast.error("Cannot report absence for a date older than 7 days.");
+                                        toast.error(t('dateLimitError'));
                                         return;
                                     }
 
                                     setFormData(prev => ({ ...prev, date: d.toISOString().split('T')[0] }))
                                 }}
-                                placeholder="Select date"
+                                placeholder={tc('selectDate')}
                             />
                         </div>
 
@@ -295,18 +295,18 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                     {/* Shift Selection - conditional on shifts availability */}
                     <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                            <Label className="text-sm font-medium">Affected Shift (Optional)</Label>
-                            {shifts.length > 0 && <span className="text-[10px] text-emerald-500 font-medium">Found {shifts.length} shift(s)</span>}
+                            <Label className="text-sm font-medium">{t('affectedShift')}</Label>
+                            {shifts.length > 0 && <span className="text-[10px] text-emerald-500 font-medium">{t('foundShifts', { count: shifts.length })}</span>}
                         </div>
 
                         {shifts.length === 0 ? (
                             <div className="text-xs text-muted-foreground italic bg-muted/30 p-2 rounded border border-border/50">
-                                No shifts found for this date. A standard absence will be logged.
+                                {t('noShiftsFound')}
                             </div>
                         ) : (
                             <Select value={selectedShiftId || ''} onValueChange={setSelectedShiftId}>
                                 <SelectTrigger className="bg-muted/50 border-border text-foreground">
-                                    <SelectValue placeholder="Select a shift to request coverage..." />
+                                    <SelectValue placeholder={t('selectShift')} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {/* <SelectItem value="none">-- Just Report Absence (No Coverage) --</SelectItem> */}
@@ -325,8 +325,8 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                         )}
                         <p className="text-[10px] text-muted-foreground">
                             {selectedShiftId && shifts.length > 0
-                                ? "Selecting a shift will trigger a coverage request for approval."
-                                : "Standard reporting logs the absence without triggering replacement Logic."}
+                                ? t('coverageNote')
+                                : t('standardNote')}
                         </p>
                     </div>
 
@@ -343,7 +343,7 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
 
                     {/* Proof Upload */}
                     <div className="space-y-2">
-                        <Label className="text-sm font-medium">Attachments / Proof (Optional)</Label>
+                        <Label className="text-sm font-medium">{t('attachmentsProof')}</Label>
                         <div className="border border-dashed border-border rounded-lg p-3 bg-muted/20">
                             <div className="flex items-center justify-between">
                                 <UploadButton
@@ -351,7 +351,7 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                                     onClientUploadComplete={(res) => {
                                         if (res) {
                                             setFiles(prev => [...prev, ...res.map(r => r.url)]);
-                                            toast.success("File uploaded");
+                                            toast.success(t('fileUploaded'));
                                         }
                                     }}
                                     onUploadError={(error: Error) => {
@@ -362,12 +362,12 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                                     }}
                                     content={{
                                         button({ ready }) {
-                                            if (ready) return <div className="flex items-center gap-1"><Upload className="h-3 w-3" /> Upload File</div>;
-                                            return "Loading...";
+                                            if (ready) return <div className="flex items-center gap-1"><Upload className="h-3 w-3" /> {t('uploadFile')}</div>;
+                                            return tc('loading');
                                         }
                                     }}
                                 />
-                                <span className="text-[10px] text-muted-foreground">PDF, IMG up to 4MB</span>
+                                <span className="text-[10px] text-muted-foreground">{t('fileLimit')}</span>
                             </div>
 
                             {files.length > 0 && (
@@ -397,7 +397,7 @@ export function ReportAbsenceDialog({ employeeId, trigger, open: controlledOpen,
                     <DialogFooter className="pt-2">
                         <Button type="button" variant="ghost" onClick={() => setOpen(false)}>{tc('cancel')}</Button>
                         <Button type="submit" variant="destructive" disabled={loading || (!employeeId && !selectedEmployee)}>
-                            {loading ? tc('loading') : (selectedShiftId !== "none" ? "Request Coverage" : t('report'))}
+                            {loading ? tc('loading') : (selectedShiftId !== "none" ? t('requestCoverage') : t('report'))}
                         </Button>
                     </DialogFooter>
                 </form>

@@ -70,7 +70,8 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [activeTab, setActiveTab] = useState("general");
-    const t = useTranslations("Common");
+    const t = useTranslations("Stores.form");
+    const tCommon = useTranslations("Common");
 
     // Department Removal State
     const [deptToRemove, setDeptToRemove] = useState<{ id: string; name: string } | null>(null);
@@ -91,16 +92,16 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
         try {
             if (initialData) {
                 await updateStore(initialData._id, values);
-                toast.success("Store updated successfully");
+                toast.success(t('toasts.updated'));
             } else {
                 await createStore(values);
-                toast.success("Store created successfully");
+                toast.success(t('toasts.created'));
             }
             router.push("/dashboard/stores");
             router.refresh();
         } catch (error) {
             console.error("Form submission error", error);
-            toast.error("Something went wrong");
+            toast.error(t('toasts.error'));
         } finally {
             setLoading(false);
         }
@@ -111,12 +112,12 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
         setIsArchiving(true);
         try {
             await archiveStore(initialData._id);
-            toast.success("Store archived successfully");
+            toast.success(t('toasts.archived'));
             router.push("/dashboard/stores");
             router.refresh();
         } catch (error) {
             console.error("Archive store error", error);
-            toast.error("Failed to archive store");
+            toast.error(t('toasts.archiveError'));
             setIsArchiving(false);
         }
     };
@@ -148,14 +149,14 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
         try {
             const result = await removeStoreDepartment(initialData._id, deptToRemove.id);
             if (result.success) {
-                toast.success(result.message);
+                toast.success(t('toasts.removeDeptSuccess'));
                 router.refresh();
             } else {
-                toast.error("Failed to remove department");
+                toast.error(t('toasts.removeDeptError'));
             }
         } catch (error) {
             console.error("Remove department error:", error);
-            toast.error("An error occurred while removing the department");
+            toast.error(t('toasts.genericError'));
         } finally {
             setIsRemoving(false);
             setDeptToRemove(null);
@@ -169,9 +170,9 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 max-w-4xl">
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="general">General</TabsTrigger>
-                            <TabsTrigger value="translations">Translations</TabsTrigger>
-                            <TabsTrigger value="departments" disabled={!initialData}>Departments</TabsTrigger>
+                            <TabsTrigger value="general">{t('tabs.general')}</TabsTrigger>
+                            <TabsTrigger value="translations">{t('tabs.translations')}</TabsTrigger>
+                            <TabsTrigger value="departments" disabled={!initialData}>{t('tabs.departments')}</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="general" className="space-y-4 pt-4">
@@ -181,9 +182,9 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                                     name="name"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>{t('name')}</FormLabel>
+                                            <FormLabel>{t('labels.name')}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="e.g. Downtown Branch" {...field} />
+                                                <Input placeholder={t('placeholders.name')} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -194,9 +195,9 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                                     name="address"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Address</FormLabel>
+                                            <FormLabel>{t('labels.address')}</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="e.g. 123 Main St, Springfield" {...field} />
+                                                <Input placeholder={t('placeholders.address')} {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -209,9 +210,9 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                                         name="phone"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Phone (Optional)</FormLabel>
+                                                <FormLabel>{t('labels.phone')}</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="+1 234 567 890" {...field} />
+                                                    <Input placeholder={t('placeholders.phone')} {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -222,9 +223,9 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                                         name="email"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel>Email (Optional)</FormLabel>
+                                                <FormLabel>{t('labels.email')}</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="store@example.com" {...field} />
+                                                    <Input placeholder={t('placeholders.email')} {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -234,13 +235,12 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
 
                                 {initialData && (
                                     <div className="pt-6 border-t border-border/50">
-                                        <h3 className="text-sm font-medium text-red-500 mb-4">Danger Zone</h3>
+                                        <h3 className="text-sm font-medium text-red-500 mb-4">{t('danger.title')}</h3>
                                         <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 flex items-center justify-between">
                                             <div className="space-y-1">
-                                                <h4 className="font-medium text-sm text-red-500">Archive this store</h4>
+                                                <h4 className="font-medium text-sm text-red-500">{t('danger.archiveTitle')}</h4>
                                                 <p className="text-xs text-muted-foreground">
-                                                    Archiving a store will hide it from the dashboard and prevent new data entry.
-                                                    Historical data will be preserved.
+                                                    {t('danger.archiveDesc')}
                                                 </p>
                                             </div>
                                             <Button
@@ -250,7 +250,7 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                                                 onClick={() => setShowArchiveDialog(true)}
                                             >
                                                 <Archive className="mr-2 h-4 w-4" />
-                                                Archive Store
+                                                {t('danger.archiveButton')}
                                             </Button>
                                         </div>
                                     </div>
@@ -273,9 +273,9 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                                             name={`translations.${lang}.name`}
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-xs">Localized Name</FormLabel>
+                                                    <FormLabel className="text-xs">{t('labels.localizedName')}</FormLabel>
                                                     <FormControl>
-                                                        <Input placeholder={`Name in ${lang}...`} {...field} />
+                                                        <Input placeholder={t('placeholders.nameIn', { lang })} {...field} />
                                                     </FormControl>
                                                 </FormItem>
                                             )}
@@ -285,9 +285,9 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                                             name={`translations.${lang}.address`}
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="text-xs">Localized Address</FormLabel>
+                                                    <FormLabel className="text-xs">{t('labels.localizedAddress')}</FormLabel>
                                                     <FormControl>
-                                                        <Textarea placeholder={`Address in ${lang}...`} {...field} />
+                                                        <Textarea placeholder={t('placeholders.addressIn', { lang })} {...field} />
                                                     </FormControl>
                                                 </FormItem>
                                             )}
@@ -300,7 +300,7 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                         <TabsContent value="departments" className="space-y-6 pt-4">
                             <div className="grid gap-4">
                                 <div className="flex items-center justify-between">
-                                    <h3 className="text-lg font-medium">Store Departments</h3>
+                                    <h3 className="text-lg font-medium">{t('departments.title')}</h3>
                                     {/* Can add 'Add Department' button here if needed later */}
                                 </div>
 
@@ -331,7 +331,7 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                                     </div>
                                 ) : (
                                     <div className="text-center py-12 border rounded-lg border-dashed text-muted-foreground">
-                                        No departments found for this store.
+                                        {t('departments.empty')}
                                     </div>
                                 )}
                             </div>
@@ -340,7 +340,7 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
 
                     <Button type="submit" disabled={loading} className="w-full max-w-lg">
                         {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        {t('save')}
+                        {tCommon('save')}
                     </Button>
                 </form>
             </Form>
@@ -348,20 +348,20 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
             <AlertDialog open={!!deptToRemove} onOpenChange={(open) => !open && setDeptToRemove(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Remove Department: {deptToRemove?.name}</AlertDialogTitle>
+                        <AlertDialogTitle>{t('dialogs.removeDeptTitle', { name: deptToRemove?.name || '' })}</AlertDialogTitle>
                         <AlertDialogDescription className="space-y-3">
-                            <p>Are you sure you want to remove this department? This action cannot be undone.</p>
+                            <p>{t('dialogs.removeDeptDesc')}</p>
 
                             {impactData ? (
                                 <div className="bg-amber-500/10 border border-amber-500/20 rounded-md p-3 text-sm text-amber-500">
                                     <div className="flex items-start gap-2">
                                         <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
                                         <div className="space-y-1">
-                                            <p className="font-medium">Impact Warning:</p>
+                                            <p className="font-medium">{t('dialogs.impactWarning')}</p>
                                             <ul className="list-disc pl-4 space-y-1">
-                                                <li><strong>{impactData.employeeCount}</strong> employees will be unassigned.</li>
-                                                <li><strong>{impactData.pendingCoverageCount}</strong> pending coverage requests will be cancelled.</li>
-                                                <li>Historical data (vacations, absences, schedules) will be preserved.</li>
+                                                <li><strong>{impactData.employeeCount}</strong> {t('dialogs.impactEmployees', { count: impactData.employeeCount })}</li>
+                                                <li><strong>{impactData.pendingCoverageCount}</strong> {t('dialogs.impactCoverage', { count: impactData.pendingCoverageCount })}</li>
+                                                <li>{t('dialogs.impactHistory')}</li>
                                             </ul>
                                         </div>
                                     </div>
@@ -374,7 +374,7 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isRemoving}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isRemoving}>{tCommon('cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={(e) => {
                                 e.preventDefault();
@@ -386,10 +386,10 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                             {isRemoving ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Removing...
+                                    {t('dialogs.removing')}
                                 </>
                             ) : (
-                                "Remove Department"
+                                t('dialogs.removeButton')
                             )}
                         </AlertDialogAction>
                     </AlertDialogFooter>
@@ -399,15 +399,13 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
             <AlertDialog open={showArchiveDialog} onOpenChange={setShowArchiveDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Archive Store</AlertDialogTitle>
+                        <AlertDialogTitle>{t('dialogs.archiveTitle')}</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to archive this store? This will hide it from the dashboard and disable access for store managers.
-                            <br /><br />
-                            This action can be reversed by an administrator.
+                            {t('dialogs.archiveDesc')}
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isArchiving}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel disabled={isArchiving}>{tCommon('cancel')}</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={(e) => {
                                 e.preventDefault();
@@ -419,10 +417,10 @@ export function StoreForm({ initialData = null }: StoreFormProps) {
                             {isArchiving ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Archiving...
+                                    {t('dialogs.archiving')}
                                 </>
                             ) : (
-                                "Archive Store"
+                                t('dialogs.archiveButton')
                             )}
                         </AlertDialogAction>
                     </AlertDialogFooter>

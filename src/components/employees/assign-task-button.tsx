@@ -10,14 +10,17 @@ interface AssignTaskButtonProps {
     currentUser: any;
 }
 
+import { useTranslations } from "next-intl";
+
 export function AssignTaskButton({ employee, currentUser }: AssignTaskButtonProps) {
     const [open, setOpen] = useState(false);
+    const t = useTranslations("Employees.assignTask");
 
     const initialAssignments = [
         {
             type: 'individual',
             id: employee._id,
-            label: `👤 ${employee.firstName} ${employee.lastName}`
+            label: t('individual', { name: `${employee.firstName} ${employee.lastName}` })
         }
     ];
 
@@ -35,7 +38,7 @@ export function AssignTaskButton({ employee, currentUser }: AssignTaskButtonProp
                 className="w-full gap-2 bg-primary/5 hover:bg-primary/10 border-primary/20 text-primary"
             >
                 <ListTodo className="h-4 w-4" />
-                Assign Task
+                {t('button')}
             </Button>
 
             <CreateTaskDialog

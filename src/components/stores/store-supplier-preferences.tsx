@@ -22,6 +22,8 @@ interface SupplierPreferenceProps {
 }
 
 export function StoreSupplierPreferences({ storeId, suppliers, storeSettings, canEdit }: SupplierPreferenceProps) {
+    const t = useTranslations("Stores.suppliers");
+    const tCommon = useTranslations("Common");
     const [loading, setLoading] = useState<Record<string, boolean>>({});
     // Local state to track changes before save? Or save on change?
     // Let's do save on change for switches with debounce/optimistic for inputs?
@@ -50,22 +52,22 @@ export function StoreSupplierPreferences({ storeId, suppliers, storeSettings, ca
     };
 
     const days = [
-        { val: 0, label: "Sunday" },
-        { val: 1, label: "Monday" },
-        { val: 2, label: "Tuesday" },
-        { val: 3, label: "Wednesday" },
-        { val: 4, label: "Thursday" },
-        { val: 5, label: "Friday" },
-        { val: 6, label: "Saturday" },
+        { val: 0, label: tCommon('days.sunday') },
+        { val: 1, label: tCommon('days.monday') },
+        { val: 2, label: tCommon('days.tuesday') },
+        { val: 3, label: tCommon('days.wednesday') },
+        { val: 4, label: tCommon('days.thursday') },
+        { val: 5, label: tCommon('days.friday') },
+        { val: 6, label: tCommon('days.saturday') },
     ];
 
     const handleUpdateSettings = async (supplierId: string, offset: number, ignored: boolean) => {
         setLoading(prev => ({ ...prev, [supplierId]: true }));
         try {
             await updateStoreSupplierSettings(storeId, supplierId, offset, ignored);
-            toast.success("Preferences saved");
+            toast.success(t('toasts.saved'));
         } catch (error) {
-            toast.error("Failed to save preferences");
+            toast.error(t('toasts.saveError'));
         } finally {
             setLoading(prev => ({ ...prev, [supplierId]: false }));
         }
@@ -75,9 +77,9 @@ export function StoreSupplierPreferences({ storeId, suppliers, storeSettings, ca
         setLoading(prev => ({ ...prev, [supplierId]: true }));
         try {
             await updateSupplierStorePreference(supplierId, storeId, day);
-            toast.success("Preferred order day updated");
+            toast.success(t('toasts.orderDayUpdated'));
         } catch (error) {
-            toast.error("Failed to update order day");
+            toast.error(t('toasts.orderDayError'));
         } finally {
             setLoading(prev => ({ ...prev, [supplierId]: false }));
         }
@@ -91,8 +93,8 @@ export function StoreSupplierPreferences({ storeId, suppliers, storeSettings, ca
                         <Truck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <div>
-                        <CardTitle>Supplier Preferences</CardTitle>
-                        <CardDescription>Customize when you receive alerts for each supplier</CardDescription>
+                        <CardTitle>{t('title')}</CardTitle>
+                        <CardDescription>{t('desc')}</CardDescription>
                     </div>
                 </div>
             </CardHeader>
@@ -100,75 +102,68 @@ export function StoreSupplierPreferences({ storeId, suppliers, storeSettings, ca
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>Supplier</TableHead>
-                            <TableHead>Delivery Days</TableHead>
-                            <TableHead className="w-[150px]">Alert Offset (Days)</TableHead>
-                            <TableHead className="w-[180px]">Preferred Order Day</TableHead>
-                            <TableHead className="w-[100px]">Alerts</TableHead>
+                            <TableHead>{t('table.supplier')}</TableHead>
+                            <TableHead>{t('table.deliveryDays')}</TableHead>
+                            <TableHead>{t('table.alertOffset')}</TableHead>
+                            <TableHead>{t('table.preferredDay')}</TableHead>
+                            <TableHead>{t('table.alerts')}</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {suppliers.map(supplier => {
-                            const isIgnored = getIsIgnored(supplier._id);
-                            const currentOffset = getAlertOffset(supplier._id);
-                            const currentPrefDay = getPreferredOrderDay(supplier);
-                            const schedString = supplier.deliverySchedule?.map((s: any) => days[s.dayOfWeek].label.substring(0, 3)).join(", ");
+                            const ignored = getIsIgnored(supplier._id);
+                            const offset = getAlertOffset(supplier._id);
+                            const preferredDay = getPreferredOrderDay(supplier);
 
                             return (
-                                <TableRow key={supplier._id} className={isIgnored ? "opacity-50 bg-muted/30" : ""}>
+                                <TableRow key={supplier._id} className={ignored ? "opacity-50 bg-muted/30" : ""}>
                                     <TableCell className="font-medium">
                                         {supplier.name}
                                         {supplier.category && <Badge variant="outline" className="ml-2 text-[10px]">{supplier.category}</Badge>}
                                     </TableCell>
-                                    <TableCell className="text-xs text-muted-foreground">{schedString || "On Demand"}</TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-wrap gap-1">
+                                            {supplier.deliverySchedule?.map((s: any) => (
+                                                <Badge key={s.dayOfWeek} variant="outline" className="text-xs">
+                                                    {days.find(day => day.val === s.dayOfWeek)?.label.substring(0, 3)}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>
                                         <div className="flex items-center gap-2">
                                             <Input
                                                 type="number"
-                                                defaultValue={currentOffset}
-                                                className="h-8 w-16"
+                                                className="w-20"
+                                                value={offset}
                                                 min={0}
-                                                disabled={!canEdit || isIgnored || loading[supplier._id]}
-                                                onBlur={(e) => {
+                                                max={14}
+                                                disabled={!canEdit || ignored || loading[supplier._id]}
+                                                onChange={(e) => {
                                                     const val = parseInt(e.target.value);
-                                                    if (!isNaN(val) && val !== currentOffset) {
-                                                        handleUpdateSettings(supplier._id, val, isIgnored);
+                                                    if (!isNaN(val) && val !== offset) {
+                                                        handleUpdateSettings(supplier._id, val, ignored);
                                                     }
                                                 }}
                                             />
-                                            <span className="text-xs text-muted-foreground">days before</span>
+                                            <span className="text-xs text-muted-foreground whitespace-nowrap">{t('daysBefore')}</span>
                                         </div>
                                     </TableCell>
                                     <TableCell>
                                         <Select
                                             disabled={!canEdit || loading[supplier._id]}
-                                            value={currentPrefDay !== undefined ? currentPrefDay.toString() : "none"}
+                                            value={preferredDay !== undefined ? String(preferredDay) : "default"}
                                             onValueChange={(val) => {
-                                                if (val) handleUpdateOrderDay(supplier._id, parseInt(val));
+                                                handleUpdateOrderDay(supplier._id, val === 'default' ? -1 : parseInt(val));
                                             }}
                                         >
-                                            <SelectTrigger className="h-8">
-                                                <SelectValue placeholder="Default" />
+                                            <SelectTrigger className="w-[140px]">
+                                                <SelectValue placeholder={t('default')} />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {supplier.deliverySchedule?.map((s: any) => {
-                                                    // Suggest days based on lead time? For now, just show day names + maybe logic
-                                                    // Logic: If order cutoff leadDays=1 for delivery Wed, order must be Tue.
-                                                    // User might prefer "Monday".
-                                                    // Let's just list standard days or only relevant days?
-                                                    // The requirement is "StorePreference for order day".
-                                                    // Typically this means "I prefer to order on Tuesdays".
-                                                    return (
-                                                        <SelectItem key={s.dayOfWeek} value={s.dayOfWeek.toString()}>
-                                                            {days[s.dayOfWeek].label} (Delivery)
-                                                        </SelectItem>
-                                                    );
-                                                })}
-                                                <SelectItem value="none">-- Default --</SelectItem>
-                                                {/* Allow any day? Usually constrained by delivery schedule but let's allow flexibility if they negotiate overrides */}
-                                                {/* Simply listing all days for max flexibility */}
-                                                {days.map(d => (
-                                                    <SelectItem key={`all-${d.val}`} value={d.val.toString()}>{d.label}</SelectItem>
+                                                <SelectItem value="default">{t('default')}</SelectItem>
+                                                {days.map(day => (
+                                                    <SelectItem key={day.val} value={String(day.val)}>{day.label}</SelectItem>
                                                 ))}
                                             </SelectContent>
                                         </Select>
@@ -176,11 +171,11 @@ export function StoreSupplierPreferences({ storeId, suppliers, storeSettings, ca
                                     <TableCell>
                                         <div className="flex items-center gap-2">
                                             <Switch
-                                                checked={!isIgnored}
+                                                checked={!ignored}
                                                 disabled={!canEdit || loading[supplier._id]}
-                                                onCheckedChange={(checked) => handleUpdateSettings(supplier._id, currentOffset, !checked)}
+                                                onCheckedChange={(checked) => handleUpdateSettings(supplier._id, offset, !checked)}
                                             />
-                                            {isIgnored && <BellOff className="h-4 w-4 text-muted-foreground" />}
+                                            {ignored && <BellOff className="h-4 w-4 text-muted-foreground" />}
                                         </div>
                                     </TableCell>
                                 </TableRow>

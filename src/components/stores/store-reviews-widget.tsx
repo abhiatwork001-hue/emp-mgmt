@@ -8,7 +8,8 @@ import { updateStoreReviews } from "@/lib/actions/google-places.actions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { ptBR, enUS } from "date-fns/locale";
 
 interface Review {
     author_name: string;
@@ -40,6 +41,8 @@ export function StoreReviewsWidget({
     googlePlaceId
 }: StoreReviewsWidgetProps) {
     const t = useTranslations("Reviews");
+    const locale = useLocale();
+    const dateLocale = locale === 'pt' ? ptBR : enUS;
     const [reviews, setReviews] = useState<Review[]>(initialReviews);
     const [rating, setRating] = useState(initialRating);
     const [total, setTotal] = useState(initialTotal);
@@ -140,7 +143,7 @@ export function StoreReviewsWidget({
             <CardContent>
                 {lastUpdated && (
                     <p className="text-xs text-muted-foreground mb-3">
-                        Last updated: {formatDistanceToNow(new Date(lastUpdated), { addSuffix: true })}
+                        {t('lastUpdated', { time: formatDistanceToNow(new Date(lastUpdated), { addSuffix: true, locale: dateLocale }) })}
                     </p>
                 )}
                 <div className="space-y-4">
@@ -157,7 +160,7 @@ export function StoreReviewsWidget({
                                         <span className="font-medium text-sm">{review.author_name}</span>
                                     </div>
                                     <span className="text-xs text-muted-foreground">
-                                        {review.relative_time_description}
+                                        {formatDistanceToNow(new Date(review.time * 1000), { addSuffix: true, locale: dateLocale })}
                                     </span>
                                 </div>
                                 <div className="mb-1">
