@@ -636,6 +636,80 @@
             "pendingRequests": "Pending Requests",
             "approvedThisYear": "Approved This Year",
             "analyticsTitle": "Analytics & Trends"
+        },
+        "hr": {
+            "greeting": "Good morning, {name}",
+            "actionRequired": {
+                "title": "Action Required",
+                "subtitle": "These items require your attention today",
+                "vacationRequests": "Vacation Requests",
+                "absenceRequests": "Absence Requests",
+                "overtimeRequests": "Overtime Requests",
+                "scheduleConflicts": "Schedule Conflicts",
+                "coverageRequests": "Coverage Requests",
+                "viewAll": "View All",
+                "pending": "{count} pending",
+                "urgent": "Urgent",
+                "empty": "No pending actions"
+            },
+            "staffingRisk": {
+                "title": "Staffing Risk",
+                "subtitle": "Potential coverage issues",
+                "understaffed": "Understaffed",
+                "today": "Today",
+                "tomorrow": "Tomorrow",
+                "overlappingVacations": "Overlapping Vacations",
+                "sickLeaveImpact": "Sick Leave Impact",
+                "riskLevel": {
+                    "low": "Low Risk",
+                    "medium": "Medium Risk",
+                    "high": "High Risk",
+                    "critical": "Critical"
+                },
+                "departments": "{count} departments",
+                "employees": "{count} employees",
+                "empty": "No staffing risks detected"
+            },
+            "todayGlance": {
+                "title": "Today at a Glance",
+                "working": "Working",
+                "absent": "Absent",
+                "onVacation": "On Vacation",
+                "employees": "employees"
+            },
+            "upcoming": {
+                "title": "Upcoming (Next 7-14 Days)",
+                "vacations": "Vacations",
+                "absences": "Absences",
+                "shortages": "Known Shortages",
+                "viewCalendar": "View Full Calendar",
+                "empty": "No upcoming events"
+            },
+            "compliance": {
+                "title": "Compliance & Records",
+                "expiringDocs": "Expiring Documents",
+                "missingContracts": "Missing Contracts",
+                "incompleteProfiles": "Incomplete Profiles",
+                "viewAll": "View All",
+                "urgent": "{count} urgent",
+                "empty": "All records up to date"
+            },
+            "insights": {
+                "title": "Insights",
+                "vacationUsage": "Vacation Usage",
+                "thisYear": "This Year",
+                "lastYear": "Last Year",
+                "absenceTrend": "Absence Trend",
+                "monthly": "Monthly",
+                "days": "days"
+            },
+            "announcements": {
+                "title": "Announcements",
+                "latest": "Latest",
+                "createNew": "Create New",
+                "viewAll": "View All",
+                "empty": "No announcements"
+            }
         }
     },
     "Notices": {

@@ -631,6 +631,80 @@
             "pendingRequests": "Pedidos Pendentes",
             "approvedThisYear": "Aprovado Este Ano",
             "analyticsTitle": "Análises e Tendências"
+        },
+        "hr": {
+            "greeting": "Bom dia, {name}",
+            "actionRequired": {
+                "title": "Ação Necessária",
+                "subtitle": "Estes itens requerem sua atenção hoje",
+                "vacationRequests": "Pedidos de Férias",
+                "absenceRequests": "Pedidos de Ausência",
+                "overtimeRequests": "Pedidos de Horas Extra",
+                "scheduleConflicts": "Conflitos de Escala",
+                "coverageRequests": "Pedidos de Cobertura",
+                "viewAll": "Ver Tudo",
+                "pending": "{count} pendente(s)",
+                "urgent": "Urgente",
+                "empty": "Sem ações pendentes"
+            },
+            "staffingRisk": {
+                "title": "Risco de Pessoal",
+                "subtitle": "Potenciais problemas de cobertura",
+                "understaffed": "Falta de Pessoal",
+                "today": "Hoje",
+                "tomorrow": "Amanhã",
+                "overlappingVacations": "Férias Sobrepostas",
+                "sickLeaveImpact": "Impacto de Baixas Médicas",
+                "riskLevel": {
+                    "low": "Risco Baixo",
+                    "medium": "Risco Médio",
+                    "high": "Risco Alto",
+                    "critical": "Crítico"
+                },
+                "departments": "{count} departamento(s)",
+                "employees": "{count} funcionário(s)",
+                "empty": "Sem riscos de pessoal detectados"
+            },
+            "todayGlance": {
+                "title": "Hoje num Relance",
+                "working": "A Trabalhar",
+                "absent": "Ausentes",
+                "onVacation": "De Férias",
+                "employees": "funcionários"
+            },
+            "upcoming": {
+                "title": "Próximos (7-14 Dias)",
+                "vacations": "Férias",
+                "absences": "Ausências",
+                "shortages": "Faltas Conhecidas",
+                "viewCalendar": "Ver Calendário Completo",
+                "empty": "Sem eventos próximos"
+            },
+            "compliance": {
+                "title": "Conformidade e Registos",
+                "expiringDocs": "Documentos a Expirar",
+                "missingContracts": "Contratos em Falta",
+                "incompleteProfiles": "Perfis Incompletos",
+                "viewAll": "Ver Tudo",
+                "urgent": "{count} urgente(s)",
+                "empty": "Todos os registos atualizados"
+            },
+            "insights": {
+                "title": "Análises",
+                "vacationUsage": "Uso de Férias",
+                "thisYear": "Este Ano",
+                "lastYear": "Ano Passado",
+                "absenceTrend": "Tendência de Ausências",
+                "monthly": "Mensal",
+                "days": "dias"
+            },
+            "announcements": {
+                "title": "Avisos",
+                "latest": "Mais Recente",
+                "createNew": "Criar Novo",
+                "viewAll": "Ver Tudo",
+                "empty": "Sem avisos"
+            }
         }
     },
     "Notices": {

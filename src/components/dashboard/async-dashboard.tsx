@@ -14,7 +14,7 @@ import { DepartmentHeadDashboard } from "@/components/dashboard/role-views/depar
 import { StoreDepartmentHeadDashboard } from "@/components/dashboard/role-views/store-department-head-dashboard";
 import { EmployeeDashboard } from "@/components/dashboard/role-views/employee-dashboard";
 import { getISOWeekNumber } from "@/lib/utils";
-import { Schedule, Company } from "@/lib/models"; // Import Company
+import { Schedule, Company, Notice } from "@/lib/models"; // Import Company and Notice
 import { getSchedules as getSchedulesLib } from "@/lib/actions/schedule.actions";
 
 // Helper to merge requests sort by date
@@ -486,6 +486,238 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
 
         if (viewRole === "department_head") {
             return <DepartmentHeadDashboard {...commonProps} />;
+        }
+
+        // HR Dashboard - New Priority-Based Layout
+        if (viewRole === "hr") {
+            const { HRDashboard } = await import("@/components/dashboard/hr/hr-dashboard");
+
+            // Map data to HR Dashboard props
+            const hrProps = {
+                employee: commonProps.employee,
+
+                // A. Action Required Data - Pass full arrays for the new widget
+                vacationRequests: pendingVacations,
+                absenceRequests: pendingAbsences,
+                overtimeRequests: pendingOvertime,
+                scheduleConflicts: [], // TODO: Calculate from schedule data
+                coverageRequests: pendingCoverage,
+
+                // B. Staffing Risk Data
+                understaffedToday: [], // TODO: Calculate from schedule vs required staff
+                understaffedTomorrow: [],
+                overlappingVacations: [], // TODO: Calculate from approved vacations
+                sickLeaveImpact: [], // TODO: Calculate from absences
+
+                // C. Today at a Glance Data
+                workingCount: todayShiftsCount,
+                absentCount: pendingAbsences.filter((a: any) => {
+                    const absenceDate = new Date(a.date);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    absenceDate.setHours(0, 0, 0, 0);
+                    return absenceDate.getTime() === today.getTime() && a.status === 'approved';
+                }).length,
+                vacationCount: storeStats.onVacation,
+
+                // D. Upcoming Events Data
+                upcomingEvents: [
+                    ...pendingVacations.filter((v: any) => v.status === 'approved').map((v: any) => ({
+                        date: new Date(v.from),
+                        type: 'vacation' as const,
+                        employee: `${v.employeeId?.firstName || ''} ${v.employeeId?.lastName || ''}`.trim(),
+                        department: v.employeeId?.storeDepartmentId?.name || ''
+                    })),
+                    ...pendingAbsences.filter((a: any) => a.status === 'approved').map((a: any) => ({
+                        date: new Date(a.date),
+                        type: 'absence' as const,
+                        employee: `${a.employeeId?.firstName || ''} ${a.employeeId?.lastName || ''}`.trim(),
+                        department: a.employeeId?.storeDepartmentId?.name || ''
+                    }))
+                ],
+
+                // E. Compliance Data
+                expiringDocs: 0, // TODO: Calculate from employee documents
+                missingContracts: 0, // TODO: Calculate from employees without contracts
+                incompleteProfiles: 0, // TODO: Calculate from employees with missing data
+                urgentComplianceCount: 0,
+
+                // F. Insights Data - Generate from real data with department breakdown
+                vacationData: await (async () => {
+                    const currentYear = new Date().getFullYear();
+                    const lastYear = currentYear - 1;
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+                    const { VacationRequest } = require('@/lib/models');
+
+                    // Get this year's data with department breakdown
+                    const thisYearData = await VacationRequest.aggregate([
+                        {
+                            $match: {
+                                status: 'approved',
+                                requestedFrom: {
+                                    $gte: new Date(currentYear, 0, 1),
+                                    $lt: new Date(currentYear + 1, 0, 1)
+                                }
+                            }
+                        },
+                        {
+                            $lookup: {
+                                from: 'employees',
+                                localField: 'employeeId',
+                                foreignField: '_id',
+                                as: 'employee'
+                            }
+                        },
+                        { $unwind: { path: '$employee', preserveNullAndEmptyArrays: true } },
+                        {
+                            $lookup: {
+                                from: 'storedepartments',
+                                localField: 'employee.storeDepartmentId',
+                                foreignField: '_id',
+                                as: 'department'
+                            }
+                        },
+                        { $unwind: { path: '$department', preserveNullAndEmptyArrays: true } },
+                        {
+                            $group: {
+                                _id: {
+                                    month: { $month: '$requestedFrom' },
+                                    department: '$department.name'
+                                },
+                                days: { $sum: '$totalDays' }
+                            }
+                        }
+                    ]);
+
+                    const lastYearData = await VacationRequest.aggregate([
+                        {
+                            $match: {
+                                status: 'approved',
+                                requestedFrom: {
+                                    $gte: new Date(lastYear, 0, 1),
+                                    $lt: new Date(currentYear, 0, 1)
+                                }
+                            }
+                        },
+                        {
+                            $group: {
+                                _id: { $month: '$requestedFrom' },
+                                days: { $sum: '$totalDays' }
+                            }
+                        }
+                    ]);
+
+                    // Organize data by month with department breakdown
+                    const monthlyData = new Map();
+                    thisYearData.forEach((d: any) => {
+                        const month = d._id.month;
+                        if (!monthlyData.has(month)) {
+                            monthlyData.set(month, { thisYear: 0, departments: [] });
+                        }
+                        const data = monthlyData.get(month);
+                        data.thisYear += d.days;
+                        if (d._id.department) {
+                            data.departments.push({ department: d._id.department, days: d.days });
+                        }
+                    });
+
+                    const lastYearMap = new Map(lastYearData.map((d: any) => [d._id, d.days]));
+
+                    return months.map((month, index): { month: string; thisYear: number; lastYear: number; departments: any[] } => {
+                        const data = monthlyData.get(index + 1) || { thisYear: 0, departments: [] };
+                        return {
+                            month,
+                            thisYear: data.thisYear as number,
+                            lastYear: (lastYearMap.get(index + 1) || 0) as number,
+                            departments: data.departments as any[]
+                        };
+                    });
+                })(),
+
+                absenceData: await (async () => {
+                    const currentYear = new Date().getFullYear();
+                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+                    const { AbsenceRequest } = require('@/lib/models');
+                    const absenceStats = await AbsenceRequest.aggregate([
+                        {
+                            $match: {
+                                status: 'approved',
+                                date: {
+                                    $gte: new Date(currentYear, 0, 1),
+                                    $lt: new Date(currentYear + 1, 0, 1)
+                                }
+                            }
+                        },
+                        {
+                            $lookup: {
+                                from: 'employees',
+                                localField: 'employeeId',
+                                foreignField: '_id',
+                                as: 'employee'
+                            }
+                        },
+                        { $unwind: { path: '$employee', preserveNullAndEmptyArrays: true } },
+                        {
+                            $lookup: {
+                                from: 'storedepartments',
+                                localField: 'employee.storeDepartmentId',
+                                foreignField: '_id',
+                                as: 'department'
+                            }
+                        },
+                        { $unwind: { path: '$department', preserveNullAndEmptyArrays: true } },
+                        {
+                            $group: {
+                                _id: {
+                                    month: { $month: '$date' },
+                                    department: '$department.name'
+                                },
+                                count: { $sum: 1 }
+                            }
+                        }
+                    ]);
+
+                    // Organize data by month with department breakdown
+                    const monthlyData = new Map();
+                    absenceStats.forEach((d: any) => {
+                        const month = d._id.month;
+                        if (!monthlyData.has(month)) {
+                            monthlyData.set(month, { days: 0, departments: [] });
+                        }
+                        const data = monthlyData.get(month);
+                        data.days += d.count;
+                        if (d._id.department) {
+                            data.departments.push({ department: d._id.department, days: d.count });
+                        }
+                    });
+
+                    return months.map((month, index) => {
+                        const data = monthlyData.get(index + 1) || { days: 0, departments: [] };
+                        return {
+                            month,
+                            days: data.days,
+                            departments: data.departments
+                        };
+                    });
+                })(),
+
+                // G. Announcements Data - Fetch multiple for carousel
+                announcements: await Notice.find({})
+                    .sort({ createdAt: -1 })
+                    .limit(5)
+                    .select('_id title createdAt urgent')
+                    .lean()
+                    .then((notices: any[]) => notices.map(notice => ({
+                        id: notice._id.toString(),
+                        title: notice.title,
+                        createdAt: notice.createdAt,
+                        isUrgent: notice.urgent || false
+                    })))
+            };
+
+            return <HRDashboard {...hrProps} />;
         }
 
         return <StoreManagerDashboard {...commonProps} />;
