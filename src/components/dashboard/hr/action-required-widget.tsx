@@ -183,7 +183,7 @@ export function ActionRequiredWidget({
                             {t('title')}
                         </CardTitle>
                         <p className="text-sm font-medium text-muted-foreground">
-                            These items require your attention today
+                            {t('subtitle')}
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
