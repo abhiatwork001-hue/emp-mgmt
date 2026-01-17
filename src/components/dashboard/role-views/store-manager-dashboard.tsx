@@ -13,7 +13,8 @@ import dynamic from "next/dynamic";
 import { WidgetSkeleton } from "@/components/dashboard/widget-skeleton";
 import { RequestVacationDialog } from "@/components/vacations/request-vacation-dialog";
 import { ReportAbsenceDialog } from "@/components/absences/report-absence-dialog";
-import { SmartOrderPlanner } from "@/components/suppliers/smart-order-planner";
+import { getSuppliers } from "@/lib/actions/supplier.actions";
+import { SmartOrderHelper } from "@/components/suppliers/order-helper";
 
 const PendingApprovalsWidget = dynamic(() => import("@/components/dashboard/pending-approvals-widget").then(mod => mod.PendingApprovalsWidget), {
     loading: () => <WidgetSkeleton />,
@@ -142,6 +143,7 @@ export function StoreManagerDashboard({
 }: StoreManagerDashboardProps) {
     const [showScheduleAlert, setShowScheduleAlert] = useState(false);
     const [supplierAlerts, setSupplierAlerts] = useState<any[]>([]);
+    const [suppliers, setSuppliers] = useState<any[]>([]);
     const t = useTranslations("Dashboard");
     const tc = useTranslations("Common");
 
@@ -163,6 +165,7 @@ export function StoreManagerDashboard({
     useEffect(() => {
         if (effectiveStoreId) {
             getAvailableSuppliersForToday(effectiveStoreId.toString()).then(setSupplierAlerts);
+            getSuppliers(effectiveStoreId.toString()).then(setSuppliers);
         }
     }, [effectiveStoreId]);
 
@@ -370,7 +373,7 @@ export function StoreManagerDashboard({
         ),
 
         "smart-planner": effectiveStoreId ? (
-            <SmartOrderPlanner storeId={effectiveStoreId.toString()} />
+            <SmartOrderHelper storeId={effectiveStoreId.toString()} suppliers={suppliers} />
         ) : null
     };
 

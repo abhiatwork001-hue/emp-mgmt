@@ -237,6 +237,73 @@ export async function getDashboardOverview(userId: string, userRoles: string[] =
         daysUntil: Math.ceil((new Date(v.requestedFrom).getTime() - now.getTime()) / (1000 * 3600 * 24))
     }));
 
+    // 7. Generate Admin/Owner Alerts (Schedule Overdue)
+    const alerts: any[] = [];
+    if (isOwner || isHR || isManager || userRoles.includes("tech")) {
+        // Evaluate Schedule Deadlines (Next Week)
+        // Rule: Schedules for Next Week (currentWeek + 1) should be published by Tuesday 17:00 (or as configured in Company settings)
+        // Hardcoded check for now: If today is Wed-Sun, check if Next Week exists & published.
+
+        // Simpler check: Check CURRENT week schedules -> if missing, CRITICAL.
+        // Check NEXT week schedules -> if missing and today > Deadline, WARNING.
+
+        const nextWeekRaw = weekNumber + 1; // Needs overflow logic if week 52/53
+        const nextWeek = nextWeekRaw > 52 ? 1 : nextWeekRaw; // Simple rollover
+        const nextWeekYear = nextWeekRaw > 52 ? year + 1 : year; // Simple rollover
+
+        // Find stores WITHOUT published schedule for next week
+        // We need list of active stores to compare against
+        const { Store } = await import("@/lib/models");
+        const activeStores = await Store.find({ active: true }).select("name slug").lean();
+
+        // Fetch ALL published schedules for next week
+        const publishedNextWeek = await Schedule.find({
+            year: nextWeekYear,
+            weekNumber: nextWeek,
+            status: 'published'
+        }).distinct('storeId');
+
+        const publishedStoreIds = publishedNextWeek.map(id => id.toString());
+
+        // Find stores missing schedule
+        const storesMissingSchedule = activeStores.filter((s: any) => !publishedStoreIds.includes(s._id.toString()));
+
+        if (storesMissingSchedule.length > 0) {
+            // Logic: Check if we are past deadline. 
+            // Default: Tuesday (2) 17:00.
+            const dayOfWeek = now.getDay(); // 0=Sun
+            const currentHour = now.getHours();
+
+            // Alert if: (Day > 2) OR (Day == 2 AND Hour >= 17)
+            if (dayOfWeek > 2 || (dayOfWeek === 2 && currentHour >= 17)) {
+
+                // Visible to Manager only if it's THEIR store
+                if (isManager && userDetails?.storeId) {
+                    const myStoreMissing = storesMissingSchedule.find((s: any) => s._id.toString() === userDetails.storeId?.toString());
+                    if (myStoreMissing) {
+                        alerts.push({
+                            type: 'critical',
+                            title: 'Schedule Approval Overdue',
+                            message: `Next week's schedule for ${myStoreMissing.name} is overdue.`,
+                            actionLabel: 'Create Schedule',
+                            actionLink: `/manager/schedule?week=${nextWeek}&year=${nextWeekYear}`
+                        });
+                    }
+                } else if (isOwner || isHR || userRoles.includes("admin") || userRoles.includes("tech")) {
+                    // Show count or list
+                    alerts.push({
+                        type: 'critical',
+                        title: 'Schedule Approval Overdue',
+                        message: `${storesMissingSchedule.length} stores have not published next week's schedule.`,
+                        details: storesMissingSchedule.map((s: any) => s.name).join(", "),
+                        actionLabel: 'View Schedules',
+                        actionLink: '/dashboard/schedules'
+                    });
+                }
+            }
+        }
+    }
+
     return JSON.parse(JSON.stringify({
         stats: {
             totalEmployees,
@@ -249,6 +316,7 @@ export async function getDashboardOverview(userId: string, userRoles: string[] =
         pendingRequests: allPending.slice(0, 10), // Limit payload
         employeeList,
         upcomingVacations: upcomingList,
-        recentSchedules: schedules.slice(0, 5) // Limit
+        recentSchedules: schedules.slice(0, 5), // Limit
+        alerts // Return generated alerts
     }));
 }

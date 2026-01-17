@@ -18,6 +18,7 @@ import {
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { SmartOrderHelper } from "@/components/suppliers/order-helper";
 import { SupplierForm } from "@/components/suppliers/supplier-form";
 
 export default function SuppliersPage() {
@@ -75,31 +76,38 @@ export default function SuppliersPage() {
                     <p className="text-muted-foreground mt-1">Manage network of suppliers and order catalogs.</p>
                 </div>
 
-                {canManage && (
-                    <Dialog open={isDialogOpen} onOpenChange={(open) => {
-                        setIsDialogOpen(open);
-                        if (!open) setEditingSupplier(null);
-                    }}>
-                        <DialogTrigger asChild>
-                            <Button className="shrink-0 gap-2 shadow-lg shadow-primary/20">
-                                <Plus className="w-4 h-4" /> Add Supplier
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                            <DialogHeader>
-                                <DialogTitle>{editingSupplier ? "Edit Supplier" : "Add New Supplier"}</DialogTitle>
-                            </DialogHeader>
-                            <SupplierForm
-                                supplier={editingSupplier}
-                                onSuccess={() => {
-                                    setIsDialogOpen(false);
-                                    fetchSuppliers();
-                                    setEditingSupplier(null);
-                                }}
-                            />
-                        </DialogContent>
-                    </Dialog>
-                )}
+                <div className="flex items-center gap-2">
+                    <SmartOrderHelper
+                        suppliers={suppliers}
+                        storeId={(session?.user as any)?.storeId || "global"}
+                    />
+
+                    {canManage && (
+                        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+                            setIsDialogOpen(open);
+                            if (!open) setEditingSupplier(null);
+                        }}>
+                            <DialogTrigger asChild>
+                                <Button className="shrink-0 gap-2 shadow-lg shadow-primary/20">
+                                    <Plus className="w-4 h-4" /> Add Supplier
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                                <DialogHeader>
+                                    <DialogTitle>{editingSupplier ? "Edit Supplier" : "Add New Supplier"}</DialogTitle>
+                                </DialogHeader>
+                                <SupplierForm
+                                    supplier={editingSupplier}
+                                    onSuccess={() => {
+                                        setIsDialogOpen(false);
+                                        fetchSuppliers();
+                                        setEditingSupplier(null);
+                                    }}
+                                />
+                            </DialogContent>
+                        </Dialog>
+                    )}
+                </div>
             </div>
 
             {/* Search */}

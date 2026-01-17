@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'ChickMain',
   webDir: 'public',
   server: {
-    url: 'http://192.168.139.54:3000', // LAN IP - Works on Emulator & Physical Device
+    url: 'emp-mgmt-rho.vercel.app', // LAN IP - Works on Emulator & Physical Device
     cleartext: true
   },
   plugins: {

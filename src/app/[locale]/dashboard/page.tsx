@@ -8,6 +8,8 @@ import { getAllGlobalDepartments } from "@/lib/actions/department.actions";
 import { getTranslations } from "next-intl/server";
 import { DashboardHeader } from "@/components/dashboard/dashboard-header";
 import { AsyncDashboard } from "@/components/dashboard/async-dashboard";
+import { OwnerDashboard } from "@/components/dashboard/owner/owner-dashboard"; // Import Owner Dashboard
+import { getOwnerStats } from "@/lib/actions/owner.actions"; // Import Owner Action
 import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { Suspense } from "react";
 import { getHighestAccessRole } from "@/lib/auth-utils";
@@ -44,12 +46,14 @@ export default async function DashboardPage(props: DashboardPageProps) {
     const viewRole = testRole || getHighestAccessRole(allRoles);
 
     const isManagement = ["admin", "hr", "owner", "tech", "super_user"].includes(viewRole);
+    const isOwner = viewRole === "owner"; // Specific Owner check
 
     // Parallelize Primary Fetches
-    const [stores, depts, storeRatingsRes] = await Promise.all([
+    const [stores, depts, storeRatingsRes, ownerStats] = await Promise.all([
         getAllStores(),
         getAllGlobalDepartments(),
-        isManagement ? getAllStoresRatings() : Promise.resolve([])
+        isManagement ? getAllStoresRatings() : Promise.resolve([]),
+        isOwner ? getOwnerStats((session.user as any).id) : Promise.resolve(null) // Fetch Owner Stats if owner
     ]);
 
     const storeRatings = storeRatingsRes;
@@ -95,16 +99,20 @@ export default async function DashboardPage(props: DashboardPageProps) {
                 </FadeIn>
                 <div className="mt-2 text-primary">
                     <Suspense fallback={<DashboardSkeleton />}>
-                        <AsyncDashboard
-                            employee={employee}
-                            viewRole={viewRole}
-                            stores={stores}
-                            depts={depts}
-                            allRoles={allRoles}
-                            managers={managers} // Passed as empty, fetched inside if needed or ignored if not critical
-                            storeRatings={storeRatings}
-                            weather={weather}
-                        />
+                        {isOwner && ownerStats ? (
+                            <OwnerDashboard data={ownerStats} />
+                        ) : (
+                            <AsyncDashboard
+                                employee={employee}
+                                viewRole={viewRole}
+                                stores={stores}
+                                depts={depts}
+                                allRoles={allRoles}
+                                managers={managers}
+                                storeRatings={storeRatings}
+                                weather={weather}
+                            />
+                        )}
                     </Suspense>
                 </div>
             </div>

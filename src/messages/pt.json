@@ -1,4 +1,36 @@
 {
+    "OwnerDashboard": {
+        "healthSnapshot": "Panorama da Saúde do Negócio",
+        "healthSnapshotDesc": "Visão geral em tempo real dos principais indicadores em todas as unidades.",
+        "kpi": {
+            "totalEmployees": "Total Colaboradores",
+            "activeToday": "Ativos Hoje",
+            "absenceRate": "Taxa de Ausência",
+            "overtime": "Horas Extras (Mês)",
+            "vacationLiability": "Passivo de Férias",
+            "openIssues": "Pendências"
+        },
+        "comparison": {
+            "title": "Comparação de Lojas",
+            "viewAll": "Ver Todas",
+            "store": "Loja",
+            "staff": "Equipe",
+            "absences": "Ausências",
+            "overtime": "Horas Extras",
+            "compliance": "Conformidade",
+            "action": "Ação",
+            "details": "Detalhes"
+        },
+        "costTrend": {
+            "title": "Tendência de Custos",
+            "overtime": "Horas Extras",
+            "absence": "Ausências"
+        },
+        "risks": {
+            "title": "Riscos de Conformidade",
+            "noRisks": "Nenhum risco detectado. Bom trabalho!"
+        }
+    },
     "Common": {
         "dashboard": "Painel",
         "all": "Todos",

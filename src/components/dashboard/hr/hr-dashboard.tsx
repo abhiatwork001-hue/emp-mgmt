@@ -9,7 +9,7 @@ import { TodayGlanceWidget } from "./today-glance-widget";
 import { UpcomingEventsWidget } from "./upcoming-events-widget";
 import { ComplianceWidget } from "./compliance-widget";
 import { HRInsightsWidget } from "./hr-insights-widget";
-import { AnnouncementsWidget } from "./announcements-widget";
+import { AnnouncementsWidget } from "@/components/dashboard/widgets/announcements-widget";
 import { ComplianceAlert } from "./compliance-alert";
 import { StaffingAlerts } from "./staffing-alerts";
 

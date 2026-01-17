@@ -759,7 +759,11 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
                         title: notice.title,
                         createdAt: notice.createdAt,
                         isUrgent: notice.urgent || false
-                    })))
+                    }))),
+
+                // Alert Data
+                hasScheduleAlert: scheduleHealth.overdue,
+                missingSchedules: scheduleHealth.missingEntities
             };
 
             return <HRDashboard {...hrProps} />;

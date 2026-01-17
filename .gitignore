@@ -12,6 +12,8 @@
 /service-account.json
 android/app/google-services.json
 android/google-services.json
+FEATURES.md
+VALUATION_AND_STRATEGY.md
 
 # testing
 /coverage

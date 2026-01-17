@@ -262,6 +262,13 @@ export interface IEmployee extends Document {
     pushSubscriptionNative?: string[]; // Native tokens (FCM/APNS)
     lastLogin?: Date;
     active?: boolean;
+    settings?: {
+        supplierAlerts?: {
+            supplierId: ObjectId;
+            preferredOrderDay?: number;
+            ignored?: boolean;
+        }[];
+    };
     terminatedOn?: Date;
 
     createdAt?: Date;
@@ -685,7 +692,17 @@ const EmployeeSchema = new Schema<IEmployee>({
     passwordResetRequested: { type: Boolean, default: false },
     pushSubscription: { type: Schema.Types.Mixed },
     pushSubscriptionNative: [{ type: String }],
-    lastLogin: { type: Date }
+
+    lastLogin: { type: Date },
+
+    // User Preferences
+    settings: {
+        supplierAlerts: [{
+            supplierId: { type: Schema.Types.ObjectId },
+            preferredOrderDay: { type: Number }, // 0=Sun, 1=Mon...
+            ignored: { type: Boolean, default: false }
+        }]
+    }
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 
 // Schedule Sub-schemas
@@ -955,7 +972,8 @@ const SupplierSchema = new Schema<ISupplier>({
         sku: { type: String },
         category: { type: String },
         unit: { type: String },
-        price: { type: Number }
+        price: { type: Number },
+        leadTimeOffset: { type: Number, default: 0 } // Extra days added to supplier base lead time
     }],
     deliverySchedule: [{
         dayOfWeek: { type: Number, required: true },

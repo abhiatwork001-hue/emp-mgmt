@@ -1,4 +1,36 @@
 {
+    "OwnerDashboard": {
+        "healthSnapshot": "Business Health Snapshot",
+        "healthSnapshotDesc": "Real-time overview of key performance indicators across all locations.",
+        "kpi": {
+            "totalEmployees": "Total Employees",
+            "activeToday": "Active Today",
+            "absenceRate": "Absence Rate",
+            "overtime": "Overtime (MTD)",
+            "vacationLiability": "Vacation Liability",
+            "openIssues": "Open Issues"
+        },
+        "comparison": {
+            "title": "Store Comparison",
+            "viewAll": "View All Stores",
+            "store": "Store",
+            "staff": "Staff",
+            "absences": "Absences",
+            "overtime": "Overtime",
+            "compliance": "Compliance",
+            "action": "Action",
+            "details": "Details"
+        },
+        "costTrend": {
+            "title": "Workforce Cost Trend",
+            "overtime": "Overtime",
+            "absence": "Absence"
+        },
+        "risks": {
+            "title": "Compliance Risks",
+            "noRisks": "No compliance risks detected. Good job!"
+        }
+    },
     "Common": {
         "dashboard": "Dashboard",
         "all": "All",
@@ -807,6 +839,8 @@
     },
     "Vacation": {
         "title": "Vacations",
+        "selectPeriod": "Select Period",
+        "pickDates": "Pick dates ({days} days remaining)",
         "request": "Request Vacation",
         "record": "Record Vacation",
         "recordAdmin": "Admin Record Vacation",
