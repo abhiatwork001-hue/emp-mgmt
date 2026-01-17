@@ -23,25 +23,25 @@ export function TodayGlanceWidget({
             label: t('working'),
             value: workingCount,
             icon: Users,
-            color: "text-green-600",
-            bgColor: "bg-green-50",
-            borderColor: "border-green-200"
+            color: "text-green-600 dark:text-green-400",
+            bgColor: "bg-green-50 dark:bg-green-950/30",
+            borderColor: "border-green-200 dark:border-green-800"
         },
         {
             label: t('absent'),
             value: absentCount,
             icon: UserX,
-            color: "text-red-600",
-            bgColor: "bg-red-50",
-            borderColor: "border-red-200"
+            color: "text-red-600 dark:text-red-400",
+            bgColor: "bg-red-50 dark:bg-red-950/30",
+            borderColor: "border-red-200 dark:border-red-800"
         },
         {
             label: t('onVacation'),
             value: vacationCount,
             icon: Palmtree,
-            color: "text-blue-600",
-            bgColor: "bg-blue-50",
-            borderColor: "border-blue-200"
+            color: "text-blue-600 dark:text-blue-400",
+            bgColor: "bg-blue-50 dark:bg-blue-950/30",
+            borderColor: "border-blue-200 dark:border-blue-800"
         }
     ];
 

@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Plane, UserX, AlertTriangle } from "lucide-react";
+import { Calendar, Palmtree, UserX, AlertTriangle } from "lucide-react";
 import { useTranslations, useLocale } from "next-intl";
 import { format, addDays } from "date-fns";
 import { enUS, ptBR } from "date-fns/locale";
@@ -38,7 +38,7 @@ export function UpcomingEventsWidget({ events = [] }: UpcomingEventsWidgetProps)
 
     const getEventIcon = (type: string) => {
         switch (type) {
-            case 'vacation': return Plane;
+            case 'vacation': return Palmtree;
             case 'absence': return UserX;
             case 'shortage': return AlertTriangle;
             default: return Calendar;
@@ -47,9 +47,9 @@ export function UpcomingEventsWidget({ events = [] }: UpcomingEventsWidgetProps)
 
     const getEventColor = (type: string) => {
         switch (type) {
-            case 'vacation': return 'text-blue-600 bg-blue-50 border-blue-200';
-            case 'absence': return 'text-red-600 bg-red-50 border-red-200';
-            case 'shortage': return 'text-amber-600 bg-amber-50 border-amber-200';
+            case 'vacation': return 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800';
+            case 'absence': return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800';
+            case 'shortage': return 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800';
             default: return 'text-muted-foreground bg-muted border-border';
         }
     };

@@ -85,10 +85,10 @@ export function StaffingRiskWidget({
                     <div className="space-y-4">
                         {/* Understaffed Today */}
                         {understaffedToday.length > 0 && (
-                            <div className="p-3 rounded-lg bg-red-50 border border-red-200">
+                            <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800">
                                 <div className="flex items-center gap-2 mb-2">
                                     <Users className="h-4 w-4 text-red-600" />
-                                    <span className="text-sm font-bold text-red-900">
+                                    <span className="text-sm font-bold text-red-900 dark:text-red-300">
                                         {t('understaffed')} - {t('today')}
                                     </span>
                                 </div>
@@ -104,10 +104,10 @@ export function StaffingRiskWidget({
 
                         {/* Understaffed Tomorrow */}
                         {understaffedTomorrow.length > 0 && (
-                            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+                            <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                                 <div className="flex items-center gap-2 mb-2">
                                     <Users className="h-4 w-4 text-amber-600" />
-                                    <span className="text-sm font-bold text-amber-900">
+                                    <span className="text-sm font-bold text-amber-900 dark:text-amber-300">
                                         {t('understaffed')} - {t('tomorrow')}
                                     </span>
                                 </div>
@@ -123,17 +123,17 @@ export function StaffingRiskWidget({
 
                         {/* Overlapping Vacations */}
                         {overlappingVacations.length > 0 && (
-                            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                            <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
                                 <div className="flex items-center gap-2 mb-2">
                                     <Calendar className="h-4 w-4 text-blue-600" />
-                                    <span className="text-sm font-bold text-blue-900">
+                                    <span className="text-sm font-bold text-blue-900 dark:text-blue-300">
                                         {t('overlappingVacations')}
                                     </span>
                                 </div>
                                 <div className="space-y-1">
                                     {overlappingVacations.map((item, i) => (
                                         <div key={i} className="flex items-center justify-between text-xs">
-                                            <span className="text-blue-900">{item.department}</span>
+                                            <span className="text-blue-900 dark:text-blue-300">{item.department}</span>
                                             <Badge variant="outline" className="text-xs bg-blue-100 text-blue-900 border-blue-300">
                                                 {t('employees', { count: item.count })}
                                             </Badge>
@@ -145,17 +145,17 @@ export function StaffingRiskWidget({
 
                         {/* Sick Leave Impact */}
                         {sickLeaveImpact.length > 0 && (
-                            <div className="p-3 rounded-lg bg-purple-50 border border-purple-200">
+                            <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800">
                                 <div className="flex items-center gap-2 mb-2">
                                     <Activity className="h-4 w-4 text-purple-600" />
-                                    <span className="text-sm font-bold text-purple-900">
+                                    <span className="text-sm font-bold text-purple-900 dark:text-purple-300">
                                         {t('sickLeaveImpact')}
                                     </span>
                                 </div>
                                 <div className="space-y-1">
                                     {sickLeaveImpact.map((item, i) => (
                                         <div key={i} className="flex items-center justify-between text-xs">
-                                            <span className="text-purple-900">{item.department}</span>
+                                            <span className="text-purple-900 dark:text-purple-300">{item.department}</span>
                                             <Badge
                                                 variant="outline"
                                                 className={cn(

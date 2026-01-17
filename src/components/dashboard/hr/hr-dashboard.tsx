@@ -10,6 +10,7 @@ import { UpcomingEventsWidget } from "./upcoming-events-widget";
 import { ComplianceWidget } from "./compliance-widget";
 import { HRInsightsWidget } from "./hr-insights-widget";
 import { AnnouncementsWidget } from "./announcements-widget";
+import { ComplianceAlert } from "./compliance-alert";
 import { StaffingAlerts } from "./staffing-alerts";
 
 interface HRDashboardProps {
@@ -47,6 +48,10 @@ interface HRDashboardProps {
 
     // Announcements Data
     announcements?: any[];
+
+    // Alert Data
+    hasScheduleAlert?: boolean;
+    missingSchedules?: string[];
 }
 
 export function HRDashboard({
@@ -70,7 +75,9 @@ export function HRDashboard({
     urgentComplianceCount = 0,
     vacationData = [],
     absenceData = [],
-    announcements = []
+    announcements = [],
+    hasScheduleAlert = false,
+    missingSchedules = []
 }: HRDashboardProps) {
     const t = useTranslations("Dashboard.hr");
 
@@ -86,6 +93,18 @@ export function HRDashboard({
 
             {/* Greeting & Weather */}
             <HolidayGreetingWidget />
+
+            {/* Critical Schedule Alert - Show when schedules are missing */}
+            {hasScheduleAlert && missingSchedules.length > 0 && (
+                <ComplianceAlert
+                    type="urgent"
+                    title={t('scheduleAlert.title')}
+                    message={t('scheduleAlert.message')}
+                    affectedItems={missingSchedules}
+                    actionLink="/dashboard/schedules"
+                    actionLabel={t('scheduleAlert.action')}
+                />
+            )}
 
             {/* Critical Staffing Alerts - Show when there are risks */}
             <StaffingAlerts />

@@ -82,9 +82,6 @@ export function Header({
                 {/* Report Problem */}
                 <ReportProblemDialog reporterId={(session?.user as any)?.id} />
 
-                {/* Push Notifications (All Users) */}
-                <PushPermissionButton />
-
                 {/* Notifications */}
                 <NotificationBell userId={(session?.user as any)?.id} />
 

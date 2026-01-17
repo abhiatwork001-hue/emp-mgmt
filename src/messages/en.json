@@ -96,6 +96,15 @@
             "store_department_head": "Store Dept Head",
             "employee": "Employee",
             "tech": "Tech"
+        },
+        "days": {
+            "sunday": "Sunday",
+            "monday": "Monday",
+            "tuesday": "Tuesday",
+            "wednesday": "Wednesday",
+            "thursday": "Thursday",
+            "friday": "Friday",
+            "saturday": "Saturday"
         }
     },
     "RoleSwitcher": {
@@ -709,6 +718,16 @@
                 "createNew": "Create New",
                 "viewAll": "View All",
                 "empty": "No announcements"
+            },
+            "alerts": {
+                "urgent": "URGENT",
+                "delayed": "DELAYED",
+                "viewDetails": "View Details & Alert"
+            },
+            "scheduleAlert": {
+                "title": "COMPLIANCE NOTICE: SCHEDULES MISSING",
+                "message": "The deadline for next week's schedule submission has passed. The following stores have not published their schedules:",
+                "action": "View Details & Alert"
             }
         }
     },

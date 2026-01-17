@@ -63,6 +63,7 @@ export interface IStore extends Document {
     employees: ObjectId[];
     minEmployees?: number;
     maxEmployees?: number;
+    targetWeeklyHours?: number;
 
     // Google Reviews
     googlePlaceId?: string;
@@ -149,6 +150,9 @@ export interface IStoreDepartment extends Document {
     minEmployees?: number; // New field
     maxEmployees?: number; // New field
     targetEmployees?: number; // New field
+    minWeeklyHours?: number; // New field
+    maxWeeklyHours?: number; // New field
+    targetWeeklyHours?: number; // New field
     translations?: ITranslations;
     active: boolean;
     archivedAt?: Date;
@@ -487,6 +491,7 @@ const StoreSchema = new Schema<IStore>({
     employees: [{ type: Schema.Types.ObjectId, ref: 'Employee' }],
     minEmployees: { type: Number, default: 0 },
     maxEmployees: { type: Number },
+    targetWeeklyHours: { type: Number }, // New: Target total hours for the store
 
     // Google Reviews Integration
     googlePlaceId: { type: String },
@@ -574,6 +579,9 @@ const StoreDepartmentSchema = new Schema<IStoreDepartment>({
     minEmployees: { type: Number, default: 0 },
     maxEmployees: { type: Number }, // New: Max limit
     targetEmployees: { type: Number, default: 0 },
+    minWeeklyHours: { type: Number, default: 0 }, // New
+    maxWeeklyHours: { type: Number }, // New
+    targetWeeklyHours: { type: Number, default: 0 }, // New
     translations: { type: Map, of: Object },
     active: { type: Boolean, default: true },
     archivedAt: { type: Date }

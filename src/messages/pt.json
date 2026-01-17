@@ -704,6 +704,16 @@
                 "createNew": "Criar Novo",
                 "viewAll": "Ver Tudo",
                 "empty": "Sem avisos"
+            },
+            "alerts": {
+                "urgent": "URGENTE",
+                "delayed": "EM ATRASO",
+                "viewDetails": "Ver Detalhes e Alerta"
+            },
+            "scheduleAlert": {
+                "title": "AVISO DE CONFORMIDADE: HORÁRIOS EM FALTA",
+                "message": "O prazo para submissão do horário da próxima semana passou. As seguintes lojas ainda não publicaram as suas rotas:",
+                "action": "Ver Detalhes e Alerta"
             }
         }
     },

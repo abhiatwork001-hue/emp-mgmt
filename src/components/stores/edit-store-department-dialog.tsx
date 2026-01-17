@@ -1,22 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Edit, Loader2 } from "lucide-react";
 import { updateStoreDepartment } from "@/lib/actions/store-department.actions";
+import { Loader2, Settings } from "lucide-react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 interface EditStoreDepartmentDialogProps {
     department: {
         _id: string;
         name: string;
-        description?: string;
-        active: boolean;
+        minEmployees?: number;
+        maxEmployees?: number;
+        targetEmployees?: number;
+        minWeeklyHours?: number;
+        maxWeeklyHours?: number;
+        targetWeeklyHours?: number;
     };
 }
 
@@ -24,117 +36,126 @@ export function EditStoreDepartmentDialog({ department }: EditStoreDepartmentDia
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+    // const t = useTranslations("Stores.departmentForm"); 
 
     const [formData, setFormData] = useState({
-        name: department.name,
-        description: department.description || "",
-        active: department.active,
-        minEmployees: (department as any).minEmployees || 0,
-        targetEmployees: (department as any).targetEmployees || 0
+        minEmployees: department.minEmployees || 0,
+        maxEmployees: department.maxEmployees || 0,
+        targetEmployees: department.targetEmployees || 0,
+        minWeeklyHours: department.minWeeklyHours || 0,
+        maxWeeklyHours: department.maxWeeklyHours || 0,
+        targetWeeklyHours: department.targetWeeklyHours || 0,
     });
 
-    async function handleSubmit(e: React.FormEvent) {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            await updateStoreDepartment(department._id, {
-                name: formData.name,
-                description: formData.description,
-                active: formData.active,
-                minEmployees: formData.minEmployees,
-                targetEmployees: formData.targetEmployees
-            });
+            await updateStoreDepartment(department._id, formData);
+            toast.success("Department settings updated");
             setOpen(false);
             router.refresh();
         } catch (error) {
             console.error("Failed to update department", error);
+            toast.error("Failed to update settings");
         } finally {
             setLoading(false);
         }
-    }
+    };
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-border hover:bg-accent"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }}
-                >
-                    <Edit className="mr-2 h-4 w-4" /> Edit
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                    <Settings className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px] bg-[#1e293b] border-zinc-800 text-white">
+            <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                    <DialogTitle>Edit Department</DialogTitle>
-                    <DialogDescription className="text-zinc-400">
-                        Update department details and status.
+                    <DialogTitle>Edit {department.name} Settings</DialogTitle>
+                    <DialogDescription>
+                        Configure staffing limits and schedule targets for this department.
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="name">Name</Label>
-                        <Input
-                            id="name"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            className="bg-[#111827] border-zinc-700 text-white"
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                            id="description"
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="bg-[#111827] border-zinc-700 text-white resize-none"
-                            rows={3}
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="min-employees">Min Employees</Label>
-                            <Input
-                                id="min-employees"
-                                type="number"
-                                min="0"
-                                value={formData.minEmployees}
-                                onChange={(e) => setFormData({ ...formData, minEmployees: parseInt(e.target.value) || 0 })}
-                                className="bg-[#111827] border-zinc-700 text-white"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="target-employees">Target Employees</Label>
-                            <Input
-                                id="target-employees"
-                                type="number"
-                                min="0"
-                                value={formData.targetEmployees}
-                                onChange={(e) => setFormData({ ...formData, targetEmployees: parseInt(e.target.value) || 0 })}
-                                className="bg-[#111827] border-zinc-700 text-white"
-                            />
+                <form onSubmit={handleSubmit} className="space-y-6 pt-4">
+
+                    {/* Staffing Targets */}
+                    <div className="space-y-4">
+                        <h4 className="text-sm font-medium leading-none text-muted-foreground border-b pb-2">Staffing Targets (Headcount)</h4>
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="minEmployees">Min</Label>
+                                <Input
+                                    id="minEmployees"
+                                    type="number"
+                                    min="0"
+                                    value={formData.minEmployees}
+                                    onChange={(e) => setFormData({ ...formData, minEmployees: parseInt(e.target.value) || 0 })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="targetEmployees">Target</Label>
+                                <Input
+                                    id="targetEmployees"
+                                    type="number"
+                                    min="0"
+                                    value={formData.targetEmployees}
+                                    onChange={(e) => setFormData({ ...formData, targetEmployees: parseInt(e.target.value) || 0 })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="maxEmployees">Max</Label>
+                                <Input
+                                    id="maxEmployees"
+                                    type="number"
+                                    min="0"
+                                    value={formData.maxEmployees}
+                                    onChange={(e) => setFormData({ ...formData, maxEmployees: parseInt(e.target.value) || 0 })}
+                                />
+                            </div>
                         </div>
                     </div>
-                    <div className="flex items-center justify-between rounded-lg border border-zinc-700 p-3 bg-[#111827]">
-                        <div className="space-y-0.5">
-                            <Label className="text-base">Active Status</Label>
-                            <p className="text-sm text-zinc-400">
-                                {formData.active ? "Department is active" : "Department is inactive"}
-                            </p>
+
+                    {/* Weekly Hours Targets */}
+                    <div className="space-y-4">
+                        <h4 className="text-sm font-medium leading-none text-muted-foreground border-b pb-2">Weekly Schedule Hours</h4>
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="minWeeklyHours">Min</Label>
+                                <Input
+                                    id="minWeeklyHours"
+                                    type="number"
+                                    min="0"
+                                    value={formData.minWeeklyHours}
+                                    onChange={(e) => setFormData({ ...formData, minWeeklyHours: parseInt(e.target.value) || 0 })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="targetWeeklyHours">Target</Label>
+                                <Input
+                                    id="targetWeeklyHours"
+                                    type="number"
+                                    min="0"
+                                    value={formData.targetWeeklyHours}
+                                    onChange={(e) => setFormData({ ...formData, targetWeeklyHours: parseInt(e.target.value) || 0 })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="maxWeeklyHours">Max</Label>
+                                <Input
+                                    id="maxWeeklyHours"
+                                    type="number"
+                                    min="0"
+                                    value={formData.maxWeeklyHours}
+                                    onChange={(e) => setFormData({ ...formData, maxWeeklyHours: parseInt(e.target.value) || 0 })}
+                                />
+                            </div>
                         </div>
-                        <Switch
-                            checked={formData.active}
-                            onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-                        />
                     </div>
+
                     <DialogFooter>
-                        <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
                             Cancel
                         </Button>
                         <Button type="submit" disabled={loading}>

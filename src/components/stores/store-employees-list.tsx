@@ -65,8 +65,9 @@ export function StoreEmployeesList({
             emp.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             emp.email?.toLowerCase().includes(searchTerm.toLowerCase())
         );
+        const deptId = emp.storeDepartmentId?._id || emp.storeDepartmentId || emp.departmentId;
         const matchesDepartment = departmentFilter === "all" ||
-            emp.departmentId === departmentFilter ||
+            deptId === departmentFilter ||
             (emp.departments && emp.departments.some((d: any) => d._id === departmentFilter || d === departmentFilter));
 
         let matchesStatus = true;

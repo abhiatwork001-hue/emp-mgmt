@@ -212,7 +212,7 @@ export function ActionRequiredWidget({
                         {/* Tabs */}
                         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
                             <div className="px-4 pt-3 pb-2 border-b border-border/10 shrink-0">
-                                <TabsList className="grid w-full grid-cols-6">
+                                <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1">
                                     <TabsTrigger value="all" className="text-xs">
                                         {t('viewAll')} ({counts.all})
                                     </TabsTrigger>

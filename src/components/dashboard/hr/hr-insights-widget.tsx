@@ -172,11 +172,11 @@ export function HRInsightsWidget({
                                 <Line
                                     type="monotone"
                                     dataKey="days"
-                                    stroke="hsl(var(--muted-foreground))"
+                                    stroke="#ef4444"
                                     strokeWidth={2}
-                                    dot={{ fill: 'hsl(var(--muted-foreground))', r: 3 }}
-                                    activeDot={{ r: 5 }}
-                                    opacity={0.7}
+                                    dot={{ fill: '#ef4444', r: 4 }}
+                                    activeDot={{ r: 6 }}
+
                                 />
                             </LineChart>
                         </ResponsiveContainer>

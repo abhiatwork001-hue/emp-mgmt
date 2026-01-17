@@ -32,7 +32,9 @@ export function EditStoreDialog({ store, trigger }: EditStoreDialogProps) {
         name: store.name,
         address: store.address || "",
         active: store.active,
-        minEmployees: (store as any).minEmployees || 0
+        minEmployees: (store as any).minEmployees || 0,
+        maxEmployees: (store as any).maxEmployees || 0,
+        targetWeeklyHours: (store as any).targetWeeklyHours || 0
     });
 
     async function handleSubmit(e: React.FormEvent) {
@@ -44,7 +46,9 @@ export function EditStoreDialog({ store, trigger }: EditStoreDialogProps) {
                 name: formData.name,
                 address: formData.address,
                 active: formData.active,
-                minEmployees: formData.minEmployees
+                minEmployees: formData.minEmployees,
+                maxEmployees: formData.maxEmployees,
+                targetWeeklyHours: formData.targetWeeklyHours
             });
             setOpen(false);
             router.refresh();
@@ -91,17 +95,41 @@ export function EditStoreDialog({ store, trigger }: EditStoreDialogProps) {
                             className="bg-muted/50 border-border"
                         />
                     </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="min-employees">Min Staff Target</Label>
+                            <Input
+                                id="min-employees"
+                                type="number"
+                                min="0"
+                                value={formData.minEmployees}
+                                onChange={(e) => setFormData({ ...formData, minEmployees: parseInt(e.target.value) || 0 })}
+                                className="bg-muted/50 border-border"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="max-employees">Max Staff Target</Label>
+                            <Input
+                                id="max-employees"
+                                type="number"
+                                min="0"
+                                value={formData.maxEmployees}
+                                onChange={(e) => setFormData({ ...formData, maxEmployees: parseInt(e.target.value) || 0 })}
+                                className="bg-muted/50 border-border"
+                            />
+                        </div>
+                    </div>
                     <div className="space-y-2">
-                        <Label htmlFor="min-employees">Minimum Employees</Label>
+                        <Label htmlFor="target-hours">Target Weekly Hours</Label>
                         <Input
-                            id="min-employees"
+                            id="target-hours"
                             type="number"
                             min="0"
-                            value={formData.minEmployees}
-                            onChange={(e) => setFormData({ ...formData, minEmployees: parseInt(e.target.value) || 0 })}
+                            value={formData.targetWeeklyHours}
+                            onChange={(e) => setFormData({ ...formData, targetWeeklyHours: parseInt(e.target.value) || 0 })}
                             className="bg-muted/50 border-border"
                         />
-                        <p className="text-xs text-muted-foreground">Sets the minimum staff requirement for this store.</p>
+                        <p className="text-xs text-muted-foreground">Sets the total target hours for weekly scheduling.</p>
                     </div>
                     <div className="flex items-center justify-between rounded-lg border border-border p-3 bg-muted/30">
                         <div className="space-y-0.5">

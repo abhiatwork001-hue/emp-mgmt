@@ -520,21 +520,66 @@ export async function AsyncDashboard({ employee, viewRole, stores, depts, manage
                 }).length,
                 vacationCount: storeStats.onVacation,
 
-                // D. Upcoming Events Data
-                upcomingEvents: [
-                    ...pendingVacations.filter((v: any) => v.status === 'approved').map((v: any) => ({
-                        date: new Date(v.from),
-                        type: 'vacation' as const,
-                        employee: `${v.employeeId?.firstName || ''} ${v.employeeId?.lastName || ''}`.trim(),
-                        department: v.employeeId?.storeDepartmentId?.name || ''
-                    })),
-                    ...pendingAbsences.filter((a: any) => a.status === 'approved').map((a: any) => ({
-                        date: new Date(a.date),
-                        type: 'absence' as const,
-                        employee: `${a.employeeId?.firstName || ''} ${a.employeeId?.lastName || ''}`.trim(),
-                        department: a.employeeId?.storeDepartmentId?.name || ''
-                    }))
-                ],
+                // D. Upcoming Events Data - Query approved vacations/absences for next 14 days
+                upcomingEvents: await (async () => {
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    const fourteenDaysFromNow = new Date(now);
+                    fourteenDaysFromNow.setDate(now.getDate() + 14);
+
+                    const { VacationRequest, AbsenceRequest } = require('@/lib/models');
+
+                    // Get approved vacations starting in next 14 days
+                    const upcomingVacations = await VacationRequest.find({
+                        status: 'approved',
+                        requestedFrom: {
+                            $gte: now,
+                            $lte: fourteenDaysFromNow
+                        }
+                    })
+                        .populate('employeeId', 'firstName lastName')
+                        .populate({
+                            path: 'employeeId',
+                            populate: {
+                                path: 'storeDepartmentId',
+                                select: 'name'
+                            }
+                        })
+                        .lean();
+
+                    // Get approved absences in next 14 days
+                    const upcomingAbsences = await AbsenceRequest.find({
+                        status: 'approved',
+                        date: {
+                            $gte: now,
+                            $lte: fourteenDaysFromNow
+                        }
+                    })
+                        .populate('employeeId', 'firstName lastName')
+                        .populate({
+                            path: 'employeeId',
+                            populate: {
+                                path: 'storeDepartmentId',
+                                select: 'name'
+                            }
+                        })
+                        .lean();
+
+                    return [
+                        ...upcomingVacations.map((v: any) => ({
+                            date: new Date(v.requestedFrom),
+                            type: 'vacation' as const,
+                            employee: `${v.employeeId?.firstName || ''} ${v.employeeId?.lastName || ''}`.trim(),
+                            department: v.employeeId?.storeDepartmentId?.name || ''
+                        })),
+                        ...upcomingAbsences.map((a: any) => ({
+                            date: new Date(a.date),
+                            type: 'absence' as const,
+                            employee: `${a.employeeId?.firstName || ''} ${a.employeeId?.lastName || ''}`.trim(),
+                            department: a.employeeId?.storeDepartmentId?.name || ''
+                        }))
+                    ].sort((a, b) => a.date.getTime() - b.date.getTime());
+                })(),
 
                 // E. Compliance Data
                 expiringDocs: 0, // TODO: Calculate from employee documents

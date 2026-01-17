@@ -81,7 +81,7 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                     </div>
                 )}
                 {filteredStores.map((store) => (
-                    <Link href={`/dashboard/stores/${store.slug}`} key={store._id}>
+                    <Link href={`/dashboard/stores/${store.slug || store._id}`} key={store._id}>
                         <Card className="bg-card border hover:bg-accent/50 transition cursor-pointer">
                             <CardContent className="p-6 space-y-4">
                                 <div className="flex items-start justify-between">
@@ -95,10 +95,11 @@ export function StoreList({ initialStores, currentUserRoles = [] }: { initialSto
                                                 <p className="text-xs text-muted-foreground">
                                                     {store.manager ? `${store.manager.firstName} ${store.manager.lastName}` : t('noManager')}
                                                 </p>
-                                                {store.googleRating && store.googleRating > 0 && (
+                                                {(store.googleRating !== undefined && store.googleRating >= 0) && (
                                                     <div className="flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded text-[10px] font-medium text-yellow-700 dark:text-yellow-400">
-                                                        <span>{store.googleRating.toFixed(1)}</span>
+                                                        <span>{Number(store.googleRating).toFixed(1)}</span>
                                                         <Star className="w-3 h-3 fill-current" />
+                                                        <span className="text-muted-foreground ml-0.5">({store.googleUserRatingsTotal || 0})</span>
                                                     </div>
                                                 )}
                                             </div>

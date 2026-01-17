@@ -252,63 +252,234 @@ export default async function StoreDetailsPage({ params }: { params: Promise<{ s
 
                 {/* Right Column - Quick Stats & Quick Actions */}
                 <div className="space-y-6">
-                    {/* Quick Stats */}
                     <Card>
                         <CardHeader className="pb-3">
                             <CardTitle className="text-lg">Quick Stats</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">Total Employees</span>
-                                    <span className="text-2xl font-bold">{store.employees?.length || 0}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">Departments</span>
-                                    <span className="text-2xl font-bold">{storeDepartments.length}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-muted-foreground">Active Schedules</span>
-                                    <span className="text-2xl font-bold">
-                                        {(() => {
-                                            // TODO: Move this data fetching up to the component level for cleaner code
-                                            // For now, doing it here is cleaner than restructuring the whole file
-                                            return activeSchedulesCount;
-                                        })()}
-                                    </span>
-                                </div>
-                            </div>
+                            {(() => {
+                                // --- Calculation Logic ---
+                                const { getISOWeekNumber } = require("@/lib/utils");
+                                const now = new Date();
+                                const currentWeek = getISOWeekNumber(now);
+                                const currentYear = now.getFullYear();
+
+                                // 1. Smart Schedule Selection
+                                // Prioritize Current Week. If no published schedule, find the next closest future schedule.
+                                // If none, fall back to the most recent past schedule.
+
+                                const getScheduleScore = (s: any) => {
+                                    if (s.year === currentYear && s.weekNumber === currentWeek) return 1000; // Current week = Top priority
+                                    if (s.year === currentYear && s.weekNumber > currentWeek) return 500 - (s.weekNumber - currentWeek); // Future weeks (closer is better)
+                                    if (s.year > currentYear) return 400; // Next year
+                                    return 100 - (currentWeek - s.weekNumber); // Past weeks (recent is better)
+                                };
+
+                                const relevantSchedules = allSchedules
+                                    .filter((s: any) => s.status === 'published' || s.status === 'approved')
+                                    .sort((a: any, b: any) => getScheduleScore(b) - getScheduleScore(a));
+
+                                const activeSchedule = relevantSchedules[0];
+                                // activeSchedule is the SINGLE schedule we will base stats on.
+                                // In a store with multiple departments, "one schedule" might technically be split across docs if the system was designed that way,
+                                // but typically it's one schedule doc per store per week? 
+                                // Actually, based on previous code `publishedSchedules` was a filter returning ARRAY.
+                                // If the system supports multiple schedule docs for the same week (e.g. per dept), we need to filter by the *selected week*.
+
+                                let targetYear = currentYear;
+                                let targetWeek = currentWeek;
+
+                                if (activeSchedule) {
+                                    targetYear = activeSchedule.year;
+                                    targetWeek = activeSchedule.weekNumber;
+                                }
+
+                                const publishedSchedules = allSchedules.filter((s: any) =>
+                                    s.year === targetYear &&
+                                    s.weekNumber === targetWeek &&
+                                    (s.status === 'published' || s.status === 'approved')
+                                );
+
+                                let actualHours = 0;
+                                publishedSchedules.forEach((schedule: any) => {
+                                    if (schedule.days) {
+                                        schedule.days.forEach((day: any) => {
+                                            if (day.shifts) {
+                                                day.shifts.forEach((shift: any) => {
+                                                    const [startH, startM] = shift.startTime.split(':').map(Number);
+                                                    const [endH, endM] = shift.endTime.split(':').map(Number);
+                                                    let duration = (endH * 60 + endM) - (startH * 60 + startM);
+                                                    if (duration < 0) duration += 24 * 60; // Overnight
+
+                                                    // Deduct break
+                                                    if (shift.breakMinutes) duration -= shift.breakMinutes;
+
+                                                    // Multiply by headcount
+                                                    const headcount = shift.employees ? shift.employees.length : 0;
+                                                    actualHours += (duration / 60) * headcount;
+                                                });
+                                            }
+                                        });
+                                    }
+                                });
+
+                                // 2. Targets
+                                const targetHours = (store as any).targetWeeklyHours || 0;
+                                const minStaff = (store as any).minEmployees || 0;
+                                const maxStaff = (store as any).maxEmployees || 0;
+                                const currentStaff = employees?.length || 0;
+
+                                return (
+                                    <div className="space-y-4">
+                                        {/* Staffing */}
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm font-medium text-muted-foreground">Staffing</span>
+                                                <span className={`text-sm font-bold ${currentStaff < minStaff ? 'text-red-500' : 'text-foreground'}`}>
+                                                    {currentStaff} Active
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs text-muted-foreground">
+                                                <span>Target Range:</span>
+                                                <span>{minStaff > 0 || maxStaff > 0 ? `${minStaff} - ${maxStaff || 'Any'}` : 'Not set'}</span>
+                                            </div>
+                                            {/* Mini Progress Bar for Staffing */}
+                                            {(minStaff > 0 && maxStaff > 0) && (
+                                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mt-1 mb-2">
+                                                    <div
+                                                        className={`h-full rounded-full ${currentStaff < minStaff ? 'bg-red-500' : (currentStaff > maxStaff ? 'bg-yellow-500' : 'bg-emerald-500')}`}
+                                                        style={{ width: `${Math.min((currentStaff / maxStaff) * 100, 100)}%` }}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Dept Staffing Breakdown */}
+                                            {storeDepartments.length > 0 && (
+                                                <div className="space-y-2 pt-2 border-t border-border/30 max-h-40 overflow-y-auto pr-1">
+                                                    {storeDepartments.map((dept: any) => {
+                                                        const deptEmployees = employees?.filter((e: any) =>
+                                                            e.storeDepartmentId?._id === dept._id || e.storeDepartmentId === dept._id
+                                                        ).length || 0;
+
+                                                        const minD = dept.minEmployees || 0;
+                                                        const maxD = dept.maxEmployees || 0;
+                                                        const hasTarget = minD > 0 || maxD > 0;
+
+                                                        return (
+                                                            <div key={dept._id} className="text-xs flex justify-between items-center">
+                                                                <span className="truncate max-w-[120px]" title={dept.name}>{dept.name}</span>
+                                                                <span className={`${hasTarget && (deptEmployees < minD || (maxD > 0 && deptEmployees > maxD)) ? 'text-red-500 font-bold' : 'text-muted-foreground'}`}>
+                                                                    {deptEmployees} {hasTarget ? <span className="text-[10px] text-muted-foreground font-normal">/ {minD}-{maxD || '∞'}</span> : ''}
+                                                                </span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="h-px bg-border/50" />
+
+                                        {/* Hours */}
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                                    Weekly Hours
+                                                    {activeSchedule && (
+                                                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                                            W{targetWeek}
+                                                        </span>
+                                                    )}
+                                                </span>
+                                                <div className="text-right">
+                                                    <span className="text-sm font-bold block">{actualHours.toFixed(1)} h</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between items-center text-xs text-muted-foreground">
+                                                <span>Target:</span>
+                                                <span>{targetHours > 0 ? `${targetHours} h` : 'Not set'}</span>
+                                            </div>
+                                            {/* Mini Progress Bar for Hours */}
+                                            {targetHours > 0 && (
+                                                <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden mt-1 mb-2">
+                                                    <div
+                                                        className={`h-full rounded-full ${actualHours > targetHours ? 'bg-red-500' : 'bg-blue-500'}`}
+                                                        style={{ width: `${Math.min((actualHours / targetHours) * 100, 100)}%` }}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Department Hours Breakdown - Moved inside Hours section */}
+                                            {storeDepartments.length > 0 && (
+                                                <div className="space-y-2 pt-2 border-t border-border/30 max-h-40 overflow-y-auto pr-1">
+                                                    {storeDepartments.map((dept: any) => {
+                                                        // Calc hours for this dept
+                                                        let deptActualHours = 0;
+                                                        const deptSchedule = publishedSchedules.find((s: any) =>
+                                                            s.storeDepartmentId?._id === dept._id || s.storeDepartmentId === dept._id
+                                                        );
+
+                                                        if (deptSchedule && deptSchedule.days) {
+                                                            deptSchedule.days.forEach((day: any) => {
+                                                                if (day.shifts) {
+                                                                    day.shifts.forEach((shift: any) => {
+                                                                        const [startH, startM] = shift.startTime.split(':').map(Number);
+                                                                        const [endH, endM] = shift.endTime.split(':').map(Number);
+                                                                        let duration = (endH * 60 + endM) - (startH * 60 + startM);
+                                                                        if (duration < 0) duration += 24 * 60;
+                                                                        if (shift.breakMinutes) duration -= shift.breakMinutes;
+                                                                        const headcount = shift.employees ? shift.employees.length : 0;
+                                                                        deptActualHours += (duration / 60) * headcount;
+                                                                    });
+                                                                }
+                                                            });
+                                                        }
+
+                                                        const deptTarget = dept.targetWeeklyHours || 0;
+
+                                                        return (
+                                                            <div key={dept._id} className="text-xs">
+                                                                <div className="flex justify-between items-center mb-1">
+                                                                    <span className="truncate max-w-[120px]" title={dept.name}>{dept.name}</span>
+                                                                    <span className={deptTarget > 0 && deptActualHours > deptTarget ? "text-red-500 font-bold" : "text-muted-foreground"}>
+                                                                        {deptActualHours.toFixed(0)} <span className="text-[10px] font-normal text-muted-foreground">/ {deptTarget > 0 ? deptTarget : '-'} h</span>
+                                                                    </span>
+                                                                </div>
+                                                                {deptTarget > 0 && (
+                                                                    <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                                                                        <div
+                                                                            className={`h-full rounded-full ${deptActualHours > deptTarget ? 'bg-red-500' : 'bg-blue-500'}`}
+                                                                            style={{ width: `${Math.min((deptActualHours / deptTarget) * 100, 100)}%` }}
+                                                                        />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="h-px bg-border/50" />
+
+                                        {/* General Stats - Compact at bottom */}
+                                        <div className="grid grid-cols-2 gap-2 pt-1 text-center">
+                                            <div className="p-1.5 bg-muted/30 rounded">
+                                                <span className="block text-lg font-bold">{storeDepartments.length}</span>
+                                                <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Depts</span>
+                                            </div>
+                                            <div className="p-1.5 bg-muted/30 rounded">
+                                                <span className="block text-lg font-bold">{activeSchedulesCount}</span>
+                                                <span className="text-[9px] text-muted-foreground uppercase tracking-wider">Total Scheds</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                         </CardContent>
                     </Card>
 
-                    {/* Quick Actions */}
-                    <Card>
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-lg">Quick Actions</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                            <Button variant="outline" className="w-full justify-start" asChild>
-                                <Link href="/dashboard/schedules">
-                                    <CalendarIcon className="mr-2 h-4 w-4 text-blue-600" />
-                                    View All Schedules
-                                </Link>
-                            </Button>
-                            {canManageEmployees && (
-                                <Button variant="outline" className="w-full justify-start" asChild>
-                                    <Link href={`#employees`}>
-                                        <Users className="mr-2 h-4 w-4 text-emerald-600" />
-                                        Manage Employees
-                                    </Link>
-                                </Button>
-                            )}
-                            <Button variant="outline" className="w-full justify-start" asChild>
-                                <Link href="/dashboard/absences">
-                                    <CalendarIcon className="mr-2 h-4 w-4 text-purple-600" />
-                                    View Absences
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
+
 
                     {/* Management Card */}
                     {canManageManagers && (

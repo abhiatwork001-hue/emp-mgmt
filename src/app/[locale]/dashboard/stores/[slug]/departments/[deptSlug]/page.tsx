@@ -93,7 +93,6 @@ export default async function StoreDepartmentPage({ params }: PageProps) {
                         <div className="flex justify-between items-start mb-6">
                             <h2 className="text-xl font-semibold text-foreground">Department Information</h2>
                             <div className="flex gap-2">
-                                {canManageDepartment && <EditStoreDepartmentDialog department={department} />}
                                 {canManageDepartment && (
                                     <Button variant="destructive" size="sm">
                                         <Trash2 className="mr-2 h-4 w-4" /> Delete

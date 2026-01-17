@@ -55,8 +55,11 @@ export async function getAllStoresWithStats() {
         {
             $project: {
                 name: 1,
+                slug: 1, // Ensure slug is returned
                 address: 1,
                 active: 1,
+                googleRating: 1,
+                googleUserRatingsTotal: 1,
                 departmentsCount: { $size: "$departments_list" },
                 employeesCount: { $size: "$employees_list" }
             }
@@ -98,7 +101,9 @@ export async function getStoresWithDepartments() {
 export async function getStoreDepartments(storeId: string) {
     if (!storeId) return [];
     await dbConnect();
-    const departments = await StoreDepartment.find({ storeId, active: true }).select("name").lean();
+    const departments = await StoreDepartment.find({ storeId, active: true })
+        .select("name minEmployees maxEmployees targetEmployees minWeeklyHours maxWeeklyHours targetWeeklyHours")
+        .lean();
     return JSON.parse(JSON.stringify(departments));
 }
 

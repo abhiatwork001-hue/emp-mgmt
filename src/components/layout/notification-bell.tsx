@@ -16,6 +16,9 @@ import { getUserNotifications, markNotificationAsRead, markAllNotificationsAsRea
 import { useRouter, usePathname } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { saveSubscription } from "@/lib/actions/push.actions";
+import { BellOff, Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 interface NotificationBellProps {
     userId?: string;
@@ -25,8 +28,23 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [useFallback, setUseFallback] = useState(false);
+    const [isSubscribed, setIsSubscribed] = useState(false);
+    const [loading, setLoading] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
+
+    const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || 'BMbpuQjO2CrTywrJlhVQF2ysCbkkNQ5Fyc56dEUmerRY3ROeBxflwXRtWYMzuB8budHdvoaJeXF1dsXN5tvGasQ';
+
+    // Check push notification status
+    useEffect(() => {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+        navigator.serviceWorker.ready.then((registration) => {
+            registration.pushManager.getSubscription().then((subscription) => {
+                setIsSubscribed(!!subscription);
+            });
+        });
+    }, []);
 
     // 1. Fetch initial history
     useEffect(() => {
@@ -129,6 +147,65 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         return () => clearInterval(pollInterval);
     }, [userId, useFallback]);
 
+    async function urlBase64ToUint8Array(base64String: string) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding)
+            .replace(/\-/g, '+')
+            .replace(/_/g, '/');
+
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    const toggleNotifications = async () => {
+        if (isSubscribed) {
+            // Unsubscribe
+            setLoading(true);
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.getSubscription();
+                if (subscription) {
+                    await subscription.unsubscribe();
+                    await saveSubscription(null);
+                    setIsSubscribed(false);
+                    toast.info("Notifications disabled");
+                }
+            } catch (error) {
+                console.error("Unsubscription failed:", error);
+            } finally {
+                setLoading(false);
+            }
+        } else {
+            // Subscribe
+            setLoading(true);
+            try {
+                const registration = await navigator.serviceWorker.ready;
+                const subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: await urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
+
+                const result = await saveSubscription(JSON.parse(JSON.stringify(subscription)));
+                if (result.success) {
+                    setIsSubscribed(true);
+                    toast.success("Notifications enabled!");
+                } else {
+                    throw new Error(result.error);
+                }
+            } catch (error: any) {
+                console.error("Subscription failed:", error);
+                toast.error("Failed to enable notifications");
+            } finally {
+                setLoading(false);
+            }
+        }
+    };
+
     const handleRead = async (id: string, link?: string) => {
         if (!userId) return;
 
@@ -182,6 +259,31 @@ export function NotificationBell({ userId }: NotificationBellProps) {
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {/* Push Notification Toggle */}
+                {('serviceWorker' in navigator && 'PushManager' in window) && (
+                    <>
+                        <div className="px-2 py-2">
+                            <div className="flex items-center justify-between px-2">
+                                <div className="flex items-center gap-2">
+                                    {isSubscribed ? (
+                                        <Bell className="h-4 w-4 text-primary" />
+                                    ) : (
+                                        <BellOff className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                    <span className="text-sm font-medium">
+                                        {isSubscribed ? "Notifications On" : "Notifications Off"}
+                                    </span>
+                                </div>
+                                <Switch
+                                    checked={isSubscribed}
+                                    onCheckedChange={toggleNotifications}
+                                    disabled={loading}
+                                />
+                            </div>
+                        </div>
+                        <DropdownMenuSeparator />
+                    </>
+                )}
                 <div className="max-h-[300px] overflow-y-auto">
                     {notifications.length === 0 ? (
                         <div className="p-4 text-center text-sm text-muted-foreground">
